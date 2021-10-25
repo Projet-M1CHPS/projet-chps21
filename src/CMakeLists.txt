@@ -8,7 +8,7 @@ add_library(NeuralNetwork STATIC NeuralNetwork.cpp ${CMAKE_SOURCE_DIR}/include/N
 set_target_properties(NeuralNetwork PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 target_include_directories(NeuralNetwork PUBLIC "${CMAKE_SOURCE_DIR}/include")
 
-target_link_libraries(NeuralNetwork math)
+target_link_libraries(NeuralNetwork m)
 
 add_executable(main main.cpp)
 set_target_properties(main PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

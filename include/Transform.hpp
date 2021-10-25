@@ -7,7 +7,7 @@ namespace image::transform {
 class Transformation {
 public:
   virtual ~Transformation() = default;
-  virtual void transform(image::Image &image) = 0;
+  virtual image::Image* transform(image::Image *image) = 0;
 
 private:
 };

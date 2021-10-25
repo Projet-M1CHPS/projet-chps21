@@ -1,21 +1,43 @@
 #pragma once
+#include "Matrix.hpp"
+#include <cmath>
+#include <functional>
 #include <iostream>
+#include <type_traits>
 #include <vector>
 
-namespace nn {
-
-// We could also use templated classes
-using real = float;
+namespace nnet {
 
 enum class ActivationFunctionType {
-  SIGMOID,
+  sigmoid,
   // TODO: Expand me !
 };
 
-class NeuralNetwork {
+template <typename real> real sigmoid(real x) {
+  static_assert(std::is_floating_point_v<real>,
+                "Invalid type for sigmoid, expected a floating point type");
+
+  return 1.0 / (1.0 + std::exp(-x));
+}
+
+// TODO: Implement additional functions
+// (Add them to the enum + getAFFromType())
+
+template <typename real>
+std::function<real(real)> getAFFromType(ActivationFunctionType type) {
+  static_assert(
+      std::is_floating_point_v<real>,
+      "Invalid type for activation function, expected a floating point type");
+
+  switch (type) {
+  case ActivationFunctionType::sigmoid:
+    return sigmoid<real>;
+  }
+}
+
+template <typename real> class NeuralNetwork {
 public:
   // default ctor, should create a network with a single layer
-  // and random weights/biases
   NeuralNetwork();
 
   // Not sure we should be able to copy networks ?
@@ -24,7 +46,9 @@ public:
 
   // Should throw if the number of input is incorrect
   template <typename iterator>
-  std::vector<real> runOnInput(iterator begin, iterator end) const;
+  std::vector<real> forward(iterator begin, iterator end) const;
+
+  void backward();
 
   // Should reuse loadFromStream
   void loadFromFile(const std::string &fileName);
@@ -33,7 +57,6 @@ public:
   / - the number of layers
   / - the number of neurons per layer
   / - the weights of each neuron
-  / - the biases of each neuron
   / - the activation function
   / Should throw an exception on error
   / TODO: Define a good format for a network
@@ -52,11 +75,12 @@ public:
   void setActivationFunction(ActivationFunctionType type);
   ActivationFunctionType getActivationFunction() const;
 
-  void randomizeWeights();
-  void randomizeBiases();
+  void randomizeSynapses(int seed);
 
 private:
   // TODO: Add members
+
+  std::vector<math::Matrix<real>> matrices;
 };
 
-} // namespace nn
+} // namespace nnet
