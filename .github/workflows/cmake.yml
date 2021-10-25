@@ -1,4 +1,4 @@
-name: Build
+name: Run Test
 
 on:
   push:
@@ -17,6 +17,9 @@ jobs:
     # cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
+    outputs:
+      build_dir: ${{github.workspace}}/build
+      
 
     steps:
     - uses: actions/checkout@v2
@@ -30,11 +33,6 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-    
-    steps:
     - name: test
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.  
