@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Image.hpp"
+
 namespace image::transform {
 
 // Transformation base class
@@ -7,14 +9,21 @@ namespace image::transform {
 class Transformation {
 public:
   virtual ~Transformation() = default;
-  virtual void transform(image::Image &image) = 0;
+  virtual image::Image* transform(image::Image const &image) = 0;
 
 private:
 };
 
 class GreyScale : public Transformation {
 public:
-  virtual void transform(image::Image &image) override;
+  image::Image* transform(image::Image const &image) override;
+
+private:
+};
+
+class BlackWhiteScale : public Transformation {
+public:
+  image::Image* transform(image::Image const &image) override;
 
 private:
 };
@@ -32,13 +41,19 @@ public:
   void saveToFile(std::string const &fileName) const;
   void saveToStream(std::istream &stream) const;
 
-  // Add the transformation at the given position in the list
-  void addTransformation(std::shared_ptr<Transformation> transformation, size_t position);
+  // Insert the transformation at the given position in the list
+  void insertTransformation(size_t position, std::shared_ptr<Transformation> transformation);
 
   // Add the transformation at the end of the transformation list
   // (May be renamed push_back() ?)
   void addTransformation(std::shared_ptr<Transformation> transformation);
   
+  /**
+   * @param image  Base image, will not be modified.
+   * @return a copy of the base image with all transformations applied
+   * @brief Apply all transformations of the transformation list for the given image
+  */
+  image::Image* transform(image::Image const &image);
 private:
   // Transformations should be applied in order
   std::vector<std::shared_ptr<Transformation>> transformations;
