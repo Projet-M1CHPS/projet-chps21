@@ -7,6 +7,16 @@
 *.o
 *.obj
 
+# CMake related
+**/CMakeFiles/*
+**/_deps/*
+**/CMakeCache.txt
+**/Makefile
+*.cmake
+*.make
+*.marks
+*.pc
+
 # Precompiled Headers
 *.gch
 *.pch
@@ -35,3 +45,7 @@
 
 .vscode
 build
+debug
+Debug
+release
+Release
