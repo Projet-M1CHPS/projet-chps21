@@ -14,9 +14,11 @@ add_executable(
 )
 
 target_link_libraries(
-  Math_test
+  Math_test PUBLIC
   gtest_main
 )
+
+target_code_coverage(Math_test ALL)
 
 add_executable(
   NeuralNetwork_test
@@ -24,9 +26,12 @@ add_executable(
 )
 
 target_link_libraries(
-  NeuralNetwork_test
+  NeuralNetwork_test PUBLIC
   gtest_main
 )
+
+target_code_coverage(NeuralNetwork_test ALL)
+
 
 include(GoogleTest)
 gtest_discover_tests(Math_test)
