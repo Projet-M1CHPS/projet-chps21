@@ -5,47 +5,49 @@
 
 using namespace image;
 
-void _getBrightnessHeightmap(Image const &image, long double (&heightmap)[POSSIBLE_BRIGHTNESSES]) {
+std::array<long double, POSSIBLE_BRIGHTNESSES> _createBrightnessHeightmap(
+    Image const &image) {
+    std::cout << "> _getBrightnessHeightmap()" << std::endl;
     long double increment_value = 1.0 / image.width * image.height;
+    std::array<long double, POSSIBLE_BRIGHTNESSES> heightmap;
 
-    // Testing the initialization of colors_count = [0;0;0;...]
-    for (unsigned i = 0; i < POSSIBLE_BRIGHTNESSES; i++) {
-        assert(heightmap[i] == 0.0);
-    }
-
+    heightmap.fill(0.0);
     for (Color each : image.colors) {
-        heightmap[each.r + each.g + each.b] += increment_value;
+        unsigned index = each.r + each.g + each.b;
+        heightmap[index] += increment_value;
     }
+    std::cout << "< _getBrightnessHeightmap()" << std::endl;
+    return heightmap;
 }
 
-Image* transform::BlackWhiteScale::transform(Image const &image) {
-    long double heightmap[POSSIBLE_BRIGHTNESSES] = {0.0};
-    _getBrightnessHeightmap(image, (&heightmap)[POSSIBLE_BRIGHTNESSES]);
+bool transform::BlackWhiteScale::transform(Image &image) {
+    std::array<long double, POSSIBLE_BRIGHTNESSES> heightmap =
+        _createBrightnessHeightmap(image);
     unsigned long dimension = image.width * image.height;
-    
-    std::vector<Color> new_colors;
+
     for (unsigned i = 0; i < dimension; i++) {
         color_t height_colorized = 255 * ((color_t)heightmap[i]);
         Color current(height_colorized, height_colorized, height_colorized);
-        new_colors.push_back(current);
+        image.colors[i] = current;
     }
-    Image modified(image.width, image.height, new_colors);
-    Image* ret_modified = &modified;
-    return ret_modified;
+    return true;
 }
 
-Image *transform::GreyScale::transform(Image const &image) {
-    long double heightmap[POSSIBLE_BRIGHTNESSES] = {0.0};
-    _getBrightnessHeightmap(image, (&heightmap)[POSSIBLE_BRIGHTNESSES]);
+bool transform::GreyScale::transform(Image &image) {
+    std::cout << "> transform::GreyScale::transform()" << std::endl;
     unsigned long dimension = image.width * image.height;
 
-    std::vector<Color> new_colors;
     for (unsigned i = 0; i < dimension; i++) {
-        color_t height_colorized = (color_t)(heightmap[i] * 255);
-        Color current(height_colorized, height_colorized, height_colorized);
-        new_colors.push_back(current);
+        unsigned mean = (unsigned) ((image.colors[i].r+image.colors[i].g+image.colors[i].b)/3.0);
+        if(mean < 0)
+            mean = 0;
+        else if(mean > 255)
+            mean = 255;
+        image.colors[i].r = mean;
+        image.colors[i].g = mean;
+        image.colors[i].b = mean;
     }
-    Image modified(image.width, image.height, new_colors);
-    Image* ret_modified = &modified;
-    return ret_modified;
+    //image.print();
+    std::cout << "< transform::GreyScale::transform()" << std::endl;
+    return true;
 }

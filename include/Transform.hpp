@@ -9,22 +9,19 @@ namespace image::transform {
 class Transformation {
 public:
   virtual ~Transformation() = default;
-  virtual image::Image* transform(image::Image const &image) = 0;
-
+  virtual bool transform(image::Image &image) = 0;
 private:
 };
 
 class GreyScale : public Transformation {
 public:
-  image::Image* transform(image::Image const &image) override;
-
+  bool transform(image::Image &image) override;
 private:
 };
 
 class BlackWhiteScale : public Transformation {
 public:
-  image::Image* transform(image::Image const &image) override;
-
+  bool transform(image::Image &image) override;
 private:
 };
 
@@ -53,7 +50,7 @@ public:
    * @return a copy of the base image with all transformations applied
    * @brief Apply all transformations of the transformation list for the given image
   */
-  image::Image* transform(image::Image const &image);
+  image::Image transform(image::Image const &image);
 private:
   // Transformations should be applied in order
   std::vector<std::shared_ptr<Transformation>> transformations;
