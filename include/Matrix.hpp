@@ -17,13 +17,10 @@ public:
     if (rows == 0 || cols == 0)
       return;
 
-    data = new T[rows * cols];
+    data = std::make_unique<T[]>(rows * cols);
   }
 
-  ~Matrix() {
-    if (data)
-      delete[] data;
-  }
+  ~Matrix() = default;
 
   // Does not perform bound checking
   T &operator()(size_t i, size_t j) { return data[i * cols + j]; };
@@ -40,7 +37,6 @@ public:
     // We may be able to skip the reallacoation
 
     if (data && rows * cols != other.rows * other.cols) {
-      delete data;
       data = nullptr;
     }
 
@@ -50,8 +46,8 @@ public:
     // not need no copy an empty matrix
     if (other.data) {
       if (not data)
-        data = new T(other.rows * other.cols);
-      std::memcpy(data, other.data, sizeof(T) * rows * cols);
+        data = std::make_unique<T[]>(rows * cols);
+      std::memcpy(data.get(), other.getData(), sizeof(T) * rows * cols);
     }
     return *this;
   }
@@ -61,27 +57,22 @@ public:
     if (this == &other)
       return *this;
 
-    // We're overiding the old data
-    if (data)
-      delete data;
-
-    data = other.data;
+    data = std::move(other.data);
     rows = other.rows;
     cols = other.cols;
 
-    other.data = nullptr;
     other.rows = 0;
     other.cols = 0;
     return *this;
   }
 
-  T *begin() { return data; }
+  T *begin() { return data.get(); }
 
-  T *end() { return data + (rows * cols); }
+  T *end() { return data.get() + (rows * cols); }
 
-  const T *getData() const { return getData(); }
+  const T *getData() const { return data.get(); }
 
-  T *getData() { return data; }
+  T *getData() { return data.get(); }
 
   size_t getRows() const { return rows; }
 
@@ -102,40 +93,65 @@ public:
     return sum;
   }
 
-  Matrix operator*(const Matrix other) {
+  Matrix operator+(const Matrix other) {
 
-    size_t b_rows = other.rows, b_cols = other.cols;
-
-    if (cols != b_rows)
+    if (rows != other.rows or cols != other.cols)
       throw std::invalid_argument("Matrix dimensions do not match");
 
-    Matrix<T> c(rows, b_cols);
+    Matrix res(rows, cols);
 
-    T *raw_b = other.data;
-    T *raw_c = c.data;
+    const T *other_data = other.getData();
+    T *res_data = res.getData();
 
 #ifdef USE_BLAS
 
     if constexpr (std::is_same_v<real, float>)
       static_assert(false, "blas not implemented");
     else if constexpr (std::is_same_v<real, double>)
-      static_assert(false, "blas no implemented");
+      static_assert(false, "blas not implemented");
+    else
+#endif
+      for (size_t i = 0; i < rows * cols; i++) {
+        res_data[i] = data[i] + other_data[i];
+      }
+
+    return res;
+  }
+
+  Matrix operator*(const Matrix other) {
+
+    size_t other_rows = other.rows, other_cols = other.cols;
+
+    if (cols != other_rows)
+      throw std::invalid_argument("Matrix dimensions do not match");
+
+    Matrix<T> res(rows, other_cols);
+
+    const T *raw_other = other.getData();
+    T *raw_res = res.getData();
+
+#ifdef USE_BLAS
+
+    if constexpr (std::is_same_v<real, float>)
+      static_assert(false, "blas not implemented");
+    else if constexpr (std::is_same_v<real, double>)
+      static_assert(false, "blas not implemented");
     else
 
 #endif
       for (int i = 0; i < rows; i++) {
         for (int k = 0; k < cols; k++) {
           T a_ik = data[i * cols + k];
-          for (int j = 0; j < b_cols; j++)
-            raw_c[i * b_cols + j] += a_ik * raw_b[k * b_cols + j];
+          for (int j = 0; j < other_cols; j++)
+            raw_res[i * other_cols + j] += a_ik * raw_other[k * other_cols + j];
         }
       }
 
-    return c;
+    return res;
   }
 
 private:
-  T *data = nullptr;
+  std::unique_ptr<T[]> data = nullptr;
   size_t rows = 0, cols = 0;
 };
 

@@ -12,4 +12,5 @@ namespace utils {
             IOException(const std::string& msg) noexcept;
             IOException(const char* msg) noexcept;
     };
+
 }

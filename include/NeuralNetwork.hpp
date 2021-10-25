@@ -80,7 +80,8 @@ public:
 private:
   // TODO: Add members
 
-  std::vector<math::Matrix<real>> matrices;
+  std::vector<math::Matrix<real>> weights;
+  std::vector<math::Matrix<real>> biases;
 };
 
 } // namespace nnet

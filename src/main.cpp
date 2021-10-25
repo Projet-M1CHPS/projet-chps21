@@ -1,13 +1,14 @@
 #include "Image.hpp"
 #include "NeuralNetwork.hpp"
-#include "Transform.hpp"
 #include "Utils.hpp"
 #include <iostream>
+
 
 // Test main, should be replaced by the python interface
 int main(int argc, char **argv) {
 
-  // Load a single image
+  // What the main could look like in the end
+  /* Load a single image
   image::ImageLoader loader("test.ppm");
 
   try {
@@ -22,10 +23,10 @@ int main(int argc, char **argv) {
   te.addTransformation(std::make_shared<image::transform::GreyScale>());
   te.transform(img);
 
-  nn::NeuralNetwork nn;
+  nnet::NeuralNetwork nn;
 
   try {
-    std::vector<float> res = nn.runOnInput(img.getData());
+    std::vector<float> res = nn.runOnInput(img.begin(), img.end());
 
     std::cout << "NN Output: " << std::endl;
     for (int i = 0; i < res.size(); i++) {
@@ -34,7 +35,7 @@ int main(int argc, char **argv) {
   } catch (std::runtime_error &e) {
     std::cout << "Could not run neural network : " << std::endl;
     e.what();
-  }
+  } */
 
   return 0;
 }

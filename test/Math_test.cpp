@@ -12,7 +12,7 @@ TEST(MatrixTest, CanCreateMatrix) {
   ASSERT_EQ(11, m.getCols());
 
   // Should be able to create an empty matrix
-  Matrix<float> n;
+  const Matrix<float> n;
 
   ASSERT_EQ(nullptr, n.getData());
   ASSERT_EQ(0, n.getRows());
