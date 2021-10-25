@@ -9,13 +9,30 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 add_executable(
-  main_test
-  main_test.cpp
+  Math_test
+  Math_test.cpp
 )
+
 target_link_libraries(
-  main_test
+  Math_test PUBLIC
   gtest_main
 )
 
+target_code_coverage(Math_test ALL)
+
+add_executable(
+  NeuralNetwork_test
+  NeuralNetwork_test.cpp
+)
+
+target_link_libraries(
+  NeuralNetwork_test PUBLIC
+  gtest_main
+)
+
+target_code_coverage(NeuralNetwork_test ALL)
+
+
 include(GoogleTest)
-gtest_discover_tests(main_test)
+gtest_discover_tests(Math_test)
+gtest_discover_tests(NeuralNetwork_test)
