@@ -61,9 +61,14 @@ void _listDirectories(char *path) {
     std::cout << std::endl;
 }
 
-
+/**
+ * @param filename: ONLY PPM FILES FOR NOW
+ */
 Image ImageLoader::load(std::string const filename) {
     std::ifstream fp;
+
+    //_listDirectories(".");
+
     fp.open(filename);
     if (!fp.is_open()) {
         std::cerr << "<!> ImageLoader::load(" << filename
@@ -81,22 +86,35 @@ Image ImageLoader::load(std::string const filename) {
     fp >> max_color;
     assert(max_color >= 0 && max_color < 256);
     fp.get();
-    //std::cout << "width: " << width << "; height: " << height
-    //          << "; max_color: " << max_color << std::endl;
+    std::cout << "width: " << width << "; height: " << height
+              << "; max_color: " << max_color << std::endl;
     std::vector<Color> colors;
     int r, g, b = 0;
+    char current;
     for (unsigned i = 0; i < height; i++) {
         for (unsigned j = 0; j < width; j++) {
-            char tmp[3];
-            fp >> r;
-            fp >> g;
-            fp >> b;
+            current = fp.get();
+            //std::cout << "current = " << current << std::endl;
+            r = current-'0';
+            current = fp.get();
+            //std::cout << "current = " << current << std::endl;
+            g = current-'0';
+            current = fp.get();
+            //std::cout << "current = " << current << std::endl;
+            b = current-'0';
+            //std::cout << "r: " << r << "; g: " << g << "; b: " << b << std::endl;
             Color col((color_t)r, (color_t)g, (color_t)b);
-            // col.print();
+            //col.print();
             colors.push_back(col);
+            if(!fp.eof())
+                fp.get();
+            
         }
+        if(!fp.eof())
+            fp.get();
     }
-    Image img(width, height, colors);
+    std::cout << "lecture OK" << std::endl;
+    Image img(width, height, std::vector<Color>(colors));
     //img.print();
     fp.close();
     return img;

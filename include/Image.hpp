@@ -37,9 +37,9 @@ namespace image {
     // and handle different image formats (atleast ppm)
     class ImageLoader {
         public :
-            image::Image load(std::string const filename);
-            void save(std::string const filename, const Image &image);
-            std::vector<image::Image> loadDirectory(std::string const filename);
+            static image::Image load(std::string const filename);
+            static void save(std::string const filename, const Image &image);
+            static std::vector<image::Image> loadDirectory(std::string const filename);
         private :
     };
 }
