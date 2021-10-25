@@ -9,11 +9,7 @@ namespace image::transform {
 class Transformation {
 public:
   virtual ~Transformation() = default;
-<<<<<<< HEAD
   virtual image::Image* transform(image::Image const &image) = 0;
-=======
-  virtual image::Image* transform(image::Image *image) = 0;
->>>>>>> bdb11c27d0205f0bc49207730b6e416f5e6b2aff
 
 private:
 };
