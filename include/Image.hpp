@@ -14,7 +14,7 @@ namespace image {
     class Color {
         public:
             Color(color_t r, color_t g, color_t b);
-            void print();
+            void print() const;
             color_t r, g, b;
         private:
     };
@@ -25,7 +25,8 @@ namespace image {
         public :
             Image();
             Image(unsigned width, unsigned height, std::vector<Color> colors); // RGB Vector
-            void print();
+            void print() const;
+            color_t getMaxColor() const;
             unsigned width, height;
             std::vector<Color> colors;
         private :
