@@ -5,8 +5,8 @@
 #include <vector>
 
 // Test main, should be replaced by the python interface
-int main(int argc, char **argv) {
-
+int main(int argc, char **argv)
+{
   // What the main could look like in the end
   /* Load a single image
   image::ImageLoader loader("test.ppm");
@@ -45,21 +45,25 @@ int main(int argc, char **argv) {
   auto &w = nn.getWeights();
   auto &b = nn.getBiaises();
 
-  for (auto &i : w) {
-    for (auto &e : i) {
+  for (auto &i : w)
+  {
+    for (auto &e : i)
+    {
       e = 1.f;
     }
   }
 
-  for (auto &i : b) {
-    for (auto &e : i) {
+  for (auto &i : b)
+  {
+    for (auto &e : i)
+    {
       e = 1.f;
     }
   }
 
   std::vector<double> input{1, 1};
-  std::vector<double> target{6};
-
+  std::vector<double> target{7};
+  
   nn.train(input.begin(), input.end(), target.begin(), target.end());
 
   return 0;
