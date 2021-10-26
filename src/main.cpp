@@ -2,6 +2,7 @@
 #include "NeuralNetwork.hpp"
 #include "Utils.hpp"
 #include <iostream>
+#include <vector>
 
 
 // Test main, should be replaced by the python interface
@@ -36,6 +37,31 @@ int main(int argc, char **argv) {
     std::cout << "Could not run neural network : " << std::endl;
     e.what();
   } */
+
+  ///////Ugo
+  nnet::NeuralNetwork<float> nn;
+  nn.setLayersSize(std::vector<size_t>{2, 2, 1});
+  nn.setActivationFunction(nnet::ActivationFunctionType::square);
+  
+  auto& w = nn.getWeights();
+  auto& b = nn.getBiaises();
+
+  for (auto& i : w) {
+    for (auto& e : i) {
+      e = 1.f;
+    }
+  }
+
+  for (auto& i : b) {
+    for (auto& e : i) {
+      e = 1.f;
+    }
+  }
+
+  std::vector<double> input{1, 1};
+  std::vector<double> target{6};
+
+  nn.train(input.begin(), input.end(), target.begin(), target.end());
 
   return 0;
 }

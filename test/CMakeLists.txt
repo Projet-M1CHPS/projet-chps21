@@ -15,6 +15,7 @@ add_executable(
 
 target_link_libraries(
   Math_test PUBLIC
+  Utils
   gtest_main
 )
 
@@ -27,6 +28,7 @@ add_executable(
 
 target_link_libraries(
   NeuralNetwork_test PUBLIC
+  Utils
   gtest_main
 )
 

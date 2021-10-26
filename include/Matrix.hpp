@@ -22,6 +22,20 @@ public:
 
   ~Matrix() = default;
 
+  T *begin() { return data.get(); }
+  T *cbegin() const { return data.get(); }
+
+  T *end() { return data.get() + (rows * cols); }
+  T *cend() const { return data.get() + (rows * cols); }
+
+  const T *getData() const { return data.get(); }
+
+  T *getData() { return data.get(); }
+
+  size_t getRows() const { return rows; }
+
+  size_t getCols() const { return cols; }
+
   // Does not perform bound checking
   T &operator()(size_t i, size_t j) { return data[i * cols + j]; };
 
@@ -66,19 +80,7 @@ public:
     return *this;
   }
 
-  T *begin() { return data.get(); }
-
-  T *end() { return data.get() + (rows * cols); }
-
-  const T *getData() const { return data.get(); }
-
-  T *getData() { return data.get(); }
-
-  size_t getRows() const { return rows; }
-
-  size_t getCols() const { return cols; }
-
-  T sumReduce() {
+  T sumReduce() const {
 
     if (not data)
       throw std::runtime_error("Cannot a null-sized matrix");
@@ -93,13 +95,88 @@ public:
     return sum;
   }
 
-  Matrix operator+(const Matrix other) {
+  Matrix transpose() const {
+    Matrix transposed(cols, rows);
+
+    T* transposed_data = transposed.getData();
+    for (size_t i = 0; i < rows; i++) {
+      for (size_t j = 0; j < cols; j++) {
+        transposed_data[j * rows + i] = data[i * cols + j];
+      }
+    }
+
+    return transposed;
+  }
+
+  Matrix &operator+=(const Matrix &other) {
 
     if (rows != other.rows or cols != other.cols)
       throw std::invalid_argument("Matrix dimensions do not match");
 
-    Matrix res(rows, cols);
+    const T *other_data = other.getData();
+    T *res_data = getData();
+#ifdef USE_BLAS
 
+    if constexpr (std::is_same_v<real, float>)
+      static_assert(false, "blas not implemented");
+    else if constexpr (std::is_same_v<real, double>)
+      static_assert(false, "blas not implemented");
+    else
+#endif
+      for (size_t i = 0; i < rows * cols; i++) {
+        res_data[i] = data[i] + other_data[i];
+      }
+    return *this;
+  }
+
+  Matrix operator+(const Matrix &other) const {
+
+    if (rows != other.rows or cols != other.cols)
+      throw std::invalid_argument("Matrix dimensions do not match");
+
+    const T *other_data = other.getData();
+    Matrix<T> res(rows, cols);
+
+    T *res_data = res.getData();
+#ifdef USE_BLAS
+
+    if constexpr (std::is_same_v<real, float>)
+      static_assert(false, "blas not implemented");
+    else if constexpr (std::is_same_v<real, double>)
+      static_assert(false, "blas not implemented");
+    else
+#endif
+      for (size_t i = 0; i < rows * cols; i++) {
+        res_data[i] = data[i] + other_data[i];
+      }
+    return res;
+  }
+
+  Matrix &operator-=(const Matrix &other) {
+    Matrix res(rows, cols);
+    const T *other_data = other.getData();
+    T *res_data = getData();
+
+#ifdef USE_BLAS
+
+    if constexpr (std::is_same_v<real, float>)
+      static_assert(false, "blas not implemented");
+    else if constexpr (std::is_same_v<real, double>)
+      static_assert(false, "blas not implemented");
+    else
+#endif
+      for (size_t i = 0; i < rows * cols; i++) {
+        res_data[i] = data[i] - other_data[i];
+      }
+
+    return *this;
+  }
+
+  Matrix operator-(const Matrix &other) const {
+    if (rows != other.rows or cols != other.cols)
+      throw std::invalid_argument("Matrix dimensions do not match");
+
+    Matrix res(rows, cols);
     const T *other_data = other.getData();
     T *res_data = res.getData();
 
@@ -112,20 +189,20 @@ public:
     else
 #endif
       for (size_t i = 0; i < rows * cols; i++) {
-        res_data[i] = data[i] + other_data[i];
+        res_data[i] = data[i] - other_data[i];
       }
 
     return res;
   }
 
-  Matrix operator*(const Matrix other) {
+  Matrix operator*(const Matrix &other) const {
 
     size_t other_rows = other.rows, other_cols = other.cols;
 
     if (cols != other_rows)
       throw std::invalid_argument("Matrix dimensions do not match");
 
-    Matrix<T> res(rows, other_cols);
+    Matrix res(rows, other_cols);
 
     const T *raw_other = other.getData();
     T *raw_res = res.getData();
