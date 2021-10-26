@@ -59,7 +59,7 @@ TEST(MatrixTest, CanMoveCopy) {
   // should be able to copy an empty matrix
   Matrix<float> m1;
 
-  n = m1;
+  n = std::move(m1);
   // The src matrix should be reset to an empty matrix
   ASSERT_EQ(nullptr, n.getData());
   ASSERT_EQ(0, n.getRows());
@@ -86,12 +86,6 @@ TEST(MatrixTest, CanIterateOnMatrix) {
   ASSERT_EQ(4, count);
 }
 
-TEST(MatrixTest, ThrowOnInvalidMatrixMultiply) {
-  Matrix<float> m(2, 9), n(1, 2);
-
-  ASSERT_ANY_THROW(m * n);
-}
-
 TEST(MatrixTest, CanAddMatrix) {
   Matrix<float> m(2, 2), n(2, 2);
 
@@ -102,18 +96,25 @@ TEST(MatrixTest, CanAddMatrix) {
 
   n = m;
 
-  auto c = m - n;
+  auto c = m + n;
   for (size_t i = 0; i < 2; i++)
     for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(0, c(i, j));
+      ASSERT_EQ(2, c(i, j));
 
   // Check that we can add in place
 
-  m -= n;
+  m += n;
 
   for (size_t i = 0; i < 2; i++)
     for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(0, c(i, j));
+      ASSERT_EQ(2, c(i, j));
+}
+
+TEST(MatrixTest, ThrowOnInvalidMatrixAdd) {
+  Matrix<float> m(2, 2), n(2, 1);
+
+  ASSERT_ANY_THROW(auto c = m + n);
+  ASSERT_ANY_THROW(m += n);
 }
 
 TEST(MatrixTest, CanSubMatrix) {
@@ -140,32 +141,20 @@ TEST(MatrixTest, CanSubMatrix) {
       ASSERT_EQ(0, c(i, j));
 }
 
+TEST(MatrixTest, ThrowOnInvalidMatrixSub) {
+  Matrix<float> m(2, 2), n(2, 1);
+
+  ASSERT_ANY_THROW(auto c = m - n);
+  ASSERT_ANY_THROW(m -= n);
+}
+
 TEST(MatrixTest, CanTransposeMatrix) {
-
-  // Check we can transpose a square matrix
-  Matrix<float> m(2, 2);
-
-  m(0, 0) = 1;
-  m(0, 1) = 0;
-  m(1, 0) = 1;
-  m(1, 1) = 0;
-
-  auto t = m.transpose();
-  ASSERT_EQ(2, t.getRows());
-  ASSERT_EQ(2, t.getCols());
-
-  for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 2; j++) {
-      ASSERT_EQ(m(j, i), t(i, j));
-    }
-
-  // Check we can transpose any matrix
 
   Matrix<float> n(3, 5);
 
   utils::random::randomize(n, 0.f, 100.f);
 
-  t = n.transpose();
+  auto t = n.transpose();
   ASSERT_EQ(5, t.getRows());
   ASSERT_EQ(3, t.getCols());
 
@@ -201,10 +190,10 @@ TEST(MatrixTest, CanMultiplyMatrix) {
       ASSERT_EQ(2, c(i, j));
 }
 
-TEST(MatrixTest, ThrowOnInvalidSumReduce) {
-  Matrix<float> m;
+TEST(MatrixTest, ThrowOnInvalidMatrixMultiply) {
+  Matrix<float> m(2, 9), n(1, 2);
 
-  ASSERT_ANY_THROW(m.sumReduce());
+  ASSERT_ANY_THROW(m * n);
 }
 
 TEST(MatrixTest, CanSumReduce) {
@@ -217,4 +206,10 @@ TEST(MatrixTest, CanSumReduce) {
 
   auto c = m.sumReduce();
   ASSERT_EQ(4, c);
+}
+
+TEST(MatrixTest, ThrowOnInvalidSumReduce) {
+  Matrix<float> m;
+
+  ASSERT_ANY_THROW(m.sumReduce());
 }

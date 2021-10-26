@@ -48,18 +48,13 @@ public:
     if (this == &other)
       return *this;
 
-    // We may be able to skip the reallacoation
-
-    if (data && rows * cols != other.rows * other.cols) {
-      data = nullptr;
-    }
-
     rows = other.rows;
     cols = other.cols;
 
     // not need no copy an empty matrix
     if (other.data) {
-      if (not data)
+      // If data is unallocated or different size, allocate new memory
+      if (not data or data and rows * cols != other.rows * other.cols)
         data = std::make_unique<T[]>(rows * cols);
       std::memcpy(data.get(), other.getData(), sizeof(T) * rows * cols);
     }
@@ -83,10 +78,10 @@ public:
   T sumReduce() const {
 
     if (not data)
-      throw std::runtime_error("Cannot a null-sized matrix");
+      throw std::runtime_error("Cannot sum-reduce a null-sized matrix");
 
     T sum = 0;
-    size_t stop = cols * rows;
+    const size_t stop = cols * rows;
 
     for (size_t i = 0; i < stop; i++) {
       sum += data[i];
@@ -98,7 +93,7 @@ public:
   Matrix transpose() const {
     Matrix transposed(cols, rows);
 
-    T* transposed_data = transposed.getData();
+    T *transposed_data = transposed.getData();
     for (size_t i = 0; i < rows; i++) {
       for (size_t j = 0; j < cols; j++) {
         transposed_data[j * rows + i] = data[i * cols + j];
@@ -114,7 +109,6 @@ public:
       throw std::invalid_argument("Matrix dimensions do not match");
 
     const T *other_data = other.getData();
-    T *res_data = getData();
 #ifdef USE_BLAS
 
     if constexpr (std::is_same_v<real, float>)
@@ -124,38 +118,23 @@ public:
     else
 #endif
       for (size_t i = 0; i < rows * cols; i++) {
-        res_data[i] = data[i] + other_data[i];
+        data[i] += other_data[i];
       }
     return *this;
   }
 
   Matrix operator+(const Matrix &other) const {
+    auto res = *this;
+    return res += other;
+  }
+
+  Matrix &operator-=(const Matrix &other) {
 
     if (rows != other.rows or cols != other.cols)
       throw std::invalid_argument("Matrix dimensions do not match");
 
-    const T *other_data = other.getData();
-    Matrix<T> res(rows, cols);
-
-    T *res_data = res.getData();
-#ifdef USE_BLAS
-
-    if constexpr (std::is_same_v<real, float>)
-      static_assert(false, "blas not implemented");
-    else if constexpr (std::is_same_v<real, double>)
-      static_assert(false, "blas not implemented");
-    else
-#endif
-      for (size_t i = 0; i < rows * cols; i++) {
-        res_data[i] = data[i] + other_data[i];
-      }
-    return res;
-  }
-
-  Matrix &operator-=(const Matrix &other) {
     Matrix res(rows, cols);
     const T *other_data = other.getData();
-    T *res_data = getData();
 
 #ifdef USE_BLAS
 
@@ -166,33 +145,15 @@ public:
     else
 #endif
       for (size_t i = 0; i < rows * cols; i++) {
-        res_data[i] = data[i] - other_data[i];
+        data[i] -= other_data[i];
       }
 
     return *this;
   }
 
   Matrix operator-(const Matrix &other) const {
-    if (rows != other.rows or cols != other.cols)
-      throw std::invalid_argument("Matrix dimensions do not match");
-
-    Matrix res(rows, cols);
-    const T *other_data = other.getData();
-    T *res_data = res.getData();
-
-#ifdef USE_BLAS
-
-    if constexpr (std::is_same_v<real, float>)
-      static_assert(false, "blas not implemented");
-    else if constexpr (std::is_same_v<real, double>)
-      static_assert(false, "blas not implemented");
-    else
-#endif
-      for (size_t i = 0; i < rows * cols; i++) {
-        res_data[i] = data[i] - other_data[i];
-      }
-
-    return res;
+    auto res = *this;
+    return res -= other;
   }
 
   Matrix operator*(const Matrix &other) const {

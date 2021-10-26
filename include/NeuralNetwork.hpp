@@ -132,8 +132,26 @@ enum class FloatingPrecision {
  * @param str
  * @return FloatingPrecision
  */
-FloatingPrecision strToFloatingPrecision(const std::string &str);
-const char *floatingPrecisionToStr(FloatingPrecision fp);
+FloatingPrecision strToFPrecision(const std::string &str) {
+  if (str == "float32") {
+    return FloatingPrecision::float32;
+  } else if (str == "float64") {
+    return FloatingPrecision::float64;
+  } else {
+    throw std::invalid_argument("Invalid floating precision");
+  }
+}
+
+const char *fPrecisionToStr(FloatingPrecision fp) {
+  switch (fp) {
+  case FloatingPrecision::float32:
+    return "float32";
+  case FloatingPrecision::float64:
+    return "float64";
+  default:
+    throw std::invalid_argument("Invalid floating precision");
+  }
+}
 
 /**
  * @brief Convert a static type to the corresponding enum type
@@ -141,7 +159,7 @@ const char *floatingPrecisionToStr(FloatingPrecision fp);
  * @tparam ypename
  * @return FloatingPrecision
  */
-template <typename T> FloatingPrecision getFloatingPointPrecision() {
+template <typename T> FloatingPrecision getFPPrecision() {
   if constexpr (std::is_same_v<float, T>) {
     return FloatingPrecision::float32;
   } else if constexpr (std::is_same_v<double, T>) {
@@ -159,7 +177,7 @@ template <typename T> FloatingPrecision getFloatingPointPrecision() {
 class NeuralNetworkBase {
 public:
   NeuralNetworkBase() = delete;
-  FloatingPrecision getPrecision() {return precision;}
+  FloatingPrecision getPrecision() { return precision; }
 
 protected:
   // The precision has no reason to change, so no need for setter method
@@ -181,7 +199,7 @@ public:
    * @brief Construct a new Neural Network object with no layer
    *
    */
-  NeuralNetwork() : NeuralNetworkBase(getFloatingPointPrecision<real>()) {}
+  NeuralNetwork() : NeuralNetworkBase(getFPPrecision<real>()) {}
 
   /**
    * @brief Construct a copy of an existing neural network
@@ -189,7 +207,7 @@ public:
    * @param other
    */
   NeuralNetwork(const NeuralNetwork &other)
-      : NeuralNetworkBase(getFloatingPointPrecision<real>()) {
+      : NeuralNetworkBase(getFPPrecision<real>()) {
     *this = other;
   }
   NeuralNetwork &operator=(const NeuralNetwork &) = default;

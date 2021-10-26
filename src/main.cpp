@@ -4,7 +4,6 @@
 #include <iostream>
 #include <vector>
 
-
 // Test main, should be replaced by the python interface
 int main(int argc, char **argv) {
 
@@ -42,18 +41,18 @@ int main(int argc, char **argv) {
   nnet::NeuralNetwork<float> nn;
   nn.setLayersSize(std::vector<size_t>{2, 2, 1});
   nn.setActivationFunction(nnet::ActivationFunctionType::square);
-  
-  auto& w = nn.getWeights();
-  auto& b = nn.getBiaises();
 
-  for (auto& i : w) {
-    for (auto& e : i) {
+  auto &w = nn.getWeights();
+  auto &b = nn.getBiaises();
+
+  for (auto &i : w) {
+    for (auto &e : i) {
       e = 1.f;
     }
   }
 
-  for (auto& i : b) {
-    for (auto& e : i) {
+  for (auto &i : b) {
+    for (auto &e : i) {
       e = 1.f;
     }
   }
