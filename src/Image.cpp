@@ -70,10 +70,10 @@ long double Image::difference(const Image& other) const {
     assert(other.colors.size() == colors.size());
     
     long double diff = 0.0;
-    for(size_t i =0; i<) {
+    for(size_t i =0; i<colors.size(); i++) {
         unsigned this_sum = colors[i].r+colors[i].g+colors[i].b;
         unsigned other_sum = other.colors[i].r+other.colors[i].g+other.colors[i].b;
-        diff += ((long double) std::abs(this_sum - other_sum))/possible_brightness;
+        diff += ((long double) (std::max(this_sum, other_sum) - std::min(this_sum, other_sum)))/possible_brightness;
     }
     return diff;
 }
