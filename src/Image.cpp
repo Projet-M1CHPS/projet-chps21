@@ -3,9 +3,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
-
 #include <dirent.h>
+#include <unistd.h>
 
 #include <cassert>
 #include <fstream>
@@ -13,7 +12,9 @@
 #include <string>
 #include <vector>
 
-using namespace image;
+#include "stb_image_write.h"
+
+namespace image {
 
 Color::Color(color_t r, color_t g, color_t b) {
     this->r = r;
@@ -63,6 +64,8 @@ color_t Image::getMaxColor() const {
     return max;
 }
 
+namespace {
+
 void _listDirectories(char *path) {
     DIR *dir;
     struct dirent *diread;
@@ -79,6 +82,30 @@ void _listDirectories(char *path) {
     for (auto file : files) std::cout << file << "| ";
     std::cout << std::endl;
 }
+
+char _colorValueToAscii(color_t value) {
+    return (char)static_cast<char>(((int)value) + '0');
+}
+
+void _showImageInBrowser(std::string const filename) {
+    if (system(nullptr) != -1) {
+        char cmd[256];
+        std::string pngImage = std::string(filename);
+        pngImage.replace(pngImage.find_last_of('.')+1, 3, std::string("png"));
+        std::cout << pngImage << std::endl;
+        sprintf(cmd, "convert %s %s", filename.data(), pngImage.data());
+        std::cout << cmd << std::endl;
+        system(cmd);
+        sprintf(cmd, "firefox --new-tab -url `pwd`/%s", pngImage.data());
+        std::cout << cmd << std::endl;
+        system(cmd);
+        sleep(2);
+        sprintf(cmd, "rm %s", pngImage.data());
+        std::cout << cmd << std::endl;
+        system(cmd);
+    }
+}
+}  // namespace
 
 /**
  * @param filename: ONLY PPM FILES FOR NOW
@@ -128,13 +155,9 @@ Image ImageLoader::load(std::string const filename) {
     }
     std::cout << "lecture OK" << std::endl;
     Image img(width, height, std::vector<Color>(colors));
-    img.print();
+    //img.print();
     fp.close();
     return img;
-}
-
-char _colorValueToAscii(color_t value) {
-    return (char)static_cast<char>(((int)value) + '0');
 }
 
 /**
@@ -152,7 +175,7 @@ void ImageLoader::save(std::string const filename, Image const &image) {
         exit(-1);
     }
 
-    image.print();
+    //image.print();
 
     fp << "P6\n"
        << image.width << ' ' << image.height << '\n'
@@ -164,28 +187,33 @@ void ImageLoader::save(std::string const filename, Image const &image) {
 
     std::cout << "ecriture OK" << std::endl;
     fp.close();
+    _showImageInBrowser(filename);
 }
 /**
  * @param filename: any image file supported by stb.
  */
-Image ImageLoader::load_stb(const char * filename) {
+Image ImageLoader::load_stb(const char *filename) {
     int width, height, channels;
     unsigned char *imgData = stbi_load(filename, &width, &height, &channels, 3);
-    if(imgData == NULL) {
+    if (imgData == NULL) {
         std::cout << "Error, cannot open \"" << filename << "\"." << std::endl;
         width = 0;
         height = 0;
         std::vector<Color> colors;
-        Image img((unsigned int)width, (unsigned int)height, std::vector<Color>(colors));
+        Image img((unsigned int)width, (unsigned int)height,
+                  std::vector<Color>(colors));
         return img;
     }
 
     std::vector<Color> colors;
     unsigned int size = width * height;
-    for(unsigned char *p = imgData; p != imgData + size; p += channels) { // loop through each pixel
+    for (unsigned char *p = imgData; p != imgData + size;
+         p += channels) {  // loop through each pixel
         Color col(*p, *(p + 1), *(p + 2));
         colors.push_back(col);
     }
     Image img(width, height, std::vector<Color>(colors));
     return img;
 }
+
+}  // namespace image
