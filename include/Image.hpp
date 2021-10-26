@@ -4,9 +4,6 @@
 #include <vector>
 #include <memory>
 
-#define MAX_COLOR 256
-#define POSSIBLE_BRIGHTNESSES 255*3
-
 using color_t = unsigned char;
 
 namespace image {
