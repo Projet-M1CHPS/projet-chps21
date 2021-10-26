@@ -1,5 +1,10 @@
 #include "Image.hpp"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #include <dirent.h>
 
 #include <cassert>
@@ -159,4 +164,28 @@ void ImageLoader::save(std::string const filename, Image const &image) {
 
     std::cout << "ecriture OK" << std::endl;
     fp.close();
+}
+/**
+ * @param filename: any image file supported by stb.
+ */
+Image ImageLoader::load_stb(const char * filename) {
+    int width, height, channels;
+    unsigned char *imgData = stbi_load(filename, &width, &height, &channels, 3);
+    if(imgData == NULL) {
+        std::cout << "Error, cannot open \"" << filename << "\"." << std::endl;
+        width = 0;
+        height = 0;
+        std::vector<Color> colors;
+        Image img((unsigned int)width, (unsigned int)height, std::vector<Color>(colors));
+        return img;
+    }
+
+    std::vector<Color> colors;
+    unsigned int size = width * height;
+    for(unsigned char *p = imgData; p != imgData + size; p += channels) { // loop through each pixel
+        Color col(*p, *(p + 1), *(p + 2));
+        colors.push_back(col);
+    }
+    Image img(width, height, std::vector<Color>(colors));
+    return img;
 }

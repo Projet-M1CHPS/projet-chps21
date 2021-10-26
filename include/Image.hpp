@@ -39,6 +39,7 @@ namespace image {
     class ImageLoader {
         public :
             static image::Image load(std::string const filename);
+            static image::Image load_stb(const char * filename);
             static void save(std::string const filename, const Image &image);
             static std::vector<image::Image> loadDirectory(std::string const filename);
         private :
