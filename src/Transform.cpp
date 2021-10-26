@@ -3,11 +3,44 @@
 #include <cassert>
 #include <iostream>
 
-const unsigned possible_brightness = 255 * 3;
+constexpr unsigned possible_brightness = 255 * 3;
+constexpr unsigned half_brigthness = (unsigned)possible_brightness / 3;
 
 namespace image::transform {
 
 namespace {
+color_t _greyByBlackAndWhite(const Color &color) {
+    return ((unsigned)(((unsigned)color.r) + ((unsigned)color.g) +
+                       ((unsigned)color.b))) < half_brigthness
+               ? 0
+               : 255;
+}
+color_t _greyByMean(const Color &color) {
+    return ((unsigned)(((unsigned)color.r) + ((unsigned)color.g) +
+                       ((unsigned)color.b)) /
+            3);
+}
+color_t _greyByDesaturation(const Color &color) {
+    color_t max =
+        std::max(color.r, std::max(color.g, color.b));  // Optimisation possible
+    color_t min = std::min(color.r, std::min(color.g, color.b));  // by grouping
+    return (color_t)(max - min) / 2;
+}
+color_t _greyByMinDecomposition(const Color &color) {
+    return std::min(color.r, std::min(color.g, color.b));
+}
+color_t _greyByMaxDecomposition(const Color &color) {
+    return std::max(color.r, std::max(color.g, color.b));
+}
+
+void _greyscaling(Image &image, color_t (*func)(const Color &)) {
+    for (size_t i = 0; i < image.colors.size(); i++) {
+        color_t grey = func(image.colors[i]);
+        image.colors[i].r = grey;
+        image.colors[i].g = grey;
+        image.colors[i].b = grey;
+    }
+}
 std::array<long double, possible_brightness> _createBrightnessHeightmap(
     Image const &image) {
     std::cout << "> _getBrightnessHeightmap()" << std::endl;
@@ -25,35 +58,14 @@ std::array<long double, possible_brightness> _createBrightnessHeightmap(
 }  // namespace
 
 bool BlackWhiteScale::transform(Image &image) {
-    std::array<long double, possible_brightness> heightmap =
-        _createBrightnessHeightmap(image);
-    unsigned long dimension = image.width * image.height;
-
-    for (unsigned i = 0; i < dimension; i++) {
-        color_t height_colorized = 255 * ((color_t)heightmap[i]);
-        Color current(height_colorized, height_colorized, height_colorized);
-        image.colors[i] = current;
-    }
+    unsigned mid_value = 255 * 3 / 2;
+    _greyscaling(image, _greyByBlackAndWhite);
     return true;
 }
 
 bool GreyScale::transform(Image &image) {
     std::cout << "> GreyScale::transform()" << std::endl;
-    unsigned long dimension = image.width * image.height;
-
-    for (unsigned i = 0; i < dimension; i++) {
-        unsigned mean = (unsigned)((image.colors[i].r + image.colors[i].g +
-                                    image.colors[i].b) /
-                                   3.0);
-        if (mean < 0)
-            mean = 0;
-        else if (mean > 255)
-            mean = 255;
-        image.colors[i].r = mean;
-        image.colors[i].g = mean;
-        image.colors[i].b = mean;
-    }
-    // image.print();
+    _greyscaling(image, _greyByMean);
     std::cout << "< GreyScale::transform()" << std::endl;
     return true;
 }
