@@ -84,14 +84,14 @@ void _listDirectories(char *path) {
 }
 
 char _colorValueToAscii(color_t value) {
-    return (char)static_cast<char>(((int)value) + '0');
+    return (char)static_cast<char>(((int)value));
 }
 
 void _showImageInBrowser(std::string const filename) {
     if (system(nullptr) != -1) {
         char cmd[256];
         std::string pngImage = std::string(filename);
-        pngImage.replace(pngImage.find_last_of('.')+1, 3, std::string("png"));
+        pngImage.replace(pngImage.find_last_of('.') + 1, 3, std::string("png"));
         std::cout << pngImage << std::endl;
         sprintf(cmd, "convert %s %s", filename.data(), pngImage.data());
         std::cout << cmd << std::endl;
@@ -140,13 +140,13 @@ Image ImageLoader::load(std::string const filename) {
     for (unsigned i = 0; i < width * height; i++) {
         current = fp.get();
         // std::cout << "current = " << current << std::endl;
-        r = current - '0';
+        r = current;
         current = fp.get();
         // std::cout << "current = " << current << std::endl;
-        g = current - '0';
+        g = current;
         current = fp.get();
         // std::cout << "current = " << current << std::endl;
-        b = current - '0';
+        b = current;
         // std::cout << "r: " << r << "; g: " << g << "; b: " << b <<
         // std::endl;
         Color col((color_t)r, (color_t)g, (color_t)b);
@@ -155,7 +155,7 @@ Image ImageLoader::load(std::string const filename) {
     }
     std::cout << "lecture OK" << std::endl;
     Image img(width, height, std::vector<Color>(colors));
-    //img.print();
+    // img.print();
     fp.close();
     return img;
 }
@@ -175,7 +175,7 @@ void ImageLoader::save(std::string const filename, Image const &image) {
         exit(-1);
     }
 
-    //image.print();
+    // image.print();
 
     fp << "P6\n"
        << image.width << ' ' << image.height << '\n'
