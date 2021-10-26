@@ -3,7 +3,6 @@
 #include <cassert>
 #include <iostream>
 
-constexpr unsigned possible_brightness = 255 * 3;
 constexpr unsigned half_brigthness = (unsigned)possible_brightness / 3;
 
 namespace image::transform {

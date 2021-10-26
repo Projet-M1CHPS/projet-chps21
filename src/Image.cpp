@@ -64,6 +64,20 @@ color_t Image::getMaxColor() const {
     return max;
 }
 
+long double Image::difference(const Image& other) const {
+    assert(other.width == width);
+    assert(other.height == height);
+    assert(other.colors.size() == colors.size());
+    
+    long double diff = 0.0;
+    for(size_t i =0; i<) {
+        unsigned this_sum = colors[i].r+colors[i].g+colors[i].b;
+        unsigned other_sum = other.colors[i].r+other.colors[i].g+other.colors[i].b;
+        diff += ((long double) std::abs(this_sum - other_sum))/possible_brightness;
+    }
+    return diff;
+}
+
 namespace {
 
 void _listDirectories(char *path) {

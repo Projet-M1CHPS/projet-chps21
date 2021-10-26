@@ -5,6 +5,7 @@
 #include <memory>
 
 using color_t = unsigned char;
+constexpr unsigned possible_brightness = 255 * 3;
 
 namespace image {
 
@@ -24,6 +25,10 @@ namespace image {
             Image(unsigned width, unsigned height, std::vector<Color> colors); // RGB Vector
             void print() const;
             color_t getMaxColor() const;
+            /** @param other with the exact same dimension as this image
+             *  @return the difference in percentage (%) between the two images pixels.
+            */   
+            long double difference(const Image& other) const;
             unsigned width, height;
             std::vector<Color> colors;
         private :
