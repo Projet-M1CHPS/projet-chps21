@@ -33,7 +33,8 @@ Image::Image() {
 }
 
 Image::Image(unsigned width, unsigned height, std::vector<Color> colors) {
-    assert(width > 0 && height > 0 && colors.size() == width * height);
+    if (width <= 0 || height <= 0 || colors.size() != width * height)
+        throw "Wrong image dimensions.";
     this->width = width;
     this->height = height;
     this->colors = colors;
@@ -126,7 +127,7 @@ void _showImageInBrowser(std::string const filename) {
 
 Image ImageLoader::createRandomImage() {
     unsigned width = (rand() % 1080) + 1;
-    unsigned height = (rand() % 1080)  + 1;
+    unsigned height = (rand() % 1080) + 1;
     std::vector<Color> colors;
     colors.reserve(width * height);
     for (unsigned i = 0; i < colors.capacity(); i++)
