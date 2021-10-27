@@ -33,7 +33,7 @@ Image::Image() {
 }
 
 Image::Image(unsigned width, unsigned height, std::vector<Color> colors) {
-    assert(colors.size() == width * height);
+    assert(width > 0 && height > 0 && colors.size() == width * height);
     this->width = width;
     this->height = height;
     this->colors = colors;
@@ -64,16 +64,19 @@ color_t Image::getMaxColor() const {
     return max;
 }
 
-long double Image::difference(const Image& other) const {
+long double Image::difference(const Image &other) const {
     assert(other.width == width);
     assert(other.height == height);
     assert(other.colors.size() == colors.size());
-    
+
     long double diff = 0.0;
-    for(size_t i =0; i<colors.size(); i++) {
-        unsigned this_sum = colors[i].r+colors[i].g+colors[i].b;
-        unsigned other_sum = other.colors[i].r+other.colors[i].g+other.colors[i].b;
-        diff += ((long double) (std::max(this_sum, other_sum) - std::min(this_sum, other_sum)))/possible_brightness;
+    for (size_t i = 0; i < colors.size(); i++) {
+        unsigned this_sum = colors[i].r + colors[i].g + colors[i].b;
+        unsigned other_sum =
+            other.colors[i].r + other.colors[i].g + other.colors[i].b;
+        diff += ((long double)(std::max(this_sum, other_sum) -
+                               std::min(this_sum, other_sum))) /
+                possible_brightness;
     }
     return diff;
 }
@@ -120,6 +123,18 @@ void _showImageInBrowser(std::string const filename) {
     }
 }
 }  // namespace
+
+Image ImageLoader::createRandomImage() {
+    unsigned width = (rand() % 1080) + 1;
+    unsigned height = (rand() % 1080)  + 1;
+    std::vector<Color> colors;
+    colors.reserve(width * height);
+    for (unsigned i = 0; i < colors.capacity(); i++)
+        colors.push_back(
+            Color(rand() % nb_colors, rand() % nb_colors, rand() % nb_colors));
+
+    return Image(width, height, colors);
+}
 
 /**
  * @param filename: ONLY PPM FILES FOR NOW

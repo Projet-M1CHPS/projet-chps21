@@ -32,7 +32,22 @@ target_link_libraries(
 
 target_code_coverage(NeuralNetwork_test ALL)
 
+add_executable(
+  Transform_test
+  Transform_test.cpp
+)
+
+target_link_libraries(
+  Transform_test PUBLIC
+  Transform
+  Image
+  gtest_main
+)
+
+target_code_coverage(Transform_test ALL)
+
 
 include(GoogleTest)
 gtest_discover_tests(Math_test)
 gtest_discover_tests(NeuralNetwork_test)
+gtest_discover_tests(Transform_test)

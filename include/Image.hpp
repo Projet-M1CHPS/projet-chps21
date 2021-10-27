@@ -41,6 +41,7 @@ namespace image {
     // and handle different image formats (atleast ppm)
     class ImageLoader {
         public :
+            static image::Image createRandomImage();
             static image::Image load(std::string const filename);
             static image::Image load_stb(const char * filename);
             static void save(std::string const filename, const Image &image);
