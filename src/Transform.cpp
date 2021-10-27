@@ -7,7 +7,7 @@ constexpr unsigned half_brigthness = (unsigned)possible_brightness / 3;
 
 namespace image::transform {
 
-namespace {
+namespace grey_subfunctions {
 color_t _greyByBlackAndWhite(const Color &color) {
     return ((unsigned)(((unsigned)color.r) + ((unsigned)color.g) +
                        ((unsigned)color.b))) < half_brigthness
@@ -39,33 +39,69 @@ void _greyscaling(Image &image, color_t (*func)(const Color &)) {
         image.colors[i].g = grey;
         image.colors[i].b = grey;
     }
-}
-std::array<long double, possible_brightness> _createBrightnessHeightmap(
-    Image const &image) {
-    std::cout << "> _getBrightnessHeightmap()" << std::endl;
-    long double increment_value = 1.0 / image.width * image.height;
-    std::array<long double, possible_brightness> heightmap;
+}  // namespace grey_subfunctions
 
-    heightmap.fill(0.0);
+}  // namespace grey_subfunctions
+namespace histogram_subfunctions {
+/**
+ * @return [rHistogram, gHistogram, bHistogram]
+ */
+std::array<std::array<long double, nb_colors>, 3> _createColorsHistograms(
+    Image const &image) {
+    std::cout << "> _createColorsHistograms()" << std::endl;
+    long double increment_value = 1.0 / ((double)nb_colors);
+    std::array<std::array<long double, nb_colors>, 3> histograms;
+    histograms[0].fill(0.0);
+    histograms[1].fill(0.0);
+    histograms[2].fill(0.0);
     for (Color each : image.colors) {
-        unsigned index = each.r + each.g + each.b;
-        heightmap[index] += increment_value;
+        histograms[0][each.r] += increment_value;
+        histograms[1][each.g] += increment_value;
+        histograms[2][each.b] += increment_value;
     }
-    std::cout << "< _getBrightnessHeightmap()" << std::endl;
-    return heightmap;
+    std::cout << "< _createColorsHistograms()" << std::endl;
+    return histograms;
 }
-}  // namespace
+
+std::array<long double, possible_brightness> _createBrightnessHistogram(
+    Image const &image) {
+    std::cout << "> _createBrightnessHistogram()" << std::endl;
+    long double increment_value = 1.0 / ((double)possible_brightness);
+    std::array<std::array<long double, nb_colors>, 3> histograms =
+        _createColorsHistograms(image);
+    std::array<long double, possible_brightness> histogram;
+    histogram.fill(0.0);
+    for (unsigned i = 0; i < nb_colors; i++)
+        histogram[histograms[0][i] + histograms[1][i] + histograms[2][i]] +=
+            increment_value;
+
+    std::cout << "< _createBrightnessHistogram()" << std::endl;
+    return histogram;
+}
+}  // namespace histogram_subfunctions
 
 bool BlackWhiteScale::transform(Image &image) {
     unsigned mid_value = 255 * 3 / 2;
-    _greyscaling(image, _greyByBlackAndWhite);
+    grey_subfunctions::_greyscaling(image,
+                                    grey_subfunctions::_greyByBlackAndWhite);
     return true;
 }
 
 bool GreyScale::transform(Image &image) {
     std::cout << "> GreyScale::transform()" << std::endl;
-    _greyscaling(image, _greyByMean);
+    grey_subfunctions::_greyscaling(image, grey_subfunctions::_greyByMean);
     std::cout << "< GreyScale::transform()" << std::endl;
+    return true;
+}
+
+bool HistogramInversion::transform(Image &image) {
+    std::cout << "> HistogramInversion::transform()" << std::endl;
+    for (Color &each : image.colors) {
+        each.r = 255 - each.r;
+        each.g = 255 - each.g;
+        each.b = 255 - each.b;
+    }
+    std::cout << "< HistogramInversion::transform()" << std::endl;
     return true;
 }
 }  // namespace image::transform

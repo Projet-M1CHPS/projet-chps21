@@ -5,6 +5,7 @@
 #include <memory>
 
 using color_t = unsigned char;
+constexpr unsigned nb_colors = 256;
 constexpr unsigned possible_brightness = 255 * 3;
 
 namespace image {
