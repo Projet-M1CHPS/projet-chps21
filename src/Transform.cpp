@@ -8,7 +8,7 @@ constexpr unsigned half_brigthness = (unsigned)possible_brightness / 3;
 namespace image::transform {
 
 namespace grey_subfunctions {
-color_t _greyByBlackAndWhite(const Color &color) {
+color_t _greyByBinarisation(const Color &color) {
     return ((unsigned)(((unsigned)color.r) + ((unsigned)color.g) +
                        ((unsigned)color.b))) < half_brigthness
                ? 0
@@ -80,10 +80,12 @@ std::array<long double, possible_brightness> _createBrightnessHistogram(
 }
 }  // namespace histogram_subfunctions
 
-bool BlackWhiteScale::transform(Image &image) {
+bool NoTransform::transform(Image &image) { return true; }
+
+bool BinaryScale::transform(Image &image) {
     unsigned mid_value = 255 * 3 / 2;
     grey_subfunctions::_greyscaling(image,
-                                    grey_subfunctions::_greyByBlackAndWhite);
+                                    grey_subfunctions::_greyByBinarisation);
     return true;
 }
 

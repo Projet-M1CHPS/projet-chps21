@@ -14,28 +14,30 @@ class Transformation {
    private:
 };
 
+class NoTransform : public Transformation {
+   public:
+    bool transform(image::Image &image) override;
+};
+
 class GreyScale : public Transformation {
    public:
     bool transform(image::Image &image) override;
-
-   private:
 };
 
-class BlackWhiteScale : public Transformation {
+class BinaryScale : public Transformation {
    public:
     bool transform(image::Image &image) override;
-
-   private:
 };
 
 class HistogramInversion : public Transformation {
    public:
     bool transform(image::Image &image) override;
-
-   private:
 };
+
 class TransformEngine {
    public:
+    static std::shared_ptr<Transformation> getTransformationFromString(
+        std::string identifier);
     // We want to be able to store the applied transformations in a file
     // (Should throw an exception on error)
     void loadFromFile(std::string const &fileName);
