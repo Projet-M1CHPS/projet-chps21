@@ -92,22 +92,23 @@ TEST(MatrixTest, CanAddMatrix) {
   m(0, 0) = 1;
   m(0, 1) = 1;
   m(1, 0) = 1;
-  m(1, 1) = 1;
+  m(1, 1) = 2;
 
   n = m;
+  n(1, 1) = 3;
 
   auto c = m + n;
   for (size_t i = 0; i < 2; i++)
     for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(2, c(i, j));
+      ASSERT_EQ(m(i, j) + n(i, j), c(i, j));
 
-  // Check that we can add in place
-
-  m += n;
+  // Check that we can sub in place
+  c = m;
+  c += n;
 
   for (size_t i = 0; i < 2; i++)
     for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(2, c(i, j));
+      ASSERT_EQ(m(i, j) + n(i, j), c(i, j));
 }
 
 TEST(MatrixTest, ThrowOnInvalidMatrixAdd) {
@@ -121,24 +122,25 @@ TEST(MatrixTest, CanSubMatrix) {
   Matrix<float> m(2, 2), n(2, 2);
 
   m(0, 0) = 1;
-  m(0, 1) = 1;
+  m(0, 1) = 2;
   m(1, 0) = 1;
-  m(1, 1) = 1;
+  m(1, 1) = 2;
 
   n = m;
+  n(1, 1) = 3;
 
   auto c = m - n;
   for (size_t i = 0; i < 2; i++)
     for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(0, c(i, j));
+      ASSERT_EQ(m(i, j) - n(i, j), c(i, j));
 
-  // Check that we can add in place
-
-  m -= n;
+  // Check that we can sub in place
+  c = m;
+  c -= n;
 
   for (size_t i = 0; i < 2; i++)
     for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(0, c(i, j));
+      ASSERT_EQ(m(i, j) - n(i, j), c(i, j));
 }
 
 TEST(MatrixTest, ThrowOnInvalidMatrixSub) {
