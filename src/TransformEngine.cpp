@@ -6,14 +6,24 @@ namespace image::transform {
 
 namespace transform_enumerates {
 
-enum TRANSFORM_ENUM { GREYSCALE, BINARYSCALE, HISTOGRAMINVERSION, NOTRANSFORM };
+enum TRANSFORM_ENUM {
+    GREYSCALE,
+    BINARYSCALE,
+    HISTOGRAMINVERSION,
+    HISTOGRAMBINARYSCALE,
+    NOTRANSFORM
+};
 
 static TRANSFORM_ENUM strToTransformEnum(std::string identifier) {
     TRANSFORM_ENUM t_enum = std::map<std::string, TRANSFORM_ENUM>(
                                 {{"greyscale", GREYSCALE},
                                  {"binaryscale", BINARYSCALE},
                                  {"histograminversion", HISTOGRAMINVERSION},
+                                 {"histograminversion", HISTOGRAMINVERSION},
+                                 {"histogrambinaryscale", HISTOGRAMBINARYSCALE},
+                                 // Add new functions here
                                  {"_", NOTRANSFORM}})
+                                // Not here !
                                 .find(identifier)
                                 ->second;
     if (t_enum == NOTRANSFORM)
@@ -34,6 +44,8 @@ static std::string TransformEnumToStr(TRANSFORM_ENUM t_enum) {
             return "binaryscale";
         case HISTOGRAMINVERSION:
             return "histograminversion";
+        case HISTOGRAMBINARYSCALE:
+            return "histogrambinaryscale";
         default:
             return "_";
     }
@@ -48,6 +60,8 @@ static std::shared_ptr<Transformation> _getTransformationFromString(
             return std::make_shared<BinaryScale>();
         case HISTOGRAMINVERSION:
             return std::make_shared<HistogramInversion>();
+        case HISTOGRAMBINARYSCALE:
+            return std::make_shared<HistogramBinaryScale>();
         default:
             return std::make_shared<NoTransform>();
     }
@@ -66,9 +80,11 @@ void TransformEngine::addTransformation(
 }
 
 Image TransformEngine::transform(Image const &image) {
-    Image copy(image);
+    std::cout << "> TransformEngine::transform()" << std::endl;
+    Image copy = image;
     for (std::shared_ptr<Transformation> tr : transformations)
         tr->transform(copy);
+    std::cout << "< TransformEngine::transform()" << std::endl;
     return copy;
 }
 

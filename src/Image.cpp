@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include <cassert>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -16,35 +17,74 @@
 
 namespace image {
 
-Color::Color(color_t r, color_t g, color_t b) {
-    this->r = r;
-    this->g = g;
-    this->b = b;
-}
+Color::Color(color_t r, color_t g, color_t b) : r(r), g(g), b(b) {}
 
 void Color::print() const {
     std::cout << "[" << (unsigned int)this->r << ";" << (unsigned int)this->g
               << ";" << (unsigned int)this->b << "]";
 }
 
-Image::Image() {
-    this->width = 0;
-    this->height = 0;
+Image::Image(size_t width, size_t height) : width(width), height(height) {
+    if (width == 0 || height == 0) return;
+    colors = std::make_unique<Color[]>(width * height);
 }
 
-Image::Image(unsigned width, unsigned height, std::vector<Color> colors) {
-    if (width <= 0 || height <= 0 || colors.size() != width * height)
-        throw "Wrong image dimensions.";
-    this->width = width;
-    this->height = height;
-    this->colors = colors;
+Image::Image(size_t width, size_t height, std::unique_ptr<Color[]> &&ptr)
+    : width(width), height(height) {
+    if (width == 0 || height == 0) return;
+    assign(std::move(ptr));
 }
+
+Image::Image(Image const &other) { *this = other; }
+
+Image::Image(Image &&other) { *this = std::move(other); }
+
+Image &Image::operator=(Image const &other) {
+    if (this == &other) return *this;
+
+    size_t size = other.getDimension();
+
+    if (getDimension() != size) {
+        colors = nullptr;
+    }
+
+    width = other.width;
+    height = other.height;
+
+    if (other.colors) {
+        if (not colors) colors = std::make_unique<Color[]>(size);
+        std::memcpy(colors.get(), other.colors.get(), sizeof(Color) * size);
+    }
+
+    return *this;
+}
+
+Image &Image::operator=(Image &&other) {
+    if (this == &other) return *this;
+
+    colors = std::move(other.colors);
+    width = other.width;
+    height = other.height;
+    other.width = 0;
+    other.height = 0;
+
+    return *this;
+}
+
+Color *Image::begin() { return getData(); }
+Color *Image::end() { return getData() + getDimension(); }
+
+const Color *Image::begin() const { return getData(); }
+const Color *Image::end() const { return getData() + getDimension(); }
+
+const Color *Image::getData() const { return colors.get(); }
+Color *Image::getData() { return colors.get(); }
 
 void Image::print() const {
     std::cout << "[" << std::endl;
-    for (unsigned l = 0; l < this->width; l++) {
-        for (unsigned c = 0; c < this->width; c++) {
-            this->colors[l * this->width + c].print();
+    for (unsigned l = 0; l < height; l++) {
+        for (unsigned c = 0; c < width; c++) {
+            colors[l * width + c].print();
             std::cout << " ; ";
         }
         std::cout << std::endl;
@@ -54,29 +94,29 @@ void Image::print() const {
 
 color_t Image::getMaxColor() const {
     color_t max = 0;
-    for (Color each : this->colors) {
-        if (each.r > max)
-            max = each.r;
-        else if (each.g > max)
-            max = each.g;
-        else if (each.b > max)
-            max = each.b;
+    for (Color const &each : *this) {
+        color_t local_max = std::max(each.g, std::max(each.r, each.b));
+        max = std::max(local_max, max);
     }
     return max;
 }
 
-long double Image::difference(const Image &other) const {
+size_t Image::getWidth() const { return width; }
+size_t Image::getHeight() const { return height; }
+size_t Image::getDimension() const { return getHeight() * getWidth(); }
+
+double Image::difference(const Image &other) const {
     assert(other.width == width);
     assert(other.height == height);
-    assert(other.colors.size() == colors.size());
+    // assert(other.colors.size() == colors.size());
 
-    long double diff = 0.0;
-    for (size_t i = 0; i < colors.size(); i++) {
-        unsigned this_sum = colors[i].r + colors[i].g + colors[i].b;
-        unsigned other_sum =
+    double diff = 0.0;
+    for (size_t i = 0; i < getDimension(); i++) {
+        size_t this_sum = colors[i].r + colors[i].g + colors[i].b;
+        size_t other_sum =
             other.colors[i].r + other.colors[i].g + other.colors[i].b;
-        diff += ((long double)(std::max(this_sum, other_sum) -
-                               std::min(this_sum, other_sum))) /
+        diff += ((double)(std::max(this_sum, other_sum) -
+                          std::min(this_sum, other_sum))) /
                 possible_brightness;
     }
     return diff;
@@ -102,7 +142,7 @@ void _listDirectories(char *path) {
 }
 
 char _colorValueToAscii(color_t value) {
-    return (char)static_cast<char>(((int)value));
+    return static_cast<char>(((int)value));
 }
 
 void _showImageInBrowser(std::string const filename) {
@@ -126,15 +166,13 @@ void _showImageInBrowser(std::string const filename) {
 }  // namespace
 
 Image ImageLoader::createRandomImage() {
-    unsigned width = (rand() % 1080) + 1;
-    unsigned height = (rand() % 1080) + 1;
-    std::vector<Color> colors;
-    colors.reserve(width * height);
-    for (unsigned i = 0; i < colors.capacity(); i++)
-        colors.push_back(
-            Color(rand() % nb_colors, rand() % nb_colors, rand() % nb_colors));
-
-    return Image(width, height, colors);
+    Image res((rand() % 1080) + 1, (rand() % 1080) + 1);
+    Color *raw_array = res.getData();
+    for (size_t i = 0; i < res.getDimension(); i++) {
+        raw_array[i] =
+            (Color){rand() % nb_colors, rand() % nb_colors, rand() % nb_colors};
+    }
+    return res;
 }
 
 /**
@@ -164,10 +202,13 @@ Image ImageLoader::load(std::string const filename) {
     fp.get();
     std::cout << "width: " << width << "; height: " << height
               << "; max_color: " << max_color << std::endl;
-    std::vector<Color> colors;
+
     int r, g, b = 0;
     char current;
-    for (unsigned i = 0; i < width * height; i++) {
+
+    Image img(width, height);
+    size_t i = 0;
+    for (Color &each : img) {
         current = fp.get();
         // std::cout << "current = " << current << std::endl;
         r = current;
@@ -179,12 +220,11 @@ Image ImageLoader::load(std::string const filename) {
         b = current;
         // std::cout << "r: " << r << "; g: " << g << "; b: " << b <<
         // std::endl;
-        Color col((color_t)r, (color_t)g, (color_t)b);
+        each = {(color_t)r, (color_t)g, (color_t)b};
         // col.print();
-        colors.push_back(col);
+        i++;
     }
     std::cout << "lecture OK" << std::endl;
-    Image img(width, height, std::vector<Color>(colors));
     // img.print();
     fp.close();
     return img;
@@ -208,9 +248,9 @@ void ImageLoader::save(std::string const filename, Image const &image) {
     // image.print();
 
     fp << "P6\n"
-       << image.width << ' ' << image.height << '\n'
+       << image.getWidth() << ' ' << image.getHeight() << '\n'
        << 255 << std::endl;
-    for (Color current : image.colors)
+    for (Color current : image)
         fp << _colorValueToAscii(current.r) << _colorValueToAscii(current.g)
            << _colorValueToAscii(current.b);
     // fp << current.r << current.g << current.b;
@@ -229,20 +269,14 @@ Image ImageLoader::load_stb(const char *filename) {
         std::cout << "Error, cannot open \"" << filename << "\"." << std::endl;
         width = 0;
         height = 0;
-        std::vector<Color> colors;
-        Image img((unsigned int)width, (unsigned int)height,
-                  std::vector<Color>(colors));
+        Image img((size_t)width, (size_t)height);
         return img;
     }
 
-    std::vector<Color> colors;
-    unsigned int size = width * height;
-    for (unsigned char *p = imgData; p != imgData + size;
-         p += channels) {  // loop through each pixel
-        Color col(*p, *(p + 1), *(p + 2));
-        colors.push_back(col);
-    }
-    Image img(width, height, std::vector<Color>(colors));
+    std::unique_ptr<Color[]> ptr(reinterpret_cast<Color *>(imgData));
+    std::cout << ptr.get() << std::endl;
+    Image img((size_t)width, (size_t)height, std::move(ptr));
+
     return img;
 }
 

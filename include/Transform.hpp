@@ -29,6 +29,11 @@ class BinaryScale : public Transformation {
     bool transform(image::Image &image) override;
 };
 
+class HistogramBinaryScale : public Transformation {
+   public:
+    bool transform(image::Image &image) override;
+};
+
 class HistogramInversion : public Transformation {
    public:
     bool transform(image::Image &image) override;
