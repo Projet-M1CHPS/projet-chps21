@@ -7,18 +7,16 @@ namespace image::transform {
 
 namespace transform_enumerates {
 
+const std::map<std::string, TRANSFORM_ENUM> transformEnumMap(
+    {{"greyscale", TRANSFORM_ENUM::GREYSCALE},
+     {"binaryscale", TRANSFORM_ENUM::BINARYSCALE},
+     {"histograminversion", TRANSFORM_ENUM::HISTOGRAMINVERSION},
+     {"histogramspread", TRANSFORM_ENUM::HISTOGRAMSPREAD},
+     {"histogrambinaryscale", TRANSFORM_ENUM::HISTOGRAMBINARYSCALE},
+     // Add new functions here
+     {"_", TRANSFORM_ENUM::NOTRANSFORM}});
 static TRANSFORM_ENUM strToTransformEnum(std::string identifier) {
-    TRANSFORM_ENUM t_enum = std::map<std::string, TRANSFORM_ENUM>(
-                                {{"greyscale", GREYSCALE},
-                                 {"binaryscale", BINARYSCALE},
-                                 {"histograminversion", HISTOGRAMINVERSION},
-                                 {"histograminversion", HISTOGRAMINVERSION},
-                                 {"histogrambinaryscale", HISTOGRAMBINARYSCALE},
-                                 // Add new functions here
-                                 {"_", NOTRANSFORM}})
-                                // Not here !
-                                .find(identifier)
-                                ->second;
+    TRANSFORM_ENUM t_enum = transformEnumMap.find(identifier)->second;
     if (t_enum == NOTRANSFORM)
         std::cout
             << "/!\\ " << identifier
@@ -27,21 +25,6 @@ static TRANSFORM_ENUM strToTransformEnum(std::string identifier) {
                "[namespace 'transform_enumerates'] subfunctions."
             << std::endl;
     return t_enum;
-}
-
-static std::string transformEnumToStr(TRANSFORM_ENUM t_enum) {
-    switch (t_enum) {
-        case GREYSCALE:
-            return "greyscale";
-        case BINARYSCALE:
-            return "binaryscale";
-        case HISTOGRAMINVERSION:
-            return "histograminversion";
-        case HISTOGRAMBINARYSCALE:
-            return "histogrambinaryscale";
-        default:
-            return "_";
-    }
 }
 
 static std::shared_ptr<Transformation> getTransformationFromString(
@@ -55,9 +38,17 @@ static std::shared_ptr<Transformation> getTransformationFromString(
             return std::make_shared<HistogramInversion>();
         case HISTOGRAMBINARYSCALE:
             return std::make_shared<HistogramBinaryScale>();
+        case HISTOGRAMSPREAD:
+            return std::make_shared<HistogramSpread>();
+        // Add new functions here
         default:
             return std::make_shared<NoTransform>();
     }
+}
+
+static std::string transformEnumToStr(TRANSFORM_ENUM t_enum) {
+    for (auto pair : transformEnumMap)
+        if (pair.second == t_enum) return pair.first;
 }
 
 }  // namespace transform_enumerates
