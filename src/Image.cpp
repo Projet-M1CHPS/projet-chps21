@@ -19,9 +19,7 @@ namespace image {
 
 RGBColor::RGBColor(color_t r, color_t g, color_t b) : r(r), g(g), b(b) {}
 
-size_t RGBColor::getBrightness() {
-    return r+g+b;
-}
+size_t RGBColor::getBrightness() { return r + g + b; }
 
 void RGBColor::print() const {
     std::cout << "[" << (unsigned int)this->r << ";" << (unsigned int)this->g
@@ -173,8 +171,9 @@ Image ImageLoader::createRandomImage() {
     Image res((rand() % 1080) + 1, (rand() % 1080) + 1);
     RGBColor *raw_array = res.getData();
     for (size_t i = 0; i < res.getDimension(); i++) {
-        raw_array[i] =
-            (RGBColor){rand() % nb_colors, rand() % nb_colors, rand() % nb_colors};
+        raw_array[i] = (RGBColor){(color_t)(rand() % nb_colors),
+                                  (color_t)(rand() % nb_colors),
+                                  (color_t)(rand() % nb_colors)};
     }
     return res;
 }
