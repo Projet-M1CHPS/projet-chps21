@@ -356,14 +356,13 @@ namespace nnet
             printf(("----------------errors----------------\n"));
             //for (auto &i : errors)
             //    std::cout << i << std::endl;
-            
-            for(int i = 0; i < errors.size(); i++)
-                std::cout << i << "\n" << errors[i] << std::endl;
+
+            for (int i = 0; i < errors.size(); i++)
+                std::cout << i << "\n"
+                          << errors[i] << std::endl;
             printf(("----------------errors----------------\n\n"));
 
-            std::cout << "size(layer / layer_af / errors) = " << layers.size() << " / " << 
-                                                                 layers_af.size() << " / " << 
-                                                                 errors.size() << std::endl;
+            std::cout << "size(layer / layer_af / errors) = " << layers.size() << " / " << layers_af.size() << " / " << errors.size() << std::endl;
             printf(("\n----------------for----------------\n"));
 
             for (long i = weights.size(); i > 0; i--)
@@ -372,23 +371,31 @@ namespace nnet
 
                 // calcul de S * (1 - S)
                 math::Matrix<float> gradient(layers[i]);
-                std::cout << "grad = \n" << gradient << std::endl;
+                std::cout << "grad = \n"
+                          << gradient << std::endl;
                 auto dafunc = af::getAFFromType<real>(activation_functions[i - 1]).second;
                 std::transform(gradient.cbegin(), gradient.cend(), gradient.begin(), dafunc);
 
                 // calcul de (S * E) * alpha
-                std::cout << "grad = \n" << gradient << std::endl;
-                std::cout << "error = \n" << errors[i - 1] << std::endl;
+                std::cout << "grad = \n"
+                          << gradient << std::endl;
+                std::cout << "error = \n"
+                          << errors[i - 1] << std::endl;
                 gradient.hadamardProd(errors[i - 1]);
-                std::cout << "grad * error = \n" << gradient << std::endl;
+                std::cout << "grad * error = \n"
+                          << gradient << std::endl;
                 gradient = gradient * alpha;
-                std::cout << "(grad *error) * alpha = \n" << gradient << std::endl;
+                std::cout << "(grad *error) * alpha = \n"
+                          << gradient << std::endl;
 
                 // calcul de ((S * E) * alpha) * Ht
-                std::cout << "layer_af = \n" << layers_af[i - 1] << std::endl;
-                std::cout << "layer_af.T = \n" << layers_af[i - 1].transpose() << std::endl;
+                std::cout << "layer_af = \n"
+                          << layers_af[i - 1] << std::endl;
+                std::cout << "layer_af.T = \n"
+                          << layers_af[i - 1].transpose() << std::endl;
                 math::Matrix<real> delta_weight = gradient * layers_af[i - 1].transpose();
-                std::cout << "delta weight = \n" << delta_weight << std::endl;
+                std::cout << "delta weight = \n"
+                          << delta_weight << std::endl;
 
                 weights[i - 1] = weights[i - 1] + delta_weight;
                 biases[i - 1] = biases[i - 1] + gradient;
@@ -533,4 +540,22 @@ namespace nnet
         // We want every layer to have its own activation function
         std::vector<af::ActivationFunctionType> activation_functions;
     };
+
+    //std::ostream& operator<<(std::ostream& os, const Pair<T, U>& p)
+    template <typename T>
+    std::ostream &operator<<(std::ostream &os, const NeuralNetwork<T> &nn)
+    {
+        const size_t size = nn.getWeights().size();
+        os << "-------input-------\n";
+        for(size_t i = 0; i < size; i++)
+        {
+            os << "-----weight[" << i << "]-----\n";
+            os << nn.getWeights()[i];
+            os << "------bias[" << i << "]------\n";
+            os << nn.getBiases()[i];
+            os << "-----hidden[" << i << "]-----\n";
+        }
+        os << "-------output------\n";
+        return os;
+    }
 } // namespace nnet
