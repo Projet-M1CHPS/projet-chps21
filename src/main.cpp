@@ -2,7 +2,7 @@
 #include "NeuralNetwork.hpp"
 #include "Utils.hpp"
 #include "Matrix.hpp"
-#include "ActivationFonction.hpp"
+#include "ActivationFunction.hpp"
 #include <iostream>
 #include <vector>
 

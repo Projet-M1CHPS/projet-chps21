@@ -1,5 +1,5 @@
 #pragma once
-#include "ActivationFonction.hpp"
+#include "ActivationFunction.hpp"
 #include "Matrix.hpp"
 #include "Utils.hpp"
 #include <cmath>
