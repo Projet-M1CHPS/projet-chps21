@@ -6,9 +6,21 @@
 
 namespace utils {
 
-void error(const std::string &msg) noexcept;
+/**
+ * @brief Exit the program with an error message. Should only be used where a
+ * throw is not enough
+ *
+ * @param msg
+ */
+[[noreturn]] void error(const std::string &msg) noexcept;
 
-void error(const char *msg) noexcept;
+/**
+ * @brief Exit the program with an error message. Should only be used where a
+ * throw is not enough
+ *
+ * @param msg
+ */
+[[noreturn]] void error(const char *msg) noexcept;
 
 namespace random {
 

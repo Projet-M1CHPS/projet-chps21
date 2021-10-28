@@ -11,8 +11,7 @@
 
 #define alpha .01
 
-namespace nnet
-{
+namespace nnet {
 
     /**
  * @brief Enum of the supported floating precision
@@ -109,29 +108,34 @@ namespace nnet
  *
  * @tparam real
  */
-    template <typename real>
-    class NeuralNetwork final : public NeuralNetworkBase
-    {
-    public:
-        /**
+template <typename real> class NeuralNetwork final : public NeuralNetworkBase {
+public:
+  /**
    * @brief Construct a new Neural Network object with no layer
    *
    */
-        NeuralNetwork() : NeuralNetworkBase(getFPPrecision<real>()) {}
+  NeuralNetwork() : NeuralNetworkBase(getFPPrecision<real>()) {}
 
-        /**
-   * @brief Construct a copy of an existing neural network
-   *
-   * @param other
-   */
-        NeuralNetwork(const NeuralNetwork &other)
-            : NeuralNetworkBase(getFPPrecision<real>())
-        {
-            *this = other;
-        }
-        NeuralNetwork &operator=(const NeuralNetwork &) = default;
+  NeuralNetwork(const NeuralNetwork &other)
+      : NeuralNetworkBase(getFPPrecision<real>()) {
+    *this = other;
+  }
+  
+  NeuralNetwork(NeuralNetwork &&other)
+      : NeuralNetworkBase(getFPPrecision<real>()) {
+    *this = std::move(other);
+  }
 
-        /**
+  NeuralNetwork &operator=(const NeuralNetwork &) = default;
+  NeuralNetwork &operator=(NeuralNetwork &&other) {
+    weights = std::move(other.weights);
+    biases = std::move(other.biases);
+    activation_functions = std::move(other.activation_functions);
+
+    return *this;
+  }
+
+  /**
    * @brief Run the network on a set of input, throwing on error
    *
    *
@@ -305,7 +309,7 @@ namespace nnet
         /**
    * @brief Returns the size of the input layer
    *
-   * @return size_t
+   * @param layers
    */
         size_t getInputSize() const
         {
@@ -418,25 +422,4 @@ namespace nnet
         // We want every layer to have its own activation function
         std::vector<af::ActivationFunctionType> activation_functions;
     };
-
-    /**
- * @brief Main class for serializing and deserializing neural networks
- * Also offers utility for outputing data about the network in a json format
- *
- */
-    class NeuralNetworkSerializer
-    {
-    public:
-        NeuralNetworkSerializer(NeuralNetworkBase &network) : network(&network) {}
-
-        void saveToFile();
-        void saveToStream();
-
-        void loadFromFile();
-        void loadFromStream();
-
-    private:
-        NeuralNetworkBase *network;
-    };
-
 } // namespace nnet
