@@ -17,19 +17,23 @@
 
 namespace image {
 
-Color::Color(color_t r, color_t g, color_t b) : r(r), g(g), b(b) {}
+RGBColor::RGBColor(color_t r, color_t g, color_t b) : r(r), g(g), b(b) {}
 
-void Color::print() const {
+size_t RGBColor::getBrightness() {
+    return r+g+b;
+}
+
+void RGBColor::print() const {
     std::cout << "[" << (unsigned int)this->r << ";" << (unsigned int)this->g
               << ";" << (unsigned int)this->b << "]";
 }
 
 Image::Image(size_t width, size_t height) : width(width), height(height) {
     if (width == 0 || height == 0) return;
-    colors = std::make_unique<Color[]>(width * height);
+    colors = std::make_unique<RGBColor[]>(width * height);
 }
 
-Image::Image(size_t width, size_t height, std::unique_ptr<Color[]> &&ptr)
+Image::Image(size_t width, size_t height, std::unique_ptr<RGBColor[]> &&ptr)
     : width(width), height(height) {
     if (width == 0 || height == 0) return;
     assign(std::move(ptr));
@@ -52,8 +56,8 @@ Image &Image::operator=(Image const &other) {
     height = other.height;
 
     if (other.colors) {
-        if (not colors) colors = std::make_unique<Color[]>(size);
-        std::memcpy(colors.get(), other.colors.get(), sizeof(Color) * size);
+        if (not colors) colors = std::make_unique<RGBColor[]>(size);
+        std::memcpy(colors.get(), other.colors.get(), sizeof(RGBColor) * size);
     }
 
     return *this;
@@ -71,14 +75,14 @@ Image &Image::operator=(Image &&other) {
     return *this;
 }
 
-Color *Image::begin() { return getData(); }
-Color *Image::end() { return getData() + getDimension(); }
+RGBColor *Image::begin() { return getData(); }
+RGBColor *Image::end() { return getData() + getDimension(); }
 
-const Color *Image::begin() const { return getData(); }
-const Color *Image::end() const { return getData() + getDimension(); }
+const RGBColor *Image::begin() const { return getData(); }
+const RGBColor *Image::end() const { return getData() + getDimension(); }
 
-const Color *Image::getData() const { return colors.get(); }
-Color *Image::getData() { return colors.get(); }
+const RGBColor *Image::getData() const { return colors.get(); }
+RGBColor *Image::getData() { return colors.get(); }
 
 void Image::print() const {
     std::cout << "[" << std::endl;
@@ -94,7 +98,7 @@ void Image::print() const {
 
 color_t Image::getMaxColor() const {
     color_t max = 0;
-    for (Color const &each : *this) {
+    for (RGBColor const &each : *this) {
         color_t local_max = std::max(each.g, std::max(each.r, each.b));
         max = std::max(local_max, max);
     }
@@ -167,10 +171,10 @@ void _showImageInBrowser(std::string const filename) {
 
 Image ImageLoader::createRandomImage() {
     Image res((rand() % 1080) + 1, (rand() % 1080) + 1);
-    Color *raw_array = res.getData();
+    RGBColor *raw_array = res.getData();
     for (size_t i = 0; i < res.getDimension(); i++) {
         raw_array[i] =
-            (Color){rand() % nb_colors, rand() % nb_colors, rand() % nb_colors};
+            (RGBColor){rand() % nb_colors, rand() % nb_colors, rand() % nb_colors};
     }
     return res;
 }
@@ -208,7 +212,7 @@ Image ImageLoader::load(std::string const filename) {
 
     Image img(width, height);
     size_t i = 0;
-    for (Color &each : img) {
+    for (RGBColor &each : img) {
         current = fp.get();
         // std::cout << "current = " << current << std::endl;
         r = current;
@@ -250,7 +254,7 @@ void ImageLoader::save(std::string const filename, Image const &image) {
     fp << "P6\n"
        << image.getWidth() << ' ' << image.getHeight() << '\n'
        << 255 << std::endl;
-    for (Color current : image)
+    for (RGBColor current : image)
         fp << _colorValueToAscii(current.r) << _colorValueToAscii(current.g)
            << _colorValueToAscii(current.b);
     // fp << current.r << current.g << current.b;
@@ -273,7 +277,7 @@ Image ImageLoader::load_stb(const char *filename) {
         return img;
     }
 
-    std::unique_ptr<Color[]> ptr(reinterpret_cast<Color *>(imgData));
+    std::unique_ptr<RGBColor[]> ptr(reinterpret_cast<RGBColor *>(imgData));
     std::cout << ptr.get() << std::endl;
     Image img((size_t)width, (size_t)height, std::move(ptr));
 

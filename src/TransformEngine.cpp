@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <map>
 
@@ -5,14 +6,6 @@
 namespace image::transform {
 
 namespace transform_enumerates {
-
-enum TRANSFORM_ENUM {
-    GREYSCALE,
-    BINARYSCALE,
-    HISTOGRAMINVERSION,
-    HISTOGRAMBINARYSCALE,
-    NOTRANSFORM
-};
 
 static TRANSFORM_ENUM strToTransformEnum(std::string identifier) {
     TRANSFORM_ENUM t_enum = std::map<std::string, TRANSFORM_ENUM>(
@@ -36,7 +29,7 @@ static TRANSFORM_ENUM strToTransformEnum(std::string identifier) {
     return t_enum;
 }
 
-static std::string TransformEnumToStr(TRANSFORM_ENUM t_enum) {
+static std::string transformEnumToStr(TRANSFORM_ENUM t_enum) {
     switch (t_enum) {
         case GREYSCALE:
             return "greyscale";
@@ -51,7 +44,7 @@ static std::string TransformEnumToStr(TRANSFORM_ENUM t_enum) {
     }
 }
 
-static std::shared_ptr<Transformation> _getTransformationFromString(
+static std::shared_ptr<Transformation> getTransformationFromString(
     std::string identifier) {
     switch (transform_enumerates::strToTransformEnum(identifier)) {
         case GREYSCALE:
@@ -68,6 +61,25 @@ static std::shared_ptr<Transformation> _getTransformationFromString(
 }
 
 }  // namespace transform_enumerates
+
+void TransformEngine::loadFromFile(std::string const &fileName) {
+    std::ifstream fp(fileName);
+    transformationsEnums.clear();
+    transformations.clear();
+    for (std::string line; std::getline(fp, line, '\n');) {
+        transformationsEnums.push_back(
+            transform_enumerates::strToTransformEnum(line));
+        transformations.push_back(
+            transform_enumerates::getTransformationFromString(line));
+    }
+    fp.close();
+}
+void TransformEngine::saveToFile(std::string const &fileName) const {
+    std::ofstream fp(fileName);
+    for (TRANSFORM_ENUM each : transformationsEnums)
+        fp << transform_enumerates::transformEnumToStr(each) << '\n';
+    fp.close();
+}
 
 void TransformEngine::insertTransformation(
     size_t position, std::shared_ptr<Transformation> transformation) {

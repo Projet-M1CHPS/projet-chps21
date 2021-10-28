@@ -10,14 +10,15 @@ constexpr unsigned nb_colors = 256;
 
 namespace image {
 
-struct Color {
-    Color() = default;
-    Color(color_t r, color_t g, color_t b);
+struct RGBColor {
+    RGBColor() = default;
+    RGBColor(color_t r, color_t g, color_t b);
+    size_t getBrightness();
     void print() const;
     color_t r, g, b;
 };
 
-static_assert(sizeof(Color) == sizeof(unsigned char) * 3, "Invalid color size");
+static_assert(sizeof(RGBColor) == sizeof(unsigned char) * 3, "Invalid color size");
 
 // TODO: implement me
 // We must be able to access the raw data
@@ -26,7 +27,7 @@ class Image {
    public:
     Image(size_t width = 0, size_t height = 0);  // RGB Vector
     Image(size_t width, size_t height,
-          std::unique_ptr<Color[]>&& ptr);  // RGB Vector
+          std::unique_ptr<RGBColor[]>&& ptr);  // RGB Vector
 
     Image(Image const& other);
     Image(Image&& other);
@@ -34,23 +35,23 @@ class Image {
     Image& operator=(Image const& other);
     Image& operator=(Image&& other);
 
-    Color* getData();
-    const Color* getData() const;
+    RGBColor* getData();
+    const RGBColor* getData() const;
 
-    void assign(std::unique_ptr<Color[]>&& data) { colors = std::move(data); }
+    void assign(std::unique_ptr<RGBColor[]>&& data) { colors = std::move(data); }
 
     size_t getWidth() const;
     size_t getHeight() const;
     size_t getDimension() const;
 
-    Color* begin();
-    const Color* begin() const;
+    RGBColor* begin();
+    const RGBColor* begin() const;
 
-    Color* end();
-    const Color* end() const;
+    RGBColor* end();
+    const RGBColor* end() const;
 
-    const Color* cbegin() const;
-    const Color* cend() const;
+    const RGBColor* cbegin() const;
+    const RGBColor* cend() const;
 
     void print() const;
     color_t getMaxColor() const;
@@ -61,7 +62,7 @@ class Image {
     double difference(const Image& other) const;
 
    private:
-    std::unique_ptr<Color[]> colors;
+    std::unique_ptr<RGBColor[]> colors;
     size_t width, height;
 };
 

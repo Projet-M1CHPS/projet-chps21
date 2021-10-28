@@ -4,14 +4,20 @@
 
 namespace image::transform {
 
+enum TRANSFORM_ENUM {
+    GREYSCALE,
+    BINARYSCALE,
+    HISTOGRAMINVERSION,
+    HISTOGRAMBINARYSCALE,
+    NOTRANSFORM
+};
+
 // Transformation base class
 // Note that all transformations are assumed to be reentrant
 class Transformation {
    public:
     virtual ~Transformation() = default;
     virtual bool transform(image::Image &image) = 0;
-
-   private:
 };
 
 class NoTransform : public Transformation {
@@ -65,12 +71,14 @@ class TransformEngine {
     /**
      * @param image  Base image, will not be modified.
      * @return a copy of the base image with all transformations applied
-     * @brief Apply all transformations of the transformation list for the given
-     * image
+     * @brief Apply all transformations of the transformation list for the
+     * given image
      */
     image::Image transform(image::Image const &image);
 
    private:
+    // Keeping the transformations identifiers for I/O easily.
+    std::vector<TRANSFORM_ENUM> transformationsEnums;
     // Transformations should be applied in order
     std::vector<std::shared_ptr<Transformation>> transformations;
 };
