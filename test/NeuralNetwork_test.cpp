@@ -4,13 +4,13 @@
 #include <vector>
 
 TEST(ActivationFunctionTest, AF_Sigmoid) {
-  ASSERT_NEAR(0.5f, nnet::sigmoid<float>(0), 0.005);
-  ASSERT_NEAR(0.731f, nnet::sigmoid<float>(1), 0.005);
-  ASSERT_NEAR(0.268f, nnet::sigmoid<float>(-1), 0.005);
+  ASSERT_NEAR(0.5f, af::sigmoid<float>(0), 0.005);
+  ASSERT_NEAR(0.731f, af::sigmoid<float>(1), 0.005);
+  ASSERT_NEAR(0.268f, af::sigmoid<float>(-1), 0.005);
 
-  ASSERT_NEAR(0.5, nnet::sigmoid<double>(0), 0.005);
-  ASSERT_NEAR(0.731, nnet::sigmoid<double>(1), 0.005);
-  ASSERT_NEAR(0.268, nnet::sigmoid<float>(-1), 0.005);
+  ASSERT_NEAR(0.5, af::sigmoid<double>(0), 0.005);
+  ASSERT_NEAR(0.731, af::sigmoid<double>(1), 0.005);
+  ASSERT_NEAR(0.268, af::sigmoid<float>(-1), 0.005);
 }
 
 TEST(NeuralNetworkTest, CanCreateNeuralNetwork) {
@@ -92,7 +92,7 @@ TEST(NeuralNetworkTest, SimpleNeuralTest) {
 
   nnet::NeuralNetwork<float> nn;
   nn.setLayersSize(std::vector<size_t>{2, 2, 1});
-  nn.setActivationFunction(nnet::ActivationFunctionType::square);
+  nn.setActivationFunction(af::ActivationFunctionType::square);
 
   auto &w = nn.getWeights();
   auto &b = nn.getBiases();
@@ -119,7 +119,7 @@ TEST(NeuralNetworkTest, ComplexNeuralTest) {
 
   nnet::NeuralNetwork<double> nn;
   nn.setLayersSize(std::vector<size_t>{2, 4, 2, 3, 2});
-  nn.setActivationFunction(nnet::ActivationFunctionType::square);
+  nn.setActivationFunction(af::ActivationFunctionType::square);
 
   auto &w = nn.getWeights();
   auto &b = nn.getBiases();

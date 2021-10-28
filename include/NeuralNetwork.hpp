@@ -1,151 +1,17 @@
 #pragma once
+#include "ActivationFonction.hpp"
 #include "Matrix.hpp"
 #include "Utils.hpp"
 #include <cmath>
 #include <functional>
 #include <iostream>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
-#define alpha .1
+#define alpha .01
 
 namespace nnet {
-
-/**
- * @brief Enum of supported activation functions
- *
- * Function that are not referenced in this enum cannot be used to prevent
- * errors when serializing a network
- *
- */
-enum class ActivationFunctionType {
-  sigmoid,
-  // TODO: Expand me !
-
-  // Debug
-  square
-};
-
-/**
- * @brief Convert a string to an ActivationFunctionType
- *
- * @param str
- * @return ActivationFunctionType
- */
-ActivationFunctionType strToAFType(const std::string &str) {
-
-  if (str == "sigmoid") {
-    return ActivationFunctionType::sigmoid;
-  } else if (str == "square") {
-    return ActivationFunctionType::square;
-  } else {
-    throw std::runtime_error("Unknown activation function type");
-  }
-}
-
-/**
- * @brief Convert an ActivationFunctionType to a string
- *
- * @param type
- * @return std::string
- */
-std::string AFTypeToStr(ActivationFunctionType type) {
-  switch (type) {
-  case ActivationFunctionType::sigmoid:
-    return "sigmoid";
-  case ActivationFunctionType::square:
-    return "square";
-  default:
-    throw std::runtime_error("Unknown activation function type");
-  }
-}
-
-/**
- * @brief Sigmoid math function
- *
- * @to_do: Move me to a separate file
- *
- * @tparam real
- * @param x
- * @return real
- */
-template <typename real> real sigmoid(real x) {
-  static_assert(std::is_floating_point_v<real>,
-                "Invalid type for sigmoid, expected a floating point type");
-
-  return 1.0 / (1.0 + std::exp(-x));
-}
-
-/**
- * @brief Delta sigmoid math function
- *
- * @to_do: Move me to a separate file
- *
- * @tparam real
- * @param x
- * @return real
- */
-template <typename real> real dsigmoid(real x) {
-  static_assert(std::is_floating_point_v<real>,
-                "Invalid type for sigmoid, expected a floating point type");
-
-  return sigmoid(x) * (1 - sigmoid(x));
-}
-
-/**
- * @brief Squarre math function
- *
- * @to_do: Move me to a separate file
- *
- * @tparam real
- * @param x
- * @return real
- */
-template <typename real> real square(real x) {
-  static_assert(std::is_floating_point_v<real>,
-                "Invalid type for square, expected a floating point type");
-
-  return x * x;
-}
-
-/**
- * @brief Delta squarre math function
- *
- * @to_do: Move me to a separate file
- *
- * @tparam real
- * @param x
- * @return real
- */
-template <typename real> real dsquare(real x) {
-  static_assert(std::is_floating_point_v<real>,
-                "Invalid type for square, expected a floating point type");
-
-  return 2 * x;
-}
-
-/**
- * @brief Return the function associated with an ActivationFunctionType
- *
- * @tparam real
- * @param type
- * @return std::function<real(real)>
- */
-template <typename real>
-std::function<real(real)> getAFFromType(ActivationFunctionType type) {
-  static_assert(
-      std::is_floating_point_v<real>,
-      "Invalid type for activation function, expected a floating point type");
-
-  switch (type) {
-  case ActivationFunctionType::sigmoid:
-    return sigmoid<real>;
-  case ActivationFunctionType::square:
-    return square<real>;
-  default:
-    utils::error("Activation function not supported");
-  }
-}
 
 /**
  * @brief Enum of the supported floating precision
@@ -217,10 +83,10 @@ public:
   virtual size_t getOutputSize() const = 0;
   virtual size_t getInputSize() const = 0;
   virtual std::vector<size_t> getLayersSize() const = 0;
-  virtual void setActivationFunction(ActivationFunctionType type) = 0;
-  virtual void setActivationFunction(ActivationFunctionType af,
+  virtual void setActivationFunction(af::ActivationFunctionType type) = 0;
+  virtual void setActivationFunction(af::ActivationFunctionType af,
                                      size_t layer) = 0;
-  virtual const std::vector<ActivationFunctionType> &
+  virtual const std::vector<af::ActivationFunctionType> &
   getActivationFunctions() const = 0;
 
   virtual void randomizeSynapses() = 0;
@@ -295,11 +161,15 @@ public:
     return current_layer;
   }
 
+  // TODO: implement the backpropagation algorithm
+  void backward();
+
   template <typename iterator>
   void train(iterator begin_input, iterator end_input, iterator begin_target,
              iterator end_target) {
     std::vector<math::Matrix<real>> layers;
-    std::vector<math::Matrix<real>> layers_buffer;
+    std::vector<math::Matrix<real>> layers_af;
+    // std::vector<math::Matrix<real>> errors_buffer;
     // Forward
     // ------------------------------------------------------------------------
     const size_t nbInput = std::distance(begin_input, end_input);
@@ -312,23 +182,22 @@ public:
     std::copy(begin_input, end_input, current_layer.begin());
 
     layers.push_back(current_layer);
-    layers_buffer.push_back(current_layer);
+    layers_af.push_back(current_layer);
 
     for (size_t i = 0; i < weights.size(); i++) {
+      // std::cout << current_layer << "\n" << std::endl;
       // C = W * C + B
       current_layer = weights[i] * current_layer;
-      // Avoid a copy by using the += operator
       current_layer += biases[i];
 
-      layers_buffer.push_back(current_layer);
+      layers.push_back(current_layer);
 
       // Apply activation function on every element of the matrix
-      // C_ij = AF(C_ij)
-      std::function<real(real)> af =
-          getAFFromType<real>(activation_functions[i]);
-      std::for_each(current_layer.cbegin(), current_layer.cend(), af);
+      auto afunc = af::getAFFromType<real>(activation_functions[i]).first;
+      std::transform(current_layer.cbegin(), current_layer.cend(),
+                     current_layer.begin(), afunc);
 
-      layers.push_back(current_layer);
+      layers_af.push_back(current_layer);
     }
 
     // Backward
@@ -343,28 +212,42 @@ public:
     math::Matrix<real> target(nbTarget, 1);
     std::copy(begin_target, end_target, target.begin());
 
-    //
+    // Erreur de l'output
     math::Matrix<real> current_error = target - current_layer;
 
+    // printf("backprop\n");
+
     for (long i = weights.size() - 1; i >= 0; i--) {
-      std::cout << "\ni = " << i << std::endl;
+      // std::cout << current_error << "\n" << std::endl;
+      // std::cout << "\ni = " << i << std::endl;
 
       // calcul de S
-      math::Matrix<real> gradient(layers_buffer[i + 1]);
-      std::function<real(real)> daf = dsigmoid<real>;
-      std::for_each(gradient.cbegin(), gradient.cend(), daf);
+      math::Matrix<float> gradient(layers[i + 1]);
+      // std::cout << "gradient = \n" << gradient << std::endl;
+      auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
+      std::transform(gradient.cbegin(), gradient.cend(), gradient.begin(),
+                     dafunc);
+      // std::cout << "gradient = \n" << gradient << std::endl;
 
-      // calcul de S * E
-      gradient = gradient * current_error;
+      // std::cout << "eror\n" << current_error << std::endl;
       // calcul de (S * E) * alpha
+      gradient.hadamardProd(current_error);
       gradient = gradient * alpha;
+      // std::cout << "gradient = \n" << gradient << std::endl;
 
       // calcul de ((S * E) * alpha) * Ht
-      math::Matrix<real> ht = layers[i].transpose();
-      math::Matrix<real> delta_weight = gradient * ht;
+      // math::Matrix<real> ht = ;
+      math::Matrix<real> delta_weight = gradient * layers_af[i].transpose();
+      // std::cout << "delta_weight = \n" << delta_weight << std::endl;
 
       weights[i] = weights[i] + delta_weight;
       biases[i] = biases[i] + gradient;
+
+      // std::cout << "\ni = " << i << std::endl;
+      // std::cout << "weight" << std::endl;
+      // std::cout << weights[i] << std::endl;
+      // std::cout << "biais" << std::endl;
+      // std::cout << biases[i] << std::endl;
 
       math::Matrix<real> wt = weights[i].transpose();
       current_error = wt * current_error;
@@ -373,8 +256,8 @@ public:
 
   /**
    * @brief Take a vector of sizes correspondig to the number of neurons
-   * in each layer and build the network accordingly. Note that weightsremains
-   * uninitialized after this.
+   * in each layer and build the network accordingly. Note that weights are not
+   * initialized after this.
    *
    * @param layers
    */
@@ -391,7 +274,7 @@ public:
       // So that each weight matrix can be multiplied by the previous layer
       weights.push_back(math::Matrix<real>(layers[i + 1], layers[i]));
       biases.push_back(math::Matrix<real>(layers[i + 1], 1));
-      activation_functions.push_back(ActivationFunctionType::sigmoid);
+      activation_functions.push_back(af::ActivationFunctionType::sigmoid);
     }
   }
 
@@ -419,20 +302,21 @@ public:
   virtual std::vector<size_t> getLayersSize() const override {
     std::vector<size_t> res(weights.size());
 
-    for (size_t i = 0; i < weights.size(); i++) {
-      res[i] = weights[i].getCols();
+
+    for (auto w : weights) {
+      res.push_back(w.getRows());
     }
     return res;
   }
 
-  virtual void setActivationFunction(ActivationFunctionType type) override {
+  virtual void setActivationFunction(af::ActivationFunctionType type) override {
 
     for (size_t i = 0; i < activation_functions.size(); i++) {
       activation_functions[i] = type;
     }
   }
 
-  virtual void setActivationFunction(ActivationFunctionType af,
+  virtual void setActivationFunction(af::ActivationFunctionType af,
                                      size_t layer) override {
     if (layer >= weights.size()) {
       throw std::invalid_argument("Invalid layer");
@@ -441,7 +325,7 @@ public:
     activation_functions[layer] = af;
   }
 
-  virtual const std::vector<ActivationFunctionType> &
+  virtual const std::vector<af::ActivationFunctionType> &
   getActivationFunctions() const override {
     return activation_functions;
   }
@@ -449,13 +333,14 @@ public:
   /**
    * @brief Randomizes the weights and biases of the network
    *
+   * @param seed
    */
   virtual void randomizeSynapses() override {
     for (auto &layer : weights) {
       utils::random::randomize<real>(layer, 0, 1);
     }
 
-    for (auto &layer : weights) {
+    for (auto &layer : biases) {
       utils::random::randomize<real>(layer, 0, 1);
     }
   }
@@ -476,10 +361,8 @@ private:
     res += biases[index];
 
     // Apply activation function on every element of the matrix
-    // C_ij = AF(C_ij)
-    std::function<real(real)> af =
-        getAFFromType<real>(activation_functions[index]);
-    std::for_each(res.cbegin(), res.cend(), af);
+    auto afunc = af::getAFFromType<real>(activation_functions[index]).first;
+    std::for_each(res.cbegin(), res.cend(), afunc);
     return res;
   }
 
@@ -488,6 +371,6 @@ private:
   std::vector<math::Matrix<real>> biases;
 
   // We want every layer to have its own activation function
-  std::vector<ActivationFunctionType> activation_functions;
+  std::vector<af::ActivationFunctionType> activation_functions;
 };
 } // namespace nnet

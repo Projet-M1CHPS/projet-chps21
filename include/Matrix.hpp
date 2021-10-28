@@ -237,7 +237,8 @@ public:
   Matrix operator*(const double &other) const {
     Matrix res(rows, cols);
 
-    T *raw_res = res.getData();
+      T *raw_res = res.getData();
+      T *raw_mat = data.get();
 
 #ifdef USE_BLAS
 
@@ -248,17 +249,45 @@ public:
     else
 
 #endif
-      const size_t size{rows * cols};
-    for (int i = 0; i < size; i++)
-      raw_res[i] *= other;
+        const size_t size{rows * cols};
+      for (size_t i = 0; i < size; i++)
+        raw_res[i] = raw_mat[i] * other;
 
     return res;
   }
 
-private:
-  std::unique_ptr<T[]> data = nullptr;
-  size_t rows = 0, cols = 0;
-};
+    void hadamardProd(const Matrix &other) const
+    {
+      if (rows != other.rows or cols != other.cols)
+        throw std::invalid_argument("Matrix dimensions do not match");
+
+      const T *raw_data_other = other.getData();
+      T *raw_data = data.get();
+
+      const size_t size{rows * cols};
+      for (size_t i = 0; i < size; i++)
+        raw_data[i] *= raw_data_other[i];
+    }
+
+    //friend std::ostream& operator<<(std::ostream& os, const Pair<T, U>& p)
+    friend std::ostream &operator<<(std::ostream &os, const Matrix<T> &mat)
+    {
+      const T *raw_data = mat.data.get();
+      for (size_t i = 0; i < mat.rows; i++)
+      {
+        for (size_t j = 0; j < mat.cols; j++)
+        {
+          os << raw_data[i * mat.cols + j] << " ";
+        }
+        os << "\n";
+      }
+      return os;
+    }
+
+  private:
+    std::unique_ptr<T[]> data = nullptr;
+    size_t rows = 0, cols = 0;
+  };
 
 using FloatMatrix = Matrix<float>;
 using DoubleMatrix = Matrix<double>;
