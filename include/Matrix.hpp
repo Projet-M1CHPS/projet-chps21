@@ -259,7 +259,7 @@ namespace math
       return res;
     }
 
-    Matrix operator*(const double &other) const
+    Matrix operator*(const double other) const
     {
       Matrix res(rows, cols);
 
