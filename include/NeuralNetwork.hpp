@@ -235,16 +235,24 @@ public:
    */
   NeuralNetwork() : NeuralNetworkBase(getFPPrecision<real>()) {}
 
-  /**
-   * @brief Construct a copy of an existing neural network
-   *
-   * @param other
-   */
   NeuralNetwork(const NeuralNetwork &other)
       : NeuralNetworkBase(getFPPrecision<real>()) {
     *this = other;
   }
+  
+  NeuralNetwork(NeuralNetwork &&other)
+      : NeuralNetworkBase(getFPPrecision<real>()) {
+    *this = std::move(other);
+  }
+
   NeuralNetwork &operator=(const NeuralNetwork &) = default;
+  NeuralNetwork &operator=(NeuralNetwork &&other) {
+    weights = std::move(other.weights);
+    biases = std::move(other.biases);
+    activation_functions = std::move(other.activation_functions);
+
+    return *this;
+  }
 
   /**
    * @brief Run the network on a set of input, throwing on error
@@ -272,9 +280,6 @@ public:
     }
     return current_layer;
   }
-
-  // TODO: implement the backpropagation algorithm
-  void backward();
 
   template <typename iterator>
   void train(iterator begin_input, iterator end_input, iterator begin_target,
@@ -354,8 +359,8 @@ public:
 
   /**
    * @brief Take a vector of sizes correspondig to the number of neurons
-   * in each layer and build the network accordingly. Note that weights are not
-   * initialized after this.
+   * in each layer and build the network accordingly. Note that weightsremains
+   * uninitialized after this.
    *
    * @param layers
    */
@@ -376,11 +381,6 @@ public:
     }
   }
 
-  /**
-   * @brief Returns the size of the output layer
-   *
-   * @return size_t
-   */
   size_t getOutputSize() const {
     // The last operation is <Mm x Mn> * <Om * On>
     // So the output is <Mm * On> where On is 1
@@ -392,11 +392,6 @@ public:
     return weights.back().getRows();
   }
 
-  /**
-   * @brief Returns the size of the input layer
-   *
-   * @return size_t
-   */
   size_t getInputSize() const {
     // The first operation is <Mm x Mn> * <Om * On>
     // So the input is of size <Mn * On> where On is 1
@@ -407,11 +402,6 @@ public:
     return weights.front().getCols();
   }
 
-  /**
-   * @brief Returns a vector containing the size of each layer
-   *
-   * @return std::vector<size_t>
-   */
   std::vector<size_t> getLayersSize() const {
     std::vector<size_t> res(weights.size());
 
@@ -421,12 +411,6 @@ public:
     return res;
   }
 
-  /**
-   * @brief Set the Activation Function of a given layer
-   *
-   * @param type
-   * @param layer
-   */
   void setActivationFunction(ActivationFunctionType type) {
 
     for (size_t i = 0; i < activation_functions.size(); i++) {
@@ -434,12 +418,6 @@ public:
     }
   }
 
-  /**
-   * @brief Set the Activation Function of a given layer
-   *
-   * @param type
-   * @param layer
-   */
   void setActivationFunction(ActivationFunctionType af, size_t layer) {
     if (layer >= weights.size()) {
       throw std::invalid_argument("Invalid layer");
@@ -451,7 +429,6 @@ public:
   /**
    * @brief Randomizes the weights and biases of the network
    *
-   * @param seed
    */
   void randomizeSynapses() {
     for (auto &layer : weights) {
@@ -463,15 +440,7 @@ public:
     }
   }
 
-  /**
-   * @brief Geter for the weights
-   */
   std::vector<math::Matrix<real>> &getWeights() { return weights; }
-
-  /**
-   * @brief Geter for the biases matrices
-   *
-   */
   std::vector<math::Matrix<real>> &getBiaises() { return biases; }
 
 private:
