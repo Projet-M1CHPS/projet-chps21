@@ -23,12 +23,12 @@ template <typename T> void randomize(math::Matrix<T> &matrix, T min, T max) {
 
   if constexpr (std::is_floating_point_v<T>) {
     std::uniform_real_distribution<> dis(min, max);
-    for (auto elem : matrix)
+    for (auto& elem : matrix)
       elem = dis(gen);
 
   } else if constexpr (std::is_integral_v<T>) {
     std::uniform_int_distribution<> dis(min, max);
-    for (auto elem : matrix)
+    for (auto& elem : matrix)
       elem = dis(gen);
   }
 }
