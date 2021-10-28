@@ -211,7 +211,19 @@ public:
   NeuralNetworkBase() = delete;
   virtual ~NeuralNetworkBase() = default;
 
-  FloatingPrecision getPrecision() { return precision; }
+  FloatingPrecision getPrecision() const { return precision; }
+
+  virtual void setLayersSize(std::vector<size_t> layers) = 0;
+  virtual size_t getOutputSize() const = 0;
+  virtual size_t getInputSize() const = 0;
+  virtual std::vector<size_t> getLayersSize() const = 0;
+  virtual void setActivationFunction(ActivationFunctionType type) = 0;
+  virtual void setActivationFunction(ActivationFunctionType af,
+                                     size_t layer) = 0;
+  virtual const std::vector<ActivationFunctionType> &
+  getActivationFunctions() const = 0;
+
+  virtual void randomizeSynapses() = 0;
 
 protected:
   // The precision has no reason to change, so no need for setter method
@@ -229,6 +241,8 @@ protected:
  */
 template <typename real> class NeuralNetwork final : public NeuralNetworkBase {
 public:
+  using value_type = real;
+
   /**
    * @brief Construct a new Neural Network object with no layer
    *
@@ -239,7 +253,7 @@ public:
       : NeuralNetworkBase(getFPPrecision<real>()) {
     *this = other;
   }
-  
+
   NeuralNetwork(NeuralNetwork &&other)
       : NeuralNetworkBase(getFPPrecision<real>()) {
     *this = std::move(other);
@@ -364,7 +378,7 @@ public:
    *
    * @param layers
    */
-  void setLayersSize(std::vector<size_t> layers) {
+  virtual void setLayersSize(std::vector<size_t> layers) override {
 
     if (layers.size() < 2) {
       throw std::invalid_argument("Requires atleast 2 layers");
@@ -381,7 +395,7 @@ public:
     }
   }
 
-  size_t getOutputSize() const {
+  virtual size_t getOutputSize() const override {
     // The last operation is <Mm x Mn> * <Om * On>
     // So the output is <Mm * On> where On is 1
 
@@ -392,7 +406,7 @@ public:
     return weights.back().getRows();
   }
 
-  size_t getInputSize() const {
+  virtual size_t getInputSize() const override {
     // The first operation is <Mm x Mn> * <Om * On>
     // So the input is of size <Mn * On> where On is 1
     if (weights.empty()) {
@@ -402,7 +416,7 @@ public:
     return weights.front().getCols();
   }
 
-  std::vector<size_t> getLayersSize() const {
+  virtual std::vector<size_t> getLayersSize() const override {
     std::vector<size_t> res(weights.size());
 
     for (size_t i = 0; i < weights.size(); i++) {
@@ -411,14 +425,15 @@ public:
     return res;
   }
 
-  void setActivationFunction(ActivationFunctionType type) {
+  virtual void setActivationFunction(ActivationFunctionType type) override {
 
     for (size_t i = 0; i < activation_functions.size(); i++) {
       activation_functions[i] = type;
     }
   }
 
-  void setActivationFunction(ActivationFunctionType af, size_t layer) {
+  virtual void setActivationFunction(ActivationFunctionType af,
+                                     size_t layer) override {
     if (layer >= weights.size()) {
       throw std::invalid_argument("Invalid layer");
     }
@@ -426,11 +441,16 @@ public:
     activation_functions[layer] = af;
   }
 
+  virtual const std::vector<ActivationFunctionType> &
+  getActivationFunctions() const override {
+    return activation_functions;
+  }
+
   /**
    * @brief Randomizes the weights and biases of the network
    *
    */
-  void randomizeSynapses() {
+  virtual void randomizeSynapses() override {
     for (auto &layer : weights) {
       utils::random::randomize<real>(layer, 0, 1);
     }
@@ -441,7 +461,10 @@ public:
   }
 
   std::vector<math::Matrix<real>> &getWeights() { return weights; }
-  std::vector<math::Matrix<real>> &getBiaises() { return biases; }
+  const std::vector<math::Matrix<real>> &getWeights() const { return weights; }
+
+  std::vector<math::Matrix<real>> &getBiases() { return biases; }
+  const std::vector<math::Matrix<real>> &getBiases() const { return biases; }
 
 private:
   math::Matrix<real> forwardOnce(const math::Matrix<real> &mat,

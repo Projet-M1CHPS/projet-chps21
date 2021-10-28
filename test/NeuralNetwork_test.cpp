@@ -95,7 +95,7 @@ TEST(NeuralNetworkTest, SimpleNeuralTest) {
   nn.setActivationFunction(nnet::ActivationFunctionType::square);
 
   auto &w = nn.getWeights();
-  auto &b = nn.getBiaises();
+  auto &b = nn.getBiases();
 
   for (auto &i : w) {
     for (auto &e : i) {
@@ -122,7 +122,7 @@ TEST(NeuralNetworkTest, ComplexNeuralTest) {
   nn.setActivationFunction(nnet::ActivationFunctionType::square);
 
   auto &w = nn.getWeights();
-  auto &b = nn.getBiaises();
+  auto &b = nn.getBiases();
 
   for (auto &i : w) {
     for (auto &e : i) {

@@ -43,7 +43,7 @@ int main(int argc, char **argv)
   nn.setActivationFunction(nnet::ActivationFunctionType::square);
 
   auto &w = nn.getWeights();
-  auto &b = nn.getBiaises();
+  auto &b = nn.getBiases();
 
   for (auto &i : w)
   {

@@ -7,13 +7,13 @@ namespace nnet {
 /**
  * @brief Helper class for serializing and deserializing neural networks
  * Also offers utility for outputing a network metadata as a JSon file
- * 
+ *
  * @todo Implement me !
  *
  */
 class NeuralNetworkSerializer {
 public:
-  enum Flags {
+  enum NNSerializerFlags {
     /**
      * @brief If set, the serializer will not load/write the weights to/from the
      * output file
@@ -48,33 +48,31 @@ public:
   NeuralNetworkSerializer &operator=(const NeuralNetworkSerializer &) = delete;
 
   static void saveToFile(std::string const &path, NeuralNetworkBase const &nn,
-                         Flags const &flags) {
-    utils::error("FIXME: SaveToFile Not implemented");
-  }
+                         NNSerializerFlags const &flags);
+
   static void saveToStream(std::ostream &stream, NeuralNetworkBase const &nn,
-                           Flags const &flags) {
-    utils::error("FIXME: SaveToStream Not implemented");
-  }
+                           NNSerializerFlags const &flags);
 
   static std::unique_ptr<NeuralNetworkBase>
-  loadFromFile(std::string const &path) {
-    utils::error("FIXME: loadFromFile Not implemented");
-  }
+  loadFromFile(std::string const &path);
 
   static std::unique_ptr<NeuralNetworkBase>
-  loadFromStream(std::istream &stream) {
-    utils::error("FIXME: loadFromStream Not implemented");
-  }
+  loadFromStream(std::istream &stream);
 
   static void saveMetadataToJSon(std::string const &path,
-                                 NeuralNetworkBase const &nn) {
-    utils::error("FIXME: SaveMetadataToJSon Not implemented");
-  }
+                                 NeuralNetworkBase const &nn);
 
   static std::unique_ptr<NeuralNetworkBase>
-  loadMetadataFromJSon(std::string const &path) {
-    utils::error("FIXME: LoadMetadataFromJSon Not implemented");
-  }
+  loadMetadataFromJSon(std::string const &path);
+
+private:
+  static void binarySaveToStream(std::ostream& os, NeuralNetworkBase const &nn,
+                                 NNSerializerFlags const &flags);
+  static void saveToStream(std::ostream& os, NeuralNetworkBase const &nn,
+                                 NNSerializerFlags const &flags);
+
+  static void binaryLoadFromStream();
+  static void loadFromStream();
 };
 
 } // namespace nnet
