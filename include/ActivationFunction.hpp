@@ -17,6 +17,7 @@ namespace af
  */
   enum class ActivationFunctionType
   {
+    identity,
     sigmoid,
     // TODO: Expand me !
 
@@ -45,6 +46,44 @@ namespace af
   {
     utils::error("Activation function not supported");
   }
+
+
+   /**
+ * @brief Identity math function
+ *
+ * @to_do: Move me to a separate file
+ *
+ * @tparam real
+ * @param x
+ * @return real
+ */
+  template <typename real>
+  real identity(real x)
+  {
+    static_assert(std::is_floating_point_v<real>,
+                  "Invalid type for sigmoid, expected a floating point type");
+
+    return x;
+  }
+
+  /**
+ * @brief Delta identity math function
+ *
+ * @to_do: Move me to a separate file
+ *
+ * @tparam real
+ * @param x
+ * @return real
+ */
+  template <typename real>
+  real didentity(real x)
+  {
+    static_assert(std::is_floating_point_v<real>,
+                  "Invalid type for sigmoid, expected a floating point type");
+
+    return 1;
+  }
+
 
   /**
  * @brief Sigmoid math function
@@ -81,6 +120,7 @@ namespace af
 
     return sigmoid(x) * (1 - sigmoid(x));
   }
+
 
   /**
  * @brief Squarre math function
@@ -134,6 +174,8 @@ namespace af
 
     switch (type)
     {
+    case ActivationFunctionType::identity:
+      return std::make_pair(identity<real>, didentity<real>);
     case ActivationFunctionType::sigmoid:
       return std::make_pair(sigmoid<real>, dsigmoid<real>);
     case ActivationFunctionType::square:
