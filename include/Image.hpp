@@ -42,7 +42,7 @@ class Image {
 
     size_t getWidth() const;
     size_t getHeight() const;
-    size_t getDimension() const;
+    size_t getDimension() const; // returns width * height
 
     RGBColor* begin();
     const RGBColor* begin() const;
@@ -75,6 +75,7 @@ class ImageLoader {
     static image::Image load(std::string const filename);
     static image::Image load_stb(const char* filename);
     static void save(std::string const filename, const Image& image);
+    static void save_png_stb(const char* filename, const Image& image);
     static std::vector<image::Image> loadDirectory(std::string const filename);
 
    private:
