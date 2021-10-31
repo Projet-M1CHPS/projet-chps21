@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#define alpha .01
+#define alpha .1
 
 namespace nnet
 {
@@ -253,7 +253,7 @@ namespace nnet
                 // std::cout << "\ni = " << i << std::endl;
 
                 // calcul de S
-                math::Matrix<float> gradient(layers[i + 1]);
+                math::Matrix<real> gradient(layers[i + 1]);
                 // std::cout << "gradient = \n" << gradient << std::endl;
                 auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
                 std::transform(gradient.cbegin(), gradient.cend(), gradient.begin(),
@@ -286,13 +286,13 @@ namespace nnet
 
         template <typename iterator>
         void train_bis(iterator begin_input, iterator end_input, iterator begin_target,
-                       iterator end_target)
+                       iterator end_target, const real learning_rate)
         {
             std::vector<math::Matrix<real>> layers;
             std::vector<math::Matrix<real>> layers_af;
             std::vector<math::Matrix<real>> errors;
             errors.resize(weights.size());
-            std::cout << "size error = " << errors.size() << std::endl;
+
             // Forward
             // ------------------------------------------------------------------------
             const size_t nbInput = std::distance(begin_input, end_input);
@@ -310,7 +310,6 @@ namespace nnet
 
             for (size_t i = 0; i < weights.size(); i++)
             {
-                // std::cout << current_layer << "\n" << std::endl;
                 // C = W * C + B
                 current_layer = weights[i] * current_layer;
                 current_layer += biases[i];
@@ -324,6 +323,7 @@ namespace nnet
 
                 layers_af.push_back(current_layer);
             }
+            //std::cout << "forward :\n" << current_layer << std::endl;
 
             // Backward
             // ------------------------------------------------------------------------
@@ -342,66 +342,48 @@ namespace nnet
             // Erreur de l'output
             math::Matrix<real> current_error = target - current_layer;
             errors[errors.size() - 1] = current_error;
-            //errors.push_back(current_error);
 
-            std::cout << "size weight = " << weights.size() << std::endl;
-            std::cout << "size afunc = " << activation_functions.size() << std::endl;
             for (long i = weights.size() - 2; i >= 0; i--)
             {
-                std::cout << i << std::endl;
                 current_error = weights[i + 1].transpose() * current_error;
                 errors[i] = current_error;
             }
 
-            printf(("----------------errors----------------\n"));
-            //for (auto &i : errors)
-            //    std::cout << i << std::endl;
+            //printf(("----------------errors----------------\n"));
+            for (auto &i : errors)
+                //std::cout << i << std::endl;
 
-            for (int i = 0; i < errors.size(); i++)
-                std::cout << i << "\n"
-                          << errors[i] << std::endl;
-            printf(("----------------errors----------------\n\n"));
+                //printf(("\n----------------for----------------\n"));
 
-            std::cout << "size(layer / layer_af / errors) = " << layers.size() << " / " << layers_af.size() << " / " << errors.size() << std::endl;
-            printf(("\n----------------for----------------\n"));
+                for (long i = weights.size() - 1; i >= 0; i--)
+                {
+                    //std::cout << "\ni = " << i << std::endl;
 
-            for (long i = weights.size(); i > 0; i--)
-            {
-                std::cout << "\ni = " << i << std::endl;
+                    // calcul de S * (1 - S)
+                    math::Matrix<real> gradient(layers[i + 1]);
+                    //std::cout << "grad = \n" << gradient << std::endl;
+                    auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
+                    std::transform(gradient.cbegin(), gradient.cend(), gradient.begin(), dafunc);
 
-                // calcul de S * (1 - S)
-                math::Matrix<float> gradient(layers[i]);
-                std::cout << "grad = \n"
-                          << gradient << std::endl;
-                auto dafunc = af::getAFFromType<real>(activation_functions[i - 1]).second;
-                std::transform(gradient.cbegin(), gradient.cend(), gradient.begin(), dafunc);
+                    // calcul de (S * E) * alpha
+                    //std::cout << "grad = \n" << gradient << std::endl;
+                    //std::cout << "error = \n" << errors[i] << std::endl;
+                    gradient.hadamardProd(errors[i]);
+                    //std::cout << "grad * error = \n" << gradient << std::endl;
+                    gradient = gradient * learning_rate;
+                    //std::cout << "(grad *error) * alpha = \n" << gradient << std::endl;
 
-                // calcul de (S * E) * alpha
-                std::cout << "grad = \n"
-                          << gradient << std::endl;
-                std::cout << "error = \n"
-                          << errors[i - 1] << std::endl;
-                gradient.hadamardProd(errors[i - 1]);
-                std::cout << "grad * error = \n"
-                          << gradient << std::endl;
-                gradient = gradient * alpha;
-                std::cout << "(grad *error) * alpha = \n"
-                          << gradient << std::endl;
+                    // calcul de ((S * E) * alpha) * Ht
+                    //std::cout << "layer_af = \n" << layers_af[i] << std::endl;
+                    //std::cout << "layer_af.T = \n" << layers_af[i].transpose() << std::endl;
+                    math::Matrix<real> delta_weight = gradient * layers_af[i].transpose();
+                    //std::cout << "delta weight = \n" << delta_weight << std::endl;
 
-                // calcul de ((S * E) * alpha) * Ht
-                std::cout << "layer_af = \n"
-                          << layers_af[i - 1] << std::endl;
-                std::cout << "layer_af.T = \n"
-                          << layers_af[i - 1].transpose() << std::endl;
-                math::Matrix<real> delta_weight = gradient * layers_af[i - 1].transpose();
-                std::cout << "delta weight = \n"
-                          << delta_weight << std::endl;
-
-                weights[i - 1] = weights[i - 1] + delta_weight;
-                biases[i - 1] = biases[i - 1] + gradient;
-                printf(("\n----------------loop----------------\n"));
-            }
-            printf(("\n----------------for----------------\n"));
+                    weights[i] = weights[i] + delta_weight;
+                    biases[i] = biases[i] + gradient;
+                    //printf(("\n----------------loop----------------\n"));
+                }
+            //printf(("\n-------------endfor----------------\n"));
         }
 
         /**
@@ -502,7 +484,7 @@ namespace nnet
         {
             for (auto &layer : weights)
             {
-                utils::random::randomize<real>(layer, 0, 1);
+                utils::random::randomize<real>(layer, -1, 1);
             }
 
             for (auto &layer : biases)
@@ -529,7 +511,7 @@ namespace nnet
 
             // Apply activation function on every element of the matrix
             auto afunc = af::getAFFromType<real>(activation_functions[index]).first;
-            std::for_each(res.cbegin(), res.cend(), afunc);
+            std::transform(res.cbegin(), res.cend(), res.begin(), afunc);
             return res;
         }
 
@@ -547,13 +529,14 @@ namespace nnet
     {
         const size_t size = nn.getWeights().size();
         os << "-------input-------\n";
-        for(size_t i = 0; i < size; i++)
+        for (size_t i = 0; i < size; i++)
         {
             os << "-----weight[" << i << "]-----\n";
             os << nn.getWeights()[i];
             os << "------bias[" << i << "]------\n";
             os << nn.getBiases()[i];
-            os << "-----hidden[" << i << "]-----\n";
+            if(i != size - 1)
+                os << "-----hidden[" << i << "]-----\n";
         }
         os << "-------output------\n";
         return os;
