@@ -19,6 +19,8 @@ namespace af
   {
     identity,
     sigmoid,
+    relu,
+    leakyRelu,
     // TODO: Expand me !
 
     // Debug
@@ -47,8 +49,7 @@ namespace af
     utils::error("Activation function not supported");
   }
 
-
-   /**
+  /**
  * @brief Identity math function
  *
  * @to_do: Move me to a separate file
@@ -83,7 +84,6 @@ namespace af
 
     return 1;
   }
-
 
   /**
  * @brief Sigmoid math function
@@ -121,6 +121,80 @@ namespace af
     return sigmoid(x) * (1 - sigmoid(x));
   }
 
+  /**
+ * @brief Relu math function
+ *
+ * @to_do: Move me to a separate file
+ *
+ * @tparam real
+ * @param x
+ * @return real
+ */
+  template <typename real>
+  real relu(real x)
+  {
+    static_assert(std::is_floating_point_v<real>,
+                  "Invalid type for sigmoid, expected a floating point type");
+
+    return (x <= 0) ? 0.0 : x;
+  }
+
+  /**
+ * @brief Delta relu math function
+ *
+ * @to_do: Move me to a separate file
+ *
+ * @tparam real
+ * @param x
+ * @return real
+ */
+  template <typename real>
+  real drelu(real x)
+  {
+    static_assert(std::is_floating_point_v<real>,
+                  "Invalid type for sigmoid, expected a floating point type");
+    
+    if (x == 0.0)
+        throw std::invalid_argument("Relu undefined on x = 0.0");
+
+    return (x < 0) ? 0.0 : 1;
+  }
+
+  /**
+ * @brief Leaky relu math function
+ *
+ * @to_do: Move me to a separate file
+ *
+ * @tparam real
+ * @param x
+ * @return real
+ */
+  template <typename real>
+  real leakyRelu(real x)
+  {
+    static_assert(std::is_floating_point_v<real>,
+                  "Invalid type for sigmoid, expected a floating point type");
+
+    return (x < 0) ? (0.01 * x) : x;
+  }
+
+  /**
+ * @brief Delta leaky relu math function
+ *
+ * @to_do: Move me to a separate file
+ *
+ * @tparam real
+ * @param x
+ * @return real
+ */
+  template <typename real>
+  real dleakyRelu(real x)
+  {
+    static_assert(std::is_floating_point_v<real>,
+                  "Invalid type for sigmoid, expected a floating point type");
+
+    return (x < 0) ? 0.01 : 1;
+  }
 
   /**
  * @brief Squarre math function
@@ -178,6 +252,10 @@ namespace af
       return std::make_pair(identity<real>, didentity<real>);
     case ActivationFunctionType::sigmoid:
       return std::make_pair(sigmoid<real>, dsigmoid<real>);
+    case ActivationFunctionType::relu:
+      return std::make_pair(relu<real>, drelu<real>);
+    case ActivationFunctionType::leakyRelu:
+      return std::make_pair(leakyRelu<real>, dleakyRelu<real>);
     case ActivationFunctionType::square:
       return std::make_pair(square<real>, dsquare<real>);
     default:
