@@ -197,7 +197,6 @@ namespace math
 
     Matrix operator-(const Matrix &other) const
     {
-
       // To avoid copies, we need not to use the -= operator
       // and directly perform the substraction in the result matrix
       // This is the reason behind this code duplicate
@@ -228,7 +227,7 @@ namespace math
 
     Matrix operator*(const Matrix &other) const
     {
-      size_t other_rows = other.rows, other_cols = other.cols;
+      const size_t other_rows = other.rows, other_cols = other.cols;
       if (cols != other_rows)
         throw std::invalid_argument("Matrix dimensions do not match");
 
@@ -259,11 +258,31 @@ namespace math
       return res;
     }
 
-    Matrix operator*(const double other) const
+    Matrix operator*(const T scale) const
     {
       Matrix res(rows, cols);
 
       T *raw_res = res.getData();
+      const T *raw_mat = data.get();
+
+#ifdef USE_BLAS
+
+      if constexpr (std::is_same_v<real, float>)
+        static_assert(false, "blas not implemented");
+      else if constexpr (std::is_same_v<real, double>)
+        static_assert(false, "blas not implemented");
+      else
+
+#endif
+        const size_t size{rows * cols};
+      for (size_t i = 0; i < size; i++)
+        raw_res[i] = raw_mat[i] * scale;
+
+      return res;
+    }
+
+    Matrix &operator*=(const T scale)
+    {
       T *raw_mat = data.get();
 
 #ifdef USE_BLAS
@@ -277,9 +296,9 @@ namespace math
 #endif
         const size_t size{rows * cols};
       for (size_t i = 0; i < size; i++)
-        raw_res[i] = raw_mat[i] * other;
+        raw_mat[i] *= scale;
 
-      return res;
+      return *this;
     }
 
     void hadamardProd(const Matrix &other) const
@@ -308,13 +327,13 @@ namespace math
   std::ostream &operator<<(std::ostream &os, const Matrix<T> &m)
   {
     size_t j = 0;
-    size_t cols = m.getCols();
-    
-    for(T const& i : m)
+    const size_t cols = m.getCols();
+
+    for (T const &i : m)
     {
       os << i << " ";
       j++;
-      if(j % cols == 0)
+      if (j % cols == 0)
         os << "\n";
     }
     return os;
