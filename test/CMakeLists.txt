@@ -35,6 +35,21 @@ target_link_libraries(
 target_code_coverage(NeuralNetwork_test ALL)
 
 
+add_executable(
+  ActivationFunction_test
+  ActivationFunction_test.cpp
+)
+
+target_link_libraries(
+  ActivationFunction_test PUBLIC
+  Utils
+  gtest_main
+)
+
+target_code_coverage(Math_test ALL)
+
+
 include(GoogleTest)
 gtest_discover_tests(Math_test)
 gtest_discover_tests(NeuralNetwork_test)
+gtest_discover_tests(ActivationFunction_test)
