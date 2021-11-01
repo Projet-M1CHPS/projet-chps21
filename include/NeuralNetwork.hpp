@@ -197,24 +197,30 @@ namespace nnet
             std::vector<math::Matrix<real>> layers;
             std::vector<math::Matrix<real>> layers_af;
             // std::vector<math::Matrix<real>> errors_buffer;
-            // Forward
-            // ------------------------------------------------------------------------
             const size_t nbInput = std::distance(begin_input, end_input);
+            const size_t nbTarget = std::distance(begin_target, end_target);
 
-            if (nbInput != weights.front().getCols())
+            if (nbInput != weights.front().getCols() || nbTarget != getOutputSize())
             {
                 throw std::invalid_argument("Invalid number of input");
             }
 
+            //
             math::Matrix<real> current_layer(nbInput, 1);
             std::copy(begin_input, end_input, current_layer.begin());
+
+            //
+            math::Matrix<real> target(nbTarget, 1);
+            std::copy(begin_target, end_target, target.begin());
+
+            // Forward
+            // ------------------------------------------------------------------------
 
             layers.push_back(current_layer);
             layers_af.push_back(current_layer);
 
             for (size_t i = 0; i < weights.size(); i++)
             {
-                // std::cout << current_layer << "\n" << std::endl;
                 // C = W * C + B
                 current_layer = weights[i] * current_layer;
                 current_layer += biases[i];
@@ -231,16 +237,6 @@ namespace nnet
 
             // Backward
             // ------------------------------------------------------------------------
-
-            const size_t nbTarget = std::distance(begin_target, end_target);
-            if (nbTarget != getOutputSize())
-            {
-                throw std::invalid_argument("Invalid number of target");
-            }
-
-            //
-            math::Matrix<real> target(nbTarget, 1);
-            std::copy(begin_target, end_target, target.begin());
 
             // Erreur de l'output
             math::Matrix<real> current_error = target - current_layer;
@@ -293,17 +289,24 @@ namespace nnet
             std::vector<math::Matrix<real>> errors;
             errors.resize(weights.size());
 
-            // Forward
-            // ------------------------------------------------------------------------
             const size_t nbInput = std::distance(begin_input, end_input);
+            const size_t nbTarget = std::distance(begin_target, end_target);
 
-            if (nbInput != weights.front().getCols())
+            if (nbInput != weights.front().getCols() || nbTarget != getOutputSize())
             {
                 throw std::invalid_argument("Invalid number of input");
             }
 
+            //
             math::Matrix<real> current_layer(nbInput, 1);
             std::copy(begin_input, end_input, current_layer.begin());
+
+            //
+            math::Matrix<real> target(nbTarget, 1);
+            std::copy(begin_target, end_target, target.begin());
+
+            // Forward
+            // ------------------------------------------------------------------------
 
             layers.push_back(current_layer);
             layers_af.push_back(current_layer);
@@ -311,8 +314,7 @@ namespace nnet
             for (size_t i = 0; i < weights.size(); i++)
             {
                 // C = W * C + B
-                current_layer = weights[i] * current_layer;
-                current_layer += biases[i];
+                current_layer = weights[i] * current_layer + biases[i];
 
                 layers.push_back(current_layer);
 
@@ -323,23 +325,10 @@ namespace nnet
 
                 layers_af.push_back(current_layer);
             }
-            //std::cout << "forward :\n" << current_layer << std::endl;
 
             // Backward
-            // ------------------------------------------------------------------------
-            // printf("backprop\n");
 
-            const size_t nbTarget = std::distance(begin_target, end_target);
-            if (nbTarget != getOutputSize())
-            {
-                throw std::invalid_argument("Invalid number of target");
-            }
-
-            //
-            math::Matrix<real> target(nbTarget, 1);
-            std::copy(begin_target, end_target, target.begin());
-
-            // Erreur de l'output
+            // Error
             math::Matrix<real> current_error = target - current_layer;
             errors[errors.size() - 1] = current_error;
 
@@ -349,41 +338,23 @@ namespace nnet
                 errors[i] = current_error;
             }
 
-            //printf(("----------------errors----------------\n"));
-            for (auto &i : errors)
-                //std::cout << i << std::endl;
+            for (long i = weights.size() - 1; i >= 0; i--)
+            {
+                // calcul de S * (1 - S)
+                math::Matrix<real> gradient(layers[i + 1]);
+                auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
+                std::transform(gradient.cbegin(), gradient.cend(), gradient.begin(), dafunc);
 
-                //printf(("\n----------------for----------------\n"));
+                // calcul de (S * E) * alpha
+                gradient.hadamardProd(errors[i]);
+                gradient *= learning_rate;
 
-                for (long i = weights.size() - 1; i >= 0; i--)
-                {
-                    //std::cout << "\ni = " << i << std::endl;
+                // calcul de ((S * E) * alpha) * Ht
+                math::Matrix<real> delta_weight = gradient * layers_af[i].transpose();
 
-                    // calcul de S * (1 - S)
-                    math::Matrix<real> gradient(layers[i + 1]);
-                    //std::cout << "grad = \n" << gradient << std::endl;
-                    auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
-                    std::transform(gradient.cbegin(), gradient.cend(), gradient.begin(), dafunc);
-
-                    // calcul de (S * E) * alpha
-                    //std::cout << "grad = \n" << gradient << std::endl;
-                    //std::cout << "error = \n" << errors[i] << std::endl;
-                    gradient.hadamardProd(errors[i]);
-                    //std::cout << "grad * error = \n" << gradient << std::endl;
-                    gradient = gradient * learning_rate;
-                    //std::cout << "(grad *error) * alpha = \n" << gradient << std::endl;
-
-                    // calcul de ((S * E) * alpha) * Ht
-                    //std::cout << "layer_af = \n" << layers_af[i] << std::endl;
-                    //std::cout << "layer_af.T = \n" << layers_af[i].transpose() << std::endl;
-                    math::Matrix<real> delta_weight = gradient * layers_af[i].transpose();
-                    //std::cout << "delta weight = \n" << delta_weight << std::endl;
-
-                    weights[i] = weights[i] + delta_weight;
-                    biases[i] = biases[i] + gradient;
-                    //printf(("\n----------------loop----------------\n"));
-                }
-            //printf(("\n-------------endfor----------------\n"));
+                weights[i] += delta_weight;
+                biases[i] += gradient;
+            }
         }
 
         /**
@@ -484,7 +455,7 @@ namespace nnet
         {
             for (auto &layer : weights)
             {
-                utils::random::randomize<real>(layer, -1, 1);
+                utils::random::randomize<real>(layer, 0, 1);
             }
 
             for (auto &layer : biases)
@@ -535,7 +506,7 @@ namespace nnet
             os << nn.getWeights()[i];
             os << "------bias[" << i << "]------\n";
             os << nn.getBiases()[i];
-            if(i != size - 1)
+            if (i != size - 1)
                 os << "-----hidden[" << i << "]-----\n";
         }
         os << "-------output------\n";
