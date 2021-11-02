@@ -9,18 +9,12 @@
 #include <array>
 
 template <typename T>
-void func_xor()
+void func_xor(const T learning_rate)
 {
   nnet::NeuralNetwork<T> nn;
   nn.setLayersSize(std::vector<size_t>{2, 2, 1});
-  nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
+  nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
   nn.randomizeSynapses();
-
-  auto &b = nn.getBiases();
-
-  for (auto &i : b)
-    for (auto &e : i)
-      e = 0;
 
   std::cout << nn << std::endl;
 
@@ -32,11 +26,15 @@ void func_xor()
 
   float error = 1.f;
   size_t count = 0;
-  while (error > 0.02)
+  while (error > 0.1)
   {
-    for (int i = 0; i < 10000; i++)
+    for (int i = 0; i < 1000; i++)
       for (int j = 0; j < 4; j++)
-        nn.train_bis(input[j].begin(), input[j].end(), target.begin() + j, target.begin() + j + 1, 0.075);
+      {
+        //const size_t n = rand() % 4;
+        //nn.train_bis(input[n].begin(), input[n].end(), target.begin() + n, target.begin() + n + 1, learning_rate);
+        nn.train_bis(input[j].begin(), input[j].end(), target.begin() + j, target.begin() + j + 1, learning_rate);
+      }
 
     error = 0.0;
     for (int i = 0; i < 4; i++)
@@ -46,7 +44,7 @@ void func_xor()
     count++;
   }
 
-  std::cout << "Result" << "--->" << count << std::endl;
+  std::cout << "Result" << "---> " << count << std::endl;
   for (int i = 0; i < 4; i++)
   {
     std::cout << input[i][0] << "|" << input[i][1] << " = " << target[i] << std::endl;
@@ -55,31 +53,12 @@ void func_xor()
   std::cout << nn << std::endl;
 }
 
-// Test main, should be replaced by the python interface
+
+
+
 int main(int argc, char **argv)
 {
-  nnet::NeuralNetwork<float> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 2, 1});
-  nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
-  nn.randomizeSynapses();
-  //nn.setActivationFunction(af::ActivationFunctionType::identity, 2);
-
-  auto &w = nn.getWeights();
-  auto &b = nn.getBiases();
-
-  for (auto &i : b)
-  {
-    for (auto &e : i)
-      e = 0;
-    //std::cout << i << std::endl;
-  }
-
-  std::vector<float> input{1, 1};
-  std::vector<float> target{-6.255, 20003};
-
-  func_xor<float>();
-  //printf("--------------------\n");
-  //func_xor<double>();
+  func_xor<float>(0.1);
 
   return 0;
 }
