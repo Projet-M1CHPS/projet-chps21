@@ -3,15 +3,6 @@
 
 #include <vector>
 
-TEST(ActivationFunctionTest, AF_Sigmoid) {
-  ASSERT_NEAR(0.5f, af::sigmoid<float>(0), 0.005);
-  ASSERT_NEAR(0.731f, af::sigmoid<float>(1), 0.005);
-  ASSERT_NEAR(0.268f, af::sigmoid<float>(-1), 0.005);
-
-  ASSERT_NEAR(0.5, af::sigmoid<double>(0), 0.005);
-  ASSERT_NEAR(0.731, af::sigmoid<double>(1), 0.005);
-  ASSERT_NEAR(0.268, af::sigmoid<float>(-1), 0.005);
-}
 
 TEST(NeuralNetworkTest, CanCreateNeuralNetwork) {
   nnet::NeuralNetwork<float> nn;

@@ -30,9 +30,10 @@ TEST(MatrixTest, CanCopyMatrix) {
 
   n = m;
 
-  for (size_t i = 0; i < 2; i++)
+  for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++)
       ASSERT_EQ(1, n(i, j));
+  }
 }
 
 TEST(MatrixTest, CanMoveCopy) {
@@ -79,7 +80,7 @@ TEST(MatrixTest, CanIterateOnMatrix) {
   // and that m.end() returns the correct end
   // by counting the number of element we iterate on
   size_t count = 0;
-  for (float f : m) {
+  for (float f: m) {
     ASSERT_EQ(1, f);
     count++;
   }
@@ -106,9 +107,10 @@ TEST(MatrixTest, CanAddMatrix) {
   c = m;
   c += n;
 
-  for (size_t i = 0; i < 2; i++)
+  for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++)
       ASSERT_EQ(m(i, j) + n(i, j), c(i, j));
+  }
 }
 
 TEST(MatrixTest, ThrowOnInvalidMatrixAdd) {
@@ -138,9 +140,10 @@ TEST(MatrixTest, CanSubMatrix) {
   c = m;
   c -= n;
 
-  for (size_t i = 0; i < 2; i++)
+  for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++)
       ASSERT_EQ(m(i, j) - n(i, j), c(i, j));
+  }
 }
 
 TEST(MatrixTest, ThrowOnInvalidMatrixSub) {
@@ -160,9 +163,10 @@ TEST(MatrixTest, CanTransposeMatrix) {
   ASSERT_EQ(5, t.getRows());
   ASSERT_EQ(3, t.getCols());
 
-  for (size_t i = 0; i < 3; i++)
+  for (size_t i = 0; i < 3; i++) {
     for (size_t j = 0; j < 5; j++)
       ASSERT_EQ(n(i, j), t(j, i));
+  }
 }
 
 TEST(MatrixTest, CanMultiplyMatrix) {
@@ -187,9 +191,10 @@ TEST(MatrixTest, CanMultiplyMatrix) {
   d(1, 0) = 1;
 
   c = m * d;
-  for (size_t i = 0; i < 2; i++)
+  for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 1; j++)
       ASSERT_EQ(2, c(i, j));
+  }
 }
 
 TEST(MatrixTest, ThrowOnInvalidMatrixMultiply) {
@@ -214,4 +219,92 @@ TEST(MatrixTest, ThrowOnInvalidSumReduce) {
   Matrix<float> m;
 
   ASSERT_ANY_THROW(m.sumReduce());
+}
+
+TEST(MatrixTest, CanMulMatrixWithMatrix) {
+  Matrix<float> m(2, 2), n(2, 2);
+
+  m(0, 0) = 1;
+  m(0, 1) = 2;
+  m(1, 0) = 1;
+  m(1, 1) = 2;
+
+  n = m;
+  n(1, 1) = 3;
+
+  auto c = m * n;
+  Matrix<float> d(2, 2);
+
+  for (size_t i = 0; i < 2; i++) {
+    for (size_t k = 0; k < 2; k++) {
+      for (size_t j = 0; j < 2; j++) {
+        d(i, j) += m(i, k) * n(k, j);
+      }
+    }
+  }
+
+  for (size_t i = 0; i < 2; i++) {
+    for (size_t j = 0; j < 2; j++)
+      ASSERT_EQ(c(i, j), d(i, j));
+  }
+}
+
+TEST(MatrixTest, ThrowOnInvalidMatrixMul) {
+  Matrix<float> m(2, 2), n(1, 3);
+
+  ASSERT_ANY_THROW(auto c = m * n);
+}
+
+TEST(MatrixTest, CanMulMatrixWithScale) {
+  Matrix<float> m(2, 2);
+  const float scale{2};
+
+  m(0, 0) = 1;
+  m(0, 1) = 2;
+  m(1, 0) = 3;
+  m(1, 1) = 4;
+
+  auto c = m * scale;
+  for (size_t i = 0; i < 2; i++) {
+    for (size_t j = 0; j < 2; j++)
+      ASSERT_EQ(m(i, j) * scale, c(i, j));
+  }
+
+  // Check that we can mul in place
+  c = m;
+  c *= scale;
+
+  for (size_t i = 0; i < 2; i++) {
+    for (size_t j = 0; j < 2; j++)
+      ASSERT_EQ(m(i, j) * scale, c(i, j));
+  }
+}
+
+TEST(MatrixTest, CanHadamardMulMatrix) {
+  Matrix<float> m(2, 3), n(2, 3);
+
+  m(0, 0) = 1;
+  m(0, 1) = 2;
+  m(0, 2) = 2;
+
+  m(1, 0) = 4;
+  m(1, 1) = 2;
+  m(1, 2) = 3;
+
+  n = m;
+  n(1, 1) = 3;
+
+  auto c = m;
+  c.hadamardProd(n);
+
+  for (size_t i = 0; i < 2; i++) {
+    for (size_t j = 0; j < 2; j++)
+      ASSERT_EQ(m(i, j) * n(i, j), c(i, j));
+  }
+}
+
+TEST(MatrixTest, ThrowOnInvalidMatrixHadamardMul) {
+  Matrix<float> m(2, 2), n(1, 3);
+
+  ASSERT_ANY_THROW(m.hadamardProd(n));
 }

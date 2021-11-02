@@ -50,7 +50,7 @@ void NeuralNetworkSerializer::binarySaveToStream(
     auto const &activations = nn.getActivationFunctions();
 
     for (auto const &activation : activations) {
-      std::string const &name = activationFunctionTypeToStr(activation);
+      std::string const &name = AFTypeToStr(activation);
       os.write(name.c_str(), name.size() * sizeof(char));
       os.write("\0", sizeof(char));
     }
@@ -108,7 +108,7 @@ void NeuralNetworkSerializer::AsciiSaveToStream(std::ostream &os,
     auto const &activations = nn.getActivationFunctions();
 
     for (auto const &activation : activations) {
-      std::string const &name = af::activationFunctionTypeToStr(activation);
+      std::string const &name = af::AFTypeToStr(activation);
       os << name << " ";
     }
   }

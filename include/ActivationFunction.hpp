@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Utils.hpp"
 #include <iostream>
 #include <cmath>
@@ -14,13 +15,16 @@ namespace af {
  * errors when serializing a network
  *
  */
-enum class ActivationFunctionType {
-  sigmoid,
-  // TODO: Expand me !
+  enum class ActivationFunctionType {
+    identity,
+    sigmoid,
+    relu,
+    leakyRelu,
+    // TODO: Expand me !
 
-  // Debug
-  square
-};
+    // Debug
+    square
+  };
 
 /**
  * @brief Convert a string to an ActivationFunctionType
@@ -28,7 +32,7 @@ enum class ActivationFunctionType {
  * @param str
  * @return ActivationFunctionType
  */
-ActivationFunctionType strToActivationFunctionType(const std::string &str);
+  ActivationFunctionType strToAFType(const std::string &str);
 
 /**
  * @brief Convert an ActivationFunctionType to a string
@@ -36,93 +40,118 @@ ActivationFunctionType strToActivationFunctionType(const std::string &str);
  * @param type
  * @return std::string
  */
-std::string activationFunctionTypeToStr(ActivationFunctionType type);
+  std::string AFTypeToStr(ActivationFunctionType type);
 
-/**
- * @brief Sigmoid math function
- *
- * @to_do: Move me to a separate file
- *
- * @tparam real
- * @param x
- * @return real
- */
-template <typename real> real sigmoid(real x) {
-  static_assert(std::is_floating_point_v<real>,
-                "Invalid type for sigmoid, expected a floating point type");
+  template<typename real>
+  real identity(real x) {
+    static_assert(std::is_floating_point_v<real>,
+                  "identity(): Invalid type, expected a floating point type");
 
-  return 1.0 / (1.0 + std::exp(-x));
-}
+    return x;
+  }
 
-/**
- * @brief Delta sigmoid math function
- *
- * @to_do: Move me to a separate file
- *
- * @tparam real
- * @param x
- * @return real
- */
-template <typename real> real dsigmoid(real x) {
-  static_assert(std::is_floating_point_v<real>,
-                "Invalid type for sigmoid, expected a floating point type");
+  template<typename real>
+  real didentity(real x) {
+    static_assert(std::is_floating_point_v<real>,
+                  "didentity(): Invalid type, expected a floating point type");
 
-  return sigmoid(x) * (1 - sigmoid(x));
-}
+    return 1;
+  }
 
-/**
- * @brief Squarre math function
- *
- * @to_do: Move me to a separate file
- *
- * @tparam real
- * @param x
- * @return real
- */
-template <typename real> real square(real x) {
-  static_assert(std::is_floating_point_v<real>,
-                "Invalid type for square, expected a floating point type");
-  return x * x;
-}
+  template<typename real>
+  real sigmoid(real x) {
+    static_assert(std::is_floating_point_v<real>,
+                  "sigmoid(): Invalid type, expected a floating point type");
 
-/**
- * @brief Delta squarre math function
- *
- * @to_do: Move me to a separate file
- *
- * @tparam real
- * @param x
- * @return real
- */
-template <typename real> real dsquare(real x) {
-  static_assert(std::is_floating_point_v<real>,
-                "Invalid type for square, expected a floating point type");
+    return 1.0 / (1.0 + std::exp(-x));
+  }
 
-  return 2 * x;
-}
+  template<typename real>
+  real dsigmoid(real x) {
+    static_assert(std::is_floating_point_v<real>,
+                  "dsigmoid(): Invalid type, expected a floating point type");
 
-/**
+    return sigmoid(x) * (1 - sigmoid(x));
+  }
+
+  template<typename real>
+  real relu(real x) {
+    static_assert(std::is_floating_point_v<real>,
+                  "relu(): Invalid type, expected a floating point type");
+
+    return (x <= 0) ? 0.0 : x;
+  }
+
+  template<typename real>
+  real drelu(real x) {
+    static_assert(std::is_floating_point_v<real>,
+                  "drelu(): Invalid type, expected a floating point type");
+
+    if (x == 0.0) {
+      throw std::invalid_argument("Relu undefined on x = 0.0");
+    }
+
+    return (x < 0) ? 0.0 : 1;
+  }
+
+  template<typename real>
+  real leakyRelu(real x) {
+    static_assert(std::is_floating_point_v<real>,
+                  "leakyRelu(): Invalid type, expected a floating point type");
+
+    return (x < 0) ? (0.01 * x) : x;
+  }
+
+  template<typename real>
+  real dleakyRelu(real x) {
+    static_assert(std::is_floating_point_v<real>,
+                  "dleakyRelu(): Invalid type, expected a floating point type");
+
+    return (x < 0) ? 0.01 : 1;
+  }
+
+  template<typename real>
+  real square(real x) {
+    static_assert(std::is_floating_point_v<real>,
+                  "square(): Invalid type, expected a floating point type");
+    return x * x;
+  }
+
+  template<typename real>
+  real dsquare(real x) {
+    static_assert(std::is_floating_point_v<real>,
+                  "dsquare(): Invalid type, expected a floating point type");
+
+    return 2 * x;
+  }
+
+  /**
  * @brief Return the function associated with an ActivationFunctionType
  *
  * @tparam real
  * @param type
  * @return std::function<real(real)>
  */
-template <typename real>
-std::pair<std::function<real(real)>, std::function<real(real)>>
-getAFFromType(ActivationFunctionType type) {
-  static_assert(
-      std::is_floating_point_v<real>,
-      "Invalid type for activation function, expected a floating point type");
+  template<typename real>
+  std::pair<std::function<real(real)>, std::function<real(real)>>
+  getAFFromType(ActivationFunctionType type) {
+    static_assert(
+            std::is_floating_point_v<real>,
+            "getAFFromType(): Invalid type, expected a floating point type");
 
-  switch (type) {
-  case ActivationFunctionType::sigmoid:
-    return std::make_pair(sigmoid<real>, dsigmoid<real>);
-  case ActivationFunctionType::square:
-    return std::make_pair(square<real>, dsquare<real>);
-  default:
-    utils::error("Activation function not supported");
+    const std::unordered_map<ActivationFunctionType, std::pair<std::function<real(real)>, std::function<real(
+            real)>>> map{
+            {ActivationFunctionType::identity,  {identity<real>,  didentity<real>}},
+            {ActivationFunctionType::sigmoid,   {sigmoid<real>,   dsigmoid<real>}},
+            {ActivationFunctionType::relu,      {relu<real>,      drelu<real>}},
+            {ActivationFunctionType::leakyRelu, {leakyRelu<real>, dleakyRelu<real>}},
+            {ActivationFunctionType::square,    {square<real>,    dsquare<real>}},
+    };
+    auto pair = map.find(type);
+    if (pair == map.end()) {
+      throw std::invalid_argument("getAFFromType(): Unknown activation functions");
+    }
+    return pair->second;
   }
-}
 
 } // namespace af
