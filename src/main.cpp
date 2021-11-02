@@ -1,5 +1,6 @@
 #include "Image.hpp"
 #include "NeuralNetwork.hpp"
+#include "NeuralNetworkSerializer.hpp"
 #include "Utils.hpp"
 #include "Matrix.hpp"
 #include "ActivationFunction.hpp"
@@ -17,6 +18,8 @@ int main(int argc, char **argv)
 
   auto &w = nn.getWeights();
   auto &b = nn.getBiases();
+
+  nnet::NeuralNetworkSerializer::saveToFile("test.nn", nn);
 
   for (auto &i : w)
   {

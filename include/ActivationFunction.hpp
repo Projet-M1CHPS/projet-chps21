@@ -28,9 +28,7 @@ enum class ActivationFunctionType {
  * @param str
  * @return ActivationFunctionType
  */
-ActivationFunctionType strToActivationFunctionType(const std::string &str) {
-  utils::error("Activation function not supported");
-}
+ActivationFunctionType strToActivationFunctionType(const std::string &str);
 
 /**
  * @brief Convert an ActivationFunctionType to a string
@@ -38,9 +36,7 @@ ActivationFunctionType strToActivationFunctionType(const std::string &str) {
  * @param type
  * @return std::string
  */
-std::string activationFunctionTypeToStr(ActivationFunctionType type) {
-  utils::error("Activation function not supported");
-}
+std::string activationFunctionTypeToStr(ActivationFunctionType type);
 
 /**
  * @brief Sigmoid math function

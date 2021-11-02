@@ -1,7 +1,7 @@
 #pragma once
 #include "ActivationFunction.hpp"
 #include "Matrix.hpp"
-#include "Utils.hpp"
+#include "Utils.hpp"  
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -30,26 +30,9 @@ enum class FloatingPrecision {
  * @param str
  * @return FloatingPrecision
  */
-FloatingPrecision strToFPrecision(const std::string &str) {
-  if (str == "float32") {
-    return FloatingPrecision::float32;
-  } else if (str == "float64") {
-    return FloatingPrecision::float64;
-  } else {
-    throw std::invalid_argument("Invalid floating precision");
-  }
-}
+FloatingPrecision strToFPrecision(const std::string &str);
 
-const char *fPrecisionToStr(FloatingPrecision fp) {
-  switch (fp) {
-  case FloatingPrecision::float32:
-    return "float32";
-  case FloatingPrecision::float64:
-    return "float64";
-  default:
-    throw std::invalid_argument("Invalid floating precision");
-  }
-}
+const char *fPrecisionToStr(FloatingPrecision fp);
 
 /**
  * @brief Convert a static type to the corresponding enum type

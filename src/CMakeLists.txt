@@ -27,6 +27,7 @@ target_code_coverage(Transform)
 add_library(NeuralNetwork STATIC 
     NeuralNetwork.cpp ${CMAKE_SOURCE_DIR}/include/NeuralNetwork.hpp
     ActivationFunction.cpp ${CMAKE_SOURCE_DIR}/include/ActivationFunction.hpp
+    NeuralNetworkSerializer.cpp ${CMAKE_SOURCE_DIR}/include/NeuralNetworkSerializer.hpp
     ${CMAKE_SOURCE_DIR}/include/Matrix.hpp
 )
 set_target_properties(NeuralNetwork PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")

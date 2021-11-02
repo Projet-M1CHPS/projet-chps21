@@ -14,6 +14,7 @@ namespace nnet {
 class NeuralNetworkSerializer {
 public:
   enum NNSerializerFlags {
+    DEFAULT = 0,
     /**
      * @brief If set, the serializer will not load/write the weights to/from the
      * output file
@@ -48,10 +49,10 @@ public:
   NeuralNetworkSerializer &operator=(const NeuralNetworkSerializer &) = delete;
 
   static void saveToFile(std::string const &path, NeuralNetworkBase const &nn,
-                         NNSerializerFlags const &flags);
+                         NNSerializerFlags const &flags = DEFAULT);
 
   static void saveToStream(std::ostream &stream, NeuralNetworkBase const &nn,
-                           NNSerializerFlags const &flags);
+                           NNSerializerFlags const &flags = DEFAULT);
 
   static std::unique_ptr<NeuralNetworkBase>
   loadFromFile(std::string const &path);
@@ -67,12 +68,12 @@ public:
 
 private:
   static void binarySaveToStream(std::ostream& os, NeuralNetworkBase const &nn,
-                                 NNSerializerFlags const &flags);
-  static void saveToStream(std::ostream& os, NeuralNetworkBase const &nn,
-                                 NNSerializerFlags const &flags);
+                                 NNSerializerFlags const &flags = DEFAULT);
+  static void AsciiSaveToStream(std::ostream& os, NeuralNetworkBase const &nn,
+                                 NNSerializerFlags const &flags = DEFAULT);
 
   static void binaryLoadFromStream();
-  static void loadFromStream();
+  static void AsciiLoadFromStream();
 };
 
 } // namespace nnet

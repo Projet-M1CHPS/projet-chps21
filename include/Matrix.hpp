@@ -237,8 +237,8 @@ public:
   Matrix operator*(const double &other) const {
     Matrix res(rows, cols);
 
-      T *raw_res = res.getData();
-      T *raw_mat = data.get();
+    T *raw_res = res.getData();
+    T *raw_mat = data.get();
 
 #ifdef USE_BLAS
 
@@ -249,45 +249,42 @@ public:
     else
 
 #endif
-        const size_t size{rows * cols};
-      for (size_t i = 0; i < size; i++)
-        raw_res[i] = raw_mat[i] * other;
+      const size_t size{rows * cols};
+    for (size_t i = 0; i < size; i++)
+      raw_res[i] = raw_mat[i] * other;
 
     return res;
   }
 
-    void hadamardProd(const Matrix &other) const
-    {
-      if (rows != other.rows or cols != other.cols)
-        throw std::invalid_argument("Matrix dimensions do not match");
+  void hadamardProd(const Matrix &other) const {
+    if (rows != other.rows or cols != other.cols)
+      throw std::invalid_argument("Matrix dimensions do not match");
 
-      const T *raw_data_other = other.getData();
-      T *raw_data = data.get();
+    const T *raw_data_other = other.getData();
+    T *raw_data = data.get();
 
-      const size_t size{rows * cols};
-      for (size_t i = 0; i < size; i++)
-        raw_data[i] *= raw_data_other[i];
-    }
+    const size_t size{rows * cols};
+    for (size_t i = 0; i < size; i++)
+      raw_data[i] *= raw_data_other[i];
+  }
 
-    //friend std::ostream& operator<<(std::ostream& os, const Pair<T, U>& p)
-    friend std::ostream &operator<<(std::ostream &os, const Matrix<T> &mat)
-    {
-      const T *raw_data = mat.data.get();
-      for (size_t i = 0; i < mat.rows; i++)
-      {
-        for (size_t j = 0; j < mat.cols; j++)
-        {
-          os << raw_data[i * mat.cols + j] << " ";
-        }
-        os << "\n";
-      }
-      return os;
-    }
+private:
+  std::unique_ptr<T[]> data = nullptr;
+  size_t rows = 0, cols = 0;
+};
 
-  private:
-    std::unique_ptr<T[]> data = nullptr;
-    size_t rows = 0, cols = 0;
-  };
+template <typename T> std::ostream &operator<<(std::ostream &os, const Matrix<T>& m) {
+  size_t i = 0;
+  size_t cols = m.getCols();
+  for (T const& i : m) {
+    os << *i << " ";
+    i++;
+    if (i % cols == 0)
+      os << "\n";
+  }
+  os << "\n";
+  return os;
+}
 
 using FloatMatrix = Matrix<float>;
 using DoubleMatrix = Matrix<double>;

@@ -28,6 +28,7 @@ add_executable(
 
 target_link_libraries(
   NeuralNetwork_test PUBLIC
+  NeuralNetwork
   Utils
   gtest_main
 )

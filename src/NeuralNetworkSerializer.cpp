@@ -28,6 +28,11 @@ void NeuralNetworkSerializer::saveToStream(std::ostream &stream,
   else
     stream << "a ";
   stream << fPrecisionToStr(nn.getPrecision()) << "\n";
+  if (flags & NNSerializerFlags::BINARY_MODE) {
+    binarySaveToStream(stream, nn, flags);
+  } else {
+    AsciiSaveToStream(stream, nn, flags);
+  }
 }
 
 void NeuralNetworkSerializer::binarySaveToStream(
@@ -45,7 +50,7 @@ void NeuralNetworkSerializer::binarySaveToStream(
     auto const &activations = nn.getActivationFunctions();
 
     for (auto const &activation : activations) {
-      std::string const &name = AFTypeToStr(activation);
+      std::string const &name = activationFunctionTypeToStr(activation);
       os.write(name.c_str(), name.size() * sizeof(char));
       os.write("\0", sizeof(char));
     }
@@ -89,7 +94,7 @@ void NeuralNetworkSerializer::binarySaveToStream(
   }
 }
 
-void NeuralNetworkSerializer::saveToStream(std::ostream &os,
+void NeuralNetworkSerializer::AsciiSaveToStream(std::ostream &os,
                                            NeuralNetworkBase const &nn,
                                            NNSerializerFlags const &flags) {
   auto layers = nn.getLayersSize();
@@ -103,7 +108,7 @@ void NeuralNetworkSerializer::saveToStream(std::ostream &os,
     auto const &activations = nn.getActivationFunctions();
 
     for (auto const &activation : activations) {
-      std::string const &name = AFTypeToStr(activation);
+      std::string const &name = af::activationFunctionTypeToStr(activation);
       os << name << " ";
     }
   }
@@ -119,8 +124,7 @@ void NeuralNetworkSerializer::saveToStream(std::ostream &os,
       for (auto const &w : weights) {
         // output the whole array at once
         size_t weight_size = w.getRows() * w.getCols();
-        os.write(reinterpret_cast<char const *>(w.getData()),
-                 sizeof(real) * weight_size);
+        std::cout << w;
       }
     }
 
@@ -128,9 +132,7 @@ void NeuralNetworkSerializer::saveToStream(std::ostream &os,
       auto const &biases = nn.getBiases();
       for (auto const &w : biases) {
         // output the whole array at once
-        size_t weight_size = w.getRows() * w.getCols();
-        os.write(reinterpret_cast<char const *>(w.getData()),
-                 sizeof(real) * weight_size);
+        std::cout << w;
       }
     }
   };
