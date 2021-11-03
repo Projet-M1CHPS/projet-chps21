@@ -1,4 +1,6 @@
 #pragma once
+
+#include <iterator>
 #include "NeuralNetwork.hpp"
 #include "Utils.hpp"
 
