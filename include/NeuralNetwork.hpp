@@ -140,43 +140,10 @@ namespace nnet
       return *this;
     }
 
-    /**
-     * @brief Run the network on a set of input, throwing on error
-     *
-     *
-     * @tparam iterator
-     * @param begin
-     * @param end
-     * @return math::Matrix<real> A vector containing the network's output
-     */
-    template <typename iterator>
-    math::Matrix<real> forward(iterator begin, iterator end) const
-    {
-
-      const size_t nbInput = std::distance(begin, end);
-
-      if (nbInput != weights.front().getCols())
-      {
-        throw std::invalid_argument("Invalid number of input");
-      }
-
-      math::Matrix<real> current_layer(nbInput, 1);
-      std::copy(begin, end, current_layer.begin());
-
-      for (size_t i = 0; i < weights.size(); i++)
-      {
-        current_layer = forwardOnce(current_layer, i);
-      }
-      return current_layer;
-    }
-
     template <typename iterator>
     void train(iterator begin_input, iterator end_input, iterator begin_target,
-               iterator end_target)
+               iterator end_target, const real learning_rate)
     {
-      std::vector<math::Matrix<real>> layers;
-      std::vector<math::Matrix<real>> layers_af;
-      // std::vector<math::Matrix<real>> errors_buffer;
       const size_t nbInput = std::distance(begin_input, end_input);
       const size_t nbTarget = std::distance(begin_target, end_target);
 
@@ -185,16 +152,35 @@ namespace nnet
         throw std::invalid_argument("Invalid number of input");
       }
 
-      //
-      math::Matrix<real> current_layer(nbInput, 1);
+      std::vector<math::Matrix<real>> layers;
+      std::vector<math::Matrix<real>> layers_af;
+      std::vector<math::Matrix<real>> errors;
+      errors.resize(weights.size());
+
+      forward(begin_input, end_input, layers, layers_af);
+
+      backward(begin_target, end_target, layers, layers_af, errors, learning_rate);
+
+      /* std::cout << "layers :\n"; 
+      for(auto& i : layers)
+        std::cout << i << "\n" << std::endl;
+      
+      std::cout << "layers_af :\n"; 
+      for(auto& i : layers_af)
+        std::cout << i << "\n" << std::endl;
+
+      std::cout << "errors :\n"; 
+      for(auto& i : errors)
+        std::cout << i << "\n" << std::endl; */
+    }
+
+    template <typename iterator>
+    void forward(iterator begin_input, iterator end_input,
+                 std::vector<math::Matrix<real>> &layers,
+                 std::vector<math::Matrix<real>> &layers_af) const
+    {
+      math::Matrix<real> current_layer(std::distance(begin_input, end_input), 1);
       std::copy(begin_input, end_input, current_layer.begin());
-
-      //
-      math::Matrix<real> target(nbTarget, 1);
-      std::copy(begin_target, end_target, target.begin());
-
-      // Forward
-      // ------------------------------------------------------------------------
 
       layers.push_back(current_layer);
       layers_af.push_back(current_layer);
@@ -202,8 +188,7 @@ namespace nnet
       for (size_t i = 0; i < weights.size(); i++)
       {
         // C = W * C + B
-        current_layer = weights[i] * current_layer;
-        current_layer += biases[i];
+        current_layer = weights[i] * current_layer + biases[i];
 
         layers.push_back(current_layer);
 
@@ -214,49 +199,43 @@ namespace nnet
 
         layers_af.push_back(current_layer);
       }
+    }
 
-      // Backward
-      // ------------------------------------------------------------------------
+    template <typename iterator>
+    void backward(iterator begin_target, iterator end_target,
+                  std::vector<math::Matrix<real>> &layers,
+                  std::vector<math::Matrix<real>> &layers_af,
+                  std::vector<math::Matrix<real>> &errors,
+                  const real learning_rate)
+    {
+      math::Matrix<real> target(std::distance(begin_target, end_target), 1);
+      std::copy(begin_target, end_target, target.begin());
 
-      // Erreur de l'output
-      math::Matrix<real> current_error = target - current_layer;
+      math::Matrix<real> current_error = target - layers_af[layers_af.size() - 1];
+      errors[errors.size() - 1] = current_error;
 
-      // printf("backprop\n");
+      for (long i = weights.size() - 2; i >= 0; i--)
+      {
+        current_error = weights[i + 1].transpose() * current_error;
+        errors[i] = current_error;
+      }
 
       for (long i = weights.size() - 1; i >= 0; i--)
       {
-        // std::cout << current_error << "\n" << std::endl;
-        // std::cout << "\ni = " << i << std::endl;
-
-        // calcul de S
+        // calcul de S * (1 - S)
         math::Matrix<real> gradient(layers[i + 1]);
-        // std::cout << "gradient = \n" << gradient << std::endl;
         auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
-        std::transform(gradient.cbegin(), gradient.cend(), gradient.begin(),
-                       dafunc);
-        // std::cout << "gradient = \n" << gradient << std::endl;
+        std::transform(gradient.cbegin(), gradient.cend(), gradient.begin(), dafunc);
 
-        // std::cout << "eror\n" << current_error << std::endl;
         // calcul de (S * E) * alpha
-        gradient.hadamardProd(current_error);
-        gradient = gradient * alpha;
-        // std::cout << "gradient = \n" << gradient << std::endl;
+        gradient.hadamardProd(errors[i]);
+        gradient *= learning_rate;
 
         // calcul de ((S * E) * alpha) * Ht
-        // math::Matrix<real> ht = ;
         math::Matrix<real> delta_weight = gradient * layers_af[i].transpose();
-        // std::cout << "delta_weight = \n" << delta_weight << std::endl;
 
-        weights[i] = weights[i] + delta_weight;
-        biases[i] = biases[i] + gradient;
-
-        // std::cout << "\ni = " << i << std::endl;
-        // std::cout << "weight" << std::endl;
-        // std::cout << weights[i] << std::endl;
-        // std::cout << "biais" << std::endl;
-        // std::cout << biases[i] << std::endl;
-
-        current_error = weights[i].transpose() * current_error;
+        weights[i] += delta_weight;
+        biases[i] += gradient;
       }
     }
 
@@ -307,6 +286,7 @@ namespace nnet
       }
 
       // Backward
+      // ------------------------------------------------------------------------
 
       // Error
       math::Matrix<real> current_error = target - current_layer;
@@ -335,6 +315,21 @@ namespace nnet
         weights[i] += delta_weight;
         biases[i] += gradient;
       }
+
+      std::cout << "layers :\n";
+      for (auto &i : layers)
+        std::cout << i << "\n"
+                  << std::endl;
+
+      std::cout << "layers_af :\n";
+      for (auto &i : layers_af)
+        std::cout << i << "\n"
+                  << std::endl;
+
+      std::cout << "error :\n";
+      for (auto &i : errors)
+        std::cout << i << "\n"
+                  << std::endl;
     }
 
     template <typename iterator>
