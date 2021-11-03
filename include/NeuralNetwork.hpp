@@ -422,7 +422,7 @@ namespace nnet {
 
       // Apply activation function on every element of the matrix
       auto afunc = af::getAFFromType<real>(activation_functions[index]).first;
-      std::for_each(res.cbegin(), res.cend(), afunc);
+      std::transform(res.cbegin(), res.cend(), res.begin(), afunc);
       return res;
     }
 

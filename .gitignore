@@ -44,6 +44,10 @@
 # IDE related
 
 .vscode
+.idea
+
+# Common CMake build directories
+
 build
 debug
 Debug

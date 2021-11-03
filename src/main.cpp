@@ -11,8 +11,8 @@
 template<typename T>
 void func_xor(const T learning_rate) {
   nnet::NeuralNetwork<T> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 2, 1});
-  nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
+  nn.setLayersSize(std::vector<size_t>{2, 2, 2, 1});
+  nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
   nn.randomizeSynapses();
 
   std::cout << nn << std::endl;
