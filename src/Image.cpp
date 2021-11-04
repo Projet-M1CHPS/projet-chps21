@@ -276,11 +276,34 @@ Image ImageLoader::load_stb(const char *filename) {
         return img;
     }
 
-    std::unique_ptr<RGBColor[]> ptr(reinterpret_cast<RGBColor *>(imgData));
-    std::cout << ptr.get() << std::endl;
-    Image img((size_t)width, (size_t)height, std::move(ptr));
+    Image img((size_t)width, (size_t)height);
+    unsigned int i = 0;
+    for (RGBColor &each : img) {
+        each = {(color_t)imgData[i * 3], (color_t)imgData[i * 3 + 1], (color_t)imgData[i * 3 + 2]};
+        i++;
+    }
+
+    //std::unique_ptr<RGBColor[]> ptr(reinterpret_cast<RGBColor *>(imgData));
+    //std::cout << ptr.get() << std::endl;
 
     return img;
+}
+
+/**
+ * @param filename: name of the png file generated (must end by .png).
+ */
+void ImageLoader::save_png_stb(const char* filename, Image const &image) {
+    unsigned char *img_to_save = new unsigned char[image.getDimension() * 3];
+    RGBColor const *color_array = image.getData();
+
+    for (unsigned int i = 0; i < image.getDimension(); i++) {
+                img_to_save[i * 3]     = color_array[i].r;
+                img_to_save[i * 3 + 1] = color_array[i].g;
+                img_to_save[i * 3 + 2] = color_array[i].b;
+    }
+
+    stbi_write_png(filename, image.getWidth(), image.getHeight(), 3, img_to_save, image.getWidth() * 3);
+    delete img_to_save;
 }
 
 }  // namespace image
