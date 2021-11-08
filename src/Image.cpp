@@ -143,10 +143,6 @@ void _listDirectories(char *path) {
     std::cout << std::endl;
 }
 
-char _colorValueToAscii(color_t value) {
-    return static_cast<char>(((int)value));
-}
-
 void _showImageInBrowser(std::string const filename) {
     if (system(nullptr) != -1) {
         char cmd[256];
@@ -178,90 +174,6 @@ Image ImageLoader::createRandomImage() {
     return res;
 }
 
-/**
- * @param filename: ONLY PPM FILES FOR NOW
- */
-Image ImageLoader::load(std::string const filename) {
-    std::ifstream fp;
-
-    //_listDirectories(".");
-
-    fp.open(filename);
-    if (!fp.is_open()) {
-        std::cerr << "<!> ImageLoader::load(" << filename
-                  << ") -> cannot open file!" << std::endl;
-        exit(-1);
-    }
-    fp.seekg(3);
-    unsigned width, height, max_color = 0;
-    fp >> width;
-    assert(width > 0);
-    fp.get();
-    fp >> height;
-    assert(height > 0);
-    fp.get();
-    fp >> max_color;
-    assert(max_color == 255);
-    fp.get();
-    std::cout << "width: " << width << "; height: " << height
-              << "; max_color: " << max_color << std::endl;
-
-    int r, g, b = 0;
-    char current;
-
-    Image img(width, height);
-    size_t i = 0;
-    for (RGBColor &each : img) {
-        current = fp.get();
-        // std::cout << "current = " << current << std::endl;
-        r = current;
-        current = fp.get();
-        // std::cout << "current = " << current << std::endl;
-        g = current;
-        current = fp.get();
-        // std::cout << "current = " << current << std::endl;
-        b = current;
-        // std::cout << "r: " << r << "; g: " << g << "; b: " << b <<
-        // std::endl;
-        each = {(color_t)r, (color_t)g, (color_t)b};
-        // col.print();
-        i++;
-    }
-    std::cout << "lecture OK" << std::endl;
-    // img.print();
-    fp.close();
-    return img;
-}
-
-/**
- * @param filename: ONLY PPM FILES FOR NOW
- */
-void ImageLoader::save(std::string const filename, Image const &image) {
-    std::ofstream fp;
-
-    //_listDirectories(".");
-
-    fp.open(filename, std::ios_base::out | std::ios_base::binary);
-    if (!fp.is_open()) {
-        std::cerr << "<!> ImageLoader::save(" << filename
-                  << ") -> cannot open file!" << std::endl;
-        exit(-1);
-    }
-
-    // image.print();
-
-    fp << "P6\n"
-       << image.getWidth() << ' ' << image.getHeight() << '\n'
-       << 255 << std::endl;
-    for (RGBColor current : image)
-        fp << _colorValueToAscii(current.r) << _colorValueToAscii(current.g)
-           << _colorValueToAscii(current.b);
-    // fp << current.r << current.g << current.b;
-
-    std::cout << "ecriture OK" << std::endl;
-    fp.close();
-    _showImageInBrowser(filename);
-}
 /**
  * @param filename: any image file supported by stb.
  */
