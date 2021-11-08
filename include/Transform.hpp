@@ -9,6 +9,7 @@ enum TRANSFORM_ENUM {
     BINARYSCALE,
     HISTOGRAMINVERSION,
     HISTOGRAMBINARYSCALE,
+    HISTOGRAMSPREAD,
     NOTRANSFORM
 };
 
@@ -41,6 +42,11 @@ class HistogramBinaryScale : public Transformation {
 };
 
 class HistogramInversion : public Transformation {
+   public:
+    bool transform(image::Image &image) override;
+};
+
+class HistogramSpread : public Transformation {
    public:
     bool transform(image::Image &image) override;
 };

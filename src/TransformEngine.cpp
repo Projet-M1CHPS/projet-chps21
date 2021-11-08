@@ -49,6 +49,7 @@ static std::shared_ptr<Transformation> getTransformationFromString(
 static std::string transformEnumToStr(TRANSFORM_ENUM t_enum) {
     for (auto pair : transformEnumMap)
         if (pair.second == t_enum) return pair.first;
+    return "_";
 }
 
 }  // namespace transform_enumerates

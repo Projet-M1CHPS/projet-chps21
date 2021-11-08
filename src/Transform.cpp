@@ -1,5 +1,6 @@
 #include "Transform.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <functional>
 #include <iostream>
@@ -47,8 +48,8 @@ void _greyscaling(Image &image, std::function<color_t(const RGBColor &)> fn) {
 /**
  * @return [rHistogram, gHistogram, bHistogram]
  */
-std::vector<std::vector<double>> _createColorsHistograms(Image const &image) {
-    std::cout << "> _createColorsHistograms()" << std::endl;
+std::vector<std::vector<double>> createColorsHistograms(Image const &image) {
+    std::cout << "> createColorsHistograms()" << std::endl;
     double increment_value = 1.0 / ((double)image.getDimension());
     std::vector<std::vector<double>> histograms(3);
     histograms[0].resize(image.getDimension());
@@ -59,7 +60,7 @@ std::vector<std::vector<double>> _createColorsHistograms(Image const &image) {
         histograms[1][each.g] += increment_value;
         histograms[2][each.b] += increment_value;
     }
-    std::cout << "< _createColorsHistograms()" << std::endl;
+    std::cout << "< createColorsHistograms()" << std::endl;
     return histograms;
 }
 
@@ -67,7 +68,7 @@ std::vector<std::vector<double>> _createColorsHistograms(Image const &image) {
  * @return [percentage of pixels with brightness = 0; ... = 1; ... =
  * possible_brightness-1]
  */
-std::vector<double> _createBrightnessHistogram(Image const &image) {
+std::vector<double> createBrightnessHistogram(Image const &image) {
     double increment_value = 1.0 / ((double)image.getDimension());
     std::vector<double> histogram(possible_brightness + 1);
 
@@ -93,8 +94,7 @@ bool GreyScale::transform(Image &image) {
 
 bool HistogramBinaryScale::transform(Image &image) {
     std::cout << "> HistogramBinaryScale::transform()" << std::endl;
-    std::vector<double> brightness_histogram =
-        _createBrightnessHistogram(image);
+    std::vector<double> brightness_histogram = createBrightnessHistogram(image);
 
     unsigned median_brightness = (unsigned)possible_brightness / 2;
     double cumul = 0.0;
@@ -119,6 +119,42 @@ bool HistogramInversion::transform(Image &image) {
         each = {(color_t)(255 - each.r), (color_t)(255 - each.g),
                 (color_t)(255 - each.b)};
     std::cout << "< HistogramInversion::transform()" << std::endl;
+    return true;
+}
+
+bool HistogramSpread::transform(Image &image) {
+    std::cout << "> HistogramSpread::transform()" << std::endl;
+    std::vector<std::vector<double>> histograms = createColorsHistograms(image);
+    std::array<size_t, 3> minIndexes;
+    minIndexes.fill(0);
+    std::array<size_t, 3> maxIndexes;
+    maxIndexes.fill(255);
+    for (size_t c = 0; c < 3; c++) {  // Channels iteration loop
+        for (size_t i = 254; i >= 0; i--)
+            if (histograms[c][i] > 0.0) {
+                maxIndexes[c] = i + 1;
+                break;
+            }
+        for (size_t i = 1; i < 256; i++)
+            if (histograms[c][i] > 0.0) {
+                minIndexes[c] = i + 1;
+                break;
+            }
+    }
+    std::array<size_t, 3> dMins = {minIndexes[0] - 0, minIndexes[1] - 0,
+                                   minIndexes[2] - 0};
+    std::array<size_t, 3> dMaxs = {255 - maxIndexes[0], 255 - maxIndexes[1],
+                                   255 - maxIndexes[2]};
+    std::array<double, 3> coefs = {(dMaxs[0] - dMins[0]) / (255.0),
+                                   (dMaxs[1] - dMins[1]) / (255.0),
+                                   (dMaxs[2] - dMins[2]) / (255.0)};
+    size_t index = 0;
+    for (RGBColor &each : image) {
+        each.r = coefs[0] * index;
+        each.g = coefs[1] * index;
+        each.b = coefs[1] * index;
+    }
+    std::cout << "< HistogramSpread::transform()" << std::endl;
     return true;
 }
 }  // namespace image::transform
