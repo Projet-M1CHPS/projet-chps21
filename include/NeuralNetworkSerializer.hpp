@@ -17,32 +17,7 @@ class NeuralNetworkSerializer {
 public:
   enum NNSerializerFlags {
     DEFAULT = 0,
-    /**
-     * @brief If set, the serializer will not load/write the weights to/from the
-     * output file
-     *
-     */
-    NO_WEIGHTS = 1,
-
-    /**
-     * @brief If set, the serializer will not load/write the biases to/from the
-     * output file
-     *
-     */
-    NO_BIASES = 2,
-
-    /**
-     * @brief If set, the serializer will not load/write the activations
-     * function to/from the file
-     *
-     */
-    NO_ACTIVATIONS = 4,
-
-    /**
-     * @brief If set, the serializer will output in binary mode
-     *
-     */
-    BINARY_MODE = 16,
+    BINARY_MODE = 1,
   };
 
   // This is an helper class without need for an instance
