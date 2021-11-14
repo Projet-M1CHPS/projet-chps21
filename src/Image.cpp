@@ -189,11 +189,7 @@ Image ImageLoader::load_stb(const char *filename) {
  * @param filename: name of the png file generated (must end by .png).
  */
 void ImageLoader::save_png_stb(const char* filename, Image const &image) {
-    unsigned char const *img_to_save = image.getData();
-    grayscale_color const *color_array = image.getData();
-
-    stbi_write_png(filename, image.getWidth(), image.getHeight(), 3, img_to_save, image.getWidth() * 3);
-    delete img_to_save;
+    stbi_write_png(filename, image.getWidth(), image.getHeight(), 1, image.getData(), image.getWidth());
 }
 
 }  // namespace image
