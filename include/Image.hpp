@@ -3,14 +3,15 @@
 #include <vector>
 #include <memory>
 
-using color_t = unsigned char;
+//using color_t = unsigned char;
+using grayscale_color = unsigned char;
 
 constexpr unsigned possible_brightness = 255 * 3;
 constexpr unsigned nb_colors = 256;
 
 namespace image {
 
-struct RGBColor {
+/*struct RGBColor {
     RGBColor() = default;
     RGBColor(color_t r, color_t g, color_t b);
     size_t getBrightness();
@@ -19,51 +20,48 @@ struct RGBColor {
 };
 
 static_assert(sizeof(RGBColor) == sizeof(unsigned char) * 3, "Invalid color size");
+*/
 
-// TODO: implement me
-// We must be able to access the raw data
-// To feed it to the neural network
 class Image {
-   public:
-    Image(size_t width = 0, size_t height = 0);  // RGB Vector
-    Image(size_t width, size_t height,
-          std::unique_ptr<RGBColor[]>&& ptr);  // RGB Vector
-
-    Image(Image const& other);
-    Image(Image&& other);
-
-    Image& operator=(Image const& other);
-    Image& operator=(Image&& other);
-
-    RGBColor* getData();
-    const RGBColor* getData() const;
-
-    void assign(std::unique_ptr<RGBColor[]>&& data) { colors = std::move(data); }
-
-    size_t getWidth() const;
-    size_t getHeight() const;
-    size_t getDimension() const; // returns width * height
-
-    RGBColor* begin();
-    const RGBColor* begin() const;
-
-    RGBColor* end();
-    const RGBColor* end() const;
-
-    const RGBColor* cbegin() const;
-    const RGBColor* cend() const;
-
-    void print() const;
-    color_t getMaxColor() const;
-
-    /** @param other with the exact same dimension as this image
-     *  @return the difference in percentage (%) between the two images pixels.
-     */
-    double difference(const Image& other) const;
-
-   private:
-    std::unique_ptr<RGBColor[]> colors;
-    size_t width, height;
+    public:
+    // constructors
+        // init image with a size
+        Image(size_t width = 0, size_t height = 0);
+        // init and fill image with an array of grayscale
+        Image(size_t width, size_t height, std::unique_ptr<grayscale_color[]>&& ptr);
+        // copy another already existing image
+        Image(Image const& other); 
+        Image(Image&& other);
+    // destructor
+    // operators
+        Image& operator=(Image const& other);
+        Image& operator=(Image&& other);
+    // color manipulation
+        //assign a new array of grayscale to the class
+        void assign(std::unique_ptr<grayscale_color[]>&& data);
+    // getters
+        // get grayscale data
+        //// pixel
+        const grayscale_color getPixel(unsigned int x) const;
+        const grayscale_color getPixel(unsigned int x, unsigned int y) const;
+        //// whole array
+        grayscale_color* getData();
+        const grayscale_color* getData() const;
+        // get sizes
+        size_t getWidth() const;
+        size_t getHeight() const;
+        size_t getDimension() const; // returns width * height
+        // get the first pixel of the image
+        grayscale_color* begin();
+        const grayscale_color* begin() const;
+        // get the last pixel of the image
+        grayscale_color* end();
+        const grayscale_color* end() const;
+    // other
+        void print() const;
+    private:
+    std::unique_ptr<grayscale_color[]> pixel_data;
+    size_t width, height, dimension;
 };
 
 // Can be replaced by factory methods inside the Image class

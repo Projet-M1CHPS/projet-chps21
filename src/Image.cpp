@@ -1,8 +1,5 @@
 #include "Image.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <dirent.h>
 #include <unistd.h>
 
@@ -13,26 +10,21 @@
 #include <string>
 #include <vector>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
 namespace image {
 
-RGBColor::RGBColor(color_t r, color_t g, color_t b) : r(r), g(g), b(b) {}
 
-size_t RGBColor::getBrightness() { return r + g + b; }
-
-void RGBColor::print() const {
-    std::cout << "[" << (unsigned int)this->r << ";" << (unsigned int)this->g
-              << ";" << (unsigned int)this->b << "]";
-}
-
-Image::Image(size_t width, size_t height) : width(width), height(height) {
+Image::Image(size_t width, size_t height) : width(width), height(height), dimension(width*height) {
     if (width == 0 || height == 0) return;
-    colors = std::make_unique<RGBColor[]>(width * height);
+    pixel_data = std::make_unique<grayscale_color[]>(width * height);
 }
 
-Image::Image(size_t width, size_t height, std::unique_ptr<RGBColor[]> &&ptr)
-    : width(width), height(height) {
+Image::Image(size_t width, size_t height, std::unique_ptr<grayscale_color[]> &&ptr)
+    : width(width), height(height), dimension(width*height) {
     if (width == 0 || height == 0) return;
     assign(std::move(ptr));
 }
@@ -44,18 +36,17 @@ Image::Image(Image &&other) { *this = std::move(other); }
 Image &Image::operator=(Image const &other) {
     if (this == &other) return *this;
 
-    size_t size = other.getDimension();
-
-    if (getDimension() != size) {
-        colors = nullptr;
+    if (getDimension() != other.getDimension()) {
+        this->pixel_data = nullptr;
     }
 
-    width = other.width;
-    height = other.height;
+    this->width = other.getWidth();
+    this->height = other.getHeight();
+    this->dimension = other.getDimension();
 
-    if (other.colors) {
-        if (not colors) colors = std::make_unique<RGBColor[]>(size);
-        std::memcpy(colors.get(), other.colors.get(), sizeof(RGBColor) * size);
+    if (other.pixel_data) {
+        if (not this->pixel_data) this->pixel_data = std::make_unique<grayscale_color[]>(this->dimension);
+        std::memcpy(this->pixel_data.get(), other.pixel_data.get(), sizeof(grayscale_color) * this->dimension);
     }
 
     return *this;
@@ -64,64 +55,59 @@ Image &Image::operator=(Image const &other) {
 Image &Image::operator=(Image &&other) {
     if (this == &other) return *this;
 
-    colors = std::move(other.colors);
-    width = other.width;
-    height = other.height;
+    this->pixel_data = std::move(other.pixel_data);
+    width = other.getWidth();
+    height = other.getHeight();
+    this->dimension = other.getDimension();
     other.width = 0;
     other.height = 0;
+    other.dimension = 0;
 
     return *this;
 }
 
-RGBColor *Image::begin() { return getData(); }
-RGBColor *Image::end() { return getData() + getDimension(); }
+void Image::assign(std::unique_ptr<grayscale_color[]>&& data) {
+    pixel_data = std::move(data);
+}
 
-const RGBColor *Image::begin() const { return getData(); }
-const RGBColor *Image::end() const { return getData() + getDimension(); }
+const grayscale_color Image::getPixel(unsigned int x) const{
+    if (x < this->getDimension()) {
+        return pixel_data.get()[x];
+    }
+    else {
+        return 0;
+    }
+}
 
-const RGBColor *Image::getData() const { return colors.get(); }
-RGBColor *Image::getData() { return colors.get(); }
+const grayscale_color Image::getPixel(unsigned int x, unsigned int y) const{
+    if (x < this->getWidth() && y < this->getHeight()) {
+        return pixel_data.get()[this->getWidth() * x + y];
+    }
+    else {
+        return 0;
+    }
+}
+
+const grayscale_color *Image::getData() const { return pixel_data.get(); }
+grayscale_color *Image::getData() { return pixel_data.get(); }
+
+size_t Image::getWidth() const { return this->width; }
+size_t Image::getHeight() const { return this->height; }
+size_t Image::getDimension() const { return this->dimension; }
+
+
+grayscale_color *Image::begin() { return getData(); }
+grayscale_color *Image::end() { return getData() + getDimension(); }
+
+const grayscale_color *Image::begin() const { return getData(); }
+const grayscale_color *Image::end() const { return getData() + getDimension(); }
 
 void Image::print() const {
-    std::cout << "[" << std::endl;
-    for (unsigned l = 0; l < height; l++) {
-        for (unsigned c = 0; c < width; c++) {
-            colors[l * width + c].print();
-            std::cout << " ; ";
+    for (unsigned x = 0; x < this->width; x++) {
+        for (unsigned y = 0; y < this-> height; y++) {
+            std::cout << "[" << x << "][" << y << "] = " << this->getPixel(x,y) << std::endl;
         }
-        std::cout << std::endl;
     }
-    std::cout << "]" << std::endl;
-}
-
-color_t Image::getMaxColor() const {
-    color_t max = 0;
-    for (RGBColor const &each : *this) {
-        color_t local_max = std::max(each.g, std::max(each.r, each.b));
-        max = std::max(local_max, max);
-    }
-    return max;
-}
-
-size_t Image::getWidth() const { return width; }
-size_t Image::getHeight() const { return height; }
-size_t Image::getDimension() const { return getHeight() * getWidth(); }
-
-double Image::difference(const Image &other) const {
-    assert(other.width == width);
-    assert(other.height == height);
-    // assert(other.colors.size() == colors.size());
-
-    double diff = 0.0;
-    for (size_t i = 0; i < getDimension(); i++) {
-        size_t this_sum = colors[i].r + colors[i].g + colors[i].b;
-        size_t other_sum =
-            other.colors[i].r + other.colors[i].g + other.colors[i].b;
-        diff += ((double)(std::max(this_sum, other_sum) -
-                          std::min(this_sum, other_sum))) /
-                possible_brightness;
-    }
-    return diff;
 }
 
 namespace {
@@ -165,11 +151,9 @@ void _showImageInBrowser(std::string const filename) {
 
 Image ImageLoader::createRandomImage() {
     Image res((rand() % 1080) + 1, (rand() % 1080) + 1);
-    RGBColor *raw_array = res.getData();
+    grayscale_color *raw_array = res.getData();
     for (size_t i = 0; i < res.getDimension(); i++) {
-        raw_array[i] = (RGBColor){(color_t)(rand() % nb_colors),
-                                  (color_t)(rand() % nb_colors),
-                                  (color_t)(rand() % nb_colors)};
+        raw_array[i] = (grayscale_color)(rand() % nb_colors);
     }
     return res;
 }
@@ -179,8 +163,8 @@ Image ImageLoader::createRandomImage() {
  */
 Image ImageLoader::load_stb(const char *filename) {
     int width, height, channels;
-    unsigned char *imgData = stbi_load(filename, &width, &height, &channels, 3);
-    if (imgData == NULL) {
+    unsigned char *img_data = stbi_load(filename, &width, &height, &channels, 3);
+    if (img_data == NULL) {
         std::cout << "Error, cannot open \"" << filename << "\"." << std::endl;
         width = 0;
         height = 0;
@@ -190,8 +174,8 @@ Image ImageLoader::load_stb(const char *filename) {
 
     Image img((size_t)width, (size_t)height);
     unsigned int i = 0;
-    for (RGBColor &each : img) {
-        each = {(color_t)imgData[i * 3], (color_t)imgData[i * 3 + 1], (color_t)imgData[i * 3 + 2]};
+    for (grayscale_color &each : img) {
+        each = (grayscale_color)img_data[i];
         i++;
     }
 
@@ -205,14 +189,8 @@ Image ImageLoader::load_stb(const char *filename) {
  * @param filename: name of the png file generated (must end by .png).
  */
 void ImageLoader::save_png_stb(const char* filename, Image const &image) {
-    unsigned char *img_to_save = new unsigned char[image.getDimension() * 3];
-    RGBColor const *color_array = image.getData();
-
-    for (unsigned int i = 0; i < image.getDimension(); i++) {
-                img_to_save[i * 3]     = color_array[i].r;
-                img_to_save[i * 3 + 1] = color_array[i].g;
-                img_to_save[i * 3 + 2] = color_array[i].b;
-    }
+    unsigned char const *img_to_save = image.getData();
+    grayscale_color const *color_array = image.getData();
 
     stbi_write_png(filename, image.getWidth(), image.getHeight(), 3, img_to_save, image.getWidth() * 3);
     delete img_to_save;
