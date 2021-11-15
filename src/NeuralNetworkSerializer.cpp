@@ -22,7 +22,7 @@ namespace nnet {
     // if the serialization fails, we want to delete the file
     try {
       saveToStream(file, nn, flags);
-    } catch (std::exception& e) {
+    } catch (std::exception &e) {
       file.close();
       std::filesystem::remove(path);
       // Re-throw the original exception
@@ -103,38 +103,37 @@ namespace nnet {
     // Write the number of layers
     os << layer_size << " ";
     // output the whole array at once
-    std::copy(layers.begin(), layers.end(), std::ostream_iterator<int>(os, " "));
 
-    if (not(flags & NNSerializerFlags::NO_ACTIVATIONS)) {
-      auto const &activations = nn.getActivationFunctions();
-
-      for (auto const &activation: activations) {
-        std::string const &name = af::AFTypeToStr(activation);
-        os << name << " ";
-      }
+    for (auto i : layers) {
+      os << i << " ";
     }
+
+    auto const &activations = nn.getActivationFunctions();
+
+    for (auto const &activation: activations) {
+      std::string const &name = af::AFTypeToStr(activation);
+      os << name << " ";
+    }
+    os << std::endl;
 
     auto f = [&]<class NN>(std::ostream &os, NN const &nn,
                            NNSerializerFlags const &flags) {
       using real = typename NN::value_type;
 
-      if (not(flags & NNSerializerFlags::NO_WEIGHTS)) {
-        auto const &weights = nn.getWeights();
-        // Write the number of weights
+      auto const &weights = nn.getWeights();
+      // Write the number of weights
 
-        for (auto const &w: weights) {
-          // output the whole array at once
-          size_t weight_size = w.getRows() * w.getCols();
-          std::cout << w;
-        }
+      for (auto const &w: weights) {
+        // output the whole array at once
+        size_t weight_size = w.getRows() * w.getCols();
+        os << w;
       }
+      os << std::endl;
 
-      if (not(flags & NNSerializerFlags::NO_BIASES)) {
-        auto const &biases = nn.getBiases();
-        for (auto const &w: biases) {
-          // output the whole array at once
-          std::cout << w;
-        }
+      auto const &biases = nn.getBiases();
+      for (auto const &w: biases) {
+        // output the whole array at once
+        os << w;
       }
     };
 

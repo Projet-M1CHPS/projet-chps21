@@ -60,10 +60,8 @@ int main(int argc, char **argv)
     nn.setLayersSize(std::vector<size_t>{2, 2, 1});
     nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
     nn.randomizeSynapses();
-
     std::vector<float> input{1, 1};
     std::vector<float> target{0};
-
     nn.train(input.begin(), input.end(), target.begin(), target.end(), 0.1); */
 
     return 0;
