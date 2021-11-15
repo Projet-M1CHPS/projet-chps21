@@ -2,6 +2,7 @@
 
 #include <dirent.h>
 #include <unistd.h>
+#include <numeric>
 
 #include <cassert>
 #include <cstring>
@@ -92,6 +93,21 @@ grayscale_t GrayscaleImage::getPixel(unsigned int x, unsigned int y) const {
   return pixel_data.get()[x];
 }
 
+double GrayscaleImage::getDifference(GrayscaleImage const &other) const {
+    double diff = 0.0;
+    const grayscale_t *self_iter = begin();
+    const grayscale_t *other_iter = other.begin();
+
+    // While-loop ensure the comparison between existing elements only 
+    // (if dimensions were different)
+    while(self_iter != end() && other_iter != other.end()) { 
+        diff += (double) (std::abs(*self_iter - *other_iter))/max_brightness;
+        self_iter++;
+        other_iter++;
+    }
+    return diff;
+}
+
 grayscale_t *GrayscaleImage::getData() { return pixel_data.get(); }
 const grayscale_t *GrayscaleImage::getData() const { return pixel_data.get(); }
 
@@ -180,7 +196,7 @@ GrayscaleImage ImageLoader::load(std::string const &filename) {
 }
 
 /**
- * @brief Saves a greyscale as a png file
+ * @brief Saves a grayscale as a png file
  *
  * @param filename absolute or relative path
  * @param image

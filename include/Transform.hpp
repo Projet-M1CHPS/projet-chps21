@@ -5,12 +5,9 @@
 namespace image::transform {
 
 enum class TransformType {
-    greyscale,
     binaryScale,
-    histogramInversion,
-    histogramBinaryScale,
-    histogramSpread,
-    noTransform
+    inversion,
+    binaryScaleByMedian,
 };
 
 // Transformation base class
@@ -21,32 +18,17 @@ class Transformation {
     virtual bool transform(image::GrayscaleImage &image) = 0;
 };
 
-class NoTransform : public Transformation {
-   public:
-    bool transform(image::GrayscaleImage &image) override;
-};
-
-class GreyScale : public Transformation {
-   public:
-    bool transform(image::GrayscaleImage &image) override;
-};
-
 class BinaryScale : public Transformation {
    public:
     bool transform(image::GrayscaleImage &image) override;
 };
 
-class HistogramBinaryScale : public Transformation {
+class BinaryScaleByMedian : public Transformation {
    public:
     bool transform(image::GrayscaleImage &image) override;
 };
 
-class HistogramInversion : public Transformation {
-   public:
-    bool transform(image::GrayscaleImage &image) override;
-};
-
-class HistogramSpread : public Transformation {
+class Inversion : public Transformation {
    public:
     bool transform(image::GrayscaleImage &image) override;
 };

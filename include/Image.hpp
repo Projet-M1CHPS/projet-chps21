@@ -5,7 +5,7 @@
 
 using grayscale_t = unsigned char;
 
-constexpr unsigned possible_brightness = 255 * 3;
+constexpr unsigned max_brightness = 255;
 constexpr unsigned nb_colors = 256;
 
 namespace image {
@@ -66,6 +66,17 @@ public:
    * @return grayscale_t 
    */
   grayscale_t getPixel(unsigned int x, unsigned int y) const;
+
+
+  /**
+   * @brief Compute the difference of the pixels between two images.
+   * If images do not have the same dimensions, every not comparable pixel will be computed as a 0% difference.
+   * 
+   * @param other another image
+   * @return difference in range [0.0, 1.0]
+   */
+  double getDifference(GrayscaleImage const &other) const;
+
 
   /**
    * @brief Returns the underlying raw ptr
