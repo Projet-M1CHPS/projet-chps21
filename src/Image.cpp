@@ -164,9 +164,9 @@ namespace image {
       }
     }
   }// namespace
-  GrayscaleImage ImageLoader::createRandomNoiseImage() {
 
-    GrayscaleImage res((rand() % 1080) + 1, (rand() % 1080) + 1);
+  GrayscaleImage ImageLoader::createRandomNoiseImage(size_t width, size_t height) {
+    GrayscaleImage res(width, height);
     grayscale_t *raw_array = res.getData();
 
     for (size_t i = 0; i < res.getSize(); i++) {
@@ -174,6 +174,10 @@ namespace image {
     }
     return res;
   }
+
+  GrayscaleImage ImageLoader::createRandomNoiseImage() {
+    return ImageLoader::createRandomNoiseImage((size_t) (rand() % 1080) + 1, (size_t) (rand() % 1080) + 1);
+  } 
 
   /**
  * @param filename any image file supported by stb.
