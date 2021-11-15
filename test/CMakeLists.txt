@@ -35,6 +35,33 @@ target_link_libraries(
 
 target_code_coverage(NeuralNetwork_test ALL)
 
+add_executable(
+  Image_test
+  Image_test.cpp
+)
+
+target_link_libraries(
+  Image_test PUBLIC
+  Image
+  gtest_main
+)
+
+target_code_coverage(Image_test ALL)
+
+add_executable(
+  Transform_test
+  Transform_test.cpp
+)
+
+target_link_libraries(
+  Transform_test PUBLIC
+  Transform
+  Image
+  gtest_main
+)
+
+target_code_coverage(Transform_test ALL)
+
 
 add_executable(
         ActivationFunction_test
@@ -53,4 +80,7 @@ target_code_coverage(ActivationFunction_test ALL)
 include(GoogleTest)
 gtest_discover_tests(Math_test)
 gtest_discover_tests(NeuralNetwork_test)
+
 gtest_discover_tests(ActivationFunction_test)
+gtest_discover_tests(Image_test)
+gtest_discover_tests(Transform_test)

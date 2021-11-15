@@ -1,191 +1,194 @@
 #include "Image.hpp"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
-
 #include <dirent.h>
+#include <unistd.h>
 
 #include <cassert>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
 
-using namespace image;
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
-Color::Color(color_t r, color_t g, color_t b) {
-    this->r = r;
-    this->g = g;
-    this->b = b;
+namespace image {
+
+GrayscaleImage::GrayscaleImage(size_t width, size_t height)
+    : width(width), height(height) {
+  if (width == 0 || height == 0)
+    return;
+  pixel_data = std::make_unique<grayscale_t[]>(width * height);
 }
 
-void Color::print() const {
-    std::cout << "[" << (unsigned int)this->r << ";" << (unsigned int)this->g
-              << ";" << (unsigned int)this->b << "]";
+GrayscaleImage::GrayscaleImage(size_t width, size_t height,
+                               std::unique_ptr<grayscale_t[]> &&ptr)
+    : width(width), height(height) {
+  if (width == 0 || height == 0)
+    return;
+  assign(std::move(ptr));
 }
 
-Image::Image() {
-    this->width = 0;
-    this->height = 0;
+GrayscaleImage::GrayscaleImage(GrayscaleImage const &other) { *this = other; }
+
+GrayscaleImage::GrayscaleImage(GrayscaleImage &&other) {
+  *this = std::move(other);
 }
 
-Image::Image(unsigned width, unsigned height, std::vector<Color> colors) {
-    assert(colors.size() == width * height);
-    this->width = width;
-    this->height = height;
-    this->colors = colors;
-}
+GrayscaleImage &GrayscaleImage::operator=(GrayscaleImage const &other) {
+  if (this == &other)
+    return *this;
 
-void Image::print() const {
-    std::cout << "[" << std::endl;
-    for (unsigned l = 0; l < this->width; l++) {
-        for (unsigned c = 0; c < this->width; c++) {
-            this->colors[l * this->width + c].print();
-            std::cout << " ; ";
-        }
-        std::cout << std::endl;
+  // We may avoid a copy if the internal array is big enough to hold
+  // the copy
+  if (getSize() != other.getSize()) {
+    pixel_data = nullptr;
+  }
+
+  width = other.width;
+  height = other.height;
+  if (other.pixel_data) {
+    // If the internal array wasn't big enough or just not allocated
+    if (not pixel_data) {
+      pixel_data = std::make_unique<grayscale_t[]>(width * height);
     }
-    std::cout << "]" << std::endl;
+    std::memcpy(pixel_data.get(), other.pixel_data.get(),
+                sizeof(grayscale_t) * width * height);
+  }
+
+  return *this;
 }
 
-color_t Image::getMaxColor() const {
-    color_t max = 0;
-    for (Color each : this->colors) {
-        if (each.r > max)
-            max = each.r;
-        else if (each.g > max)
-            max = each.g;
-        else if (each.b > max)
-            max = each.b;
-    }
-    return max;
+GrayscaleImage &GrayscaleImage::operator=(GrayscaleImage &&other) {
+  if (this == &other)
+    return *this;
+
+  pixel_data = std::move(other.pixel_data);
+  width = other.width;
+  height = other.height;
+
+  other.width = 0;
+  other.height = 0;
+
+  return *this;
 }
 
+void GrayscaleImage::assign(std::unique_ptr<grayscale_t[]> &&data) {
+  pixel_data = std::move(data);
+}
+
+grayscale_t GrayscaleImage::getPixel(unsigned int x) const {
+  if (x > getSize())
+    throw std::out_of_range("Out of range access in image");
+  return pixel_data.get()[x];
+}
+
+grayscale_t GrayscaleImage::getPixel(unsigned int x, unsigned int y) const {
+  if (x > width && y > getHeight())
+    throw std::out_of_range("Out of range access in image");
+  return pixel_data.get()[x];
+}
+
+grayscale_t *GrayscaleImage::getData() { return pixel_data.get(); }
+const grayscale_t *GrayscaleImage::getData() const { return pixel_data.get(); }
+
+grayscale_t *GrayscaleImage::begin() { return getData(); }
+const grayscale_t *GrayscaleImage::begin() const { return getData(); }
+
+grayscale_t *GrayscaleImage::end() { return getData() + getSize(); }
+const grayscale_t *GrayscaleImage::end() const { return getData() + getSize(); }
+
+namespace {
+
+// FIXME: Remove this atrocity
+// For further Inquiry about the very nature of this function, please
+// refer to BENJAMIN LOZES
 void _listDirectories(char *path) {
-    DIR *dir;
-    struct dirent *diread;
-    std::vector<char *> files;
+  DIR *dir;
+  struct dirent *diread;
+  std::vector<char *> files;
 
-    if ((dir = opendir(path)) != nullptr) {
-        while ((diread = readdir(dir)) != nullptr)
-            files.push_back(diread->d_name);
-        closedir(dir);
-    } else {
-        perror("opendir");
-        return;
-    }
-    for (auto file : files) std::cout << file << "| ";
-    std::cout << std::endl;
+  if ((dir = opendir(path)) != nullptr) {
+    while ((diread = readdir(dir)) != nullptr)
+      files.push_back(diread->d_name);
+    closedir(dir);
+  } else {
+    perror("opendir");
+    return;
+  }
+  for (auto file : files)
+    std::cout << file << "| ";
+  std::cout << std::endl;
+}
+
+// FIXME: Remove this atrocity
+// For further Inquiry about the very nature of this function, please
+// refer to BENJAMIN LOZES
+void _showImageInBrowser(std::string filename) {
+  if (system(nullptr) != -1) {
+
+    char cmd[256];
+    filename.replace(filename.find_last_of('.') + 1, 3, "png");
+
+    std::cout << filename << std::endl;
+    sprintf(cmd, "convert %s %s", filename.data(), filename.data());
+    std::cout << cmd << std::endl;
+
+    system(cmd);
+    sprintf(cmd, "firefox --new-tab -url `pwd`/%s", filename.data());
+    std::cout << cmd << std::endl;
+    system(cmd);
+
+    sleep(2);
+    sprintf(cmd, "rm %s", filename.data());
+
+    std::cout << cmd << std::endl;
+    system(cmd);
+  }
+}
+} // namespace
+
+GrayscaleImage ImageLoader::createRandomNoiseImage() {
+
+  GrayscaleImage res((rand() % 1080) + 1, (rand() % 1080) + 1);
+  grayscale_t *raw_array = res.getData();
+
+  for (size_t i = 0; i < res.getSize(); i++) {
+    raw_array[i] = (grayscale_t)(rand() % nb_colors);
+  }
+  return res;
 }
 
 /**
- * @param filename: ONLY PPM FILES FOR NOW
+ * @param filename any image file supported by stb.
  */
-Image ImageLoader::load(std::string const filename) {
-    std::ifstream fp;
+GrayscaleImage ImageLoader::load(std::string const &filename) {
+  int width, height, channels;
+  unsigned char *img_data =
+      stbi_load(filename.c_str(), &width, &height, &channels, 1);
 
-    //_listDirectories(".");
+  if (img_data == NULL)
+    throw std::runtime_error("ImageLoader::load: stbi_load failed");
 
-    fp.open(filename);
-    if (!fp.is_open()) {
-        std::cerr << "<!> ImageLoader::load(" << filename
-                  << ") -> cannot open file!" << std::endl;
-        exit(-1);
-    }
-    fp.seekg(3);
-    unsigned width, height, max_color = 0;
-    fp >> width;
-    assert(width > 0);
-    fp.get();
-    fp >> height;
-    assert(height > 0);
-    fp.get();
-    fp >> max_color;
-    assert(max_color == 255);
-    fp.get();
-    std::cout << "width: " << width << "; height: " << height
-              << "; max_color: " << max_color << std::endl;
-    std::vector<Color> colors;
-    int r, g, b = 0;
-    char current;
-    for (unsigned i = 0; i < width * height; i++) {
-        current = fp.get();
-        // std::cout << "current = " << current << std::endl;
-        r = current - '0';
-        current = fp.get();
-        // std::cout << "current = " << current << std::endl;
-        g = current - '0';
-        current = fp.get();
-        // std::cout << "current = " << current << std::endl;
-        b = current - '0';
-        // std::cout << "r: " << r << "; g: " << g << "; b: " << b <<
-        // std::endl;
-        Color col((color_t)r, (color_t)g, (color_t)b);
-        // col.print();
-        colors.push_back(col);
-    }
-    std::cout << "lecture OK" << std::endl;
-    Image img(width, height, std::vector<Color>(colors));
-    img.print();
-    fp.close();
-    return img;
-}
+  std::unique_ptr<grayscale_t[]> ptr(reinterpret_cast<grayscale_t *>(img_data));
+  GrayscaleImage res(width, height, std::move(ptr));
 
-char _colorValueToAscii(color_t value) {
-    return (char)static_cast<char>(((int)value) + '0');
+  return res;
 }
 
 /**
- * @param filename: ONLY PPM FILES FOR NOW
+ * @brief Saves a greyscale as a png file
+ *
+ * @param filename absolute or relative path
+ * @param image
  */
-void ImageLoader::save(std::string const filename, Image const &image) {
-    std::ofstream fp;
-
-    //_listDirectories(".");
-
-    fp.open(filename, std::ios_base::out | std::ios_base::binary);
-    if (!fp.is_open()) {
-        std::cerr << "<!> ImageLoader::save(" << filename
-                  << ") -> cannot open file!" << std::endl;
-        exit(-1);
-    }
-
-    image.print();
-
-    fp << "P6\n"
-       << image.width << ' ' << image.height << '\n'
-       << 255 << std::endl;
-    for (Color current : image.colors)
-        fp << _colorValueToAscii(current.r) << _colorValueToAscii(current.g)
-           << _colorValueToAscii(current.b);
-    // fp << current.r << current.g << current.b;
-
-    std::cout << "ecriture OK" << std::endl;
-    fp.close();
+void ImageLoader::save(std::string const &filename,
+                       GrayscaleImage const &image) {
+  stbi_write_png(filename.c_str(), image.getWidth(), image.getHeight(), 1,
+                 image.getData(), image.getWidth());
 }
-/**
- * @param filename: any image file supported by stb.
- */
-Image ImageLoader::load_stb(const char * filename) {
-    int width, height, channels;
-    unsigned char *imgData = stbi_load(filename, &width, &height, &channels, 3);
-    if(imgData == NULL) {
-        std::cout << "Error, cannot open \"" << filename << "\"." << std::endl;
-        width = 0;
-        height = 0;
-        std::vector<Color> colors;
-        Image img((unsigned int)width, (unsigned int)height, std::vector<Color>(colors));
-        return img;
-    }
 
-    std::vector<Color> colors;
-    unsigned int size = width * height;
-    for(unsigned char *p = imgData; p != imgData + size; p += channels) { // loop through each pixel
-        Color col(*p, *(p + 1), *(p + 2));
-        colors.push_back(col);
-    }
-    Image img(width, height, std::vector<Color>(colors));
-    return img;
-}
+} // namespace image
