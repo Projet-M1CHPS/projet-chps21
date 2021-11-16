@@ -1,5 +1,4 @@
 #include <ActivationFunction.hpp>
-#include <search.h>
 
 namespace af {
 

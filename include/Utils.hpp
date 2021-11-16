@@ -50,8 +50,8 @@ namespace utils {
   // Generic IO exception
   class IOException : public std::runtime_error {
   public:
-    IOException(const std::string &msg) noexcept;
-    IOException(const char *msg) noexcept;
+    explicit IOException(const std::string &msg) noexcept;
+    explicit IOException(const char *msg) noexcept;
   };
 
 }   // namespace utils

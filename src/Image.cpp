@@ -33,9 +33,9 @@ namespace image {
     assign(std::move(ptr));
   }
 
-  GrayscaleImage::GrayscaleImage(GrayscaleImage const &other) { *this = other; }
+  GrayscaleImage::GrayscaleImage(GrayscaleImage const &other) : width(0), height(0) { *this = other; }
 
-  GrayscaleImage::GrayscaleImage(GrayscaleImage &&other) {
+  GrayscaleImage::GrayscaleImage(GrayscaleImage &&other) noexcept {
     *this = std::move(other);
   }
 
@@ -63,7 +63,7 @@ namespace image {
     return *this;
   }
 
-  GrayscaleImage &GrayscaleImage::operator=(GrayscaleImage &&other) {
+  GrayscaleImage &GrayscaleImage::operator=(GrayscaleImage &&other) noexcept {
     if (this == &other)
       return *this;
 
@@ -164,7 +164,7 @@ namespace image {
     }
   }   // namespace
 
-  GrayscaleImage ImageLoader::createRandomNoiseImage(size_t width, size_t height) {
+  GrayscaleImage ImageSerializer::createRandomNoiseImage(size_t width, size_t height) {
     GrayscaleImage res(width, height);
     grayscale_t *raw_array = res.getData();
 
@@ -174,20 +174,20 @@ namespace image {
     return res;
   }
 
-  GrayscaleImage ImageLoader::createRandomNoiseImage() {
-    return ImageLoader::createRandomNoiseImage((size_t) (rand() % 1080) + 1, (size_t) (rand() % 1080) + 1);
+  GrayscaleImage ImageSerializer::createRandomNoiseImage() {
+    return ImageSerializer::createRandomNoiseImage((size_t) (rand() % 1080) + 1, (size_t) (rand() % 1080) + 1);
   }
 
   /**
    * @param filename any image file supported by stb.
    */
-  GrayscaleImage ImageLoader::load(std::string const &filename) {
+  GrayscaleImage ImageSerializer::load(std::string const &filename) {
     int width, height, channels;
     unsigned char *img_data =
             stbi_load(filename.c_str(), &width, &height, &channels, 1);
 
     if (img_data == NULL)
-      throw std::runtime_error("ImageLoader::load: stbi_load failed");
+      throw std::runtime_error("ImageSerializer::load: stbi_load failed");
 
     std::unique_ptr<grayscale_t[]> ptr(reinterpret_cast<grayscale_t *>(img_data));
     GrayscaleImage res(width, height, std::move(ptr));
@@ -201,7 +201,7 @@ namespace image {
    * @param filename absolute or relative path
    * @param image
    */
-  void ImageLoader::save(std::string const &filename,
+  void ImageSerializer::save(std::string const &filename,
                          GrayscaleImage const &image) {
     stbi_write_png(filename.c_str(), image.getWidth(), image.getHeight(), 1,
                    image.getData(), image.getWidth());

@@ -25,20 +25,14 @@ namespace nnet {
     float64,
   };
 
-  /**
-   * @brief
-   *
-   * @param str
-   * @return FloatingPrecision
-   */
-  FloatingPrecision strToFPrecision(const std::string &str);
 
+  FloatingPrecision strToFPrecision(const std::string &str);
   const char *fPrecisionToStr(FloatingPrecision fp);
 
   /**
    * @brief Convert a static type to the corresponding enum type
    *
-   * @tparam ypename
+   * @tparam typename
    * @return FloatingPrecision
    */
   template<typename T>
@@ -54,7 +48,7 @@ namespace nnet {
   }
 
   /**
-   * @brief Base class for the neural network
+   * @brief Interface for a neural network
    *
    */
   class NeuralNetworkBase {
@@ -127,6 +121,15 @@ namespace nnet {
       return *this;
     }
 
+    /** @brief Train the neural network using backpropagation using the given inputs / outputs
+     *
+     * @tparam iterator
+     * @param begin_input
+     * @param end_input
+     * @param begin_target
+     * @param end_target
+     * @param learning_rate
+     */
     template<typename iterator>
     void train(iterator begin_input, iterator end_input, iterator begin_target,
                iterator end_target, const real learning_rate) {
@@ -146,6 +149,14 @@ namespace nnet {
       backward(begin_target, end_target, layers, layers_af, learning_rate);
     }
 
+    /** @brief Runs the neural network on the inputs
+     * The outputs are returned as a matrix of reals
+     *
+     * @tparam iterator
+     * @param begin
+     * @param end
+     * @return
+     */
     template<typename iterator>
     math::Matrix<real> predict(iterator begin, iterator end) const {
       const size_t nbInput = std::distance(begin, end);

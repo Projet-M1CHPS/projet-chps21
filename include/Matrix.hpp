@@ -45,8 +45,21 @@ namespace math {
 
     [[nodiscard]] size_t getCols() const { return cols; }
 
-    // Does not perform bound checking
+    /** @brief Returns element (i, j). Does not perform bound checking
+     *
+     * @param i
+     * @param j
+     * @return
+     */
     T &operator()(size_t i, size_t j) { return data[i * cols + j]; };
+
+    /** @brief Returns element (i, j). Does not perform bound checking
+     *
+     * @param i
+     * @param j
+     * @return
+     */
+    T const& operator()(size_t i, size_t j) const { return data[i * cols + j]; };
 
     Matrix(const Matrix &other) { *this = other; }
 
@@ -313,7 +326,6 @@ namespace math {
   using FloatMatrix = Matrix<float>;
   using DoubleMatrix = Matrix<double>;
 
-  // friend std::ostream& operator<<(std::ostream& os, const Pair<T, U>& p)
   template<typename T>
   std::ostream &operator<<(std::ostream &os, const Matrix<T> &m) {
     size_t j = 0;

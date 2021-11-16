@@ -3,12 +3,12 @@
 #include <memory>
 #include <vector>
 
-using grayscale_t = unsigned char;
-
-constexpr unsigned max_brightness = 255;
-constexpr unsigned nb_colors = 256;
-
 namespace image {
+
+  using grayscale_t = unsigned char;
+
+  constexpr unsigned max_brightness = 255;
+  constexpr unsigned nb_colors = 256;
 
   class GrayscaleImage {
   public:
@@ -18,7 +18,7 @@ namespace image {
      * @param width Default to 0
      * @param height Default to 0
      */
-    GrayscaleImage(size_t width = 0, size_t height = 0);
+    explicit GrayscaleImage(size_t width = 0, size_t height = 0);
 
     /**
      * @brief Construct a new GrayscaleImage object
@@ -34,8 +34,8 @@ namespace image {
     GrayscaleImage(GrayscaleImage const &other);
     GrayscaleImage &operator=(GrayscaleImage const &other);
 
-    GrayscaleImage(GrayscaleImage &&other);
-    GrayscaleImage &operator=(GrayscaleImage &&other);
+    GrayscaleImage(GrayscaleImage &&other) noexcept;
+    GrayscaleImage &operator=(GrayscaleImage &&other) noexcept;
 
     ~GrayscaleImage() = default;
 
@@ -55,7 +55,7 @@ namespace image {
      * @param x
      * @return grayscale_t
      */
-    grayscale_t getPixel(unsigned int x) const;
+    [[nodiscard]] grayscale_t getPixel(unsigned int x) const;
 
     /**
      * @brief Returns the pixel at coordinate (x, y)
@@ -65,7 +65,7 @@ namespace image {
      * @param x
      * @return grayscale_t
      */
-    grayscale_t getPixel(unsigned int x, unsigned int y) const;
+    [[nodiscard]] grayscale_t getPixel(unsigned int x, unsigned int y) const;
 
 
     /**
@@ -75,7 +75,7 @@ namespace image {
      * @param other another image
      * @return difference in range [0.0, 1.0]
      */
-    double getDifference(GrayscaleImage const &other) const;
+    [[nodiscard]] double getDifference(GrayscaleImage const &other) const;
 
 
     /**
@@ -90,18 +90,18 @@ namespace image {
      *
      * @return const grayscale_t*
      */
-    const grayscale_t *getData() const;
+    [[nodiscard]] const grayscale_t *getData() const;
 
-    size_t getWidth() const { return width; }
+    [[nodiscard]] size_t getWidth() const { return width; }
 
-    size_t getHeight() const { return height; }
+    [[nodiscard]] size_t getHeight() const { return height; }
 
     /**
      * @brief Returns the dimensions of the image as a pair
      *
      * @return std::pair<size_t, size_t>
      */
-    std::pair<size_t, size_t> getDimension() const {
+    [[nodiscard]] std::pair<size_t, size_t> getDimension() const {
       return std::make_pair(width, height);
     }
 
@@ -111,24 +111,24 @@ namespace image {
      *
      * @return size_t
      */
-    size_t getSize() const { return height * width; }
+    [[nodiscard]] size_t getSize() const { return height * width; }
 
-    grayscale_t *begin();
-    const grayscale_t *begin() const;
+    [[nodiscard]] grayscale_t *begin();
+    [[nodiscard]] const grayscale_t *begin() const;
 
-    grayscale_t *end();
-    const grayscale_t *end() const;
+    [[nodiscard]] grayscale_t *end();
+    [[nodiscard]] const grayscale_t *end() const;
 
   private:
     std::unique_ptr<grayscale_t[]> pixel_data;
-    size_t width, height;
+    size_t width{}, height{};
   };
 
   /**
    * @brief Helper class for image generation and serialization
    *
    */
-  class ImageLoader {
+  class ImageSerializer {
   public:
     /**
      * @brief Create and return a random generated image
@@ -143,8 +143,20 @@ namespace image {
      */
     static image::GrayscaleImage createRandomNoiseImage();
 
+    /** @brief Load an image in any supported format from the given path
+     *
+     * @param filename
+     * @return
+     */
     static image::GrayscaleImage load(std::string const &filename);
+
+    /** @brief Saves an image as a PNG to the given path
+     *
+     * @param filename
+     * @param image
+     */
     static void save(std::string const &filename, const GrayscaleImage &image);
+
     static std::vector<image::GrayscaleImage>
     loadDirectory(std::string const &filename);
 

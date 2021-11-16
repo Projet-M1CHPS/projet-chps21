@@ -40,7 +40,7 @@ namespace image::transform {
     void loadFromFile(std::string const &fileName);
 
     // Since we may want to store the transformations alongside other data,
-    // this sould not rely on eos/eof to know when to stop reading
+    // this should not rely on eos/eof to know when to stop reading
     void loadFromStream(std::istream &stream);
 
     void saveToFile(std::string const &fileName) const;
@@ -51,7 +51,7 @@ namespace image::transform {
                               std::shared_ptr<Transformation> transformation);
 
     // Add the transformation at the end of the transformation list
-    // (May be renamed push_back() ?)
+    // (Might be renamed push_back() ?)
     void addTransformation(std::shared_ptr<Transformation> transformation);
 
     /**

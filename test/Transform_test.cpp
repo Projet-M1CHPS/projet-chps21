@@ -5,7 +5,7 @@
 #include "Image.hpp"
 
 TEST(TransformTest, HistogramInversionLossless) {
-    image::GrayscaleImage original = image::ImageLoader::createRandomNoiseImage();
+    image::GrayscaleImage original = image::ImageSerializer::createRandomNoiseImage();
     // Add a simple transformation
     image::transform::TransformEngine te;
     te.addTransformation(
@@ -17,7 +17,7 @@ TEST(TransformTest, HistogramInversionLossless) {
 }
 
 TEST(TransformTest, DoubleBinaryScaleLossless) {
-    image::GrayscaleImage original = image::ImageLoader::createRandomNoiseImage();
+    image::GrayscaleImage original = image::ImageSerializer::createRandomNoiseImage();
     // Add a simple transformation
     image::transform::TransformEngine te;
     te.addTransformation(std::make_shared<image::transform::BinaryScale>());
