@@ -48,7 +48,7 @@ namespace image::transform {
       return "_";
     }
 
-  }// namespace
+  }   // namespace
 
   void TransformEngine::loadFromFile(std::string const &fileName) {
     std::ifstream fp(fileName);
@@ -93,4 +93,4 @@ namespace image::transform {
     return copy;
   }
 
-}// namespace image::transform
+}   // namespace image::transform

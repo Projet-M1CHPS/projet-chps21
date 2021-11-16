@@ -4,37 +4,37 @@
 
 namespace image::transform {
 
-enum class TransformType {
+  enum class TransformType {
     binaryScale,
     inversion,
     binaryScaleByMedian,
-};
+  };
 
-// Transformation base class
-// Note that all transformations are assumed to be reentrant
-class Transformation {
-   public:
+  // Transformation base class
+  // Note that all transformations are assumed to be reentrant
+  class Transformation {
+  public:
     virtual ~Transformation() = default;
     virtual bool transform(image::GrayscaleImage &image) = 0;
-};
+  };
 
-class BinaryScale : public Transformation {
-   public:
+  class BinaryScale : public Transformation {
+  public:
     bool transform(image::GrayscaleImage &image) override;
-};
+  };
 
-class BinaryScaleByMedian : public Transformation {
-   public:
+  class BinaryScaleByMedian : public Transformation {
+  public:
     bool transform(image::GrayscaleImage &image) override;
-};
+  };
 
-class Inversion : public Transformation {
-   public:
+  class Inversion : public Transformation {
+  public:
     bool transform(image::GrayscaleImage &image) override;
-};
+  };
 
-class TransformEngine {
-   public:
+  class TransformEngine {
+  public:
     // We want to be able to store the applied transformations in a file
     // (Should throw an exception on error)
     void loadFromFile(std::string const &fileName);
@@ -62,11 +62,11 @@ class TransformEngine {
      */
     image::GrayscaleImage transform(image::GrayscaleImage const &image);
 
-   private:
+  private:
     // Keeping the transformations identifiers for I/O easily.
     std::vector<TransformType> transformationsEnums;
     // Transformations should be applied in order
     std::vector<std::shared_ptr<Transformation>> transformations;
-};
+  };
 
-}  // namespace image::transform
+}   // namespace image::transform

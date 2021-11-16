@@ -1,62 +1,58 @@
+#include "ActivationFunction.hpp"
 #include "Image.hpp"
+#include "Matrix.hpp"
 #include "NeuralNetwork.hpp"
 #include "Utils.hpp"
-#include "Matrix.hpp"
-#include "ActivationFunction.hpp"
-#include <iostream>
-#include <vector>
-#include <utility>
 #include <array>
+#include <iostream>
+#include <utility>
+#include <vector>
 
-template <typename T>
-size_t func_xor(const size_t bach_size, const T learning_rate, const T error_limit)
-{
-    nnet::NeuralNetwork<T> nn;
-    nn.setLayersSize(std::vector<size_t>{2, 2, 2, 1});
-    nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
-    nn.randomizeSynapses();
+template<typename T>
+size_t func_xor(const size_t bach_size, const T learning_rate, const T error_limit) {
+  nnet::NeuralNetwork<T> nn;
+  nn.setLayersSize(std::vector<size_t>{2, 2, 2, 1});
+  nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
+  nn.randomizeSynapses();
 
-    std::cout << nn << std::endl;
+  std::cout << nn << std::endl;
 
-    std::vector<std::vector<T>> input{{1, 1},
-                                      {1, 0},
-                                      {0, 1},
-                                      {0, 0}};
-    std::vector<T> target{0, 1, 1, 0};
+  std::vector<std::vector<T>> input{{1, 1},
+                                    {1, 0},
+                                    {0, 1},
+                                    {0, 0}};
+  std::vector<T> target{0, 1, 1, 0};
 
-    float error = 1.f;
-    size_t count = 0;
-    while (error > error_limit)
-    {
-        for (int i = 0; i < bach_size; i++)
-            for (int j = 0; j < 4; j++)
-                nn.train(input[j].begin(), input[j].end(), target.begin() + j, target.begin() + j + 1, learning_rate);
+  float error = 1.f;
+  size_t count = 0;
+  while (error > error_limit) {
+    for (int i = 0; i < bach_size; i++)
+      for (int j = 0; j < 4; j++)
+        nn.train(input[j].begin(), input[j].end(), target.begin() + j, target.begin() + j + 1, learning_rate);
 
-        error = 0.0;
-        for (int i = 0; i < input.size(); i++)
-            error += std::pow(std::fabs(nn.predict(input[i].begin(), input[i].end())(0, 0) - target[i]), 2);
-        error /= input.size();
-        std::cout << error << std::endl;
-        count++;
-    }
-
-    std::cout << "Result"
-              << "---> " << count << " iterations" << std::endl;
+    error = 0.0;
     for (int i = 0; i < input.size(); i++)
-    {
-        std::cout << input[i][0] << "|" << input[i][1] << " = "
-                  << nn.predict(input[i].begin(), input[i].end()) << "("
-                  << target[i] << ")" << std::endl;
-    }
-    std::cout << nn << std::endl;
-    return count;
+      error += std::pow(std::fabs(nn.predict(input[i].begin(), input[i].end())(0, 0) - target[i]), 2);
+    error /= input.size();
+    std::cout << error << std::endl;
+    count++;
+  }
+
+  std::cout << "Result"
+            << "---> " << count << " iterations" << std::endl;
+  for (int i = 0; i < input.size(); i++) {
+    std::cout << input[i][0] << "|" << input[i][1] << " = "
+              << nn.predict(input[i].begin(), input[i].end()) << "("
+              << target[i] << ")" << std::endl;
+  }
+  std::cout << nn << std::endl;
+  return count;
 }
 
-int main(int argc, char **argv)
-{
-    func_xor<float>(100, 0.05, 0.001);
+int main(int argc, char **argv) {
+  func_xor<float>(100, 0.05, 0.001);
 
-    /* nnet::NeuralNetwork<float> nn;
+  /* nnet::NeuralNetwork<float> nn;
     nn.setLayersSize(std::vector<size_t>{2, 2, 1});
     nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
     nn.randomizeSynapses();
@@ -64,5 +60,5 @@ int main(int argc, char **argv)
     std::vector<float> target{0};
     nn.train(input.begin(), input.end(), target.begin(), target.end(), 0.1); */
 
-    return 0;
+  return 0;
 }

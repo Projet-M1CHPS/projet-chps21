@@ -1,20 +1,20 @@
 #pragma once
 
 #include "Utils.hpp"
-#include <iostream>
 #include <cmath>
 #include <functional>
+#include <iostream>
 #include <utility>
 
 namespace af {
 
-/**
- * @brief Enum of supported activation functions
- *
- * Function that are not referenced in this enum cannot be used to prevent
- * errors when serializing a network
- *
- */
+  /**
+   * @brief Enum of supported activation functions
+   *
+   * Function that are not referenced in this enum cannot be used to prevent
+   * errors when serializing a network
+   *
+   */
   enum class ActivationFunctionType {
     identity,
     sigmoid,
@@ -26,20 +26,20 @@ namespace af {
     square
   };
 
-/**
- * @brief Convert a string to an ActivationFunctionType
- *
- * @param str
- * @return ActivationFunctionType
- */
+  /**
+   * @brief Convert a string to an ActivationFunctionType
+   *
+   * @param str
+   * @return ActivationFunctionType
+   */
   ActivationFunctionType strToAFType(const std::string &str);
 
-/**
- * @brief Convert an ActivationFunctionType to a string
- *
- * @param type
- * @return std::string
- */
+  /**
+   * @brief Convert an ActivationFunctionType to a string
+   *
+   * @param type
+   * @return std::string
+   */
   std::string AFTypeToStr(ActivationFunctionType type);
 
   template<typename real>
@@ -126,12 +126,12 @@ namespace af {
   }
 
   /**
- * @brief Return the function associated with an ActivationFunctionType
- *
- * @tparam real
- * @param type
- * @return std::function<real(real)>
- */
+   * @brief Return the function associated with an ActivationFunctionType
+   *
+   * @tparam real
+   * @param type
+   * @return std::function<real(real)>
+   */
   template<typename real>
   std::pair<std::function<real(real)>, std::function<real(real)>>
   getAFFromType(ActivationFunctionType type) {
@@ -140,13 +140,14 @@ namespace af {
             "getAFFromType(): Invalid type, expected a floating point type");
 
     const std::unordered_map<ActivationFunctionType, std::pair<std::function<real(real)>, std::function<real(
-            real)>>> map{
-            {ActivationFunctionType::identity,  {identity<real>,  didentity<real>}},
-            {ActivationFunctionType::sigmoid,   {sigmoid<real>,   dsigmoid<real>}},
-            {ActivationFunctionType::relu,      {relu<real>,      drelu<real>}},
-            {ActivationFunctionType::leakyRelu, {leakyRelu<real>, dleakyRelu<real>}},
-            {ActivationFunctionType::square,    {square<real>,    dsquare<real>}},
-    };
+                                                                                                  real)>>>
+            map{
+                    {ActivationFunctionType::identity, {identity<real>, didentity<real>}},
+                    {ActivationFunctionType::sigmoid, {sigmoid<real>, dsigmoid<real>}},
+                    {ActivationFunctionType::relu, {relu<real>, drelu<real>}},
+                    {ActivationFunctionType::leakyRelu, {leakyRelu<real>, dleakyRelu<real>}},
+                    {ActivationFunctionType::square, {square<real>, dsquare<real>}},
+            };
     auto pair = map.find(type);
     if (pair == map.end()) {
       throw std::invalid_argument("getAFFromType(): Unknown activation functions");
@@ -154,4 +155,4 @@ namespace af {
     return pair->second;
   }
 
-} // namespace af
+}   // namespace af

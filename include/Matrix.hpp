@@ -16,7 +16,6 @@ namespace math {
     Matrix() = default;
 
     Matrix(size_t rows, size_t cols) : rows(rows), cols(cols) {
-
       if (rows == 0 || cols == 0) {
         return;
       }
@@ -73,8 +72,7 @@ namespace math {
       return *this;
     }
 
-    Matrix &operator=(Matrix &&other)
-    noexcept {
+    Matrix &operator=(Matrix &&other) noexcept {
       // No reason to copy oneself
       if (this == &other) {
         return *this;
@@ -90,7 +88,6 @@ namespace math {
     }
 
     [[nodiscard]] T sumReduce() const {
-
       if (not data) {
         throw std::runtime_error("Cannot sum-reduce a null-sized matrix");
       }
@@ -119,7 +116,6 @@ namespace math {
     }
 
     Matrix &operator+=(const Matrix &other) {
-
       if (rows != other.rows or cols != other.cols) {
         throw std::invalid_argument("Matrix dimensions do not match");
       }
@@ -133,9 +129,9 @@ namespace math {
         static_assert(false, "blas not implemented");
       else
 #endif
-      for (size_t i = 0; i < rows * cols; i++) {
-        data[i] += other_data[i];
-      }
+        for (size_t i = 0; i < rows * cols; i++) {
+          data[i] += other_data[i];
+        }
       return *this;
     }
 
@@ -161,9 +157,9 @@ namespace math {
         static_assert(false, "blas not implemented");
       else
 #endif
-      for (size_t i = 0; i < rows * cols; i++) {
-        res_data[i] = data[i] + other_data[i];
-      }
+        for (size_t i = 0; i < rows * cols; i++) {
+          res_data[i] = data[i] + other_data[i];
+        }
 
       return res;
     }
@@ -184,9 +180,9 @@ namespace math {
         static_assert(false, "blas not implemented");
       else
 #endif
-      for (size_t i = 0; i < rows * cols; i++) {
-        data[i] -= other_data[i];
-      }
+        for (size_t i = 0; i < rows * cols; i++) {
+          data[i] -= other_data[i];
+        }
 
       return *this;
     }
@@ -213,9 +209,9 @@ namespace math {
         static_assert(false, "blas not implemented");
       else
 #endif
-      for (size_t i = 0; i < rows * cols; i++) {
-        res_data[i] = data[i] - other_data[i];
-      }
+        for (size_t i = 0; i < rows * cols; i++) {
+          res_data[i] = data[i] - other_data[i];
+        }
 
       return res;
     }
@@ -240,14 +236,14 @@ namespace math {
       else
 
 #endif
-      for (int i = 0; i < rows; i++) {
-        for (int k = 0; k < cols; k++) {
-          T a_ik = data[i * cols + k];
-          for (int j = 0; j < other_cols; j++) {
-            raw_res[i * other_cols + j] += a_ik * raw_other[k * other_cols + j];
+        for (int i = 0; i < rows; i++) {
+          for (int k = 0; k < cols; k++) {
+            T a_ik = data[i * cols + k];
+            for (int j = 0; j < other_cols; j++) {
+              raw_res[i * other_cols + j] += a_ik * raw_other[k * other_cols + j];
+            }
           }
         }
-      }
 
       return res;
     }
@@ -267,7 +263,7 @@ namespace math {
       else
 
 #endif
-      const size_t size{rows * cols};
+        const size_t size{rows * cols};
       for (size_t i = 0; i < size; i++) {
         raw_res[i] = raw_mat[i] * scale;
       }
@@ -287,7 +283,7 @@ namespace math {
       else
 
 #endif
-      const size_t size{rows * cols};
+        const size_t size{rows * cols};
       for (size_t i = 0; i < size; i++) {
         raw_mat[i] *= scale;
       }
@@ -317,13 +313,13 @@ namespace math {
   using FloatMatrix = Matrix<float>;
   using DoubleMatrix = Matrix<double>;
 
-  //friend std::ostream& operator<<(std::ostream& os, const Pair<T, U>& p)
+  // friend std::ostream& operator<<(std::ostream& os, const Pair<T, U>& p)
   template<typename T>
   std::ostream &operator<<(std::ostream &os, const Matrix<T> &m) {
     size_t j = 0;
     const size_t cols = m.getCols();
 
-    for (T const &i: m) {
+    for (T const &i : m) {
       os << i << " ";
       if (++j % cols == 0) {
         os << "\n";
@@ -332,4 +328,4 @@ namespace math {
     return os;
   }
 
-} // namespace math
+}   // namespace math

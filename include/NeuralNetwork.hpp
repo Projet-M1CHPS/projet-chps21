@@ -15,32 +15,32 @@
 namespace nnet {
 
   /**
- * @brief Enum of the supported floating precision
- *
- * Used for serialization
- *
- */
+   * @brief Enum of the supported floating precision
+   *
+   * Used for serialization
+   *
+   */
   enum class FloatingPrecision {
     float32,
     float64,
   };
 
   /**
- * @brief
- *
- * @param str
- * @return FloatingPrecision
- */
+   * @brief
+   *
+   * @param str
+   * @return FloatingPrecision
+   */
   FloatingPrecision strToFPrecision(const std::string &str);
 
   const char *fPrecisionToStr(FloatingPrecision fp);
 
   /**
- * @brief Convert a static type to the corresponding enum type
- *
- * @tparam ypename
- * @return FloatingPrecision
- */
+   * @brief Convert a static type to the corresponding enum type
+   *
+   * @tparam ypename
+   * @return FloatingPrecision
+   */
   template<typename T>
   FloatingPrecision getFPPrecision() {
     if constexpr (std::is_same_v<float, T>) {
@@ -54,9 +54,9 @@ namespace nnet {
   }
 
   /**
- * @brief Base class for the neural network
- *
- */
+   * @brief Base class for the neural network
+   *
+   */
   class NeuralNetworkBase {
   public:
     NeuralNetworkBase() = delete;
@@ -92,11 +92,11 @@ namespace nnet {
   };
 
   /**
- * @brief A neural network that supports most fp precision as template
- * parameters
- *
- * @tparam real
- */
+   * @brief A neural network that supports most fp precision as template
+   * parameters
+   *
+   * @tparam real
+   */
   template<typename real>
   class NeuralNetwork final : public NeuralNetworkBase {
   public:
@@ -109,11 +109,11 @@ namespace nnet {
     NeuralNetwork() : NeuralNetworkBase(getFPPrecision<real>()) {}
 
     NeuralNetwork(const NeuralNetwork &other)
-            : NeuralNetworkBase(getFPPrecision<real>()) {
+        : NeuralNetworkBase(getFPPrecision<real>()) {
       *this = other;
     }
 
-    NeuralNetwork(NeuralNetwork &&other) noexcept: NeuralNetworkBase(getFPPrecision<real>()) {
+    NeuralNetwork(NeuralNetwork &&other) noexcept : NeuralNetworkBase(getFPPrecision<real>()) {
       *this = std::move(other);
     }
 
@@ -171,7 +171,6 @@ namespace nnet {
      * @param layers
      */
     void setLayersSize(std::vector<size_t> const &layers) override {
-
       if (layers.size() < 2) {
         throw std::invalid_argument("Requires atleast 2 layers");
       }
@@ -213,15 +212,14 @@ namespace nnet {
 
       res.reserve(weights.size());
 
-      for (auto& w : weights) {
+      for (auto &w : weights) {
         res.push_back(w.getRows());
       }
       return res;
     }
 
     void setActivationFunction(af::ActivationFunctionType type) override {
-
-      for (auto &activation_function: activation_functions) {
+      for (auto &activation_function : activation_functions) {
         activation_function = type;
       }
     }
@@ -246,11 +244,11 @@ namespace nnet {
      * @param seed
      */
     void randomizeSynapses() override {
-      for (auto &layer: weights) {
+      for (auto &layer : weights) {
         utils::random::randomize<real>(layer, 0, 1);
       }
 
-      for (auto &layer: biases) {
+      for (auto &layer : biases) {
         utils::random::randomize<real>(layer, 0, 1);
       }
     }
@@ -347,7 +345,7 @@ namespace nnet {
     std::vector<af::ActivationFunctionType> activation_functions;
   };
 
-  //std::ostream& operator<<(std::ostream& os, const Pair<T, U>& p)
+  // std::ostream& operator<<(std::ostream& os, const Pair<T, U>& p)
   template<typename T>
   std::ostream &operator<<(std::ostream &os, const NeuralNetwork<T> &nn) {
     const size_t size = nn.getWeights().size();
@@ -364,4 +362,4 @@ namespace nnet {
     os << "-------output------\n";
     return os;
   }
-} // namespace nnet
+}   // namespace nnet

@@ -1,15 +1,14 @@
 #include "NeuralNetworkSerializer.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <search.h>
-#include <filesystem>
 
 namespace nnet {
 
   void NeuralNetworkSerializer::saveToFile(std::string const &path,
                                            NeuralNetworkBase const &nn,
                                            NNSerializerFlags const &flags) {
-
     std::ios::openmode mode = std::ios::out;
     if (flags & NNSerializerFlags::BINARY_MODE) {
       mode |= std::ios::binary;
@@ -33,7 +32,6 @@ namespace nnet {
   void NeuralNetworkSerializer::saveToStream(std::ostream &stream,
                                              NeuralNetworkBase const &nn,
                                              NNSerializerFlags const &flags) {
-
     stream << fPrecisionToStr(nn.getPrecision()) << "\n";
     if (flags & NNSerializerFlags::BINARY_MODE) {
       binarySaveToStream(stream, nn, flags);
@@ -44,7 +42,6 @@ namespace nnet {
 
   void NeuralNetworkSerializer::binarySaveToStream(
           std::ostream &os, NeuralNetworkBase const &nn, NNSerializerFlags const &flags) {
-
     auto layers = nn.getLayersSize();
     size_t layer_size = layers.size();
     // Write the number of layers
@@ -54,7 +51,7 @@ namespace nnet {
 
     auto const &activations = nn.getActivationFunctions();
 
-    for (auto const &activation: activations) {
+    for (auto const &activation : activations) {
       std::string const &name = AFTypeToStr(activation);
       os.write(name.c_str(), static_cast<long>(name.length() * sizeof(char)));
       os.write(" ", sizeof(char));
@@ -67,7 +64,7 @@ namespace nnet {
       auto const &weights = nn.getWeights();
       // Write the number of weights
 
-      for (auto const &w: weights) {
+      for (auto const &w : weights) {
         // output the whole array at once
         size_t weight_size = w.getRows() * w.getCols();
         os.write(reinterpret_cast<char const *>(w.getData()),
@@ -75,7 +72,7 @@ namespace nnet {
       }
 
       auto const &biases = nn.getBiases();
-      for (auto const &w: biases) {
+      for (auto const &w : biases) {
         // output the whole array at once
         size_t weight_size = w.getRows() * w.getCols();
         os.write(reinterpret_cast<char const *>(w.getData()),
@@ -110,7 +107,7 @@ namespace nnet {
 
     auto const &activations = nn.getActivationFunctions();
 
-    for (auto const &activation: activations) {
+    for (auto const &activation : activations) {
       std::string const &name = af::AFTypeToStr(activation);
       os << name << " ";
     }
@@ -123,7 +120,7 @@ namespace nnet {
       auto const &weights = nn.getWeights();
       // Write the number of weights
 
-      for (auto const &w: weights) {
+      for (auto const &w : weights) {
         // output the whole array at once
         size_t weight_size = w.getRows() * w.getCols();
         os << w;
@@ -131,7 +128,7 @@ namespace nnet {
       os << std::endl;
 
       auto const &biases = nn.getBiases();
-      for (auto const &w: biases) {
+      for (auto const &w : biases) {
         // output the whole array at once
         os << w;
       }
@@ -168,4 +165,4 @@ namespace nnet {
     utils::error("FIXME: LoadMetadataFromJSon Not implemented");
   }
 
-} // namespace nnet
+}   // namespace nnet

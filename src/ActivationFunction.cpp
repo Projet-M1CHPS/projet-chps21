@@ -5,11 +5,11 @@ namespace af {
 
   ActivationFunctionType strToAFType(const std::string &str) {
     const std::unordered_map<const char *, ActivationFunctionType> map{
-            {"identity",  ActivationFunctionType::identity},
-            {"sigmoid",   ActivationFunctionType::sigmoid},
-            {"relu",      ActivationFunctionType::relu},
+            {"identity", ActivationFunctionType::identity},
+            {"sigmoid", ActivationFunctionType::sigmoid},
+            {"relu", ActivationFunctionType::relu},
             {"leakyRelu", ActivationFunctionType::leakyRelu},
-            {"square",    ActivationFunctionType::square},
+            {"square", ActivationFunctionType::square},
     };
 
     auto pair = map.find(str.c_str());
@@ -21,11 +21,11 @@ namespace af {
 
   std::string AFTypeToStr(ActivationFunctionType type) {
     const std::unordered_map<ActivationFunctionType, const char *> map{
-            {ActivationFunctionType::identity,  "identity"},
-            {ActivationFunctionType::sigmoid,   "sigmoid"},
-            {ActivationFunctionType::relu,      "relu"},
+            {ActivationFunctionType::identity, "identity"},
+            {ActivationFunctionType::sigmoid, "sigmoid"},
+            {ActivationFunctionType::relu, "relu"},
             {ActivationFunctionType::leakyRelu, "leakyRelu"},
-            {ActivationFunctionType::square,    "square"},
+            {ActivationFunctionType::square, "square"},
     };
 
     auto pair = map.find(type);
@@ -35,4 +35,4 @@ namespace af {
     return pair->second;
   }
 
-} // namespace af
+}   // namespace af

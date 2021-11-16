@@ -18,9 +18,9 @@ namespace image::transform {
 
     grayscale_t _grayByDesaturation(const unsigned &r, const unsigned &g, const unsigned &b) {
       grayscale_t max =
-              std::max(r, std::max(g, b));// Optimisation possible
+              std::max(r, std::max(g, b));   // Optimisation possible
       grayscale_t min =
-              std::min(r, std::min(g, b));// by grouping
+              std::min(r, std::min(g, b));   // by grouping
       return (grayscale_t) (max - min) / 2;
     }
 
@@ -31,12 +31,12 @@ namespace image::transform {
     grayscale_t _grayByMaxDecomposition(const unsigned &r, const unsigned &g, const unsigned &b) {
       return std::max(r, std::max(g, b));
     }
-  }// namespace color_to_gray
+  }   // namespace color_to_gray
 
   /**
-  * @return [percentage of pixels with brightness = 0; ... = 1; ... =
-  * max_brightness-1]
-  */
+   * @return [percentage of pixels with brightness = 0; ... = 1; ... =
+   * max_brightness-1]
+   */
   std::vector<double> createHistogram(GrayscaleImage const &image) {
     double increment_value = 1.0 / ((double) image.getSize());
     std::vector<double> histogram(nb_colors);
@@ -70,4 +70,4 @@ namespace image::transform {
     std::for_each(image.begin(), image.end(), [](auto &e) { e = max_brightness - e; });
     return true;
   }
-}// namespace image::transform
+}   // namespace image::transform
