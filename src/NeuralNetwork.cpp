@@ -1,6 +1,4 @@
 #include "NeuralNetwork.hpp"
-#include <cmath>
-#include <functional>
 
 namespace nnet {
 

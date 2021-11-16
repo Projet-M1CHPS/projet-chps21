@@ -202,7 +202,7 @@ namespace image {
    * @param image
    */
   void ImageSerializer::save(std::string const &filename,
-                         GrayscaleImage const &image) {
+                             GrayscaleImage const &image) {
     stbi_write_png(filename.c_str(), image.getWidth(), image.getHeight(), 1,
                    image.getData(), image.getWidth());
   }

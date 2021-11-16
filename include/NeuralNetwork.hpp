@@ -10,8 +10,6 @@
 #include <utility>
 #include <vector>
 
-#define alpha .1
-
 namespace nnet {
 
   /**

@@ -36,7 +36,7 @@ target_include_directories(NeuralNetwork PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_link_libraries(NeuralNetwork PUBLIC m Utils)
 target_code_coverage(NeuralNetwork)
 
-add_executable(main main.cpp)
+add_executable(main main.cpp RunControl.cpp ../include/RunControl.h)
 set_target_properties(main PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(main PUBLIC "${CMAKE_SOURCE_DIR}/include")
 
