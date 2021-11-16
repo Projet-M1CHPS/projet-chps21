@@ -130,7 +130,19 @@ namespace image {
    */
   class ImageLoader {
   public:
+    /**
+     * @brief Create and return a random generated image
+     * @param width image width, default is random in range [1:1080]
+     * @param height image height, default is random in range [1:1080]
+     */
+    static image::GrayscaleImage createRandomNoiseImage(size_t width, size_t height);
+    /**
+     * @brief Create and return a random generated image
+     * @param width image width, default is random in range [1:1080]
+     * @param height image height, default is random in range [1:1080]
+     */
     static image::GrayscaleImage createRandomNoiseImage();
+
     static image::GrayscaleImage load(std::string const &filename);
     static void save(std::string const &filename, const GrayscaleImage &image);
     static std::vector<image::GrayscaleImage>

@@ -95,15 +95,13 @@ namespace image {
 
   double GrayscaleImage::getDifference(GrayscaleImage const &other) const {
     double diff = 0.0;
-    const grayscale_t *self_iter = begin();
-    const grayscale_t *other_iter = other.begin();
+    const grayscale_t *self_data = getData(),
+                      *other_data = other.getData();
 
-    // While-loop ensure the comparison between existing elements only
-    // (if dimensions were different)
-    while (self_iter != end() && other_iter != other.end()) {
-      diff += (double) (std::abs(*self_iter - *other_iter)) / max_brightness;
-      self_iter++;
-      other_iter++;
+    size_t stop = std::min(getSize(), other.getSize());
+
+    for (size_t i = 0; i < stop; i++) {
+      diff += std::fabs(self_data[i] - other_data[i]) / max_brightness;
     }
     return diff;
   }
@@ -166,14 +164,18 @@ namespace image {
     }
   }   // namespace
 
-  GrayscaleImage ImageLoader::createRandomNoiseImage() {
-    GrayscaleImage res((rand() % 1080) + 1, (rand() % 1080) + 1);
+  GrayscaleImage ImageLoader::createRandomNoiseImage(size_t width, size_t height) {
+    GrayscaleImage res(width, height);
     grayscale_t *raw_array = res.getData();
 
     for (size_t i = 0; i < res.getSize(); i++) {
       raw_array[i] = (grayscale_t) (rand() % nb_colors);
     }
     return res;
+  }
+
+  GrayscaleImage ImageLoader::createRandomNoiseImage() {
+    return ImageLoader::createRandomNoiseImage((size_t) (rand() % 1080) + 1, (size_t) (rand() % 1080) + 1);
   }
 
   /**

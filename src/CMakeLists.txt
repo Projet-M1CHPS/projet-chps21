@@ -9,11 +9,12 @@ target_code_coverage(Utils)
 
 add_library(Image STATIC
         Image.cpp ${CMAKE_SOURCE_DIR}/include/Image.hpp
-        ${CMAKE_SOURCE_DIR}/include/stb_image.h
-        ${CMAKE_SOURCE_DIR}/include/stb_image_write.h
+        ${CMAKE_SOURCE_DIR}/dependency/stb_image.h
+        ${CMAKE_SOURCE_DIR}/dependency/stb_image_write.h
         )
 set_target_properties(Image PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-target_include_directories(Image PUBLIC "${CMAKE_SOURCE_DIR}/include")
+# Uses the stb library located in dependency
+target_include_directories(Image PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/dependency")
 target_code_coverage(Image)
 
 add_library(Transform STATIC
