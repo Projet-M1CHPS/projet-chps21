@@ -1,6 +1,8 @@
 #include "Image.hpp"
 
+#include <algorithm>
 #include <dirent.h>
+#include <functional>
 #include <numeric>
 #include <unistd.h>
 
@@ -119,7 +121,7 @@ namespace image {
 
     // FIXME: Remove this atrocity
     // For further Inquiry about the very nature of this function, please
-    // refer to BENJAMIN LOZES
+    // refer to BENJAMIN LOZES (testing purpose only)
     void _listDirectories(char *path) {
       DIR *dir;
       struct dirent *diread;
@@ -137,45 +139,18 @@ namespace image {
         std::cout << file << "| ";
       std::cout << std::endl;
     }
-
-    // FIXME: Remove this atrocity
-    // For further Inquiry about the very nature of this function, please
-    // refer to BENJAMIN LOZES
-    void _showImageInBrowser(std::string filename) {
-      if (system(nullptr) != -1) {
-        char cmd[256];
-        filename.replace(filename.find_last_of('.') + 1, 3, "png");
-
-        std::cout << filename << std::endl;
-        sprintf(cmd, "convert %s %s", filename.data(), filename.data());
-        std::cout << cmd << std::endl;
-
-        system(cmd);
-        sprintf(cmd, "firefox --new-tab -url `pwd`/%s", filename.data());
-        std::cout << cmd << std::endl;
-        system(cmd);
-
-        sleep(2);
-        sprintf(cmd, "rm %s", filename.data());
-
-        std::cout << cmd << std::endl;
-        system(cmd);
-      }
-    }
   }   // namespace
 
   GrayscaleImage ImageSerializer::createRandomNoiseImage(size_t width, size_t height) {
     GrayscaleImage res(width, height);
-    grayscale_t *raw_array = res.getData();
-
-    for (size_t i = 0; i < res.getSize(); i++) {
-      raw_array[i] = (grayscale_t) (rand() % nb_colors);
-    }
+    srand(time(0));
+    std::for_each(res.begin(), res.end(), [](auto &e) { e = (grayscale_t) (rand() % nb_colors); });
     return res;
   }
 
   GrayscaleImage ImageSerializer::createRandomNoiseImage() {
-    return ImageSerializer::createRandomNoiseImage((size_t) (rand() % 1080) + 1, (size_t) (rand() % 1080) + 1);
+    srand(time(0));
+    return ImageSerializer::createRandomNoiseImage((size_t) (rand() % 389) + 124, (size_t) (rand() % 389) + 124);
   }
 
   /**
@@ -202,7 +177,7 @@ namespace image {
    * @param image
    */
   void ImageSerializer::save(std::string const &filename,
-                         GrayscaleImage const &image) {
+                             GrayscaleImage const &image) {
     stbi_write_png(filename.c_str(), image.getWidth(), image.getHeight(), 1,
                    image.getData(), image.getWidth());
   }
