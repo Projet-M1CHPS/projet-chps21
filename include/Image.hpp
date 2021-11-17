@@ -113,6 +113,13 @@ namespace image {
      */
     [[nodiscard]] size_t getSize() const { return height * width; }
 
+    void setSize(size_t new_width, size_t new_height) {
+      width = new_width;
+      height = new_height;
+      pixel_data.reset();
+      pixel_data = std::make_unique<grayscale_t[]>(width * height);
+    }
+
     [[nodiscard]] grayscale_t *begin();
     [[nodiscard]] const grayscale_t *begin() const;
 
@@ -131,7 +138,7 @@ namespace image {
   public:
     /**
      * @brief Create and return a random generated image
-     * 
+     *
      * @param width: DEFAULT = random number in range [124,512]
      * @param height: DEFAULT = random number in range [124,512]
      */
@@ -139,7 +146,7 @@ namespace image {
 
     /**
      * @brief Create and return a random generated image.
-     * 
+     *
      * @param width: DEFAULT = random number in range [124,512]
      * @param height: DEFAULT = random number in range [124,512]
      */

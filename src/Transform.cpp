@@ -4,6 +4,7 @@
 #include <cassert>
 #include <functional>
 #include <iostream>
+#include <math.h>
 
 namespace image::transform {
 
@@ -42,6 +43,48 @@ namespace image::transform {
     std::vector<double> histogram(nb_colors);
     std::for_each(image.begin(), image.end(), [&histogram, increment_value](auto e) { histogram[e] += increment_value; });
     return histogram;
+  }
+
+  Resize::Resize(size_t width, size_t height) : width(width), height(height){};
+
+  /**
+   * @brief Sub-function for resizing (stable on both up-scaling and down-scaling, but not really efficient on up-scaling)
+   *
+   * @param factors Pair: (source.width-1)/(dest.width-1) ; (source.height-1)/(dest.height-1)
+   * @param source source image
+   * @param dest destination image
+   */
+  void downscaling(std::pair<double, double> factors, GrayscaleImage const &source, GrayscaleImage &dest) {
+    for (size_t x = 0; x < dest.getWidth(); x++) {
+      for (size_t y = 0; y < dest.getHeight(); y++) {
+        if (x == 0 || y == 0 || x == dest.getWidth() - 1 || y == dest.getHeight() - 1) {
+          size_t index = (x == 0 ? 0 : source.getWidth() - 1) + source.getWidth() * (y == 0 ? 0 : source.getHeight() - 1);
+          dest.getData()[x + y * dest.getWidth()] = source.getData()[index];   // borders
+        } else {
+          size_t orig_left_x = (size_t) std::floor(factors.first * x);
+          size_t orig_right_x = (size_t) std::ceil(factors.first * x);
+          size_t orig_up_y = (size_t) std::floor(factors.second * y);
+          size_t orig_down_y = (size_t) std::ceil(factors.second * y);
+          grayscale_t value = (grayscale_t)
+                  std::round((source.getData()[orig_left_x + source.getWidth() * orig_up_y] +
+                              source.getData()[orig_left_x + source.getWidth() * orig_down_y] +
+                              source.getData()[orig_right_x + source.getWidth() * orig_up_y] +
+                              source.getData()[orig_right_x + source.getWidth() * orig_down_y]) /
+                             4.0);
+          dest.getData()[x + dest.getWidth() * y] = value;
+        }
+      }
+    }
+  }
+
+  bool Resize::transform(GrayscaleImage &image) {
+    const image::GrayscaleImage source = image;   // In order to modify the image ref, we first need to copy it.
+    image.setSize(width, height);
+    std::pair<double, double> factors((double) (source.getWidth() - 1) / (width - 1), (double) (source.getHeight() - 1) / (height - 1));
+    // Works for both up & down scaling.
+    // A upscaling(...) function will be defined soon to enhance that particular case.
+    downscaling(factors, source, image);
+    return true;
   }
 
   bool BinaryScale::transform(GrayscaleImage &image) {

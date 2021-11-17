@@ -5,6 +5,7 @@
 namespace image::transform {
 
   enum class TransformType {
+    resize,
     binaryScale,
     inversion,
     binaryScaleByMedian,
@@ -16,6 +17,15 @@ namespace image::transform {
   public:
     virtual ~Transformation() = default;
     virtual bool transform(image::GrayscaleImage &image) = 0;
+  };
+
+  class Resize : public Transformation {
+  private:
+    size_t width, height;
+
+  public:
+    Resize(size_t width, size_t height);
+    bool transform(image::GrayscaleImage &image) override;
   };
 
   class BinaryScale : public Transformation {

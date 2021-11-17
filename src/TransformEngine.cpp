@@ -12,6 +12,7 @@ namespace image::transform {
                     {"binaryscale", TransformType::binaryScale},
                     {"inversion", TransformType::inversion},
                     {"binaryScaleByMedian", TransformType::binaryScaleByMedian},
+                    {"resize", TransformType::resize},
                     // Add new functions here
             });
 
@@ -33,6 +34,8 @@ namespace image::transform {
           return std::make_shared<Inversion>();
         case TransformType::binaryScaleByMedian:
           return std::make_shared<BinaryScaleByMedian>();
+        case TransformType::resize:
+          return std::make_shared<Resize>(0, 0);   // TODO: Rebuild the TransformationEngine system
         // Add new functions here
         default:
           throw "[ERROR]: " + identifier + "is not recognised as a valid Transform. \n" +
@@ -45,6 +48,7 @@ namespace image::transform {
       for (auto pair : transformEnumMap)
         if (pair.second == t_enum)
           return pair.first;
+      throw "[ERROR]: transformEnumToStr(t_enum): t_enum can not be recognised as a valid Transform identifier.\nIf you declared a new transformation please declare it in: TransformEngine.cpp [namespace 'transform_enumerates'] subfunctions.\n";
       return "_";
     }
 
