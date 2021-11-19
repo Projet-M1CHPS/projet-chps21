@@ -24,7 +24,7 @@
 # `target_code_coverage(<TARGET_NAME>)`, where the target is given and thus only
 # that target is instrumented. This applies to both libraries and executables.
 #
-# To add coverage targets, such as calling `make ccov` to generate the actual
+# To add coverage targets, such as calling `findOrBuildEnvironnement ccov` to generate the actual
 # coverage information for perusal or consumption, call
 # `target_code_coverage(<TARGET_NAME>)` on an *executable* target.
 #

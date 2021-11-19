@@ -23,4 +23,15 @@ namespace nnet {
     }
   }
 
+  std::unique_ptr<NeuralNetworkBase> makeNeuralNetwork(FloatingPrecision precision) {
+    switch (precision) {
+      case FloatingPrecision::float32:
+        return std::make_unique<NeuralNetwork<float>>();
+      case FloatingPrecision::float64:
+        return std::make_unique<NeuralNetwork<double>>();
+      default:
+        return nullptr;
+    }
+  }
+
 }   // namespace nnet

@@ -1,7 +1,8 @@
 #include "ActivationFunction.hpp"
 #include "NeuralNetwork.hpp"
-#include "RunControl.h"
 #include "Utils.hpp"
+#include "controlSystem/RunConfiguration.h"
+#include "controlSystem/RunControl.h"
 #include <iostream>
 #include <vector>
 
@@ -45,14 +46,31 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
   return count;
 }
 
+using namespace control;
+
 int main(int argc, char **argv) {
   if (argc < 2) {
-    std::cerr << "Usage: ./" << argv[0] << " <input_dir> <working_dir>";
+    std::cerr << "Usage: " << argv[0] << " <input_dir> (<working_dir>) (<target_dir>)";
+    return 1;
+  }
+  std::string working_dir, target_dir;
+
+  if (argc == 3) working_dir = argv[2];
+  else
+    working_dir = "runs";
+
+  if (argc >= 4) target_dir = argv[2];
+  else
+    target_dir = "run_" + utils::timestampAsStr();
+
+  RunConfiguration config(argv[1], working_dir, target_dir);
+
+  RunResult res = runOnConfig(config);
+
+  if (not res) {
+    std::cerr << "Run failed: " << res.getMessage() << std::endl;
     return 1;
   }
 
-  RunConfiguration config;
-
-
-  return runOnConfig(config) ? 0 : 1;
+  return 0;
 }
