@@ -5,6 +5,7 @@
 namespace image::transform {
 
   enum class TransformType {
+    crop,
     resize,
     binaryScale,
     inversion,
