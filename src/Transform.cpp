@@ -45,6 +45,8 @@ namespace image::transform {
     return histogram;
   }
 
+  Crop::Crop(size_t width, size_t height, size_t orig_x, size_t orig_y) : width(width), height(height), orig_x(orig_x), orig_y(orig_y){};
+
   Resize::Resize(size_t width, size_t height) : width(width), height(height){};
 
   float _get2DVectorNorm(size_t x, size_t y) {
@@ -91,6 +93,27 @@ namespace image::transform {
         dest(x, y) = mean;
       }
     }
+  }
+
+  bool Crop::transform(GrayscaleImage &image) {
+    if (orig_x < 0 || orig_y < 0 || width <= 0 || height <= 0) {
+      std::cout << "Crop can not be applied on this image: new origin needs to be greater or equal than (0,0) and new dimensions needs to be strictly greater than (0,0)" << std::endl;
+      return false;
+    } else if (orig_x + width > image.getWidth()) {
+      std::cout << "Crop can not be applied on this image: orig_x[" << orig_x << "] + width[" << width << "] > image.width[" << image.getWidth() << "]" << std::endl;
+      return false;
+    } else if (orig_y + height > image.getHeight()) {
+      std::cout << "Crop can not be applied on this image: orig_y[" << orig_y << "] + height[" << height << "] > image.height[" << image.getHeight() << "]" << std::endl;
+      return false;
+    }
+    const image::GrayscaleImage source = image;   // In order to modify the image ref, we first need to copy it.
+    image.setSize(width, height);
+    for (size_t x = orig_x; x < orig_x + width; x++) {
+      for (size_t y = orig_y; y < orig_y + height; y++) {
+        image(x - orig_x, y - orig_y) = source(x, y);
+      }
+    }
+    return true;
   }
 
   bool Resize::transform(GrayscaleImage &image) {

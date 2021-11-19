@@ -13,6 +13,7 @@ namespace image::transform {
                     {"inversion", TransformType::inversion},
                     {"binaryScaleByMedian", TransformType::binaryScaleByMedian},
                     {"resize", TransformType::resize},
+                    {"crop", TransformType::crop},
                     // Add new functions here
             });
 
@@ -36,6 +37,8 @@ namespace image::transform {
           return std::make_shared<BinaryScaleByMedian>();
         case TransformType::resize:
           return std::make_shared<Resize>(0, 0);   // TODO: Rebuild the TransformationEngine system
+        case TransformType::crop:
+          return std::make_shared<Crop>(0, 0, 0, 0);   // TODO: Rebuild the TransformationEngine system
         // Add new functions here
         default:
           throw "[ERROR]: " + identifier + "is not recognised as a valid Transform. \n" +

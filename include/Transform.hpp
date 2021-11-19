@@ -28,6 +28,15 @@ namespace image::transform {
     bool transform(image::GrayscaleImage &image) override;
   };
 
+  class Crop : public Transformation {
+  private:
+    size_t width, height, orig_x, orig_y;
+
+  public:
+    Crop(size_t width, size_t height, size_t orig_x = 0, size_t orig_y = 0);
+    bool transform(image::GrayscaleImage &image) override;
+  };
+
   class BinaryScale : public Transformation {
   public:
     bool transform(image::GrayscaleImage &image) override;
