@@ -97,13 +97,14 @@ namespace image {
 
   double GrayscaleImage::getDifference(GrayscaleImage const &other) const {
     double diff = 0.0;
-    const grayscale_t *self_data = getData(),
-                      *other_data = other.getData();
+    size_t min_height = std::min(getHeight(), other.getHeight());
+    size_t min_width = std::min(getWidth(), other.getWidth());
 
-    size_t stop = std::min(getSize(), other.getSize());
-
-    for (size_t i = 0; i < stop; i++) {
-      diff += std::fabs(self_data[i] - other_data[i]) / max_brightness;
+    for (size_t y = 0; y < min_height; y++) {
+      size_t x = 0;
+      diff += std::accumulate(begin() + getWidth() * y, begin() + getWidth() * y + min_width, 0.0, [&x, y, other](auto a, auto b) {
+        return (double) std::fabs(b - other(x++, y)) / max_brightness;
+      });
     }
     return diff;
   }
@@ -143,7 +144,7 @@ namespace image {
 
   GrayscaleImage ImageSerializer::createRandomNoiseImage(size_t width, size_t height) {
     GrayscaleImage res(width, height);
-    srand(time(0));
+    srand(rand());
     std::for_each(res.begin(), res.end(), [](auto &e) { e = (grayscale_t) (rand() % nb_colors); });
     return res;
   }
