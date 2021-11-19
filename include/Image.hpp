@@ -85,6 +85,14 @@ namespace image {
      */
     grayscale_t *getData();
 
+    grayscale_t &operator()(size_t x, size_t y) {
+      return getData()[x + y * width];
+    }
+
+    grayscale_t operator()(size_t x, size_t y) const {
+      return getData()[x + y * width];
+    }
+
     /**
      * @brief Returns the underlying raw ptr
      *

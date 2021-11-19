@@ -47,6 +47,10 @@ namespace image::transform {
 
   Resize::Resize(size_t width, size_t height) : width(width), height(height){};
 
+  float _get2DVectorNorm(size_t x, size_t y) {
+    return sqrtf(x * x + y * y);
+  }
+
   /**
    * @brief Sub-function for resizing (stable on both up-scaling and down-scaling, but not really efficient on up-scaling)
    *
@@ -56,23 +60,35 @@ namespace image::transform {
    */
   void downscaling(std::pair<double, double> factors, GrayscaleImage const &source, GrayscaleImage &dest) {
     for (size_t x = 0; x < dest.getWidth(); x++) {
-      for (size_t y = 0; y < dest.getHeight(); y++) {
-        if (x == 0 || y == 0 || x == dest.getWidth() - 1 || y == dest.getHeight() - 1) {
-          size_t index = (x == 0 ? 0 : source.getWidth() - 1) + source.getWidth() * (y == 0 ? 0 : source.getHeight() - 1);
-          dest.getData()[x + y * dest.getWidth()] = source.getData()[index];   // borders
-        } else {
-          size_t orig_left_x = (size_t) std::floor(factors.first * x);
-          size_t orig_right_x = (size_t) std::ceil(factors.first * x);
-          size_t orig_up_y = (size_t) std::floor(factors.second * y);
-          size_t orig_down_y = (size_t) std::ceil(factors.second * y);
-          grayscale_t value = (grayscale_t)
-                  std::round((source.getData()[orig_left_x + source.getWidth() * orig_up_y] +
-                              source.getData()[orig_left_x + source.getWidth() * orig_down_y] +
-                              source.getData()[orig_right_x + source.getWidth() * orig_up_y] +
-                              source.getData()[orig_right_x + source.getWidth() * orig_down_y]) /
-                             4.0);
-          dest.getData()[x + dest.getWidth() * y] = value;
-        }
+      size_t source_x = std::round(x * factors.first);
+      dest(x, 0) = source(source_x, 0);                                           // top row
+      dest(x, dest.getHeight() - 1) = source(source_x, source.getHeight() - 1);   // bottom row
+    }
+
+    for (size_t y = 0; y < dest.getHeight(); y++) {
+      size_t source_y = std::round(y * factors.second);
+      dest(0, y) = source(0, source_y);                                         // left col
+      dest(dest.getWidth() - 1, y) = source(source.getWidth() - 1, source_y);   // right col
+    }
+
+    for (size_t x = 1; x < dest.getWidth() - 1; x++) {
+      for (size_t y = 1; y < dest.getHeight() - 1; y++) {
+        size_t orig_left_x = (size_t) std::floor(factors.first * x);
+        size_t orig_right_x = (size_t) std::ceil(factors.first * x);
+        size_t orig_up_y = (size_t) std::floor(factors.second * y);
+        size_t orig_down_y = (size_t) std::ceil(factors.second * y);
+        float top_left_coef = _get2DVectorNorm(orig_left_x - x, orig_up_y - y);
+        float top_right_coef = _get2DVectorNorm(orig_right_x - x, orig_up_y - y);
+        float bottom_left_coef = _get2DVectorNorm(orig_left_x - x, orig_down_y - y);
+        float bottom_right_coef = _get2DVectorNorm(orig_right_x - x, orig_down_y - y);
+
+        grayscale_t mean = (grayscale_t)
+                std::round((source(orig_left_x, orig_up_y) +
+                            source(orig_left_x, orig_down_y) +
+                            source(orig_right_x, orig_up_y) +
+                            source(orig_right_x, orig_down_y)) /
+                           4.0);
+        dest(x, y) = mean;
       }
     }
   }
