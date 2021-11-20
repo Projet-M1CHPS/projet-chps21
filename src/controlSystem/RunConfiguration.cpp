@@ -19,7 +19,7 @@ namespace control {
     this->working_dir = std::move(working_dir);
 
     // If the target dir points to an existing dir or an absolute location, just assign it
-    if (target_dir.is_absolute() or std::filesystem::exists(target_dir))
+    if (target_dir.is_absolute())
       this->target_dir = target_dir;
     else {   // Else, target dir shall be a sub-folder in the working_dir
       this->target_dir = this->working_dir;

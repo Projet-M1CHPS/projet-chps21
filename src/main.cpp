@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
   else
     working_dir = "runs";
 
-  if (argc >= 4) target_dir = argv[2];
+  if (argc >= 4) target_dir = argv[3];
   else
     target_dir = "run_" + utils::timestampAsStr();
 

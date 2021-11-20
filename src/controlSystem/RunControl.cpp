@@ -17,7 +17,6 @@ namespace control {
                                           RunConfiguration const &config) {
       auto res = std::make_unique<ImageStash>(env.getCachePath(), config.getInputPath(), false);
 
-      res->warmup();
       return res;
     }
 
@@ -67,6 +66,7 @@ namespace control {
     std::cerr << "FIXME: WorkEnv::loadConf() not implemented" << std::endl;
     return nullptr;
   }
+
   void WorkingEnvironnement::cleanup(RunConfiguration const &config) const {
     auto flags = config.getRunFlags();
 
@@ -121,6 +121,7 @@ namespace control {
 
   void TrainingRunController::run() {
     auto &config = *state->configuration;
+    state->cache->warmup();
 
     switch (config.getFPPrecision()) {
       case FloatingPrecision::float32:
@@ -138,6 +139,8 @@ namespace control {
     if (not state) return;
 
     state->environnement->cleanup(*state->configuration);
+
+    state = nullptr;
   }
 
   template<typename real>

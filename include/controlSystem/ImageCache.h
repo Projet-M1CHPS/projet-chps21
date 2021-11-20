@@ -51,9 +51,7 @@ namespace control {
 
   protected:
     std::vector<std::pair<std::filesystem::path, size_t>> eval_set;
-
     std::vector<std::pair<std::filesystem::path, size_t>> training_set;
-    std::vector<size_t> training_set_types;
 
     std::filesystem::path cache_path;
     ImageCacheStats stats;
