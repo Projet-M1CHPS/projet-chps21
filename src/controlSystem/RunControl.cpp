@@ -1,6 +1,4 @@
 #include "controlSystem/RunControl.h"
-#include "controlSystem/ImageCache.h"
-#include "controlSystem/RunConfiguration.h"
 
 #include <future>
 #include <utility>
@@ -13,26 +11,29 @@ using namespace nnet;
 
 namespace control {
 
-  using FutureSystem = std::pair<std::future<std::unique_ptr<ImageCache>>,
-                                 std::future<std::unique_ptr<NeuralNetworkBase>>>;
-
   namespace {
 
     std::unique_ptr<ImageCache> initCache(WorkingEnvironnement const &env,
                                           RunConfiguration const &config) {
-      //auto res = std::make_unique<ImageStash>(config.getInputPath());
+      auto res = std::make_unique<ImageStash>(env.getCachePath(), config.getInputPath(), false);
 
-      //res->warmup();
+      res->warmup();
+      return res;
+    }
+
+    std::unique_ptr<NeuralNetworkBase> loadNN(WorkingEnvironnement const &env,
+                                              RunConfiguration const &config) {
+      auto nnet_path = env.getNeuralNetworkPath();
+      if (fs::exists(nnet_path)) return NeuralNetworkSerializer::loadFromFile(nnet_path);
       return nullptr;
     }
 
-    std::unique_ptr<NeuralNetworkBase> initNeuralNetwork(WorkingEnvironnement const &env,
-                                                         RunConfiguration const &config) {
-      auto nnet_path = env.getNeuralNetworkPath();
+    std::unique_ptr<NeuralNetworkBase> loadOrCreateNN(WorkingEnvironnement const &env,
+                                                      RunConfiguration const &config) {
       std::unique_ptr<NeuralNetworkBase> res;
 
-      if (fs::exists(nnet_path)) {
-        res = NeuralNetworkSerializer::loadFromFile(nnet_path);
+      if (config.getRunFlags() & config.reuse_network) {
+        res = loadNN(env, config);
         if (res) return res;
       }
 
@@ -45,24 +46,9 @@ namespace control {
       return res;
     }
 
-    FutureSystem initSystem(WorkingEnvironnement const &env, RunConfiguration const &config) {
-      return {std::async(std::launch::async, initCache, env, config),
-              std::async(std::launch::async, initNeuralNetwork, env, config)};
-    }
-
-    void trainNetwork(std::pair<std::future<std::unique_ptr<ImageCache>>,
-                                std::future<std::unique_ptr<NeuralNetworkBase>>> &system,
-                      RunConfiguration const &config, WorkingEnvironnement const &env) {
-      std::cerr << "FIXME: trainNetwork not implemented" << std::endl;
-    }
-
-    void runNetwork(FutureSystem &system, RunConfiguration const &config,
-                    WorkingEnvironnement const &env) {
-      std::cerr << "FIXME: runNetwork not implemented" << std::endl;
-    }
   }   // namespace
 
-  WorkingEnvironnement
+  std::unique_ptr<WorkingEnvironnement>
   WorkingEnvironnement::findOrBuildEnvironnement(std::filesystem::path working_dir) {
     if (not fs::exists(working_dir)) fs::create_directories(working_dir);
 
@@ -74,17 +60,13 @@ namespace control {
     tmp.append("cache");
     if (not fs::exists(tmp)) fs::create_directory(tmp);
 
-    WorkingEnvironnement res;
-    res.working_dir = std::move(working_dir);
-
-    return res;
+    return std::make_unique<WorkingEnvironnement>(std::move(working_dir));
   }
 
-  std::unique_ptr<RunConfiguration> WorkingEnvironnement::loadConfiguration() const {
+  [[nodiscard]] std::unique_ptr<RunConfiguration> WorkingEnvironnement::loadConfiguration() const {
     std::cerr << "FIXME: WorkEnv::loadConf() not implemented" << std::endl;
     return nullptr;
   }
-
   void WorkingEnvironnement::cleanup(RunConfiguration const &config) const {
     auto flags = config.getRunFlags();
 
@@ -95,77 +77,73 @@ namespace control {
     }
   }
 
-  std::filesystem::path WorkingEnvironnement::getCachePath() const {
+  [[nodiscard]] std::filesystem::path WorkingEnvironnement::getCachePath() const {
     auto res = working_dir;
     res.append("cache");
     return res;
   }
-
-  std::filesystem::path WorkingEnvironnement::getNeuralNetworkPath() const {
+  [[nodiscard]] std::filesystem::path WorkingEnvironnement::getNeuralNetworkPath() const {
     auto res = working_dir;
     res.append("NeuralNetwork.nnet");
     return res;
   }
 
-  RunResult::RunResult(bool succeeded) : succeeded(succeeded) {}
-
-  RunResult::RunResult(bool succeeded, std::string message)
-      : succeeded(succeeded), message(std::move(message)) {}
-
-  bool RunResult::get() const { return succeeded; }
-
-  RunResult::operator bool() const { return succeeded; }
-
-  std::string const &RunResult::getMessage() const { return message; }
-
-  template<typename real>
-  void runInit(FutureSystem& system, RunConfiguration const& config) {
-    static_assert(std::is_floating_point_v<real>);
-
-    std::unique_ptr<NeuralNetworkBase> base_network = system.second.get();
-    auto network = dynamic_cast<NeuralNetwork<real> *>(base_network.get());
-
-    std::unique_ptr<ImageCache> cache = system.first.get();
-
-    if (not cache or not network)
-      throw std::runtime_error("Invalid ptr during run startup");
-
-    switch (config.getMode()) {
-      case RunConfiguration::trainingMode :
-        //launchTraining<real>(*network, *cache);
-        break;
-
-      case RunConfiguration::predictMode :
-        //launchPredict<real>(*network, *cache);
-        break;
-    }
-  }
-
-  RunResult runOnConfig(RunConfiguration const &config) {
+  RunResult AbstractRunController::launch(const RunConfiguration &config) {
     if (not fs::exists(config.getInputPath())) return {false, "Invalid input path"};
 
     try {
-      auto &wd = config.getTargetDirectory();
+      if (not state or not state->isValid()) setupState(config);
 
-      WorkingEnvironnement env = WorkingEnvironnement::findOrBuildEnvironnement(wd);
+      if (not state or not state->isValid()) throw std::runtime_error("State setup failed");
 
-      FutureSystem system = initSystem(env, config);
-
-      switch (config.getFPPrecision()) {
-        case FloatingPrecision::float32:
-          runInit<float>(system, config);
-          break;
-        case FloatingPrecision::float64:
-          runInit<double>(system, config);
-          break;
-        default:
-          throw std::runtime_error("Unknown fp precision");
-      }
-      env.cleanup(config);
+      run();
 
     } catch (std::runtime_error &e) { return {false, e.what()}; } catch (...) {
       return {false, "Unknown exception thrown during run."};
     }
     return RunResult(true);
   }
+
+  void TrainingRunController::setupState(const RunConfiguration &config) {
+    if (not state) state = std::make_unique<RunState>();
+
+    state->configuration = &config;
+    if (not state->environnement) {
+      state->environnement =
+              WorkingEnvironnement::findOrBuildEnvironnement(config.getTargetDirectory());
+    }
+
+    auto &env = *state->environnement;
+
+    if (not state->cache) initCache(env, config);
+    if (not state->network) loadOrCreateNN(env, config);
+  }
+
+  void TrainingRunController::run() {
+    auto &config = *state->configuration;
+
+    switch (config.getFPPrecision()) {
+      case FloatingPrecision::float32:
+        runImpl<float>();
+        break;
+      case FloatingPrecision::float64:
+        runImpl<double>();
+        break;
+      default:
+        throw std::runtime_error("Unknown fp precision");
+    }
+  }
+
+  void TrainingRunController::cleanup() {
+    if (not state) return;
+
+    state->environnement->cleanup(*state->configuration);
+  }
+
+  template<typename real>
+  void TrainingRunController::runImpl() {
+    static_assert(std::is_floating_point_v<real>,
+                  "TrainingRunController::runImpl: wrong fp type for run controller");
+  }
+
 }   // namespace control

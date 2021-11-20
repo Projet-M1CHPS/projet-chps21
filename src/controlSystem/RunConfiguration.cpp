@@ -1,7 +1,6 @@
 
 #include "controlSystem/RunConfiguration.h"
 #include "controlSystem/ImageCache.h"
-#include "controlSystem/RunControl.h"
 #include <search.h>
 #include <utility>
 

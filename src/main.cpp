@@ -64,8 +64,10 @@ int main(int argc, char **argv) {
     target_dir = "run_" + utils::timestampAsStr();
 
   RunConfiguration config(argv[1], working_dir, target_dir);
+  auto controller = std::make_unique<TrainingRunController>();
 
-  RunResult res = runOnConfig(config);
+  RunResult res = controller->launch(config);
+  controller->cleanup();
 
   if (not res) {
     std::cerr << "Run failed: " << res.getMessage() << std::endl;
