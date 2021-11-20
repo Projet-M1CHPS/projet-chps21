@@ -25,6 +25,9 @@ set_target_properties(Transform PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BIN
 target_include_directories(Transform PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_code_coverage(Transform)
 
+
+set(BLA_VENDER OpenBLAS)
+find_package(BLAS REQUIRED)
 add_library(NeuralNetwork STATIC
         NeuralNetwork.cpp ${CMAKE_SOURCE_DIR}/include/NeuralNetwork.hpp
         ActivationFunction.cpp ${CMAKE_SOURCE_DIR}/include/ActivationFunction.hpp
@@ -32,8 +35,8 @@ add_library(NeuralNetwork STATIC
         ${CMAKE_SOURCE_DIR}/include/Matrix.hpp
         )
 set_target_properties(NeuralNetwork PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-target_include_directories(NeuralNetwork PUBLIC "${CMAKE_SOURCE_DIR}/include")
-target_link_libraries(NeuralNetwork PUBLIC m Utils)
+target_include_directories(NeuralNetwork PUBLIC "${CMAKE_SOURCE_DIR}/include" ${BLAS_INCLUDE_DIRS})
+target_link_libraries(NeuralNetwork PUBLIC m Utils ${BLAS_LIBRARIES})
 target_code_coverage(NeuralNetwork)
 
 add_executable(main main.cpp)
