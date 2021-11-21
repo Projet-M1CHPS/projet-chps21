@@ -3,8 +3,8 @@
 #include "NeuralNetwork.hpp"
 #include "NeuralNetworkSerializer.hpp"
 #include "Transform.hpp"
-#include "controlSystem/ImageCache.h"
 #include "controlSystem/RunConfiguration.h"
+#include "controlSystem/TrainingImageCache.h"
 #include <filesystem>
 #include <memory>
 #include <utility>
@@ -60,7 +60,7 @@ namespace control {
 
   struct RunState {
     std::unique_ptr<nnet::NeuralNetworkBase> network;
-    std::unique_ptr<ImageCache> cache;
+    std::unique_ptr<TrainingImageCache> cache;
     std::unique_ptr<WorkingEnvironnement> environnement;
     RunConfiguration const *configuration;
 

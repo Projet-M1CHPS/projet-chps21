@@ -13,9 +13,10 @@ namespace control {
 
   namespace {
 
-    std::unique_ptr<ImageCache> initCache(WorkingEnvironnement const &env,
-                                          RunConfiguration const &config) {
-      auto res = std::make_unique<ImageStash>(env.getCachePath(), config.getInputPath(), false);
+    std::unique_ptr<TrainingImageCache> initCache(WorkingEnvironnement const &env,
+                                                  RunConfiguration const &config) {
+      auto res = std::make_unique<TrainingImageStash>(env.getCachePath(), config.getInputPath(),
+                                                      false);
 
       return res;
     }
@@ -115,8 +116,8 @@ namespace control {
 
     auto &env = *state->environnement;
 
-    if (not state->cache) initCache(env, config);
-    if (not state->network) loadOrCreateNN(env, config);
+    if (not state->cache) state->cache = initCache(env, config);
+    if (not state->network) state->network = loadOrCreateNN(env, config);
   }
 
   void TrainingRunController::run() {

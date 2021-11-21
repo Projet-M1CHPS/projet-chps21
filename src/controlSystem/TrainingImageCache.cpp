@@ -1,4 +1,4 @@
-#include "controlSystem/ImageCache.h"
+#include "controlSystem/TrainingImageCache.h"
 #include <filesystem>
 #include <list>
 #include <random>
@@ -26,15 +26,15 @@ namespace control {
     }
   }   // namespace
 
-  ImageStash::ImageStash(std::filesystem::path cache_path, std::filesystem::path const &input_path,
+  TrainingImageStash::TrainingImageStash(std::filesystem::path cache_path, std::filesystem::path const &input_path,
                          bool shuffle_input)
-      : ImageCache(std::move(cache_path)) {
+      : TrainingImageCache(std::move(cache_path)) {
     if (not fs::exists(input_path) or not fs::exists(input_path / "eval") or
         not fs::exists(input_path / "train"))
-      throw std::runtime_error("ImageStash: input path doesn't exist or is invalid");
+      throw std::runtime_error("TrainingImageStash: input path doesn't exist or is invalid");
 
-    //loadFromFolder(input_path / "train", training_set);
-    //loadFromFolder(input_path / "eval", eval_set);
+    loadFromFolder(input_path / "train", training_set);
+    loadFromFolder(input_path / "eval", eval_set);
 
     if (shuffle_input) {
       std::random_device rd;
@@ -45,7 +45,7 @@ namespace control {
     }
   }
 
-  bool ImageStash::warmup() {
+  bool TrainingImageStash::warmup() {
     loaded_eval_set.reserve(eval_set.size());
     loaded_training_set.reserve(training_set.size());
 
@@ -69,7 +69,7 @@ namespace control {
     return true;
   }
 
-  image::GrayscaleImage const &ImageStash::getEval(size_t index) {}
+  image::GrayscaleImage const &TrainingImageStash::getEval(size_t index) {}
 
-  image::GrayscaleImage const &ImageStash::getTraining(size_t index) {}
+  image::GrayscaleImage const &TrainingImageStash::getTraining(size_t index) {}
 }   // namespace control
