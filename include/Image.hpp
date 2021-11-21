@@ -99,7 +99,7 @@ namespace image {
     /**
      * @brief Returns the dimensions of the image as a pair
      *
-     * @return std::pair<size_t, size_t>
+     * @return std::pair<width, height>
      */
     [[nodiscard]] std::pair<size_t, size_t> getDimension() const {
       return std::make_pair(width, height);
@@ -112,6 +112,13 @@ namespace image {
      * @return size_t
      */
     [[nodiscard]] size_t getSize() const { return height * width; }
+
+    void setSize(size_t new_width, size_t new_height) {
+      width = new_width;
+      height = new_height;
+      pixel_data.reset();
+      pixel_data = std::make_unique<grayscale_t[]>(width * height);
+    }
 
     [[nodiscard]] grayscale_t *begin();
     [[nodiscard]] const grayscale_t *begin() const;
@@ -126,20 +133,22 @@ namespace image {
 
   /**
    * @brief Helper class for image generation and serialization
-   *
    */
   class ImageSerializer {
   public:
     /**
      * @brief Create and return a random generated image
-     * @param width image width, default is random in range [1:1080]
-     * @param height image height, default is random in range [1:1080]
+     *
+     * @param width: DEFAULT = random number in range [124,512]
+     * @param height: DEFAULT = random number in range [124,512]
      */
     static image::GrayscaleImage createRandomNoiseImage(size_t width, size_t height);
+
     /**
-     * @brief Create and return a random generated image
-     * @param width image width, default is random in range [1:1080]
-     * @param height image height, default is random in range [1:1080]
+     * @brief Create and return a random generated image.
+     *
+     * @param width: DEFAULT = random number in range [124,512]
+     * @param height: DEFAULT = random number in range [124,512]
      */
     static image::GrayscaleImage createRandomNoiseImage();
 

@@ -7,13 +7,13 @@ namespace image::transform {
 
   namespace {
 
-    const std::map<std::string, TransformType> transformEnumMap(
-            {
-                    {"binaryscale", TransformType::binaryScale},
-                    {"inversion", TransformType::inversion},
-                    {"binaryScaleByMedian", TransformType::binaryScaleByMedian},
-                    // Add new functions here
-            });
+    const std::map<std::string, TransformType> transformEnumMap({
+            {"binaryscale", TransformType::binaryScale},
+            {"inversion", TransformType::inversion},
+            {"binaryScaleByMedian", TransformType::binaryScaleByMedian},
+            {"resize", TransformType::resize},
+            // Add new functions here
+    });
 
     TransformType strToTransformEnum(std::string identifier) {
       auto t_enum = transformEnumMap.find(identifier);
@@ -24,8 +24,7 @@ namespace image::transform {
       return t_enum->second;
     }
 
-    std::shared_ptr<Transformation>
-    getTransformationFromString(std::string identifier) {
+    std::shared_ptr<Transformation> getTransformationFromString(std::string identifier) {
       switch (strToTransformEnum(identifier)) {
         case TransformType::binaryScale:
           return std::make_shared<BinaryScale>();
@@ -33,18 +32,23 @@ namespace image::transform {
           return std::make_shared<Inversion>();
         case TransformType::binaryScaleByMedian:
           return std::make_shared<BinaryScaleByMedian>();
+        case TransformType::resize:
+          return std::make_shared<Resize>(0, 0);   // TODO: Rebuild the TransformationEngine system
         // Add new functions here
         default:
           throw "[ERROR]: " + identifier + "is not recognised as a valid Transform. \n" +
-                  "If you declared a new transformation please declare it in: TransformEngine.cpp " +
+                  "If you declared a new transformation please declare it in: "
+                  "TransformEngine.cpp " +
                   "[namespace 'transform_enumerates'] subfunctions.\n";
       }
     }
 
     std::string transformEnumToStr(TransformType t_enum) {
       for (auto pair : transformEnumMap)
-        if (pair.second == t_enum)
-          return pair.first;
+        if (pair.second == t_enum) return pair.first;
+      throw "[ERROR]: transformEnumToStr(t_enum): t_enum can not be recognised as a valid "
+            "Transform identifier.\nIf you declared a new transformation please declare it in: "
+            "TransformEngine.cpp [namespace 'transform_enumerates'] subfunctions.\n";
       return "_";
     }
 
@@ -67,18 +71,16 @@ namespace image::transform {
   void TransformEngine::saveToFile(std::string const &fileName) const {
     std::ofstream fp(fileName);
 
-    for (TransformType each : transformationsEnums)
-      fp << transformEnumToStr(each) << '\n';
+    for (TransformType each : transformationsEnums) fp << transformEnumToStr(each) << '\n';
     fp.close();
   }
 
-  void TransformEngine::insertTransformation(
-          size_t position, std::shared_ptr<Transformation> transformation) {
+  void TransformEngine::insertTransformation(size_t position,
+                                             std::shared_ptr<Transformation> transformation) {
     transformations.insert(transformations.begin() + position, transformation);
   }
 
-  void TransformEngine::addTransformation(
-          std::shared_ptr<Transformation> transformation) {
+  void TransformEngine::addTransformation(std::shared_ptr<Transformation> transformation) {
     transformations.push_back(transformation);
   }
 
@@ -86,8 +88,7 @@ namespace image::transform {
     std::cout << "> TransformEngine::transform()" << std::endl;
 
     GrayscaleImage copy = image;
-    for (std::shared_ptr<Transformation> tr : transformations)
-      tr->transform(copy);
+    for (std::shared_ptr<Transformation> tr : transformations) tr->transform(copy);
 
     std::cout << "< TransformEngine::transform()" << std::endl;
     return copy;

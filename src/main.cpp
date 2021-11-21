@@ -49,6 +49,9 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
 using namespace control;
 
 int main(int argc, char **argv) {
+
+  func_xor<float>(100, 0.2, 0.02);
+
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <input_dir> (<working_dir>) (<target_dir>)";
     return 1;

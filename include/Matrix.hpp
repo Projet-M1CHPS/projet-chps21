@@ -1,8 +1,13 @@
 #pragma once
+extern "C" {
+  #include <cblas.h>
+}
 #include <cstring>
+#include <iostream>
 #include <memory>
 
-#include <iostream>
+#define USE_BLAS
+
 
 namespace math {
 
@@ -123,13 +128,14 @@ namespace math {
 
       const T *other_data = other.getData();
 #ifdef USE_BLAS
-
-      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
-      else if constexpr (std::is_same_v<real, double>)
-        static_assert(false, "blas not implemented");
-      else
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_saxpy(rows * cols, 1.0f, other_data, 1, data.get(), 1);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_daxpy(rows * cols, 1.0, other_data, 1, data.get(), 1);
+      }
+#else
+      for (size_t i = 0; i < rows * cols; i++) { data[i] += other_data[i]; }
 #endif
-        for (size_t i = 0; i < rows * cols; i++) { data[i] += other_data[i]; }
       return *this;
     }
 
@@ -149,13 +155,16 @@ namespace math {
 
 #ifdef USE_BLAS
 
-      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
-      else if constexpr (std::is_same_v<real, double>)
-        static_assert(false, "blas not implemented");
-      else
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_scopy(rows * cols, other_data, 1, res_data, 1);
+        cblas_saxpy(rows * cols, 1.0f, data.get(), 1, res_data, 1);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_dcopy(rows * cols, other_data, 1, res_data, 1);
+        cblas_daxpy(rows * cols, 1.0, data.get(), 1, res_data, 1);
+      }
+#else
+      for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] + other_data[i]; }
 #endif
-        for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] + other_data[i]; }
-
       return res;
     }
 
@@ -169,13 +178,14 @@ namespace math {
 
 #ifdef USE_BLAS
 
-      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
-      else if constexpr (std::is_same_v<real, double>)
-        static_assert(false, "blas not implemented");
-      else
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_saxpy(rows * cols, -1.f, other_data, 1, data.get(), 1);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_daxpy(rows * cols, -1.0, other_data, 1, data.get(), 1);
+      }
+#else
+      for (size_t i = 0; i < rows * cols; i++) { data[i] -= other_data[i]; }
 #endif
-        for (size_t i = 0; i < rows * cols; i++) { data[i] -= other_data[i]; }
-
       return *this;
     }
 
@@ -195,13 +205,16 @@ namespace math {
 
 #ifdef USE_BLAS
 
-      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
-      else if constexpr (std::is_same_v<real, double>)
-        static_assert(false, "blas not implemented");
-      else
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_scopy(rows * cols, data.get(), 1, res_data, 1);
+        cblas_saxpy(rows * cols, -1.0f, other_data, 1, res_data, 1);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_dcopy(rows * cols, data.get(), 1, res_data, 1);
+        cblas_daxpy(rows * cols, -1.0, other_data, 1, res_data, 1);
+      }
+#else
+      for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] - other_data[i]; }
 #endif
-        for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] - other_data[i]; }
-
       return res;
     }
 
@@ -216,21 +229,23 @@ namespace math {
 
 #ifdef USE_BLAS
 
-      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
-      else if constexpr (std::is_same_v<real, double>)
-        static_assert(false, "blas not implemented");
-      else
-
-#endif
-        for (int i = 0; i < rows; i++) {
-          for (int k = 0; k < cols; k++) {
-            T a_ik = data[i * cols + k];
-            for (int j = 0; j < other_cols; j++) {
-              raw_res[i * other_cols + j] += a_ik * raw_other[k * other_cols + j];
-            }
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, other_cols, cols, 1.f,
+                    data.get(), cols, raw_other, other_cols, 0.f, raw_res, other_cols);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, other_cols, cols, 1.0,
+                    data.get(), cols, raw_other, other_cols, 0.0, raw_res, other_cols);
+      }
+#else
+      for (int i = 0; i < rows; i++) {
+        for (int k = 0; k < cols; k++) {
+          T a_ik = data[i * cols + k];
+          for (int j = 0; j < other_cols; j++) {
+            raw_res[i * other_cols + j] += a_ik * raw_other[k * other_cols + j];
           }
         }
-
+      }
+#endif
       return res;
     }
 
@@ -242,15 +257,17 @@ namespace math {
 
 #ifdef USE_BLAS
 
-      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
-      else if constexpr (std::is_same_v<real, double>)
-        static_assert(false, "blas not implemented");
-      else
-
-#endif
-        const size_t size{rows * cols};
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_scopy(rows * cols, raw_mat, 1, raw_res, 1);
+        cblas_sscal(rows * cols, scale, raw_res, 1);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_dcopy(rows * cols, raw_mat, 1, raw_res, 1);
+        cblas_dscal(rows * cols, scale, raw_res, 1);
+      }
+#else
+      const size_t size{rows * cols};
       for (size_t i = 0; i < size; i++) { raw_res[i] = raw_mat[i] * scale; }
-
+#endif
       return res;
     }
 
@@ -258,16 +275,15 @@ namespace math {
       T *raw_mat = data.get();
 
 #ifdef USE_BLAS
-
-      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
-      else if constexpr (std::is_same_v<real, double>)
-        static_assert(false, "blas not implemented");
-      else
-
-#endif
-        const size_t size{rows * cols};
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_sscal(rows * cols, scale, raw_mat, 1);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_dscal(rows * cols, scale, raw_mat, 1);
+      }
+#else
+      const size_t size{rows * cols};
       for (size_t i = 0; i < size; i++) { raw_mat[i] *= scale; }
-
+#endif
       return *this;
     }
 
