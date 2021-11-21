@@ -83,7 +83,15 @@ namespace math {
         if (not data or data and rows * cols != other.rows * other.cols) {
           data = std::make_unique<T[]>(rows * cols);
         }
+#ifdef USE_BLAS
+        if constexpr (std::is_same_v<T, float>) {
+          cblas_scopy(rows * cols, other.data.get(), 1, data.get(), 1);
+        } else if constexpr (std::is_same_v<T, double>) {
+          cblas_dcopy(rows * cols, other.data.get(), 1, data.get(), 1);
+        }
+#else
         std::memcpy(data.get(), other.getData(), sizeof(T) * rows * cols);
+#endif
       }
       return *this;
     }
