@@ -162,17 +162,15 @@ namespace math {
         throw std::invalid_argument("Matrix dimensions do not match");
       }
 
-      Matrix res(rows, cols);
+      Matrix res(other);
       const T *other_data = other.getData();
       T *res_data = res.getData();
 
 #ifdef USE_BLAS
 
       if constexpr (std::is_same_v<T, float>) {
-        cblas_scopy(rows * cols, other_data, 1, res_data, 1);
         cblas_saxpy(rows * cols, 1.0f, data.get(), 1, res_data, 1);
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dcopy(rows * cols, other_data, 1, res_data, 1);
         cblas_daxpy(rows * cols, 1.0, data.get(), 1, res_data, 1);
       }
 #else
@@ -216,17 +214,15 @@ namespace math {
         throw std::invalid_argument("Matrix dimensions do not match");
       }
 
-      Matrix res(rows, cols);
+      Matrix res(*this);
       const T *other_data = other.getData();
       T *res_data = res.getData();
 
 #ifdef USE_BLAS
 
       if constexpr (std::is_same_v<T, float>) {
-        cblas_scopy(rows * cols, data.get(), 1, res_data, 1);
         cblas_saxpy(rows * cols, -1.0f, other_data, 1, res_data, 1);
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dcopy(rows * cols, data.get(), 1, res_data, 1);
         cblas_daxpy(rows * cols, -1.0, other_data, 1, res_data, 1);
       }
 #else
@@ -281,7 +277,7 @@ namespace math {
     }
 
     [[nodiscard]] Matrix operator*(const T scale) const {
-      Matrix res(rows, cols);
+      Matrix res(*this);
 
       T *raw_res = res.getData();
       const T *raw_mat = data.get();
@@ -289,10 +285,8 @@ namespace math {
 #ifdef USE_BLAS
 
       if constexpr (std::is_same_v<T, float>) {
-        cblas_scopy(rows * cols, raw_mat, 1, raw_res, 1);
         cblas_sscal(rows * cols, scale, raw_res, 1);
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dcopy(rows * cols, raw_mat, 1, raw_res, 1);
         cblas_dscal(rows * cols, scale, raw_res, 1);
       }
 #else
