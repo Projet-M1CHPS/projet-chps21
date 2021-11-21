@@ -307,7 +307,7 @@ TEST(MatrixTest, ThrowOnInvalidMatrixHadamardMul) {
 }
 
 
-TEST(MatrixTest, CanMatMatMulMatAdd) {
+TEST(MatrixTest, CanMatMatProdMatAdd) {
   Matrix<float> A(2, 3), B(3, 1), C(2, 1);
 
   A(0, 0) = 1;
