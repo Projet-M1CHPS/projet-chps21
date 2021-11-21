@@ -5,6 +5,7 @@
 #include <functional>
 #include <iostream>
 #include <math.h>
+#include <numeric>
 
 namespace image::transform {
 
@@ -35,13 +36,23 @@ namespace image::transform {
   }   // namespace color_to_gray
 
   /**
-   * @return [percentage of pixels with brightness = 0; ... = 1; ... =
-   * max_brightness-1]
+   * @return [ratio of pixels with brightness = 0; ... = 1; ... =
+   * max_brightness]
    */
-  std::vector<double> createHistogram(GrayscaleImage const &image) {
+  std::vector<double> createRatioHistogram(GrayscaleImage const &image) {
     double increment_value = 1.0 / ((double) image.getSize());
     std::vector<double> histogram(nb_colors);
     std::for_each(image.begin(), image.end(), [&histogram, increment_value](auto e) { histogram[e] += increment_value; });
+    return histogram;
+  }
+
+  /**
+   * @return [number of pixels with brightness = 0; ... = 1; ... =
+   * max_brightness]
+   */
+  std::vector<size_t> createHistogram(GrayscaleImage const &image) {
+    std::vector<size_t> histogram(nb_colors);
+    std::for_each(image.begin(), image.end(), [&histogram](auto e) { histogram[e] += 1U; });
     return histogram;
   }
 
@@ -126,14 +137,18 @@ namespace image::transform {
     return true;
   }
 
+  void binaryScalingByCap(GrayscaleImage &image, grayscale_t cap) {
+    std::for_each(image.begin(), image.end(), [cap](auto &e) { e = e < cap ? 0U : 255U; });
+  }
+
   bool BinaryScale::transform(GrayscaleImage &image) {
     float half_brightness = max_brightness / 2.0;
-    std::for_each(image.begin(), image.end(), [half_brightness](auto &e) { e = e < half_brightness ? 0U : 255U; });
+    binaryScalingByCap(image, half_brightness);
     return true;
   }
 
   bool BinaryScaleByMedian::transform(GrayscaleImage &image) {
-    std::vector<double> brightness_histogram = createHistogram(image);
+    std::vector<double> brightness_histogram = createRatioHistogram(image);
 
     grayscale_t median_brightness = 0;
     double cumul = 0.0;
@@ -144,7 +159,7 @@ namespace image::transform {
         break;
       }
     }
-    std::for_each(image.begin(), image.end(), [median_brightness](auto &e) { e = e < median_brightness ? 0U : 255U; });
+    binaryScalingByCap(image, median_brightness);
     return true;
   }
 
