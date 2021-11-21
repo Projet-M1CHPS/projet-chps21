@@ -169,7 +169,12 @@ namespace nnet {
       std::copy(begin, end, current_layer.begin());
 
       for (size_t i = 0; i < weights.size(); i++) {
-        current_layer = forwardOnce(current_layer, i);
+        current_layer = math::Matrix<real>::matMatProdMatAdd(weights[i], current_layer, biases[i]);
+
+        // Apply activation function on every element of the matrix
+        auto afunc = af::getAFFromType<real>(activation_functions[i]).first;
+        std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
+        //current_layer = forwardOnce(current_layer, i);
       }
       return current_layer;
     }
@@ -332,17 +337,6 @@ namespace nnet {
         weights[i] += delta_weight;
         biases[i] += gradient;
       }
-    }
-
-    math::Matrix<real> forwardOnce(const math::Matrix<real> &mat,
-                                   const size_t index) const {
-      // C = W * C + B
-      math::Matrix<real> res = math::Matrix<real>::matMatProdMatAdd(weights[index], mat, biases[index]);
-
-      // Apply activation function on every element of the matrix
-      auto afunc = af::getAFFromType<real>(activation_functions[index]).first;
-      std::transform(res.cbegin(), res.cend(), res.begin(), afunc);
-      return res;
     }
 
   private:
