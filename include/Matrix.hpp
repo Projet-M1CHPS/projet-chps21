@@ -16,9 +16,7 @@ namespace math {
     Matrix() = default;
 
     Matrix(size_t rows, size_t cols) : rows(rows), cols(cols) {
-      if (rows == 0 || cols == 0) {
-        return;
-      }
+      if (rows == 0 || cols == 0) { return; }
 
       data = std::make_unique<T[]>(rows * cols);
     }
@@ -59,7 +57,7 @@ namespace math {
      * @param j
      * @return
      */
-    T const& operator()(size_t i, size_t j) const { return data[i * cols + j]; };
+    T const &operator()(size_t i, size_t j) const { return data[i * cols + j]; };
 
     Matrix(const Matrix &other) { *this = other; }
 
@@ -67,9 +65,7 @@ namespace math {
 
     Matrix &operator=(const Matrix &other) {
       // No reason to copy oneself
-      if (this == &other) {
-        return *this;
-      }
+      if (this == &other) { return *this; }
 
       rows = other.rows;
       cols = other.cols;
@@ -87,9 +83,7 @@ namespace math {
 
     Matrix &operator=(Matrix &&other) noexcept {
       // No reason to copy oneself
-      if (this == &other) {
-        return *this;
-      }
+      if (this == &other) { return *this; }
 
       data = std::move(other.data);
       rows = other.rows;
@@ -101,16 +95,12 @@ namespace math {
     }
 
     [[nodiscard]] T sumReduce() const {
-      if (not data) {
-        throw std::runtime_error("Cannot sum-reduce a null-sized matrix");
-      }
+      if (not data) { throw std::runtime_error("Cannot sum-reduce a null-sized matrix"); }
 
       T sum = 0;
       const size_t stop = cols * rows;
 
-      for (size_t i = 0; i < stop; i++) {
-        sum += data[i];
-      }
+      for (size_t i = 0; i < stop; i++) { sum += data[i]; }
 
       return sum;
     }
@@ -120,9 +110,7 @@ namespace math {
 
       T *transposed_data = transposed.getData();
       for (size_t i = 0; i < rows; i++) {
-        for (size_t j = 0; j < cols; j++) {
-          transposed_data[j * rows + i] = data[i * cols + j];
-        }
+        for (size_t j = 0; j < cols; j++) { transposed_data[j * rows + i] = data[i * cols + j]; }
       }
 
       return transposed;
@@ -136,15 +124,12 @@ namespace math {
       const T *other_data = other.getData();
 #ifdef USE_BLAS
 
-      if constexpr (std::is_same_v<real, float>)
-        static_assert(false, "blas not implemented");
+      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
       else if constexpr (std::is_same_v<real, double>)
         static_assert(false, "blas not implemented");
       else
 #endif
-        for (size_t i = 0; i < rows * cols; i++) {
-          data[i] += other_data[i];
-        }
+        for (size_t i = 0; i < rows * cols; i++) { data[i] += other_data[i]; }
       return *this;
     }
 
@@ -164,15 +149,12 @@ namespace math {
 
 #ifdef USE_BLAS
 
-      if constexpr (std::is_same_v<real, float>)
-        static_assert(false, "blas not implemented");
+      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
       else if constexpr (std::is_same_v<real, double>)
         static_assert(false, "blas not implemented");
       else
 #endif
-        for (size_t i = 0; i < rows * cols; i++) {
-          res_data[i] = data[i] + other_data[i];
-        }
+        for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] + other_data[i]; }
 
       return res;
     }
@@ -187,15 +169,12 @@ namespace math {
 
 #ifdef USE_BLAS
 
-      if constexpr (std::is_same_v<real, float>)
-        static_assert(false, "blas not implemented");
+      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
       else if constexpr (std::is_same_v<real, double>)
         static_assert(false, "blas not implemented");
       else
 #endif
-        for (size_t i = 0; i < rows * cols; i++) {
-          data[i] -= other_data[i];
-        }
+        for (size_t i = 0; i < rows * cols; i++) { data[i] -= other_data[i]; }
 
       return *this;
     }
@@ -216,24 +195,19 @@ namespace math {
 
 #ifdef USE_BLAS
 
-      if constexpr (std::is_same_v<real, float>)
-        static_assert(false, "blas not implemented");
+      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
       else if constexpr (std::is_same_v<real, double>)
         static_assert(false, "blas not implemented");
       else
 #endif
-        for (size_t i = 0; i < rows * cols; i++) {
-          res_data[i] = data[i] - other_data[i];
-        }
+        for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] - other_data[i]; }
 
       return res;
     }
 
     [[nodiscard]] Matrix operator*(const Matrix &other) const {
       const size_t other_rows = other.rows, other_cols = other.cols;
-      if (cols != other_rows) {
-        throw std::invalid_argument("Matrix dimensions do not match");
-      }
+      if (cols != other_rows) { throw std::invalid_argument("Matrix dimensions do not match"); }
 
       Matrix res(rows, other_cols);
 
@@ -242,8 +216,7 @@ namespace math {
 
 #ifdef USE_BLAS
 
-      if constexpr (std::is_same_v<real, float>)
-        static_assert(false, "blas not implemented");
+      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
       else if constexpr (std::is_same_v<real, double>)
         static_assert(false, "blas not implemented");
       else
@@ -269,17 +242,14 @@ namespace math {
 
 #ifdef USE_BLAS
 
-      if constexpr (std::is_same_v<real, float>)
-        static_assert(false, "blas not implemented");
+      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
       else if constexpr (std::is_same_v<real, double>)
         static_assert(false, "blas not implemented");
       else
 
 #endif
         const size_t size{rows * cols};
-      for (size_t i = 0; i < size; i++) {
-        raw_res[i] = raw_mat[i] * scale;
-      }
+      for (size_t i = 0; i < size; i++) { raw_res[i] = raw_mat[i] * scale; }
 
       return res;
     }
@@ -289,17 +259,14 @@ namespace math {
 
 #ifdef USE_BLAS
 
-      if constexpr (std::is_same_v<real, float>)
-        static_assert(false, "blas not implemented");
+      if constexpr (std::is_same_v<real, float>) static_assert(false, "blas not implemented");
       else if constexpr (std::is_same_v<real, double>)
         static_assert(false, "blas not implemented");
       else
 
 #endif
         const size_t size{rows * cols};
-      for (size_t i = 0; i < size; i++) {
-        raw_mat[i] *= scale;
-      }
+      for (size_t i = 0; i < size; i++) { raw_mat[i] *= scale; }
 
       return *this;
     }
@@ -313,9 +280,7 @@ namespace math {
       T *raw_data = data.get();
 
       const size_t size{rows * cols};
-      for (size_t i = 0; i < size; i++) {
-        raw_data[i] *= raw_data_other[i];
-      }
+      for (size_t i = 0; i < size; i++) { raw_data[i] *= raw_data_other[i]; }
     }
 
   private:
@@ -333,9 +298,7 @@ namespace math {
 
     for (T const &i : m) {
       os << i << " ";
-      if (++j % cols == 0) {
-        os << "\n";
-      }
+      if (++j % cols == 0) { os << "\n"; }
     }
     return os;
   }
