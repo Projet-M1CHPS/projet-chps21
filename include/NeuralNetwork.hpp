@@ -285,7 +285,7 @@ namespace nnet {
 
       for (size_t i = 0; i < weights.size(); i++) {
         // C = W * C + B
-        current_layer = weights[i] * current_layer + biases[i];
+        current_layer = math::Matrix<real>::matMatProdMatAdd(weights[i], current_layer, biases[i]);
         layers[i + 1] = current_layer;
 
         // Apply activation function on every element of the matrix
@@ -337,10 +337,7 @@ namespace nnet {
     math::Matrix<real> forwardOnce(const math::Matrix<real> &mat,
                                    const size_t index) const {
       // C = W * C + B
-
-      math::Matrix<real> res = weights[index] * mat;
-      // Avoid a copy by using the += operator
-      res += biases[index];
+      math::Matrix<real> res = math::Matrix<real>::matMatProdMatAdd(weights[index], mat, biases[index]);
 
       // Apply activation function on every element of the matrix
       auto afunc = af::getAFFromType<real>(activation_functions[index]).first;
