@@ -336,6 +336,37 @@ namespace math {
       }
     }
 
+    [[nodiscard]] static Matrix matMatProdMatAdd(const Matrix &A, const Matrix &B, const Matrix &C) {
+      const size_t A_rows = A.rows, A_cols = A.cols,
+                   B_rows = B.rows, B_cols = B.cols,
+                   C_rows = C.rows, C_cols = C.cols;
+
+      if (A_cols != B_rows || A_rows != C_rows || B_cols != C_cols) {
+        throw std::invalid_argument("Matrix dimensions do not match");
+      }
+
+      Matrix res(C);
+
+#ifdef USE_BLAS
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                    A_rows, B_cols, A_cols, 1.f,
+                    A.getData(), A_cols,
+                    B.getData(), B_cols, 1.f,
+                    res.getData(), C_cols);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                    A_rows, B_cols, A_cols, 1.0,
+                    A.getData(), A_cols,
+                    B.getData(), B_cols, 1.0,
+                    res.getData(), C_cols);
+      }
+#else
+      res = A * B + C;
+#endif
+      return res;
+    }
+
   private:
     std::unique_ptr<T[]> data = nullptr;
     size_t rows = 0, cols = 0;
