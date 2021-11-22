@@ -72,7 +72,7 @@ namespace image {
      * @brief Compute the difference of the pixels between two images.
      * If images do not have the same dimensions, every not comparable pixel will be computed as a 0% difference.
      *
-     * @param other another image
+     * @param other other image
      * @return difference in range [0.0, 1.0]
      */
     [[nodiscard]] double getDifference(GrayscaleImage const &other) const;
@@ -84,6 +84,19 @@ namespace image {
      * @return grayscale_t*
      */
     grayscale_t *getData();
+
+    /**
+     * @return [number of pixels with brightness = 0; ... = 1; ... =
+     * max_brightness]
+     */
+    const std::vector<size_t> getHistogram() const;
+
+    /**
+     * @return [ratio of pixels with brightness[0.0; 1.0] = 0; ... = 1; ... =
+     * max_brightness]. 
+     * Cumulated value for this vector should be 1.0.
+     */
+    const std::vector<double> createRatioHistogram() const;
 
     grayscale_t &operator()(size_t x, size_t y) {
       return getData()[x + y * width];

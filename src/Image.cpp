@@ -112,6 +112,19 @@ namespace image {
   grayscale_t *GrayscaleImage::getData() { return pixel_data.get(); }
   const grayscale_t *GrayscaleImage::getData() const { return pixel_data.get(); }
 
+  const std::vector<size_t> GrayscaleImage::getHistogram() const {
+    std::vector<size_t> histogram(nb_colors);
+    std::for_each(begin(), end(), [&histogram](auto e) { histogram[e] += 1U; });
+    return histogram;
+  }
+
+  const std::vector<double> GrayscaleImage::createRatioHistogram() const {
+    double increment_value = 1.0 / ((double) getSize());
+    std::vector<double> histogram(nb_colors);
+    std::for_each(begin(), end(), [&histogram, increment_value](auto e) { histogram[e] += increment_value; });
+    return histogram;
+  }
+
   grayscale_t *GrayscaleImage::begin() { return getData(); }
   const grayscale_t *GrayscaleImage::begin() const { return getData(); }
 
