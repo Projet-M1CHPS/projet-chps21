@@ -300,7 +300,7 @@ namespace math {
 #else
       const size_t size{rows * cols};
       for (size_t i = 0; i < size; i++) {
-        raw_res[i] = raw_mat[i] * scale;
+        raw_res[i] *= scale;
       }
 #endif
       return res;
@@ -365,6 +365,36 @@ namespace math {
       }
 #else
       res = A * B + C;
+#endif
+      return res;
+    }
+
+    [[nodiscard]] static Matrix MatMatTransProd(const Matrix &A, const Matrix &B) {
+      const size_t A_rows = A.rows, A_cols = A.cols,
+                   B_rows = B.rows, B_cols = B.cols;
+
+      if (A_cols != B_cols) {
+        throw std::invalid_argument("Matrix dimensions do not match");
+      }
+
+      Matrix res(A_rows, B_rows);
+
+#ifdef USE_BLAS
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+                    A_rows, B_rows, A_cols, 1.f,
+                    A.getData(), A_cols,
+                    B.getData(), B_rows, 0.f,
+                    res.getData(), B_rows);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+                    A_rows, B_rows, A_cols, 1.0,
+                    A.getData(), A_cols,
+                    B.getData(), B_rows, 0.0,
+                    res.getData(), B_rows);
+      }
+#else
+      res = A * B.transpose();
 #endif
       return res;
     }

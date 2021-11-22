@@ -327,12 +327,17 @@ namespace nnet {
         auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
         std::transform(gradient.cbegin(), gradient.cend(), gradient.begin(), dafunc);
 
-        // calcul de (S * E) * alpha
+        // calcul de (S * E)
         gradient.hadamardProd(errors[i]);
         gradient *= learning_rate;
 
         // calcul de ((S * E) * alpha) * Ht
+        //math::Matrix<real> delta_weight = math::Matrix<real>::MatMatTransProd(gradient, layers_af[i]);
         math::Matrix<real> delta_weight = gradient * layers_af[i].transpose();
+
+        //std::cout << "-------debut---------" << std::endl;
+        //std::cout << delta_weight << "\n" << test << std::endl;
+        //std::cout << "--------fin--------" << std::endl;
 
         weights[i] += delta_weight;
         biases[i] += gradient;
