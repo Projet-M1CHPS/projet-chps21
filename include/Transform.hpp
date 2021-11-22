@@ -9,6 +9,7 @@ namespace image::transform {
     resize,
     binaryScale,
     inversion,
+    equalize,
     binaryScaleByMedian,
   };
 
@@ -35,6 +36,11 @@ namespace image::transform {
 
   public:
     Crop(size_t width, size_t height, size_t orig_x = 0, size_t orig_y = 0);
+    bool transform(image::GrayscaleImage &image) override;
+  };
+
+  class Equalize : public Transformation {
+  public:
     bool transform(image::GrayscaleImage &image) override;
   };
 

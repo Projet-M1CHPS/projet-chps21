@@ -137,6 +137,21 @@ namespace image::transform {
     return true;
   }
 
+  bool Equalize::transform(GrayscaleImage &image) {
+    std::vector<double> ratio_histogram = createRatioHistogram(image);
+
+    std::vector<grayscale_t> associations(nb_colors);
+    double cumulated_ratios = 0;
+    for (size_t i = 0; i < nb_colors; i++) {
+      cumulated_ratios += ratio_histogram[i];
+      associations[i] = (grayscale_t) std::round(cumulated_ratios * max_brightness);
+    }
+
+    std::for_each(image.begin(), image.end(), [associations](auto &e) { e = associations[e]; });
+
+    return true;
+  }
+
   void binaryScalingByCap(GrayscaleImage &image, grayscale_t cap) {
     std::for_each(image.begin(), image.end(), [cap](auto &e) { e = e < cap ? 0U : 255U; });
   }

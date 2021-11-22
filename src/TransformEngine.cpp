@@ -10,10 +10,11 @@ namespace image::transform {
     const std::map<std::string, TransformType> transformEnumMap(
             {
                     {"binaryscale", TransformType::binaryScale},
-                    {"inversion", TransformType::inversion},
                     {"binaryScaleByMedian", TransformType::binaryScaleByMedian},
                     {"resize", TransformType::resize},
                     {"crop", TransformType::crop},
+                    {"inversion", TransformType::inversion},
+                    {"equalize", TransformType::equalize},
                     // Add new functions here
             });
 
@@ -31,14 +32,16 @@ namespace image::transform {
       switch (strToTransformEnum(identifier)) {
         case TransformType::binaryScale:
           return std::make_shared<BinaryScale>();
-        case TransformType::inversion:
-          return std::make_shared<Inversion>();
         case TransformType::binaryScaleByMedian:
           return std::make_shared<BinaryScaleByMedian>();
         case TransformType::resize:
           return std::make_shared<Resize>(0, 0);   // TODO: Rebuild the TransformationEngine system
         case TransformType::crop:
           return std::make_shared<Crop>(0, 0, 0, 0);   // TODO: Rebuild the TransformationEngine system
+        case TransformType::inversion:
+          return std::make_shared<Inversion>();
+          case TransformType::equalize:
+          return std::make_shared<Equalize>();
         // Add new functions here
         default:
           throw "[ERROR]: " + identifier + "is not recognised as a valid Transform. \n" +
