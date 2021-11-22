@@ -11,8 +11,8 @@
 template<typename T>
 size_t func_xor(const size_t bach_size, const T learning_rate, const T error_limit) {
   nnet::NeuralNetwork<T> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 2, 2, 1});
-  nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
+  nn.setLayersSize(std::vector<size_t>{2, 1000, 1000, 1});
+  nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
   nn.randomizeSynapses();
 
   std::cout << nn << std::endl;
@@ -45,20 +45,35 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
               << nn.predict(input[i].begin(), input[i].end()) << "("
               << target[i] << ")" << std::endl;
   }
-  std::cout << nn << std::endl;
+  //std::cout << nn << std::endl;
   return count;
+}
+
+void test() {
+  using namespace math;
+
+  Matrix<float> A(2, 2), B(2, 2);
+  A(0, 0) = 1;
+  A(0, 1) = 2;
+  A(1, 0) = 3;
+  A(1, 1) = 4;
+
+  B(0, 0) = 4;
+  B(0, 1) = 1;
+  B(1, 0) = 2;
+  B(1, 1) = 6;
+
+  std::cout << A << "\n"
+            << B << "\n"
+            << B.transpose() << "\n";
+
+  Matrix<float> C = Matrix<float>::MatMatTransProd(A, B);
+  std::cout << C << std::endl;
 }
 
 int main(int argc, char **argv) {
   func_xor<float>(100, 0.05, 0.001);
-
-  /* nnet::NeuralNetwork<float> nn;
-    nn.setLayersSize(std::vector<size_t>{2, 2, 1});
-    nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
-    nn.randomizeSynapses();
-    std::vector<float> input{1, 1};
-    std::vector<float> target{0};
-    nn.train(input.begin(), input.end(), target.begin(), target.end(), 0.1); */
+  //test();
 
   return 0;
 }
