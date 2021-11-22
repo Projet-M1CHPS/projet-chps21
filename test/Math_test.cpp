@@ -351,5 +351,5 @@ TEST(MatrixTest, CanMatMatProdMatAdd) {
 TEST(MatrixTest, ThrowOnInvalidMatrixMatMatProdMatAdd) {
   Matrix<float> A(2, 2), B(1, 3), C(2, 3);
 
-  ASSERT_ANY_THROW(Matrix<float>::matMatProdMatAdd(A, B, C););
+  ASSERT_ANY_THROW(Matrix<float>::matMatProdMatAdd(A, B, C));
 }
