@@ -1,5 +1,7 @@
 #pragma once
-#include <cblas.h>
+extern "C" {
+  #include <cblas.h>
+}
 #include <cstring>
 #include <iostream>
 #include <memory>
@@ -19,9 +21,7 @@ namespace math {
     Matrix() = default;
 
     Matrix(size_t rows, size_t cols) : rows(rows), cols(cols) {
-      if (rows == 0 || cols == 0) {
-        return;
-      }
+      if (rows == 0 || cols == 0) { return; }
 
       data = std::make_unique<T[]>(rows * cols);
     }
@@ -70,9 +70,7 @@ namespace math {
 
     Matrix &operator=(const Matrix &other) {
       // No reason to copy oneself
-      if (this == &other) {
-        return *this;
-      }
+      if (this == &other) { return *this; }
 
       rows = other.rows;
       cols = other.cols;
@@ -98,9 +96,7 @@ namespace math {
 
     Matrix &operator=(Matrix &&other) noexcept {
       // No reason to copy oneself
-      if (this == &other) {
-        return *this;
-      }
+      if (this == &other) { return *this; }
 
       data = std::move(other.data);
       rows = other.rows;
@@ -112,16 +108,12 @@ namespace math {
     }
 
     [[nodiscard]] T sumReduce() const {
-      if (not data) {
-        throw std::runtime_error("Cannot sum-reduce a null-sized matrix");
-      }
+      if (not data) { throw std::runtime_error("Cannot sum-reduce a null-sized matrix"); }
 
       T sum = 0;
       const size_t stop = cols * rows;
 
-      for (size_t i = 0; i < stop; i++) {
-        sum += data[i];
-      }
+      for (size_t i = 0; i < stop; i++) { sum += data[i]; }
 
       return sum;
     }
@@ -131,9 +123,7 @@ namespace math {
 
       T *transposed_data = transposed.getData();
       for (size_t i = 0; i < rows; i++) {
-        for (size_t j = 0; j < cols; j++) {
-          transposed_data[j * rows + i] = data[i * cols + j];
-        }
+        for (size_t j = 0; j < cols; j++) { transposed_data[j * rows + i] = data[i * cols + j]; }
       }
 
       return transposed;
@@ -146,16 +136,13 @@ namespace math {
 
       const T *other_data = other.getData();
 #ifdef USE_BLAS
-
       if constexpr (std::is_same_v<T, float>) {
         cblas_saxpy(rows * cols, 1.0f, other_data, 1, data.get(), 1);
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_daxpy(rows * cols, 1.0, other_data, 1, data.get(), 1);
       }
 #else
-      for (size_t i = 0; i < rows * cols; i++) {
-        data[i] += other_data[i];
-      }
+      for (size_t i = 0; i < rows * cols; i++) { data[i] += other_data[i]; }
 #endif
       return *this;
     }
@@ -182,9 +169,7 @@ namespace math {
         cblas_daxpy(rows * cols, 1.0, data.get(), 1, res_data, 1);
       }
 #else
-      for (size_t i = 0; i < rows * cols; i++) {
-        res_data[i] = data[i] + other_data[i];
-      }
+      for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] + other_data[i]; }
 #endif
       return res;
     }
@@ -205,9 +190,7 @@ namespace math {
         cblas_daxpy(rows * cols, -1.0, other_data, 1, data.get(), 1);
       }
 #else
-      for (size_t i = 0; i < rows * cols; i++) {
-        data[i] -= other_data[i];
-      }
+      for (size_t i = 0; i < rows * cols; i++) { data[i] -= other_data[i]; }
 #endif
       return *this;
     }
@@ -234,18 +217,14 @@ namespace math {
         cblas_daxpy(rows * cols, -1.0, other_data, 1, res_data, 1);
       }
 #else
-      for (size_t i = 0; i < rows * cols; i++) {
-        res_data[i] = data[i] - other_data[i];
-      }
+      for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] - other_data[i]; }
 #endif
       return res;
     }
 
     [[nodiscard]] Matrix operator*(const Matrix &other) const {
       const size_t other_rows = other.rows, other_cols = other.cols;
-      if (cols != other_rows) {
-        throw std::invalid_argument("Matrix dimensions do not match");
-      }
+      if (cols != other_rows) { throw std::invalid_argument("Matrix dimensions do not match"); }
 
       Matrix res(rows, other_cols);
 
@@ -255,21 +234,11 @@ namespace math {
 #ifdef USE_BLAS
 
       if constexpr (std::is_same_v<T, float>) {
-        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                    rows, other_cols, cols,
-                    1.f,
-                    data.get(), cols,
-                    raw_other, other_cols,
-                    0.f,
-                    raw_res, other_cols);
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, other_cols, cols, 1.f,
+                    data.get(), cols, raw_other, other_cols, 0.f, raw_res, other_cols);
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                    rows, other_cols, cols,
-                    1.0,
-                    data.get(), cols,
-                    raw_other, other_cols,
-                    0.0,
-                    raw_res, other_cols);
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, other_cols, cols, 1.0,
+                    data.get(), cols, raw_other, other_cols, 0.0, raw_res, other_cols);
       }
 #else
       for (int i = 0; i < rows; i++) {
@@ -317,9 +286,7 @@ namespace math {
       }
 #else
       const size_t size{rows * cols};
-      for (size_t i = 0; i < size; i++) {
-        raw_mat[i] *= scale;
-      }
+      for (size_t i = 0; i < size; i++) { raw_mat[i] *= scale; }
 #endif
       return *this;
     }
@@ -333,9 +300,7 @@ namespace math {
       T *raw_data = data.get();
 
       const size_t size{rows * cols};
-      for (size_t i = 0; i < size; i++) {
-        raw_data[i] *= raw_data_other[i];
-      }
+      for (size_t i = 0; i < size; i++) { raw_data[i] *= raw_data_other[i]; }
     }
 
     [[nodiscard]] static Matrix matMatProdMatAdd(const Matrix &A, const Matrix &B, const Matrix &C) {
@@ -414,9 +379,7 @@ namespace math {
 
     for (T const &i : m) {
       os << i << " ";
-      if (++j % cols == 0) {
-        os << "\n";
-      }
+      if (++j % cols == 0) { os << "\n"; }
     }
     return os;
   }

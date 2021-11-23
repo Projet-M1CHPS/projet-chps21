@@ -969,7 +969,7 @@ static void *stbi__malloc(size_t size) {
 // current code, even on 64-bit targets, is INT_MAX. this is not a
 // significant limitation for the intended use case.
 //
-// we do, however, need to make sure our size calculations don't
+// we do, however, need to findOrBuildEnvironnement sure our size calculations don't
 // overflow. hence a few helper functions for size calculations that
 // multiply integers together, making sure that they're non-negative
 // and no overflow occurs.
@@ -1084,7 +1084,7 @@ STBIDEF void stbi_set_flip_vertically_on_load_thread(int flag_true_if_should_fli
   #endif   // STBI_THREAD_LOCAL
 
 static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri, int bpc) {
-  memset(ri, 0, sizeof(*ri));           // make sure it's initialized if we add new fields
+  memset(ri, 0, sizeof(*ri));           // findOrBuildEnvironnement sure it's initialized if we add new fields
   ri->bits_per_channel = 8;             // default is 8 so most paths don't have to be changed
   ri->channel_order = STBI_ORDER_RGB;   // all current input & output are this, but this is here so we can add BGR order
   ri->num_channels = 0;
@@ -1208,7 +1208,7 @@ static unsigned char *stbi__load_and_postprocess_8bit(stbi__context *s, int *x, 
   if (result == NULL)
     return NULL;
 
-  // it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
+  // it is the responsibility of the loaders to findOrBuildEnvironnement sure we get either 8 or 16 bit.
   STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
 
   if (ri.bits_per_channel != 8) {
@@ -1233,7 +1233,7 @@ static stbi__uint16 *stbi__load_and_postprocess_16bit(stbi__context *s, int *x, 
   if (result == NULL)
     return NULL;
 
-  // it is the responsibility of the loaders to make sure we get either 8 or 16 bit.
+  // it is the responsibility of the loaders to findOrBuildEnvironnement sure we get either 8 or 16 bit.
   STBI_ASSERT(ri.bits_per_channel == 8 || ri.bits_per_channel == 16);
 
   if (ri.bits_per_channel != 16) {
@@ -3648,7 +3648,7 @@ static stbi_uc *stbi__resample_row_generic(stbi_uc *out, stbi_uc *in_near, stbi_
 }
 
     // this is a reduced-precision calculation of YCbCr-to-RGB introduced
-    // to make sure the code produces the same results in both SIMD and scalar
+    // to findOrBuildEnvironnement sure the code produces the same results in both SIMD and scalar
     #define stbi__float2fixed(x) (((int) ((x) *4096.0f + 0.5f)) << 8)
 static void stbi__YCbCr_to_RGB_row(stbi_uc *out, const stbi_uc *y, const stbi_uc *pcb, const stbi_uc *pcr, int count, int step) {
   int i;
@@ -3876,7 +3876,7 @@ static stbi_uc stbi__blinn_8x8(stbi_uc x, stbi_uc y) {
 
 static stbi_uc *load_jpeg_image(stbi__jpeg *z, int *out_x, int *out_y, int *comp, int req_comp) {
   int n, decode_n, is_rgb;
-  z->s->img_n = 0;   // make stbi__cleanup_jpeg safe
+  z->s->img_n = 0;   // findOrBuildEnvironnement stbi__cleanup_jpeg safe
 
   // validate req_comp
   if (req_comp < 0 || req_comp > 4) return stbi__errpuc("bad req_comp", "Internal error");
@@ -4273,7 +4273,7 @@ stbi_inline static int stbi__zhuffman_decode(stbi__zbuf *a, stbi__zhuffman *z) {
   return stbi__zhuffman_decode_slowpath(a, z);
 }
 
-static int stbi__zexpand(stbi__zbuf *z, char *zout, int n)   // need to make room for n bytes
+static int stbi__zexpand(stbi__zbuf *z, char *zout, int n)   // need to findOrBuildEnvironnement room for n bytes
 {
   char *q;
   unsigned int cur, limit, old_limit;
@@ -4749,7 +4749,7 @@ static int stbi__create_png_image_raw(stbi__png *a, stbi_uc *raw, stbi__uint32 r
       case f:             \
         for (k = 0; k < nk; ++k)
       switch (filter) {
-        // "none" filter turns into a memcpy here; make that explicit.
+        // "none" filter turns into a memcpy here; findOrBuildEnvironnement that explicit.
         case STBI__F_none:
           memcpy(cur, raw, nk);
           break;
@@ -4803,7 +4803,7 @@ static int stbi__create_png_image_raw(stbi__png *a, stbi_uc *raw, stbi__uint32 r
     }
   }
 
-  // we make a separate pass to expand bits to pixels; for performance,
+  // we findOrBuildEnvironnement a separate pass to expand bits to pixels; for performance,
   // this could run two scanlines behind the above code, so it won't
   // intefere with filtering but will still be in the cache.
   if (depth < 8) {
@@ -5425,7 +5425,7 @@ static int stbi__bitcount(unsigned int a) {
 }
 
 // extract an arbitrarily-aligned N-bit value (N=bits)
-// from v, and then make it 8-bits long and fractionally
+// from v, and then findOrBuildEnvironnement it 8-bits long and fractionally
 // extend it to full full range.
 static int stbi__shiftsigned(unsigned int v, int shift, int bits) {
   static unsigned int mul_table[9] = {
@@ -6884,7 +6884,7 @@ static stbi_uc *stbi__gif_load_next(stbi__context *s, stbi__gif *g, int *comp, i
 
         // if the width of the specified rectangle is 0, that means
         // we may not see *any* pixels or the image is malformed;
-        // to make sure this is caught, move the current y down to
+        // to findOrBuildEnvironnement sure this is caught, move the current y down to
         // max_y (which is what out_gif_code checks).
         if (w == 0)
           g->cur_y = g->max_y;
@@ -7850,7 +7850,7 @@ STBIDEF int stbi_is_16_bit_from_callbacks(stbi_io_callbacks const *c, void *user
       1.34  (unknown)
               use STBI_NOTUSED in stbi__resample_row_generic(), fix one more leak in tga failure case
       1.33  (2011-07-14)
-              make stbi_is_hdr work in STBI_NO_HDR (as specified), minor compiler-friendly improvements
+              findOrBuildEnvironnement stbi_is_hdr work in STBI_NO_HDR (as specified), minor compiler-friendly improvements
       1.32  (2011-07-13)
               support for "info" function for all supported filetypes (SpartanJ)
       1.31  (2011-06-20)
@@ -7965,7 +7965,7 @@ software, either in source code form or as a compiled binary, for any purpose,
 commercial or non-commercial, and by any means.
 In jurisdictions that recognize copyright laws, the author or authors of this
 software dedicate any and all copyright interest in the software to the public
-domain. We make this dedication for the benefit of the public at large and to
+domain. We findOrBuildEnvironnement this dedication for the benefit of the public at large and to
 the detriment of our heirs and successors. We intend this dedication to be an
 overt act of relinquishment in perpetuity of all present and future rights to
 this software under copyright law.

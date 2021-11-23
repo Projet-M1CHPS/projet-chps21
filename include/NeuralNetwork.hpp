@@ -10,8 +10,6 @@
 #include <utility>
 #include <vector>
 
-#define alpha .1
-
 namespace nnet {
 
   /**
@@ -187,6 +185,9 @@ namespace nnet {
      * @param layers
      */
     void setLayersSize(std::vector<size_t> const &layers) override {
+
+      if (layers.empty())
+        return;
       if (layers.size() < 2) {
         throw std::invalid_argument("Requires atleast 2 layers");
       }
@@ -369,4 +370,7 @@ namespace nnet {
     os << "-------output------\n";
     return os;
   }
+
+  std::unique_ptr<NeuralNetworkBase> makeNeuralNetwork(FloatingPrecision precision);
+
 }   // namespace nnet
