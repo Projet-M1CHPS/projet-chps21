@@ -35,26 +35,7 @@ namespace image::transform {
     }
   }   // namespace color_to_gray
 
-  /**
-   * @return [ratio of pixels with brightness = 0; ... = 1; ... =
-   * max_brightness]
-   */
-  std::vector<double> createRatioHistogram(GrayscaleImage const &image) {
-    double increment_value = 1.0 / ((double) image.getSize());
-    std::vector<double> histogram(nb_colors);
-    std::for_each(image.begin(), image.end(), [&histogram, increment_value](auto e) { histogram[e] += increment_value; });
-    return histogram;
-  }
 
-  /**
-   * @return [number of pixels with brightness = 0; ... = 1; ... =
-   * max_brightness]
-   */
-  std::vector<size_t> createHistogram(GrayscaleImage const &image) {
-    std::vector<size_t> histogram(nb_colors);
-    std::for_each(image.begin(), image.end(), [&histogram](auto e) { histogram[e] += 1U; });
-    return histogram;
-  }
 
   Crop::Crop(size_t width, size_t height, size_t orig_x, size_t orig_y) : width(width), height(height), orig_x(orig_x), orig_y(orig_y){};
 
@@ -138,7 +119,7 @@ namespace image::transform {
   }
 
   bool Equalize::transform(GrayscaleImage &image) {
-    std::vector<double> ratio_histogram = createRatioHistogram(image);
+    std::vector<double> ratio_histogram = image.createRatioHistogram();
 
     std::vector<grayscale_t> associations(nb_colors);
     double cumulated_ratios = 0;
@@ -163,7 +144,7 @@ namespace image::transform {
   }
 
   bool BinaryScaleByMedian::transform(GrayscaleImage &image) {
-    std::vector<double> brightness_histogram = createRatioHistogram(image);
+    std::vector<double> brightness_histogram = image.createRatioHistogram();
 
     grayscale_t median_brightness = 0;
     double cumul = 0.0;
