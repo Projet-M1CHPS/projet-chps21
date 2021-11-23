@@ -5,7 +5,6 @@
 using namespace math;
 
 TEST(MatrixTest, CanCreateMatrix) {
-
   Matrix<float> m(10, 11);
 
   ASSERT_TRUE(m.getData());
@@ -68,7 +67,6 @@ TEST(MatrixTest, CanMoveCopy) {
 }
 
 TEST(MatrixTest, CanIterateOnMatrix) {
-
   Matrix<float> m(2, 2);
 
   m(0, 0) = 1;
@@ -80,7 +78,7 @@ TEST(MatrixTest, CanIterateOnMatrix) {
   // and that m.end() returns the correct end
   // by counting the number of element we iterate on
   size_t count = 0;
-  for (float f: m) {
+  for (float f : m) {
     ASSERT_EQ(1, f);
     count++;
   }
@@ -154,7 +152,6 @@ TEST(MatrixTest, ThrowOnInvalidMatrixSub) {
 }
 
 TEST(MatrixTest, CanTransposeMatrix) {
-
   Matrix<float> n(3, 5);
 
   utils::random::randomize(n, 0.f, 100.f);
@@ -307,4 +304,52 @@ TEST(MatrixTest, ThrowOnInvalidMatrixHadamardMul) {
   Matrix<float> m(2, 2), n(1, 3);
 
   ASSERT_ANY_THROW(m.hadamardProd(n));
+}
+
+
+TEST(MatrixTest, CanMatMatProdMatAdd) {
+  Matrix<float> A(2, 3), B(3, 1), C(2, 1);
+
+  A(0, 0) = 1;
+  A(0, 1) = 4;
+  A(0, 2) = 2;
+  A(1, 0) = 1;
+  A(1, 1) = 2;
+  A(1, 2) = 5;
+
+  B(1, 0) = 4;
+  B(2, 0) = 2;
+  B(3, 0) = 4;
+
+  C(1, 0) = 5;
+  C(2, 0) = 3;
+
+  Matrix<float> D(2, 1);
+
+  for (size_t i = 0; i < A.getRows(); i++) {
+    for (size_t k = 0; k < A.getCols(); k++) {
+      for (size_t j = 0; j < B.getCols(); j++) {
+        D(i, j) += A(i, k) * B(k, j);
+      }
+    }
+  }
+
+  for (size_t i = 0; i < C.getRows(); i++) {
+    for (size_t j = 0; j < C.getCols(); j++) {
+      D(i, j) += C(i, j);
+    }
+  }
+  
+  auto res = Matrix<float>::matMatProdMatAdd(A, B, C);
+
+  for (size_t i = 0; i < 2; i++) {
+    for (size_t j = 0; j < 2; j++)
+      ASSERT_EQ(D(i, j), res(i, j));
+  }
+}
+
+TEST(MatrixTest, ThrowOnInvalidMatrixMatMatProdMatAdd) {
+  Matrix<float> A(2, 2), B(1, 3), C(2, 3);
+
+  ASSERT_ANY_THROW(Matrix<float>::matMatProdMatAdd(A, B, C));
 }

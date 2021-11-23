@@ -5,12 +5,15 @@
 #include "controlSystem/RunControl.h"
 #include <iostream>
 #include <vector>
+#include <iomanip>
+
+using namespace control;
 
 template<typename T>
 size_t func_xor(const size_t bach_size, const T learning_rate, const T error_limit) {
   nnet::NeuralNetwork<T> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 2, 2, 1});
-  nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
+  nn.setLayersSize(std::vector<size_t>{2, 10,  10, 1});
+  nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
   nn.randomizeSynapses();
 
   std::cout << nn << std::endl;
@@ -18,7 +21,7 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
   std::vector<std::vector<T>> input{{1, 1}, {1, 0}, {0, 1}, {0, 0}};
   std::vector<T> target{0, 1, 1, 0};
 
-  float error = 1.f;
+  T error = 1.0;
   size_t count = 0;
   while (error > error_limit) {
     for (int i = 0; i < bach_size; i++)
@@ -31,7 +34,8 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
       error += std::pow(std::fabs(nn.predict(input[i].begin(), input[i].end())(0, 0) - target[i]),
                         2);
     error /= input.size();
-    std::cout << error << std::endl;
+    //std::cout << error << std::endl;
+    printf("%.17lf\n", error);
     count++;
   }
 
@@ -42,15 +46,35 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
               << nn.predict(input[i].begin(), input[i].end()) << "(" << target[i] << ")"
               << std::endl;
   }
-  std::cout << nn << std::endl;
+  //std::cout << nn << std::endl;
   return count;
 }
 
-using namespace control;
+void test() {
+  using namespace math;
+
+  Matrix<float> A(2, 2), B(2, 2);
+  A(0, 0) = 1;
+  A(0, 1) = 2;
+  A(1, 0) = 3;
+  A(1, 1) = 4;
+
+  B(0, 0) = 4;
+  B(0, 1) = 1;
+  B(1, 0) = 2;
+  B(1, 1) = 6;
+
+  std::cout << A << "\n"
+            << B << "\n"
+            << B.transpose() << "\n";
+
+  Matrix<float> C = Matrix<float>::MatMatTransProd(A, B);
+  std::cout << C << std::endl;
+}
 
 int main(int argc, char **argv) {
-
-  func_xor<float>(100, 0.2, 0.02);
+  func_xor<float>(100, 1.0, 0.001);
+  //test();
 
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <input_dir> (<working_dir>) (<target_dir>)";

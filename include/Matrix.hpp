@@ -81,7 +81,15 @@ namespace math {
         if (not data or data and rows * cols != other.rows * other.cols) {
           data = std::make_unique<T[]>(rows * cols);
         }
+#ifdef USE_BLAS
+        if constexpr (std::is_same_v<T, float>) {
+          cblas_scopy(rows * cols, other.data.get(), 1, data.get(), 1);
+        } else if constexpr (std::is_same_v<T, double>) {
+          cblas_dcopy(rows * cols, other.data.get(), 1, data.get(), 1);
+        }
+#else
         std::memcpy(data.get(), other.getData(), sizeof(T) * rows * cols);
+#endif
       }
       return *this;
     }
@@ -149,17 +157,15 @@ namespace math {
         throw std::invalid_argument("Matrix dimensions do not match");
       }
 
-      Matrix res(rows, cols);
+      Matrix res(other);
       const T *other_data = other.getData();
       T *res_data = res.getData();
 
 #ifdef USE_BLAS
 
       if constexpr (std::is_same_v<T, float>) {
-        cblas_scopy(rows * cols, other_data, 1, res_data, 1);
         cblas_saxpy(rows * cols, 1.0f, data.get(), 1, res_data, 1);
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dcopy(rows * cols, other_data, 1, res_data, 1);
         cblas_daxpy(rows * cols, 1.0, data.get(), 1, res_data, 1);
       }
 #else
@@ -199,17 +205,15 @@ namespace math {
         throw std::invalid_argument("Matrix dimensions do not match");
       }
 
-      Matrix res(rows, cols);
+      Matrix res(*this);
       const T *other_data = other.getData();
       T *res_data = res.getData();
 
 #ifdef USE_BLAS
 
       if constexpr (std::is_same_v<T, float>) {
-        cblas_scopy(rows * cols, data.get(), 1, res_data, 1);
         cblas_saxpy(rows * cols, -1.0f, other_data, 1, res_data, 1);
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dcopy(rows * cols, data.get(), 1, res_data, 1);
         cblas_daxpy(rows * cols, -1.0, other_data, 1, res_data, 1);
       }
 #else
@@ -250,7 +254,7 @@ namespace math {
     }
 
     [[nodiscard]] Matrix operator*(const T scale) const {
-      Matrix res(rows, cols);
+      Matrix res(*this);
 
       T *raw_res = res.getData();
       const T *raw_mat = data.get();
@@ -258,15 +262,15 @@ namespace math {
 #ifdef USE_BLAS
 
       if constexpr (std::is_same_v<T, float>) {
-        cblas_scopy(rows * cols, raw_mat, 1, raw_res, 1);
         cblas_sscal(rows * cols, scale, raw_res, 1);
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dcopy(rows * cols, raw_mat, 1, raw_res, 1);
         cblas_dscal(rows * cols, scale, raw_res, 1);
       }
 #else
       const size_t size{rows * cols};
-      for (size_t i = 0; i < size; i++) { raw_res[i] = raw_mat[i] * scale; }
+      for (size_t i = 0; i < size; i++) {
+        raw_res[i] *= scale;
+      }
 #endif
       return res;
     }
@@ -297,6 +301,67 @@ namespace math {
 
       const size_t size{rows * cols};
       for (size_t i = 0; i < size; i++) { raw_data[i] *= raw_data_other[i]; }
+    }
+
+    [[nodiscard]] static Matrix matMatProdMatAdd(const Matrix &A, const Matrix &B, const Matrix &C) {
+      const size_t A_rows = A.rows, A_cols = A.cols,
+                   B_rows = B.rows, B_cols = B.cols,
+                   C_rows = C.rows, C_cols = C.cols;
+
+      if (A_cols != B_rows || A_rows != C_rows || B_cols != C_cols) {
+        throw std::invalid_argument("Matrix dimensions do not match");
+      }
+
+      Matrix res(C);
+
+#ifdef USE_BLAS
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                    A_rows, B_cols, A_cols, 1.f,
+                    A.getData(), A_cols,
+                    B.getData(), B_cols, 1.f,
+                    res.getData(), C_cols);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
+                    A_rows, B_cols, A_cols, 1.0,
+                    A.getData(), A_cols,
+                    B.getData(), B_cols, 1.0,
+                    res.getData(), C_cols);
+      }
+#else
+      res = A * B + C;
+#endif
+      return res;
+    }
+
+    [[nodiscard]] static Matrix MatMatTransProd(const Matrix &A, const Matrix &B) {
+      const size_t A_rows = A.rows, A_cols = A.cols,
+                   B_rows = B.rows, B_cols = B.cols;
+
+      if (A_cols != B_cols) {
+        throw std::invalid_argument("Matrix dimensions do not match");
+      }
+
+      Matrix res(A_rows, B_rows);
+
+#ifdef USE_BLAS
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+                    A_rows, B_rows, A_cols, 1.f,
+                    A.getData(), A_cols,
+                    B.getData(), B_rows, 0.f,
+                    res.getData(), B_rows);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+                    A_rows, B_rows, A_cols, 1.0,
+                    A.getData(), A_cols,
+                    B.getData(), B_rows, 0.0,
+                    res.getData(), B_rows);
+      }
+#else
+      res = A * B.transpose();
+#endif
+      return res;
     }
 
   private:
