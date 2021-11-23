@@ -7,11 +7,12 @@
 #include <iostream>
 #include <utility>
 #include <vector>
+#include <iomanip>
 
 template<typename T>
 size_t func_xor(const size_t bach_size, const T learning_rate, const T error_limit) {
   nnet::NeuralNetwork<T> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 1000, 1000, 1});
+  nn.setLayersSize(std::vector<size_t>{2, 10,  10, 1});
   nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
   nn.randomizeSynapses();
 
@@ -23,7 +24,7 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
                                     {0, 0}};
   std::vector<T> target{0, 1, 1, 0};
 
-  float error = 1.f;
+  T error = 1.0;
   size_t count = 0;
   while (error > error_limit) {
     for (int i = 0; i < bach_size; i++)
@@ -34,7 +35,8 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
     for (int i = 0; i < input.size(); i++)
       error += std::pow(std::fabs(nn.predict(input[i].begin(), input[i].end())(0, 0) - target[i]), 2);
     error /= input.size();
-    std::cout << error << std::endl;
+    //std::cout << error << std::endl;
+    printf("%.17lf\n", error);
     count++;
   }
 
@@ -72,7 +74,7 @@ void test() {
 }
 
 int main(int argc, char **argv) {
-  func_xor<float>(100, 0.05, 0.001);
+  func_xor<float>(100, 1.0, 0.001);
   //test();
 
   return 0;
