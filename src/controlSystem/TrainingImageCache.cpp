@@ -26,8 +26,9 @@ namespace control {
     }
   }   // namespace
 
-  TrainingImageStash::TrainingImageStash(std::filesystem::path cache_path, std::filesystem::path const &input_path,
-                         bool shuffle_input)
+  TrainingImageStash::TrainingImageStash(std::filesystem::path cache_path,
+                                         std::filesystem::path const &input_path,
+                                         bool shuffle_input)
       : TrainingImageCache(std::move(cache_path)) {
     if (not fs::exists(input_path) or not fs::exists(input_path / "eval") or
         not fs::exists(input_path / "train"))
@@ -52,7 +53,9 @@ namespace control {
     unsigned long long cache_size = 0_byte;
     size_t i = 1, total = eval_set.size() + training_set.size();
     for (auto const &entry : eval_set) {
-      loaded_eval_set.push_back(ImageSerializer::load(entry.first));
+      auto image = ImageSerializer::load(entry.first);
+      Image::
+      loaded_eval_set.push_back(std::move(image));
       cache_size += loaded_eval_set.back().getSize();
       std::cout << "Loading Image[" << i << "/" << total
                 << "] from eval set, cache_size: " << cache_size / 1_mb << "mb\n";
@@ -69,7 +72,11 @@ namespace control {
     return true;
   }
 
-  image::GrayscaleImage const &TrainingImageStash::getEval(size_t index) {}
+  image::GrayscaleImage const &TrainingImageStash::getEval(size_t index) {
+    return loaded_eval_set[index];
+  }
 
-  image::GrayscaleImage const &TrainingImageStash::getTraining(size_t index) {}
+  image::GrayscaleImage const &TrainingImageStash::getTraining(size_t index) {
+    return loaded_training_set[index];
+  }
 }   // namespace control

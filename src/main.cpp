@@ -73,7 +73,7 @@ void test() {
 }
 
 int main(int argc, char **argv) {
-  func_xor<float>(100, 1.0, 0.001);
+  //func_xor<float>(100, 1.0, 0.001);
   //test();
 
   if (argc < 2) {
