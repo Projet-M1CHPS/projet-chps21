@@ -1,6 +1,6 @@
 #pragma once
 extern "C" {
-  #include <cblas.h>
+#include <cblas.h>
 }
 #include <cstring>
 #include <iostream>
@@ -72,15 +72,14 @@ namespace math {
       // No reason to copy oneself
       if (this == &other) { return *this; }
 
-      rows = other.rows;
-      cols = other.cols;
-
       // NO need to copy an empty matrix
       if (other.data) {
         // If data is unallocated or different size, allocate new memory
         if (not data or data and rows * cols != other.rows * other.cols) {
-          data = std::make_unique<T[]>(rows * cols);
+          data = std::make_unique<T[]>(other.rows * other.cols);
         }
+        rows = other.rows;
+        cols = other.cols;
 #ifdef USE_BLAS
         if constexpr (std::is_same_v<T, float>) {
           cblas_scopy(rows * cols, other.data.get(), 1, data.get(), 1);
@@ -268,9 +267,7 @@ namespace math {
       }
 #else
       const size_t size{rows * cols};
-      for (size_t i = 0; i < size; i++) {
-        raw_res[i] *= scale;
-      }
+      for (size_t i = 0; i < size; i++) { raw_res[i] *= scale; }
 #endif
       return res;
     }
@@ -303,9 +300,9 @@ namespace math {
       for (size_t i = 0; i < size; i++) { raw_data[i] *= raw_data_other[i]; }
     }
 
-    [[nodiscard]] static Matrix matMatProdMatAdd(const Matrix &A, const Matrix &B, const Matrix &C) {
-      const size_t A_rows = A.rows, A_cols = A.cols,
-                   B_rows = B.rows, B_cols = B.cols,
+    [[nodiscard]] static Matrix matMatProdMatAdd(const Matrix &A, const Matrix &B,
+                                                 const Matrix &C) {
+      const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols,
                    C_rows = C.rows, C_cols = C.cols;
 
       if (A_cols != B_rows || A_rows != C_rows || B_cols != C_cols) {
@@ -316,17 +313,11 @@ namespace math {
 
 #ifdef USE_BLAS
       if constexpr (std::is_same_v<T, float>) {
-        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                    A_rows, B_cols, A_cols, 1.f,
-                    A.getData(), A_cols,
-                    B.getData(), B_cols, 1.f,
-                    res.getData(), C_cols);
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, A_rows, B_cols, A_cols, 1.f,
+                    A.getData(), A_cols, B.getData(), B_cols, 1.f, res.getData(), C_cols);
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-                    A_rows, B_cols, A_cols, 1.0,
-                    A.getData(), A_cols,
-                    B.getData(), B_cols, 1.0,
-                    res.getData(), C_cols);
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, A_rows, B_cols, A_cols, 1.0,
+                    A.getData(), A_cols, B.getData(), B_cols, 1.0, res.getData(), C_cols);
       }
 #else
       res = A * B + C;
@@ -335,28 +326,19 @@ namespace math {
     }
 
     [[nodiscard]] static Matrix MatMatTransProd(const Matrix &A, const Matrix &B) {
-      const size_t A_rows = A.rows, A_cols = A.cols,
-                   B_rows = B.rows, B_cols = B.cols;
+      const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
 
-      if (A_cols != B_cols) {
-        throw std::invalid_argument("Matrix dimensions do not match");
-      }
+      if (A_cols != B_cols) { throw std::invalid_argument("Matrix dimensions do not match"); }
 
       Matrix res(A_rows, B_rows);
 
 #ifdef USE_BLAS
       if constexpr (std::is_same_v<T, float>) {
-        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-                    A_rows, B_rows, A_cols, 1.f,
-                    A.getData(), A_cols,
-                    B.getData(), B_rows, 0.f,
-                    res.getData(), B_rows);
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans, A_rows, B_rows, A_cols, 1.f,
+                    A.getData(), A_cols, B.getData(), B_rows, 0.f, res.getData(), B_rows);
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
-                    A_rows, B_rows, A_cols, 1.0,
-                    A.getData(), A_cols,
-                    B.getData(), B_rows, 0.0,
-                    res.getData(), B_rows);
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, A_rows, B_rows, A_cols, 1.0,
+                    A.getData(), A_cols, B.getData(), B_rows, 0.0, res.getData(), B_rows);
       }
 #else
       res = A * B.transpose();

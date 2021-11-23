@@ -155,10 +155,14 @@ namespace control {
   }
 
   image::GrayscaleImage const &TrainingStash::getEval(size_t index) {
+    if (index > loaded_eval_set.size()) throw std::out_of_range("Invalid image index");
+
     return loaded_eval_set[index];
   }
 
   image::GrayscaleImage const &TrainingStash::getTraining(size_t index) {
+    if (index > loaded_training_set.size()) throw std::out_of_range("Invalid image index");
+
     return loaded_training_set[index];
   }
 }   // namespace control
