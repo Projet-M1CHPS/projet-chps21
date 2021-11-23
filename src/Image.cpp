@@ -182,5 +182,11 @@ namespace image {
     stbi_write_png(filename.c_str(), image.getWidth(), image.getHeight(), 1,
                    image.getData(), image.getWidth());
   }
+  std::tuple<int, int, int> ImageSerializer::loadInfo(fs::path const& path) {
+
+    int width, height, canals;
+    stbi_info(path.c_str(), &width, &height, &canals);
+    return {width, height, canals};
+  }
 
 }   // namespace image

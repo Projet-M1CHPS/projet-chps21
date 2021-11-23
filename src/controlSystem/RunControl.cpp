@@ -1,4 +1,4 @@
-#include "controlSystem/RunControl.h"
+#include "controlSystem/RunControl.hpp"
 
 #include <future>
 #include <utility>
@@ -13,10 +13,9 @@ namespace control {
 
   namespace {
 
-    std::unique_ptr<TrainingImageCache> initCache(WorkingEnvironnement const &env,
-                                                  RunConfiguration const &config) {
-      auto res = std::make_unique<TrainingImageStash>(env.getCachePath(), config.getInputPath(),
-                                                      false);
+    std::unique_ptr<AbstractTrainingCache> initCache(WorkingEnvironnement const &env,
+                                                     RunConfiguration const &config) {
+      auto res = std::make_unique<TrainingStash>(config.getInputPath(), false);
 
       return res;
     }
@@ -99,9 +98,9 @@ namespace control {
 
       run();
 
-    } catch (std::runtime_error &e) { return {false, e.what()}; } catch (...) {
-      return {false, "Unknown exception thrown during run."};
-    }
+    } catch (std::runtime_error &e) { return {false, e.what()}; } catch (std::invalid_argument &e) {
+      return {false, e.what()};
+    } catch (...) { return {false, "Unknown exception thrown during run."}; }
     return RunResult(true);
   }
 
@@ -122,7 +121,7 @@ namespace control {
 
   void TrainingRunController::run() {
     auto &config = *state->configuration;
-    state->cache->warmup();
+    state->cache->init();
 
     switch (config.getFPPrecision()) {
       case FloatingPrecision::float32:
@@ -148,19 +147,22 @@ namespace control {
   void TrainingRunController::runImpl() {
     static_assert(std::is_floating_point_v<real>,
                   "TrainingRunController::runImpl: wrong fp type for run controller");
+
+    auto &cache = *state->cache;
+
     nnet::NeuralNetwork<real> nn;
-    nn.setLayersSize(std::vector<size_t>{20925, 2});
-    nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
+    auto image_size = cache.getTargetSize();
+    nn.setLayersSize(std::vector<size_t>{image_size.first * image_size.second, 2});
+    nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
     nn.randomizeSynapses();
 
     real error = 1.0, min_error = 0.25, learning_rate = 0.2;
-    size_t count = 0, batch_size = 50;
+    size_t count = 0, batch_size = 1;
     std::cout << std::setprecision(16) << "Training started with: {learning_rate: " << learning_rate
               << ", min_error: " << min_error << ", batch_size: " << batch_size << "}" << std::endl;
 
-    auto &cache = *state->cache;
-    math::Matrix<real> target(2, 1);
 
+    math::Matrix<real> target(2, 1);
 
     while (error > min_error) {
       for (int i = 0; i < batch_size; i++) {
@@ -176,19 +178,18 @@ namespace control {
 
       error = 0.0;
       for (int i = 0; i < cache.getEvalSetSize(); i++) {
-        double res = 0;
+        auto res = nn.predict(cache.getEval(i).begin(), cache.getEval(i).end());
 
-        nn.predict(cache.getEval(i).begin(), cache.getEval(i).end())(cache.getEvalType(i), 0);
-        error += std::pow(std::fabs(res - 1.f), 2);
+        error += std::pow(std::fabs(res(cache.getEvalType(i), 0) - 1.f), 2);
       }
 
+      error /= cache.getEvalSetSize();
       std::cout << "[" << count << "] current_error: " << error << std::endl;
       count++;
     }
     for (int i = 0; i < cache.getEvalSetSize(); i++) {
-      std::cout << "Image[" << i << "] (Type: " << cache.getTrainingType(i)
-                << ", got: " << nn.predict(cache.getEval(i).begin(), cache.getEval(i).end())
-                << std::endl;
+      std::cout << "Image[" << i << "] (Type: " << cache.getTrainingType(i) << "), got:\n"
+                << nn.predict(cache.getEval(i).begin(), cache.getEval(i).end()) << std::endl;
     }
   }
 

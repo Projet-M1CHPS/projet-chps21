@@ -13,7 +13,7 @@ add_library(Image STATIC
         Image.cpp ${CMAKE_SOURCE_DIR}/include/Image.hpp
         ${CMAKE_SOURCE_DIR}/dependency/stb_image.h
         ${CMAKE_SOURCE_DIR}/dependency/stb_image_write.h
-        controlSystem/TrainingImageCache.cpp ../include/controlSystem/TrainingImageCache.h)
+)
 set_target_properties(Image PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 # Uses the stb library located in dependency
 target_include_directories(Image PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/dependency")

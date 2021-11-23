@@ -93,18 +93,14 @@ namespace image {
 
     /**
      * @return [ratio of pixels with brightness[0.0; 1.0] = 0; ... = 1; ... =
-     * max_brightness]. 
+     * max_brightness].
      * Cumulated value for this vector should be 1.0.
      */
     const std::vector<double> createRatioHistogram() const;
 
-    grayscale_t &operator()(size_t x, size_t y) {
-      return getData()[x + y * width];
-    }
+    grayscale_t &operator()(size_t x, size_t y) { return getData()[x + y * width]; }
 
-    grayscale_t operator()(size_t x, size_t y) const {
-      return getData()[x + y * width];
-    }
+    grayscale_t operator()(size_t x, size_t y) const { return getData()[x + y * width]; }
 
     /**
      * @brief Returns the underlying raw ptr
@@ -187,7 +183,7 @@ namespace image {
      */
     static void save(std::string const &filename, const GrayscaleImage &image);
 
-    static std::vector<image::GrayscaleImage> loadDirectory(std::string const &filename);
+    static std::tuple<int, int, int> loadInfo(std::filesystem::path const &path);
 
   private:
   };

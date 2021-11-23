@@ -1,11 +1,11 @@
 #include "ActivationFunction.hpp"
 #include "NeuralNetwork.hpp"
 #include "Utils.hpp"
-#include "controlSystem/RunConfiguration.h"
-#include "controlSystem/RunControl.h"
+#include "controlSystem/RunConfiguration.hpp"
+#include "controlSystem/RunControl.hpp"
+#include <iomanip>
 #include <iostream>
 #include <vector>
-#include <iomanip>
 
 using namespace control;
 

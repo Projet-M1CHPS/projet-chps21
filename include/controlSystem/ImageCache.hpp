@@ -16,18 +16,45 @@ namespace control {
 
   class ImageCacheStats {};
 
-  class TrainingImageCache {
+  class AbstractImageCache {
   public:
-    explicit TrainingImageCache(std::filesystem::path cache_path)
-        : cache_path(std::move(cache_path)) {}
+    enum class ScalePolicy { minimum, maximum, none };
 
-    TrainingImageCache(TrainingImageCache const &other) = delete;
-    TrainingImageCache &operator=(TrainingImageCache const &other) = delete;
+    AbstractImageCache() : scale_policy(ScalePolicy::minimum), target_width(0), target_height(0) {}
+    virtual ~AbstractImageCache() = 0;
 
-    TrainingImageCache(TrainingImageCache &&other) noexcept = default;
-    TrainingImageCache &operator=(TrainingImageCache &&other) noexcept = default;
+    AbstractImageCache(AbstractImageCache const &other) = delete;
+    AbstractImageCache &operator=(AbstractImageCache const &other) = delete;
 
-    virtual bool warmup() = 0;
+    template<typename transform_iterator>
+    void setupTransformEngine(transform_iterator begin, transform_iterator end);
+
+    void setImageScaling(ScalePolicy policy) { scale_policy = policy; }
+
+    [[nodiscard]] std::pair<size_t, size_t> getTargetSize() {
+      return {target_width, target_height};
+    }
+
+    void setTargetSize(size_t width, size_t height) {
+      std::tie(target_width, target_height) = {width, height};
+    }
+
+  protected:
+    virtual void setupResizeTransform();
+
+    ImageCacheStats stats;
+    ScalePolicy scale_policy;
+    size_t target_width, target_height;
+
+    std::unique_ptr<image::transform::TransformEngine> engine;
+  };
+
+  class AbstractTrainingCache : public AbstractImageCache {
+  public:
+    AbstractTrainingCache() : is_init(false) {}
+    ~AbstractTrainingCache() override = 0;
+
+    virtual bool init() = 0;
 
     virtual image::GrayscaleImage const &getEval(size_t index) = 0;
     [[nodiscard]] size_t getEvalType(size_t index) const {
@@ -52,22 +79,20 @@ namespace control {
     [[nodiscard]] ImageCacheStats const &getStats() { return stats; }
 
   protected:
-    std::shared_ptr<image::transform::TransformEngine> engine;
-
     std::vector<std::pair<std::filesystem::path, size_t>> eval_set;
     std::vector<std::pair<std::filesystem::path, size_t>> training_set;
 
-    std::filesystem::path cache_path;
-    ImageCacheStats stats;
+    void setupResizeTransform() override;
+
+    bool is_init;
   };
 
-  class TrainingImageStash final : public TrainingImageCache {
+  class TrainingStash final : public AbstractTrainingCache {
   public:
-    explicit TrainingImageStash(std::filesystem::path cache_path,
-                                std::filesystem::path const &input_path,
-                                bool shuffle_input = false);
+    explicit TrainingStash(std::filesystem::path const &input_path, bool shuffle_input = false);
+    ~TrainingStash() override = default;
 
-    bool warmup() override;
+    bool init() override;
 
     image::GrayscaleImage const &getEval(size_t index) override;
     image::GrayscaleImage const &getTraining(size_t index) override;

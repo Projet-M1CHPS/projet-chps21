@@ -81,12 +81,19 @@ namespace image::transform {
     void addTransformation(std::shared_ptr<Transformation> transformation);
 
     /**
-     * @param image  Base image, will not be modified.
+     * @param image  Base image will not be modified.
      * @return a copy of the base image with all transformations applied
      * @brief Apply all transformations of the transformation list for the
      * given image
      */
-    image::GrayscaleImage transform(image::GrayscaleImage const &image);
+    [[nodiscard]] image::GrayscaleImage transform(image::GrayscaleImage const &image) const;
+
+    /**
+     * @param image  Apply every transformation in-place
+     * @brief Apply all transformations of the transformation list for the
+     * given image
+     */
+    void apply(image::GrayscaleImage& image) const;
 
   private:
     // Keeping the transformations identifiers for I/O easily.

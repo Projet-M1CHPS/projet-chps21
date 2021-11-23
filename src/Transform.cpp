@@ -9,22 +9,23 @@
 
 namespace image::transform {
 
-  Crop::Crop(size_t width, size_t height, size_t orig_x, size_t orig_y) : width(width), height(height), orig_x(orig_x), orig_y(orig_y){};
+  Crop::Crop(size_t width, size_t height, size_t orig_x, size_t orig_y)
+      : width(width), height(height), orig_x(orig_x), orig_y(orig_y){};
 
   Resize::Resize(size_t width, size_t height) : width(width), height(height){};
 
-  float _get2DVectorNorm(size_t x, size_t y) {
-    return sqrtf(x * x + y * y);
-  }
+  float _get2DVectorNorm(size_t x, size_t y) { return sqrtf(x * x + y * y); }
 
   /**
-   * @brief Sub-function for resizing (stable on both up-scaling and down-scaling, but not really efficient on up-scaling)
+   * @brief Sub-function for resizing (stable on both up-scaling and down-scaling, but not really
+   * efficient on up-scaling)
    *
    * @param factors Pair: (source.width-1)/(dest.width-1) ; (source.height-1)/(dest.height-1)
    * @param source source image
    * @param dest destination image
    */
-  void downscaling(std::pair<double, double> factors, GrayscaleImage const &source, GrayscaleImage &dest) {
+  void downscaling(std::pair<double, double> factors, GrayscaleImage const &source,
+                   GrayscaleImage &dest) {
     for (size_t x = 0; x < dest.getWidth(); x++) {
       size_t source_x = std::round(x * factors.first);
       dest(x, 0) = source(source_x, 0);                                           // top row
@@ -48,12 +49,10 @@ namespace image::transform {
         float bottom_left_coef = _get2DVectorNorm(orig_left_x - x, orig_down_y - y);
         float bottom_right_coef = _get2DVectorNorm(orig_right_x - x, orig_down_y - y);
 
-        grayscale_t mean = (grayscale_t)
-                std::round((source(orig_left_x, orig_up_y) +
-                            source(orig_left_x, orig_down_y) +
-                            source(orig_right_x, orig_up_y) +
-                            source(orig_right_x, orig_down_y)) /
-                           4.0);
+        grayscale_t mean = (grayscale_t) std::round(
+                (source(orig_left_x, orig_up_y) + source(orig_left_x, orig_down_y) +
+                 source(orig_right_x, orig_up_y) + source(orig_right_x, orig_down_y)) /
+                4.0);
         dest(x, y) = mean;
       }
     }
@@ -61,16 +60,21 @@ namespace image::transform {
 
   bool Crop::transform(GrayscaleImage &image) {
     if (orig_x < 0 || orig_y < 0 || width <= 0 || height <= 0) {
-      std::cout << "Crop can not be applied on this image: new origin needs to be greater or equal than (0,0) and new dimensions needs to be strictly greater than (0,0)" << std::endl;
+      std::cout << "Crop can not be applied on this image: new origin needs to be greater or equal "
+                   "than (0,0) and new dimensions needs to be strictly greater than (0,0)"
+                << std::endl;
       return false;
     } else if (orig_x + width > image.getWidth()) {
-      std::cout << "Crop can not be applied on this image: orig_x[" << orig_x << "] + width[" << width << "] > image.width[" << image.getWidth() << "]" << std::endl;
+      std::cout << "Crop can not be applied on this image: orig_x[" << orig_x << "] + width["
+                << width << "] > image.width[" << image.getWidth() << "]" << std::endl;
       return false;
     } else if (orig_y + height > image.getHeight()) {
-      std::cout << "Crop can not be applied on this image: orig_y[" << orig_y << "] + height[" << height << "] > image.height[" << image.getHeight() << "]" << std::endl;
+      std::cout << "Crop can not be applied on this image: orig_y[" << orig_y << "] + height["
+                << height << "] > image.height[" << image.getHeight() << "]" << std::endl;
       return false;
     }
-    const image::GrayscaleImage source = image;   // In order to modify the image ref, we first need to copy it.
+    const image::GrayscaleImage source =
+            image;   // In order to modify the image ref, we first need to copy it.
     image.setSize(width, height);
     for (size_t x = orig_x; x < orig_x + width; x++) {
       for (size_t y = orig_y; y < orig_y + height; y++) {
@@ -82,13 +86,18 @@ namespace image::transform {
 
   bool Resize::transform(GrayscaleImage &image) {
     if (width <= 0 || height <= 0) {
-      std::cout << "Resize can not be applied on this image: new dimensions needs to be strictly greater than (0,0)" << std::endl;
+      std::cout << "Resize can not be applied on this image: new dimensions needs to be strictly "
+                   "greater than (0,0)"
+                << std::endl;
       return false;
-    } else if (height == image.getHeight() && width == image.getWidth())   // Case where we don't need to resize the image.
+    } else if (height == image.getHeight() &&
+               width == image.getWidth())   // Case where we don't need to resize the image.
       return false;
-    const image::GrayscaleImage source = image;   // In order to modify the image ref, we first need to copy it.
+    const image::GrayscaleImage source =
+            image;   // In order to modify the image ref, we first need to copy it.
     image.setSize(width, height);
-    std::pair<double, double> factors((double) (source.getWidth() - 1) / (width - 1), (double) (source.getHeight() - 1) / (height - 1));
+    std::pair<double, double> factors((double) (source.getWidth() - 1) / (width - 1),
+                                      (double) (source.getHeight() - 1) / (height - 1));
     // Works for both up & down scaling.
     // A upscaling(...) function will be defined soon to enhance that particular case.
     downscaling(factors, source, image);

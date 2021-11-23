@@ -1,6 +1,6 @@
 
-#include "controlSystem/RunConfiguration.h"
-#include "controlSystem/TrainingImageCache.h"
+#include "controlSystem/RunConfiguration.hpp"
+#include "controlSystem/ImageCache.hpp"
 #include <search.h>
 #include <utility>
 

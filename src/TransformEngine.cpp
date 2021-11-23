@@ -7,16 +7,15 @@ namespace image::transform {
 
   namespace {
 
-    const std::map<std::string, TransformType> transformEnumMap(
-            {
-                    {"binaryscale", TransformType::binaryScale},
-                    {"binaryScaleByMedian", TransformType::binaryScaleByMedian},
-                    {"resize", TransformType::resize},
-                    {"crop", TransformType::crop},
-                    {"inversion", TransformType::inversion},
-                    {"equalize", TransformType::equalize},
-                    // Add new functions here
-            });
+    const std::map<std::string, TransformType> transformEnumMap({
+            {"binaryscale", TransformType::binaryScale},
+            {"binaryScaleByMedian", TransformType::binaryScaleByMedian},
+            {"resize", TransformType::resize},
+            {"crop", TransformType::crop},
+            {"inversion", TransformType::inversion},
+            {"equalize", TransformType::equalize},
+            // Add new functions here
+    });
 
     TransformType strToTransformEnum(std::string identifier) {
       auto t_enum = transformEnumMap.find(identifier);
@@ -36,10 +35,11 @@ namespace image::transform {
         case TransformType::resize:
           return std::make_shared<Resize>(0, 0);   // TODO: Rebuild the TransformationEngine system
         case TransformType::crop:
-          return std::make_shared<Crop>(0, 0, 0, 0);   // TODO: Rebuild the TransformationEngine system
+          return std::make_shared<Crop>(0, 0, 0,
+                                        0);   // TODO: Rebuild the TransformationEngine system
         case TransformType::inversion:
           return std::make_shared<Inversion>();
-          case TransformType::equalize:
+        case TransformType::equalize:
           return std::make_shared<Equalize>();
         // Add new functions here
         default:
@@ -91,14 +91,15 @@ namespace image::transform {
     transformations.push_back(transformation);
   }
 
-  GrayscaleImage TransformEngine::transform(GrayscaleImage const &image) {
-    std::cout << "> TransformEngine::transform()" << std::endl;
-
+  GrayscaleImage TransformEngine::transform(GrayscaleImage const &image) const {
     GrayscaleImage copy = image;
-    for (std::shared_ptr<Transformation> tr : transformations) tr->transform(copy);
+    for (const std::shared_ptr<Transformation>& tr : transformations) tr->transform(copy);
 
-    std::cout << "< TransformEngine::transform()" << std::endl;
     return copy;
+  }
+
+  void TransformEngine::apply(GrayscaleImage& image) const {
+    for (const std::shared_ptr<Transformation>& tr : transformations) tr->transform(image);
   }
 
 }   // namespace image::transform
