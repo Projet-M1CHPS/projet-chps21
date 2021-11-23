@@ -81,6 +81,11 @@ namespace image::transform {
   }
 
   bool Resize::transform(GrayscaleImage &image) {
+    if (width <= 0 || height <= 0) {
+      std::cout << "Resize can not be applied on this image: new dimensions needs to be strictly greater than (0,0)" << std::endl;
+      return false;
+    } else if (height == image.getHeight() && width == image.getWidth())   // Case where we don't need to resize the image.
+      return false;
     const image::GrayscaleImage source = image;   // In order to modify the image ref, we first need to copy it.
     image.setSize(width, height);
     std::pair<double, double> factors((double) (source.getWidth() - 1) / (width - 1), (double) (source.getHeight() - 1) / (height - 1));
