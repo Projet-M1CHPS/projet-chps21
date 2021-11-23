@@ -9,34 +9,6 @@
 
 namespace image::transform {
 
-  namespace color_to_gray {
-
-    grayscale_t _grayByBinarisation(const unsigned &r, const unsigned &g, const unsigned &b) {
-      return (r + g + b) < (max_brightness * 3) / 2 ? 0U : 255U;
-    }
-    grayscale_t _grayByMean(const unsigned &r, const unsigned &g, const unsigned &b) {
-      return (r + g + b) / 3;
-    }
-
-    grayscale_t _grayByDesaturation(const unsigned &r, const unsigned &g, const unsigned &b) {
-      grayscale_t max =
-              std::max(r, std::max(g, b));   // Optimisation possible
-      grayscale_t min =
-              std::min(r, std::min(g, b));   // by grouping
-      return (grayscale_t) (max - min) / 2;
-    }
-
-    grayscale_t _grayByMinDecomposition(const unsigned &r, const unsigned &g, const unsigned &b) {
-      return std::min(r, std::min(g, b));
-    }
-
-    grayscale_t _grayByMaxDecomposition(const unsigned &r, const unsigned &g, const unsigned &b) {
-      return std::max(r, std::max(g, b));
-    }
-  }   // namespace color_to_gray
-
-
-
   Crop::Crop(size_t width, size_t height, size_t orig_x, size_t orig_y) : width(width), height(height), orig_x(orig_x), orig_y(orig_y){};
 
   Resize::Resize(size_t width, size_t height) : width(width), height(height){};
