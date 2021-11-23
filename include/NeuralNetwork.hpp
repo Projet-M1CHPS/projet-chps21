@@ -67,8 +67,7 @@ namespace nnet {
 
     virtual void setActivationFunction(af::ActivationFunctionType type) = 0;
 
-    virtual void setActivationFunction(af::ActivationFunctionType af,
-                                       size_t layer) = 0;
+    virtual void setActivationFunction(af::ActivationFunctionType af, size_t layer) = 0;
 
     [[nodiscard]] virtual const std::vector<af::ActivationFunctionType> &
     getActivationFunctions() const = 0;
@@ -100,8 +99,7 @@ namespace nnet {
      */
     NeuralNetwork() : NeuralNetworkBase(getFPPrecision<real>()) {}
 
-    NeuralNetwork(const NeuralNetwork &other)
-        : NeuralNetworkBase(getFPPrecision<real>()) {
+    NeuralNetwork(const NeuralNetwork &other) : NeuralNetworkBase(getFPPrecision<real>()) {
       *this = other;
     }
 
@@ -128,15 +126,15 @@ namespace nnet {
      * @param end_target
      * @param learning_rate
      */
-    template<typename iterator>
-    void train(iterator begin_input, iterator end_input, iterator begin_target,
-               iterator end_target, const real learning_rate) {
+    template<typename entry_iterator, typename target_iterator>
+    void train(entry_iterator begin_input, entry_iterator end_input, target_iterator begin_target,
+               target_iterator end_target, const real learning_rate) {
       const size_t nbInput = std::distance(begin_input, end_input);
       const size_t nbTarget = std::distance(begin_target, end_target);
 
-      if (nbInput != weights.front().getCols() || nbTarget != getOutputSize()) {
-        throw std::invalid_argument("Invalid number of input");
-      }
+      /*if (nbInput != weights.front().getCols() || nbTarget != getOutputSize()) {
+        throw std::runtime_error("Invalid number of input");
+      }*/
 
       std::vector<math::Matrix<real>> layers;
       layers.resize(weights.size() + 1);
@@ -159,9 +157,9 @@ namespace nnet {
     math::Matrix<real> predict(iterator begin, iterator end) const {
       const size_t nbInput = std::distance(begin, end);
 
-      if (nbInput != weights.front().getCols()) {
-        throw std::invalid_argument("Invalid number of input");
-      }
+      /* if (nbInput != weights.front().getCols()) {
+        throw std::runtime_error("Invalid number of input");
+      } */
 
       math::Matrix<real> current_layer(nbInput, 1);
       std::copy(begin, end, current_layer.begin());
@@ -172,7 +170,7 @@ namespace nnet {
         // Apply activation function on every element of the matrix
         auto afunc = af::getAFFromType<real>(activation_functions[i]).first;
         std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
-        //current_layer = forwardOnce(current_layer, i);
+        // current_layer = forwardOnce(current_layer, i);
       }
       return current_layer;
     }
@@ -185,12 +183,8 @@ namespace nnet {
      * @param layers
      */
     void setLayersSize(std::vector<size_t> const &layers) override {
-
-      if (layers.empty())
-        return;
-      if (layers.size() < 2) {
-        throw std::invalid_argument("Requires atleast 2 layers");
-      }
+      if (layers.empty()) return;
+      if (layers.size() < 2) { throw std::runtime_error("Requires atleast 2 layers"); }
 
       weights.clear();
       biases.clear();
@@ -207,9 +201,7 @@ namespace nnet {
       // The last operation is <Mm x Mn> * <Om * On>
       // So the output is <Mm * On> where On is 1
 
-      if (weights.empty()) {
-        return 0;
-      }
+      if (weights.empty()) { return 0; }
 
       return weights.back().getRows();
     }
@@ -217,9 +209,7 @@ namespace nnet {
     [[nodiscard]] size_t getInputSize() const override {
       // The first operation is <Mm x Mn> * <Om * On>
       // So the input is of size <Mn * On> where On is 1
-      if (weights.empty()) {
-        return 0;
-      }
+      if (weights.empty()) { return 0; }
 
       return weights.front().getCols();
     }
@@ -229,23 +219,16 @@ namespace nnet {
 
       res.reserve(weights.size());
 
-      for (auto &w : weights) {
-        res.push_back(w.getRows());
-      }
+      for (auto &w : weights) { res.push_back(w.getRows()); }
       return res;
     }
 
     void setActivationFunction(af::ActivationFunctionType type) override {
-      for (auto &activation_function : activation_functions) {
-        activation_function = type;
-      }
+      for (auto &activation_function : activation_functions) { activation_function = type; }
     }
 
-    void setActivationFunction(af::ActivationFunctionType af,
-                               size_t layer) override {
-      if (layer >= weights.size()) {
-        throw std::invalid_argument("Invalid layer");
-      }
+    void setActivationFunction(af::ActivationFunctionType af, size_t layer) override {
+      if (layer >= weights.size()) { throw std::invalid_argument("Invalid layer"); }
 
       activation_functions[layer] = af;
     }
@@ -261,13 +244,9 @@ namespace nnet {
      * @param seed
      */
     void randomizeSynapses() override {
-      for (auto &layer : weights) {
-        utils::random::randomize<real>(layer, 0, 1);
-      }
+      for (auto &layer : weights) { utils::random::randomize<real>(layer, 0, 1); }
 
-      for (auto &layer : biases) {
-        utils::random::randomize<real>(layer, 0, 1);
-      }
+      for (auto &layer : biases) { utils::random::randomize<real>(layer, 0, 1); }
     }
 
     [[nodiscard]] std::vector<math::Matrix<real>> &getWeights() { return weights; }
@@ -280,8 +259,7 @@ namespace nnet {
 
   private:
     template<typename iterator>
-    void forward(iterator begin_input, iterator end_input,
-                 std::vector<math::Matrix<real>> &layers,
+    void forward(iterator begin_input, iterator end_input, std::vector<math::Matrix<real>> &layers,
                  std::vector<math::Matrix<real>> &layers_af) const {
       math::Matrix<real> current_layer(std::distance(begin_input, end_input), 1);
       std::copy(begin_input, end_input, current_layer.begin());
@@ -296,8 +274,7 @@ namespace nnet {
 
         // Apply activation function on every element of the matrix
         auto afunc = af::getAFFromType<real>(activation_functions[i]).first;
-        std::transform(current_layer.cbegin(), current_layer.cend(),
-                       current_layer.begin(), afunc);
+        std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
 
         layers_af[i + 1] = current_layer;
       }
@@ -306,8 +283,7 @@ namespace nnet {
     template<typename iterator>
     void backward(iterator begin_target, iterator end_target,
                   const std::vector<math::Matrix<real>> &layers,
-                  const std::vector<math::Matrix<real>> &layers_af,
-                  const real learning_rate) {
+                  const std::vector<math::Matrix<real>> &layers_af, const real learning_rate) {
       std::vector<math::Matrix<real>> errors;
       errors.resize(weights.size());
 
@@ -333,12 +309,13 @@ namespace nnet {
         gradient *= learning_rate;
 
         // calcul de ((S * E) * alpha) * Ht
-        //math::Matrix<real> delta_weight = math::Matrix<real>::MatMatTransProd(gradient, layers_af[i]);
+        // math::Matrix<real> delta_weight = math::Matrix<real>::MatMatTransProd(gradient,
+        // layers_af[i]);
         math::Matrix<real> delta_weight = gradient * layers_af[i].transpose();
 
-        //std::cout << "-------debut---------" << std::endl;
-        //std::cout << delta_weight << "\n" << test << std::endl;
-        //std::cout << "--------fin--------" << std::endl;
+        // std::cout << "-------debut---------" << std::endl;
+        // std::cout << delta_weight << "\n" << test << std::endl;
+        // std::cout << "--------fin--------" << std::endl;
 
         weights[i] += delta_weight;
         biases[i] += gradient;
@@ -363,9 +340,7 @@ namespace nnet {
       os << nn.getWeights()[i];
       os << "------bias[" << i << "]------\n";
       os << nn.getBiases()[i];
-      if (i != size - 1) {
-        os << "-----hidden[" << i << "]-----\n";
-      }
+      if (i != size - 1) { os << "-----hidden[" << i << "]-----\n"; }
     }
     os << "-------output------\n";
     return os;
