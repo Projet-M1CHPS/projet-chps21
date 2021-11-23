@@ -86,18 +86,33 @@ namespace image {
 
   double GrayscaleImage::getDifference(GrayscaleImage const &other) const {
     double diff = 0.0;
-    const grayscale_t *self_data = getData(), *other_data = other.getData();
+    size_t min_height = std::min(getHeight(), other.getHeight());
+    size_t min_width = std::min(getWidth(), other.getWidth());
 
-    size_t stop = std::min(getSize(), other.getSize());
-
-    for (size_t i = 0; i < stop; i++) {
-      diff += std::fabs(self_data[i] - other_data[i]) / max_brightness;
+    for (size_t y = 0; y < min_height; y++) {
+      size_t x = 0;
+      diff += std::accumulate(begin() + getWidth() * y, begin() + getWidth() * y + min_width, 0.0, [&x, y, other](auto a, auto b) {
+        return (double) std::fabs(b - other(x++, y)) / max_brightness;
+      });
     }
     return diff;
   }
 
   grayscale_t *GrayscaleImage::getData() { return pixel_data.get(); }
   const grayscale_t *GrayscaleImage::getData() const { return pixel_data.get(); }
+
+  const std::vector<size_t> GrayscaleImage::getHistogram() const {
+    std::vector<size_t> histogram(nb_colors);
+    std::for_each(begin(), end(), [&histogram](auto e) { histogram[e] += 1U; });
+    return histogram;
+  }
+
+  const std::vector<double> GrayscaleImage::createRatioHistogram() const {
+    double increment_value = 1.0 / ((double) getSize());
+    std::vector<double> histogram(nb_colors);
+    std::for_each(begin(), end(), [&histogram, increment_value](auto e) { histogram[e] += increment_value; });
+    return histogram;
+  }
 
   grayscale_t *GrayscaleImage::begin() { return getData(); }
   const grayscale_t *GrayscaleImage::begin() const { return getData(); }
@@ -129,6 +144,7 @@ namespace image {
 
   GrayscaleImage ImageSerializer::createRandomNoiseImage(size_t width, size_t height) {
     GrayscaleImage res(width, height);
+
     srand(time(nullptr));
     std::for_each(res.begin(), res.end(), [](auto &e) { e = (grayscale_t) (rand() % nb_colors); });
     return res;
