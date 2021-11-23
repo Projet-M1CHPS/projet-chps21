@@ -10,6 +10,14 @@ namespace utils {
     exit(1);
   }
 
+  std::string timestampAsStr() {
+    auto time = std::time(nullptr);
+    std::stringstream res;
+    res << std::put_time(std::localtime(&time), "%y_%b_%d_%H_%M_%S");
+    return res.str();
+  }
+
+
   // Delegate to the other constructor
   IOException::IOException(const std::string &msg) noexcept
       : IOException(msg.c_str()) {}

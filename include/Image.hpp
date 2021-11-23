@@ -1,10 +1,10 @@
 #pragma once
 
+#include <filesystem>
 #include <memory>
 #include <vector>
 
 namespace image {
-
   using grayscale_t = unsigned char;
 
   constexpr unsigned max_brightness = 255;
@@ -28,8 +28,7 @@ namespace image {
      * @param ptr Ptr to the raw data
      * The image assume the ownership of the ptr
      */
-    GrayscaleImage(size_t width, size_t height,
-                   std::unique_ptr<grayscale_t[]> &&ptr);
+    GrayscaleImage(size_t width, size_t height, std::unique_ptr<grayscale_t[]> &&ptr);
 
     GrayscaleImage(GrayscaleImage const &other);
     GrayscaleImage &operator=(GrayscaleImage const &other);
@@ -70,7 +69,8 @@ namespace image {
 
     /**
      * @brief Compute the difference of the pixels between two images.
-     * If images do not have the same dimensions, every not comparable pixel will be computed as a 0% difference.
+     * If images do not have the same dimensions, every not comparable pixel will be computed as a
+     * 0% difference.
      *
      * @param other other image
      * @return difference in range [0.0, 1.0]
@@ -178,7 +178,7 @@ namespace image {
      * @param filename
      * @return
      */
-    static image::GrayscaleImage load(std::string const &filename);
+    static image::GrayscaleImage load(std::filesystem::path const &filename);
 
     /** @brief Saves an image as a PNG to the given path
      *
@@ -187,8 +187,7 @@ namespace image {
      */
     static void save(std::string const &filename, const GrayscaleImage &image);
 
-    static std::vector<image::GrayscaleImage>
-    loadDirectory(std::string const &filename);
+    static std::vector<image::GrayscaleImage> loadDirectory(std::string const &filename);
 
   private:
   };

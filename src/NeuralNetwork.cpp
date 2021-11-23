@@ -1,6 +1,4 @@
 #include "NeuralNetwork.hpp"
-#include <cmath>
-#include <functional>
 
 namespace nnet {
 
@@ -22,6 +20,17 @@ namespace nnet {
         return "float64";
       default:
         throw std::invalid_argument("Invalid floating precision");
+    }
+  }
+
+  std::unique_ptr<NeuralNetworkBase> makeNeuralNetwork(FloatingPrecision precision) {
+    switch (precision) {
+      case FloatingPrecision::float32:
+        return std::make_unique<NeuralNetwork<float>>();
+      case FloatingPrecision::float64:
+        return std::make_unique<NeuralNetwork<double>>();
+      default:
+        return nullptr;
     }
   }
 

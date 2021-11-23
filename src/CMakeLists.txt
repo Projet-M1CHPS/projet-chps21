@@ -1,17 +1,19 @@
 
 
+
 add_library(Utils STATIC
         Utils.cpp ${CMAKE_SOURCE_DIR}/include/Utils.hpp
         )
 set_target_properties(Utils PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-target_include_directories(Utils PUBLIC "${CMAKE_SOURCE_DIR}/include")
+target_include_directories(Utils PUBLIC "${CMAKE_SOURCE_DIR}/include" ${BLAS_INCLUDE_DIRS})
 target_code_coverage(Utils)
+
 
 add_library(Image STATIC
         Image.cpp ${CMAKE_SOURCE_DIR}/include/Image.hpp
         ${CMAKE_SOURCE_DIR}/dependency/stb_image.h
         ${CMAKE_SOURCE_DIR}/dependency/stb_image_write.h
-        )
+        controlSystem/TrainingImageCache.cpp ../include/controlSystem/TrainingImageCache.h)
 set_target_properties(Image PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 # Uses the stb library located in dependency
 target_include_directories(Image PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/dependency")
@@ -22,8 +24,15 @@ add_library(Transform STATIC
         Transform.cpp ${CMAKE_SOURCE_DIR}/include/Transform.hpp
         )
 set_target_properties(Transform PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-target_include_directories(Transform PUBLIC "${CMAKE_SOURCE_DIR}/include")
+target_include_directories(Transform PUBLIC "${CMAKE_SOURCE_DIR}/include" ${BLAS_INCLUDE_DIRS})
 target_code_coverage(Transform)
+
+
+set(BLA_VENDOR OpenBLAS)
+find_package(BLAS REQUIRED)
+if(BLAS_FOUND)
+  include_directories(/opt/OpenBLAS/include/)
+endif(BLAS_FOUND)
 
 add_library(NeuralNetwork STATIC
         NeuralNetwork.cpp ${CMAKE_SOURCE_DIR}/include/NeuralNetwork.hpp
@@ -33,11 +42,13 @@ add_library(NeuralNetwork STATIC
         )
 set_target_properties(NeuralNetwork PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 target_include_directories(NeuralNetwork PUBLIC "${CMAKE_SOURCE_DIR}/include")
-target_link_libraries(NeuralNetwork PUBLIC m Utils)
+target_link_libraries(NeuralNetwork PUBLIC m Utils ${BLAS_LIBRARIES})
 target_code_coverage(NeuralNetwork)
+
+add_subdirectory(controlSystem)
 
 add_executable(main main.cpp)
 set_target_properties(main PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(main PUBLIC "${CMAKE_SOURCE_DIR}/include")
 
-target_link_libraries(main PRIVATE Image Transform NeuralNetwork pthread)
+target_link_libraries(main PRIVATE controlSystem Image Transform NeuralNetwork pthread ${BLAS_LIBRARIES})

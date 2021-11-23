@@ -10,8 +10,6 @@
 #include <utility>
 #include <vector>
 
-#define alpha .1
-
 namespace nnet {
 
   /**
@@ -169,7 +167,12 @@ namespace nnet {
       std::copy(begin, end, current_layer.begin());
 
       for (size_t i = 0; i < weights.size(); i++) {
-        current_layer = forwardOnce(current_layer, i);
+        current_layer = math::Matrix<real>::matMatProdMatAdd(weights[i], current_layer, biases[i]);
+
+        // Apply activation function on every element of the matrix
+        auto afunc = af::getAFFromType<real>(activation_functions[i]).first;
+        std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
+        //current_layer = forwardOnce(current_layer, i);
       }
       return current_layer;
     }
@@ -182,6 +185,9 @@ namespace nnet {
      * @param layers
      */
     void setLayersSize(std::vector<size_t> const &layers) override {
+
+      if (layers.empty())
+        return;
       if (layers.size() < 2) {
         throw std::invalid_argument("Requires atleast 2 layers");
       }
@@ -285,7 +291,7 @@ namespace nnet {
 
       for (size_t i = 0; i < weights.size(); i++) {
         // C = W * C + B
-        current_layer = weights[i] * current_layer + biases[i];
+        current_layer = math::Matrix<real>::matMatProdMatAdd(weights[i], current_layer, biases[i]);
         layers[i + 1] = current_layer;
 
         // Apply activation function on every element of the matrix
@@ -322,30 +328,21 @@ namespace nnet {
         auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
         std::transform(gradient.cbegin(), gradient.cend(), gradient.begin(), dafunc);
 
-        // calcul de (S * E) * alpha
+        // calcul de (S * E)
         gradient.hadamardProd(errors[i]);
         gradient *= learning_rate;
 
         // calcul de ((S * E) * alpha) * Ht
+        //math::Matrix<real> delta_weight = math::Matrix<real>::MatMatTransProd(gradient, layers_af[i]);
         math::Matrix<real> delta_weight = gradient * layers_af[i].transpose();
+
+        //std::cout << "-------debut---------" << std::endl;
+        //std::cout << delta_weight << "\n" << test << std::endl;
+        //std::cout << "--------fin--------" << std::endl;
 
         weights[i] += delta_weight;
         biases[i] += gradient;
       }
-    }
-
-    math::Matrix<real> forwardOnce(const math::Matrix<real> &mat,
-                                   const size_t index) const {
-      // C = W * C + B
-
-      math::Matrix<real> res = weights[index] * mat;
-      // Avoid a copy by using the += operator
-      res += biases[index];
-
-      // Apply activation function on every element of the matrix
-      auto afunc = af::getAFFromType<real>(activation_functions[index]).first;
-      std::transform(res.cbegin(), res.cend(), res.begin(), afunc);
-      return res;
     }
 
   private:
@@ -373,4 +370,7 @@ namespace nnet {
     os << "-------output------\n";
     return os;
   }
+
+  std::unique_ptr<NeuralNetworkBase> makeNeuralNetwork(FloatingPrecision precision);
+
 }   // namespace nnet
