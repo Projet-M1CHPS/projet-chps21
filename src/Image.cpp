@@ -18,56 +18,47 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+namespace fs = std::filesystem;
+
 namespace image {
 
-  GrayscaleImage::GrayscaleImage(size_t width, size_t height)
-      : width(width), height(height) {
-    if (width == 0 || height == 0)
-      return;
+  GrayscaleImage::GrayscaleImage(size_t width, size_t height) : width(width), height(height) {
+    if (width == 0 || height == 0) return;
     pixel_data = std::make_unique<grayscale_t[]>(width * height);
   }
 
-  GrayscaleImage::GrayscaleImage(size_t width, size_t height,
-                                 std::unique_ptr<grayscale_t[]> &&ptr)
+  GrayscaleImage::GrayscaleImage(size_t width, size_t height, std::unique_ptr<grayscale_t[]> &&ptr)
       : width(width), height(height) {
-    if (width == 0 || height == 0)
-      return;
+    if (width == 0 || height == 0) return;
     assign(std::move(ptr));
   }
 
-  GrayscaleImage::GrayscaleImage(GrayscaleImage const &other) : width(0), height(0) { *this = other; }
-
-  GrayscaleImage::GrayscaleImage(GrayscaleImage &&other) noexcept {
-    *this = std::move(other);
+  GrayscaleImage::GrayscaleImage(GrayscaleImage const &other) : width(0), height(0) {
+    *this = other;
   }
 
+  GrayscaleImage::GrayscaleImage(GrayscaleImage &&other) noexcept { *this = std::move(other); }
+
   GrayscaleImage &GrayscaleImage::operator=(GrayscaleImage const &other) {
-    if (this == &other)
-      return *this;
+    if (this == &other) return *this;
 
     // We may avoid a copy if the internal array is big enough to hold
     // the copy
-    if (getSize() != other.getSize()) {
-      pixel_data = nullptr;
-    }
+    if (getSize() != other.getSize()) { pixel_data = nullptr; }
 
     width = other.width;
     height = other.height;
     if (other.pixel_data) {
       // If the internal array wasn't big enough or just not allocated
-      if (not pixel_data) {
-        pixel_data = std::make_unique<grayscale_t[]>(width * height);
-      }
-      std::memcpy(pixel_data.get(), other.pixel_data.get(),
-                  sizeof(grayscale_t) * width * height);
+      if (not pixel_data) { pixel_data = std::make_unique<grayscale_t[]>(width * height); }
+      std::memcpy(pixel_data.get(), other.pixel_data.get(), sizeof(grayscale_t) * width * height);
     }
 
     return *this;
   }
 
   GrayscaleImage &GrayscaleImage::operator=(GrayscaleImage &&other) noexcept {
-    if (this == &other)
-      return *this;
+    if (this == &other) return *this;
 
     pixel_data = std::move(other.pixel_data);
     width = other.width;
@@ -84,21 +75,18 @@ namespace image {
   }
 
   grayscale_t GrayscaleImage::getPixel(unsigned int x) const {
-    if (x > getSize())
-      throw std::out_of_range("Out of range access in image");
+    if (x > getSize()) throw std::out_of_range("Out of range access in image");
     return pixel_data.get()[x];
   }
 
   grayscale_t GrayscaleImage::getPixel(unsigned int x, unsigned int y) const {
-    if (x > width && y > getHeight())
-      throw std::out_of_range("Out of range access in image");
+    if (x > width && y > getHeight()) throw std::out_of_range("Out of range access in image");
     return pixel_data.get()[x];
   }
 
   double GrayscaleImage::getDifference(GrayscaleImage const &other) const {
     double diff = 0.0;
-    const grayscale_t *self_data = getData(),
-                      *other_data = other.getData();
+    const grayscale_t *self_data = getData(), *other_data = other.getData();
 
     size_t stop = std::min(getSize(), other.getSize());
 
@@ -128,40 +116,38 @@ namespace image {
       std::vector<char *> files;
 
       if ((dir = opendir(path)) != nullptr) {
-        while ((diread = readdir(dir)) != nullptr)
-          files.push_back(diread->d_name);
+        while ((diread = readdir(dir)) != nullptr) files.push_back(diread->d_name);
         closedir(dir);
       } else {
         perror("opendir");
         return;
       }
-      for (auto file : files)
-        std::cout << file << "| ";
+      for (auto file : files) std::cout << file << "| ";
       std::cout << std::endl;
     }
   }   // namespace
 
   GrayscaleImage ImageSerializer::createRandomNoiseImage(size_t width, size_t height) {
     GrayscaleImage res(width, height);
-    srand(time(0));
+    srand(time(nullptr));
     std::for_each(res.begin(), res.end(), [](auto &e) { e = (grayscale_t) (rand() % nb_colors); });
     return res;
   }
 
   GrayscaleImage ImageSerializer::createRandomNoiseImage() {
-    srand(time(0));
+    srand(time(nullptr));
     return ImageSerializer::createRandomNoiseImage((size_t) (rand() % 389) + 124, (size_t) (rand() % 389) + 124);
   }
 
   /**
    * @param filename any image file supported by stb.
    */
-  GrayscaleImage ImageSerializer::load(std::string const &filename) {
-    int width, height, channels;
-    unsigned char *img_data =
-            stbi_load(filename.c_str(), &width, &height, &channels, 1);
+  GrayscaleImage ImageSerializer::load(fs::path const &filename) {
 
-    if (img_data == NULL)
+    int width, height, channels;
+    unsigned char *img_data = stbi_load(filename.c_str(), &width, &height, &channels, 1);
+
+    if (img_data == nullptr)
       throw std::runtime_error("ImageSerializer::load: stbi_load failed");
 
     std::unique_ptr<grayscale_t[]> ptr(reinterpret_cast<grayscale_t *>(img_data));
@@ -176,8 +162,7 @@ namespace image {
    * @param filename absolute or relative path
    * @param image
    */
-  void ImageSerializer::save(std::string const &filename,
-                             GrayscaleImage const &image) {
+  void ImageSerializer::save(std::string const &filename, GrayscaleImage const &image) {
     stbi_write_png(filename.c_str(), image.getWidth(), image.getHeight(), 1,
                    image.getData(), image.getWidth());
   }

@@ -1,6 +1,7 @@
 #pragma once
 #include "Matrix.hpp"
 #include <iostream>
+#include <iomanip>
 #include <random>
 #include <type_traits>
 
@@ -21,6 +22,8 @@ namespace utils {
    * @param msg
    */
   [[noreturn]] void error(const char *msg) noexcept;
+
+  std::string timestampAsStr();
 
   namespace random {
 
