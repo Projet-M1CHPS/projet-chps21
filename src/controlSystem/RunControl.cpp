@@ -152,12 +152,13 @@ namespace control {
 
     nnet::NeuralNetwork<real> nn;
     auto image_size = cache.getTargetSize();
-    nn.setLayersSize(std::vector<size_t>{image_size.first * image_size.second, 10, 2});
+    nn.setLayersSize(std::vector<size_t>{image_size.first * image_size.second, 100, 2});
     nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
+    //nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 7);
     nn.randomizeSynapses();
 
-    real error = 1.0, min_error = 0.25, learning_rate = 1.f;
-    size_t count = 0, batch_size = 100;
+    real error = 1.0, min_error = 0.25, learning_rate = 0.1f;
+    size_t count = 0, batch_size = 5;
     std::cout << std::setprecision(16) << "Training started with: {learning_rate: " << learning_rate
               << ", min_error: " << min_error << ", batch_size: " << batch_size << "}" << std::endl;
 
@@ -168,7 +169,7 @@ namespace control {
 
     while (error > min_error) {
       for (int i = 0; i < batch_size; i++) {
-        for (int j = 0; j < 1/* cache.getTrainingSetSize()*/; j++) {
+        for (int j = 0; j < cache.getTrainingSetSize(); j++) {
           target(0, 0) = 0.f;
           target(1, 0) = 0.f;
           auto type = cache.getTrainingType(j);
@@ -180,14 +181,15 @@ namespace control {
       }
 
       error = 0.0;
-      for (int i = 0; i < 1/* cache.getEvalSetSize()*/; i++) {
+      for (int i = 0; i < cache.getEvalSetSize(); i++) {
         auto type = cache.getEvalType(i);
-        //auto res = nn.predict(cache.getEval(i).begin(), cache.getEval(i).end());
-        auto res = nn.predict(cache.getTraining(i).begin(), cache.getTraining(i).end());
+        auto res = nn.predict(cache.getEval(i).begin(), cache.getEval(i).end());
+        target(0, 0) = 0.f;
+        target(1, 0) = 0.f;
+        target(type, 0) = 1.f;
 
-        real tmp = res(type, 0);
-        tmp -= 1.f;
-        tmp = std::fabs(tmp);
+        res -= target;
+        real tmp = std::fabs(res.sumReduce());
         error += std::pow(tmp, 2);
       }
 
@@ -196,7 +198,7 @@ namespace control {
       count++;
     }
     for (int i = 0; i < cache.getEvalSetSize(); i++) {
-      std::cout << "Image[" << i << "] (Type: " << cache.getTrainingType(i) << "), got:\n"
+      std::cout << "Image[" << i << "] (Type: " << cache.getEvalType(i) << "), got:\n"
                 << nn.predict(cache.getEval(i).begin(), cache.getEval(i).end()) << std::endl;
     }
   }
