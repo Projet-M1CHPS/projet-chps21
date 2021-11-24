@@ -30,8 +30,7 @@ TEST(MatrixTest, CanCopyMatrix) {
   n = m;
 
   for (size_t i = 0; i < 2; i++) {
-    for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(1, n(i, j));
+    for (size_t j = 0; j < 2; j++) ASSERT_EQ(1, n(i, j));
   }
 }
 
@@ -98,16 +97,14 @@ TEST(MatrixTest, CanAddMatrix) {
 
   auto c = m + n;
   for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(m(i, j) + n(i, j), c(i, j));
+    for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) + n(i, j), c(i, j));
 
   // Check that we can sub in place
   c = m;
   c += n;
 
   for (size_t i = 0; i < 2; i++) {
-    for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(m(i, j) + n(i, j), c(i, j));
+    for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) + n(i, j), c(i, j));
   }
 }
 
@@ -131,16 +128,14 @@ TEST(MatrixTest, CanSubMatrix) {
 
   auto c = m - n;
   for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(m(i, j) - n(i, j), c(i, j));
+    for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) - n(i, j), c(i, j));
 
   // Check that we can sub in place
   c = m;
   c -= n;
 
   for (size_t i = 0; i < 2; i++) {
-    for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(m(i, j) - n(i, j), c(i, j));
+    for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) - n(i, j), c(i, j));
   }
 }
 
@@ -161,8 +156,7 @@ TEST(MatrixTest, CanTransposeMatrix) {
   ASSERT_EQ(3, t.getCols());
 
   for (size_t i = 0; i < 3; i++) {
-    for (size_t j = 0; j < 5; j++)
-      ASSERT_EQ(n(i, j), t(j, i));
+    for (size_t j = 0; j < 5; j++) ASSERT_EQ(n(i, j), t(j, i));
   }
 }
 
@@ -178,8 +172,7 @@ TEST(MatrixTest, CanMultiplyMatrix) {
 
   auto c = m * n;
   for (size_t i = 0; i < 2; i++)
-    for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(2, c(i, j));
+    for (size_t j = 0; j < 2; j++) ASSERT_EQ(2, c(i, j));
 
   // Check that we can multiply matrix of different size (here, d is a vector)
   Matrix<float> d(2, 1);
@@ -189,8 +182,7 @@ TEST(MatrixTest, CanMultiplyMatrix) {
 
   c = m * d;
   for (size_t i = 0; i < 2; i++) {
-    for (size_t j = 0; j < 1; j++)
-      ASSERT_EQ(2, c(i, j));
+    for (size_t j = 0; j < 1; j++) ASSERT_EQ(2, c(i, j));
   }
 }
 
@@ -234,15 +226,12 @@ TEST(MatrixTest, CanMulMatrixWithMatrix) {
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t k = 0; k < 2; k++) {
-      for (size_t j = 0; j < 2; j++) {
-        d(i, j) += m(i, k) * n(k, j);
-      }
+      for (size_t j = 0; j < 2; j++) { d(i, j) += m(i, k) * n(k, j); }
     }
   }
 
   for (size_t i = 0; i < 2; i++) {
-    for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(c(i, j), d(i, j));
+    for (size_t j = 0; j < 2; j++) ASSERT_EQ(c(i, j), d(i, j));
   }
 }
 
@@ -263,8 +252,7 @@ TEST(MatrixTest, CanMulMatrixWithScale) {
 
   auto c = m * scale;
   for (size_t i = 0; i < 2; i++) {
-    for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(m(i, j) * scale, c(i, j));
+    for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) * scale, c(i, j));
   }
 
   // Check that we can mul in place
@@ -272,8 +260,7 @@ TEST(MatrixTest, CanMulMatrixWithScale) {
   c *= scale;
 
   for (size_t i = 0; i < 2; i++) {
-    for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(m(i, j) * scale, c(i, j));
+    for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) * scale, c(i, j));
   }
 }
 
@@ -295,8 +282,7 @@ TEST(MatrixTest, CanHadamardMulMatrix) {
   c.hadamardProd(n);
 
   for (size_t i = 0; i < 2; i++) {
-    for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(m(i, j) * n(i, j), c(i, j));
+    for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) * n(i, j), c(i, j));
   }
 }
 
@@ -328,23 +314,18 @@ TEST(MatrixTest, CanMatMatProdMatAdd) {
 
   for (size_t i = 0; i < A.getRows(); i++) {
     for (size_t k = 0; k < A.getCols(); k++) {
-      for (size_t j = 0; j < B.getCols(); j++) {
-        D(i, j) += A(i, k) * B(k, j);
-      }
+      for (size_t j = 0; j < B.getCols(); j++) { D(i, j) += A(i, k) * B(k, j); }
     }
   }
 
   for (size_t i = 0; i < C.getRows(); i++) {
-    for (size_t j = 0; j < C.getCols(); j++) {
-      D(i, j) += C(i, j);
-    }
+    for (size_t j = 0; j < C.getCols(); j++) { D(i, j) += C(i, j); }
   }
-  
+
   auto res = Matrix<float>::matMatProdMatAdd(A, B, C);
 
   for (size_t i = 0; i < 2; i++) {
-    for (size_t j = 0; j < 2; j++)
-      ASSERT_EQ(D(i, j), res(i, j));
+    for (size_t j = 0; j < 2; j++) ASSERT_EQ(D(i, j), res(i, j));
   }
 }
 
@@ -352,4 +333,130 @@ TEST(MatrixTest, ThrowOnInvalidMatrixMatMatProdMatAdd) {
   Matrix<float> A(2, 2), B(1, 3), C(2, 3);
 
   ASSERT_ANY_THROW(Matrix<float>::matMatProdMatAdd(A, B, C));
+}
+
+
+TEST(MatrixTest, CanMatMatProd) {
+  Matrix<float> A(3, 2), B(2, 3), C(3, 2);
+
+  A(0, 0) = 1;
+  A(0, 1) = 2;
+  A(1, 0) = 3;
+  A(1, 1) = 4;
+  A(2, 0) = 12;
+  A(2, 1) = 8;
+
+  B(0, 0) = 4;
+  B(0, 1) = 1;
+  B(0, 2) = 12;
+  B(1, 0) = 2;
+  B(1, 1) = 6;
+  B(1, 2) = 9;
+
+  C(0, 0) = 1;
+  C(0, 1) = 2;
+  C(1, 0) = 3;
+  C(1, 1) = 4;
+  C(2, 0) = 12;
+  C(2, 1) = 8;
+
+  Matrix<float> D = Matrix<float>::matMatProd(false, A, false, B);
+  Matrix<float> E = Matrix<float>::matMatProd(true, A, true, B);
+  Matrix<float> F = Matrix<float>::matMatProd(true, A, false, C);
+  Matrix<float> G = Matrix<float>::matMatProd(false, A, true, C);
+
+  Matrix<float> d = A * B;
+  Matrix<float> e = A.transpose() * B.transpose();
+  Matrix<float> f = A.transpose() * C;
+  Matrix<float> g = A * C.transpose();
+
+  for (size_t i = 0; i < D.getCols(); i++) {
+    for (size_t j = 0; j < D.getRows(); j++) { ASSERT_EQ(d(i, j), D(i, j)); }
+  }
+
+  for (size_t i = 0; i < E.getCols(); i++) {
+    for (size_t j = 0; j < E.getRows(); j++) { ASSERT_EQ(e(i, j), E(i, j)); }
+  }
+
+  for (size_t i = 0; i < F.getCols(); i++) {
+    for (size_t j = 0; j < F.getRows(); j++) { ASSERT_EQ(f(i, j), F(i, j)); }
+  }
+
+  for (size_t i = 0; i < G.getCols(); i++) {
+    for (size_t j = 0; j < G.getRows(); j++) { ASSERT_EQ(g(i, j), G(i, j)); }
+  }
+}
+
+TEST(MatrixTest, ThrowOnInvalidMatrixMatMatProd) {
+  Matrix<float> A(3, 2), B(2, 3), C(3, 2);
+
+  ASSERT_ANY_THROW(Matrix<float>::matMatProd(false, A, false, C));
+  ASSERT_ANY_THROW(Matrix<float>::matMatProd(true, A, true, C));
+  ASSERT_ANY_THROW(Matrix<float>::matMatProd(true, A, false, B));
+  ASSERT_ANY_THROW(Matrix<float>::matMatProd(false, A, true, B));
+}
+
+
+TEST(MatrixTest, CanMatTransMatProd) {
+  Matrix<float> A(3, 2), B(3, 2);
+
+  A(0, 0) = 1;
+  A(0, 1) = 2;
+  A(1, 0) = 3;
+  A(1, 1) = 4;
+  A(2, 0) = 12;
+  A(2, 1) = 8;
+
+  B(0, 0) = 1;
+  B(0, 1) = 2;
+  B(1, 0) = 3;
+  B(1, 1) = 4;
+  B(2, 0) = 12;
+  B(2, 1) = 8;
+
+  Matrix<float> C = Matrix<float>::matTransMatProd(A, B);
+
+  Matrix<float> c = A.transpose() * B;
+
+  for (size_t i = 0; i < C.getCols(); i++) {
+    for (size_t j = 0; j < C.getRows(); j++) { ASSERT_EQ(c(i, j), C(i, j)); }
+  }
+}
+
+TEST(MatrixTest, ThrowOnInvalidMatrixMatTransMatProd) {
+  Matrix<float> A(3, 2), B(2, 3);
+
+  ASSERT_ANY_THROW(Matrix<float>::matTransMatProd(A, B));
+}
+
+TEST(MatrixTest, CanMatMatTransProd) {
+  Matrix<float> A(3, 2), B(3, 2);
+
+  A(0, 0) = 1;
+  A(0, 1) = 2;
+  A(1, 0) = 3;
+  A(1, 1) = 4;
+  A(2, 0) = 12;
+  A(2, 1) = 8;
+
+  B(0, 0) = 1;
+  B(0, 1) = 2;
+  B(1, 0) = 3;
+  B(1, 1) = 4;
+  B(2, 0) = 12;
+  B(2, 1) = 8;
+
+  Matrix<float> C = Matrix<float>::matMatTransProd(A, B);
+
+  Matrix<float> c = A * B.transpose();
+
+  for (size_t i = 0; i < C.getCols(); i++) {
+    for (size_t j = 0; j < C.getRows(); j++) { ASSERT_EQ(c(i, j), C(i, j)); }
+  }
+}
+
+TEST(MatrixTest, ThrowOnInvalidMatrixMatMatTransProd) {
+  Matrix<float> A(3, 2), B(2, 3);
+
+  ASSERT_ANY_THROW(Matrix<float>::matMatTransProd(A, B));
 }
