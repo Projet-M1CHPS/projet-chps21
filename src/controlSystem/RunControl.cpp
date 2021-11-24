@@ -152,12 +152,12 @@ namespace control {
 
     nnet::NeuralNetwork<real> nn;
     auto image_size = cache.getTargetSize();
-    nn.setLayersSize(std::vector<size_t>{image_size.first * image_size.second, 100, 2});
+    nn.setLayersSize(std::vector<size_t>{image_size.first * image_size.second, 10, 2});
     nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
     //nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 7);
     nn.randomizeSynapses();
 
-    real error = 1.0, min_error = 0.25, learning_rate = 0.1f;
+    real error = 1.0, min_error = 0.25, learning_rate = 1.f;
     size_t count = 0, batch_size = 5;
     std::cout << std::setprecision(16) << "Training started with: {learning_rate: " << learning_rate
               << ", min_error: " << min_error << ", batch_size: " << batch_size << "}" << std::endl;
@@ -190,7 +190,7 @@ namespace control {
 
         res -= target;
         real tmp = std::fabs(res.sumReduce());
-        error += std::pow(tmp, 2);
+        error += tmp / res.getRows();
       }
 
       error /= (real) cache.getEvalSetSize();

@@ -5,6 +5,7 @@ extern "C" {
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <cmath>
 
 #define USE_BLAS
 
@@ -112,7 +113,7 @@ namespace math {
       T sum = 0;
       const size_t stop = cols * rows;
 
-      for (size_t i = 0; i < stop; i++) { sum += data[i]; }
+      for (size_t i = 0; i < stop; i++) { sum += std::fabs(data[i]); }
 
       return sum;
     }
