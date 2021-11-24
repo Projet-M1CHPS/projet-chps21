@@ -5,8 +5,6 @@
 #include "controlSystem/RunControl.hpp"
 #include <array>
 #include <iomanip>
-
-
 #include <iostream>
 #include <vector>
 
@@ -54,90 +52,6 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
   return count;
 }
 
-template<typename T>
-void test_matTransMatProd() {
-  using namespace math;
-
-  Matrix<T> A(3, 2), B(3, 2);
-  A(0, 0) = 1;
-  A(0, 1) = 2;
-  A(1, 0) = 3;
-  A(1, 1) = 4;
-  A(2, 0) = 12;
-  A(2, 1) = 8;
-
-  B(0, 0) = 4;
-  B(0, 1) = 1;
-  B(1, 0) = 2;
-  B(1, 1) = 6;
-  B(2, 0) = 12;
-  B(2, 1) = 9;
-
-  std::cout << A.transpose() << "\n" << B << "\n";
-
-  Matrix<T> C = Matrix<T>::matTransMatProd(A, B);
-  auto D = Matrix<T>::matMatProd(true, A, false, B);
-  std::cout << C << "\n" << D << std::endl;
-}
-
-template<typename T>
-void test_matMatTransProd() {
-  using namespace math;
-
-  Matrix<T> A(3, 2), B(3, 2);
-  A(0, 0) = 1;
-  A(0, 1) = 2;
-  A(1, 0) = 3;
-  A(1, 1) = 4;
-  A(2, 0) = 12;
-  A(2, 1) = 8;
-
-  B(0, 0) = 4;
-  B(0, 1) = 1;
-  B(1, 0) = 2;
-  B(1, 1) = 6;
-  B(2, 0) = 12;
-  B(2, 1) = 9;
-
-  std::cout << A << "\n" << B.transpose() << "\n";
-
-  Matrix<T> C = Matrix<T>::matMatTransProd(A, B);
-  auto D = Matrix<T>::matMatProd(false, A, true, B);
-  std::cout << C << "\n" << D << std::endl;
-}
-
-template<typename T>
-void test_matMatProd() {
-  using namespace math;
-
-  Matrix<T> A(3, 2), B(2, 3);
-  A(0, 0) = 1;
-  A(0, 1) = 2;
-  A(1, 0) = 3;
-  A(1, 1) = 4;
-  A(2, 0) = 12;
-  A(2, 1) = 8;
-
-  B(0, 0) = 4;
-  B(0, 1) = 1;
-  B(0, 2) = 12;
-  B(1, 0) = 2;
-  B(1, 1) = 6;
-  B(1, 2) = 9;
-
-  std::cout << A << "\n" << B << "\n";
-
-  Matrix<T> C = A * B;
-  auto D = Matrix<T>::matMatProd(false, A, false, B);
-  std::cout << C << "\n" << D << std::endl;
-
-  std::cout << "----------------" << std::endl;
-
-  Matrix<T> E = A.transpose() * B.transpose();
-  auto f = Matrix<T>::matMatProd(true, A, true, B);
-  std::cout << E << "\n" << f << std::endl;
-}
-
 void test_neural_network() {
   nnet::NeuralNetwork<float> nn;
   nn.setLayersSize(std::vector<size_t>{2, 2, 2});
@@ -176,10 +90,9 @@ void test_neural_network() {
 
 int main(int argc, char **argv) {
   // func_xor<float>(200, 0.2, 0.002);
-  //test_matMatTransProd<float>();
-  //test_matTransMatProd<float>();
-  //test_matMatProd<float>();
-  test_neural_network();
+  // test_neural_network();
+
+  
 
   return 0;
 }
