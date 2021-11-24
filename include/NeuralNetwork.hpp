@@ -10,8 +10,6 @@
 #include <utility>
 #include <vector>
 
-#define alpha .1
-
 namespace nnet {
 
   /**
@@ -174,7 +172,6 @@ namespace nnet {
         // Apply activation function on every element of the matrix
         auto afunc = af::getAFFromType<real>(activation_functions[i]).first;
         std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
-        //current_layer = forwardOnce(current_layer, i);
       }
       return current_layer;
     }
@@ -261,11 +258,13 @@ namespace nnet {
      */
     void randomizeSynapses() override {
       for (auto &layer : weights) {
-        utils::random::randomize<real>(layer, 0, 1);
+        double x = std::sqrt(2.0 / (double) layer.getRows());
+        utils::random::randomize<real>(layer, -x, x);
       }
 
       for (auto &layer : biases) {
-        utils::random::randomize<real>(layer, 0, 1);
+        double x = std::sqrt(2.0 / (double) layer.getRows());
+        utils::random::randomize<real>(layer, -x, x);
       }
     }
 
@@ -307,40 +306,25 @@ namespace nnet {
                   const std::vector<math::Matrix<real>> &layers,
                   const std::vector<math::Matrix<real>> &layers_af,
                   const real learning_rate) {
-      std::vector<math::Matrix<real>> errors;
-      errors.resize(weights.size());
-
       math::Matrix<real> target(std::distance(begin_target, end_target), 1);
       std::copy(begin_target, end_target, target.begin());
 
-      math::Matrix<real> current_error = target - layers_af[layers_af.size() - 1];
-      errors[errors.size() - 1] = current_error;
-
-      for (long i = weights.size() - 2; i >= 0; i--) {
-        current_error = weights[i + 1].transpose() * current_error;
-        errors[i] = current_error;
-      }
+      math::Matrix<real> current_error = layers_af[layers_af.size() - 1] - target;
 
       for (long i = weights.size() - 1; i >= 0; i--) {
-        // calcul de S * (1 - S)
         math::Matrix<real> gradient(layers[i + 1]);
         auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
         std::transform(gradient.cbegin(), gradient.cend(), gradient.begin(), dafunc);
 
-        // calcul de (S * E)
-        gradient.hadamardProd(errors[i]);
-        gradient *= learning_rate;
+        gradient.hadamardProd(current_error);
 
-        // calcul de ((S * E) * alpha) * Ht
-        //math::Matrix<real> delta_weight = math::Matrix<real>::MatMatTransProd(gradient, layers_af[i]);
+        current_error = weights[i].transpose() * gradient;
+
+        gradient *= learning_rate;
         math::Matrix<real> delta_weight = gradient * layers_af[i].transpose();
 
-        //std::cout << "-------debut---------" << std::endl;
-        //std::cout << delta_weight << "\n" << test << std::endl;
-        //std::cout << "--------fin--------" << std::endl;
-
-        weights[i] += delta_weight;
-        biases[i] += gradient;
+        weights[i] -= delta_weight;
+        biases[i] -= gradient;
       }
     }
 
