@@ -245,12 +245,12 @@ namespace nnet {
     void randomizeSynapses() override {
       for (auto &layer : weights) {
         double x = std::sqrt(2.0 / (double) layer.getRows());
-        utils::random::randomize<real>(layer, -x, x);
+        math::randomize<real>(layer, -x, x);
       }
 
       for (auto &layer : biases) {
         double x = std::sqrt(2.0 / (double) layer.getRows());
-        utils::random::randomize<real>(layer, -x, x);
+        math::randomize<real>(layer, -x, x);
       }
     }
 
@@ -267,7 +267,10 @@ namespace nnet {
     void forward(iterator begin_input, iterator end_input, std::vector<math::Matrix<real>> &layers,
                  std::vector<math::Matrix<real>> &layers_af) const {
       math::Matrix<real> current_layer(std::distance(begin_input, end_input), 1);
+
       std::copy(begin_input, end_input, current_layer.begin());
+      std::transform(current_layer.begin(), current_layer.end(), current_layer.begin(),
+                     [](real a) { return a / 255.f; });
 
       layers[0] = current_layer;
       layers_af[0] = current_layer;
@@ -288,8 +291,7 @@ namespace nnet {
     template<typename iterator>
     void backward(iterator begin_target, iterator end_target,
                   const std::vector<math::Matrix<real>> &layers,
-                  const std::vector<math::Matrix<real>> &layers_af,
-                  const real learning_rate) {
+                  const std::vector<math::Matrix<real>> &layers_af, const real learning_rate) {
       math::Matrix<real> target(std::distance(begin_target, end_target), 1);
       std::copy(begin_target, end_target, target.begin());
 
@@ -303,9 +305,13 @@ namespace nnet {
         gradient.hadamardProd(current_error);
 
         current_error = weights[i].transpose() * gradient;
+        // current_error = math::Matrix<real>::matMatTransProd(weights[i], true, 1.0f, gradient,
+        // false);
 
         gradient *= learning_rate;
         math::Matrix<real> delta_weight = gradient * layers_af[i].transpose();
+        /*math::Matrix<real> delta_weight = math::Matrix<real>::matMatTransProd(
+                gradient, false, learning_rate, layers_af[i], true);*/
 
         weights[i] -= delta_weight;
         biases[i] -= gradient;

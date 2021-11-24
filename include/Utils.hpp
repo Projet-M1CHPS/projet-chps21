@@ -1,7 +1,7 @@
 #pragma once
-#include "Matrix.hpp"
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <memory>
 #include <random>
 #include <type_traits>
 
@@ -23,32 +23,35 @@ namespace utils {
    */
   [[noreturn]] void error(const char *msg) noexcept;
 
-  std::string timestampAsStr();
-
-  namespace random {
-
-    template<typename T>
-    void randomize(math::Matrix<T> &matrix, T min, T max) {
-      std::random_device rd;
-      std::mt19937 gen(rd());
-
-      static constexpr bool handled =
-              std::is_floating_point_v<T> or std::is_integral_v<T>;
-      static_assert(handled, "Type not supported");
-
-      if constexpr (std::is_floating_point_v<T>) {
-        std::uniform_real_distribution<> dis(min, max);
-        for (auto &elem : matrix)
-          elem = dis(gen);
-
-      } else if constexpr (std::is_integral_v<T>) {
-        std::uniform_int_distribution<> dis(min, max);
-        for (auto &elem : matrix)
-          elem = dis(gen);
+  template<typename ArrayType>
+  struct aligned_deleter {
+    void operator()(ArrayType *array) {
+      if (array) {
+        free(array);
+        array = nullptr;
       }
     }
+  };
 
-  }   // namespace random
+  template<typename T>
+  using unique_aligned_ptr = std::unique_ptr<T[], aligned_deleter<T>>;
+
+  template<typename T>
+  unique_aligned_ptr<T> make_aligned_unique(size_t align, size_t size) {
+    return unique_aligned_ptr<T>(static_cast<T *>(aligned_alloc(align, size * sizeof(T))),
+                                 aligned_deleter<T>());
+  }
+
+  template<typename T>
+  using shared_aligned_ptr = std::shared_ptr<T[]>;
+
+  template<typename T>
+  shared_aligned_ptr<T> make_aligned_shared(size_t align, size_t size) {
+    return shared_aligned_ptr<T>(static_cast<T *>(aligned_alloc(align, size * sizeof(T))),
+                                 aligned_deleter<T>());
+  }
+
+  std::string timestampAsStr();
 
   // Generic IO exception
   class IOException : public std::runtime_error {

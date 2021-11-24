@@ -3,7 +3,6 @@
 #include "Utils.hpp"
 #include "controlSystem/RunConfiguration.hpp"
 #include "controlSystem/RunControl.hpp"
-#include <array>
 #include <iomanip>
 
 
@@ -15,7 +14,7 @@ using namespace control;
 template<typename T>
 size_t func_xor(const size_t bach_size, const T learning_rate, const T error_limit) {
   nnet::NeuralNetwork<T> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 1000, 1000, 1});
+  nn.setLayersSize(std::vector<size_t>{2, 10, 10, 1});
   nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
   nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 2);
   nn.randomizeSynapses();
@@ -72,7 +71,7 @@ void test() {
 
   std::cout << A << "\n" << B << "\n" << B.transpose() << "\n";
 
-  Matrix<float> C = Matrix<float>::MatMatTransProd(A, B);
+  Matrix<float> C = Matrix<float>::matMatTransProd(A, false, 1.0f, B, true);
   std::cout << C << std::endl;
 }
 
@@ -113,7 +112,7 @@ void test_neural_network() {
 
 
 int main(int argc, char **argv) {
-  // func_xor<float>(100, 0.2, 0.001);
+  //func_xor<float>(100, 0.2, 0.001);
   // test();
   // test_neural_network();
 

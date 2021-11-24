@@ -15,7 +15,7 @@ namespace control {
 
     std::unique_ptr<AbstractTrainingCache> initCache(WorkingEnvironnement const &env,
                                                      RunConfiguration const &config) {
-      auto res = std::make_unique<TrainingStash>(config.getInputPath(), false);
+      auto res = std::make_unique<TrainingStash>(config.getInputPath(), true);
 
       return res;
     }
@@ -39,7 +39,6 @@ namespace control {
       res = makeNeuralNetwork(config.getFPPrecision());
 
       // res->setLayersSize(config.getTopology());
-
       // res->setActivationFunction(config.getDefaultFunction());
       // res->setActivationFunction(config.getActivationFunctions());
       return res;
@@ -121,6 +120,7 @@ namespace control {
 
   void TrainingRunController::run() {
     auto &config = *state->configuration;
+    state->cache->setTargetSize(16, 16);
     state->cache->init();
 
     switch (config.getFPPrecision()) {
@@ -152,13 +152,18 @@ namespace control {
 
     nnet::NeuralNetwork<real> nn;
     auto image_size = cache.getTargetSize();
-    nn.setLayersSize(std::vector<size_t>{image_size.first * image_size.second, 10, 2});
-    nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
-    //nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 7);
+    nn.setLayersSize(std::vector<size_t>{image_size.first * image_size.second, 64, 64, 32, 32, 16,
+                                         8, 2});
+    nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
+    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 0);
+    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 2);
+    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 4);
+    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 6);
+    //nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 6);
     nn.randomizeSynapses();
 
-    real error = 1.0, min_error = 0.25, learning_rate = 1.f;
-    size_t count = 0, batch_size = 5;
+    real error = 1.0, min_error = 0.25, initial_learning_rate = 0.1f, learning_rate;
+    size_t count = 0, batch_size = 10, counter = 0;
     std::cout << std::setprecision(16) << "Training started with: {learning_rate: " << learning_rate
               << ", min_error: " << min_error << ", batch_size: " << batch_size << "}" << std::endl;
 
@@ -167,12 +172,13 @@ namespace control {
     target(0, 0) = 0;
     target(1, 0) = 0;
 
-    while (error > min_error) {
+    while (error > min_error && counter++ < 100) {
+      learning_rate = initial_learning_rate * (1 / (1 + 0.02 * counter));
       for (int i = 0; i < batch_size; i++) {
         for (int j = 0; j < cache.getTrainingSetSize(); j++) {
+          auto type = cache.getTrainingType(j);
           target(0, 0) = 0.f;
           target(1, 0) = 0.f;
-          auto type = cache.getTrainingType(j);
           target(type, 0) = 1.f;
 
           nn.train(cache.getTraining(j).begin(), cache.getTraining(j).end(), target.begin(),
@@ -190,11 +196,12 @@ namespace control {
 
         res -= target;
         real tmp = std::fabs(res.sumReduce());
-        error += tmp / res.getRows();
+        error += tmp;
       }
 
-      error /= (real) cache.getEvalSetSize();
-      std::cout << "[" << count << "] current_error: " << error << std::endl;
+      error /= cache.getEvalSetSize();
+      std::cout << "[" << count << "] current_error: " << error
+                << " learning_rate: " << learning_rate << std::endl;
       count++;
     }
     for (int i = 0; i < cache.getEvalSetSize(); i++) {

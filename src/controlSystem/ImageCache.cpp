@@ -75,7 +75,7 @@ namespace control {
   AbstractTrainingCache::~AbstractTrainingCache() {}
 
   void AbstractImageCache::setupResizeTransform() {
-    if (scale_policy == ScalePolicy::none or target_height == 0 or target_width == 0) return;
+    if (scale_policy == ScalePolicy::none and (target_height == 0 or target_width == 0)) return;
 
     if (not engine) engine = std::make_unique<transform::TransformEngine>();
 
@@ -86,8 +86,10 @@ namespace control {
     size_t width = 0, height = 0;
 
     if (target_width or target_height) {
-      if (target_height != 0 and target_width != 0) AbstractImageCache::setupResizeTransform();
-      else
+      if (target_height != 0 and target_width != 0) {
+        AbstractImageCache::setupResizeTransform();
+        return;
+      } else
         throw std::runtime_error(
                 "setupResizeTransform(): One of the target dimension is incorrect");
     }
