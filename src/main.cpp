@@ -15,9 +15,9 @@ using namespace control;
 template<typename T>
 size_t func_xor(const size_t bach_size, const T learning_rate, const T error_limit) {
   nnet::NeuralNetwork<T> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 1000, 1000, 1});
-  nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
-  nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 2);
+  nn.setLayersSize(std::vector<size_t>{2, 3, 3, 1});
+  nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
+  // nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 2);
   nn.randomizeSynapses();
 
   std::cout << nn << std::endl;
@@ -37,11 +37,9 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
 
     error = 0.0;
     for (int i = 0; i < input.size(); i++)
-      error += std::pow(std::fabs(nn.predict(input[i].begin(), input[i].end())(0, 0) - target[i]),
-                        2);
+      error += std::fabs(nn.predict(input[i].begin(), input[i].end())(0, 0) - target[i]);
     error /= input.size();
-    // std::cout << error << std::endl;
-    printf("%.17lf\n", error);
+    std::cout << std::setprecision(17) << error << std::endl;
     count++;
   }
 
@@ -56,24 +54,88 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
   return count;
 }
 
-void test() {
+template<typename T>
+void test_matTransMatProd() {
   using namespace math;
 
-  Matrix<float> A(2, 2), B(2, 2);
+  Matrix<T> A(3, 2), B(3, 2);
   A(0, 0) = 1;
   A(0, 1) = 2;
   A(1, 0) = 3;
   A(1, 1) = 4;
+  A(2, 0) = 12;
+  A(2, 1) = 8;
 
   B(0, 0) = 4;
   B(0, 1) = 1;
   B(1, 0) = 2;
   B(1, 1) = 6;
+  B(2, 0) = 12;
+  B(2, 1) = 9;
 
-  std::cout << A << "\n" << B << "\n" << B.transpose() << "\n";
+  std::cout << A.transpose() << "\n" << B << "\n";
 
-  Matrix<float> C = Matrix<float>::MatMatTransProd(A, B);
-  std::cout << C << std::endl;
+  Matrix<T> C = Matrix<T>::matTransMatProd(A, B);
+  auto D = Matrix<T>::matMatProd(true, A, false, B);
+  std::cout << C << "\n" << D << std::endl;
+}
+
+template<typename T>
+void test_matMatTransProd() {
+  using namespace math;
+
+  Matrix<T> A(3, 2), B(3, 2);
+  A(0, 0) = 1;
+  A(0, 1) = 2;
+  A(1, 0) = 3;
+  A(1, 1) = 4;
+  A(2, 0) = 12;
+  A(2, 1) = 8;
+
+  B(0, 0) = 4;
+  B(0, 1) = 1;
+  B(1, 0) = 2;
+  B(1, 1) = 6;
+  B(2, 0) = 12;
+  B(2, 1) = 9;
+
+  std::cout << A << "\n" << B.transpose() << "\n";
+
+  Matrix<T> C = Matrix<T>::matMatTransProd(A, B);
+  auto D = Matrix<T>::matMatProd(false, A, true, B);
+  std::cout << C << "\n" << D << std::endl;
+}
+
+template<typename T>
+void test_matMatProd() {
+  using namespace math;
+
+  Matrix<T> A(3, 2), B(2, 3);
+  A(0, 0) = 1;
+  A(0, 1) = 2;
+  A(1, 0) = 3;
+  A(1, 1) = 4;
+  A(2, 0) = 12;
+  A(2, 1) = 8;
+
+  B(0, 0) = 4;
+  B(0, 1) = 1;
+  B(0, 2) = 12;
+  B(1, 0) = 2;
+  B(1, 1) = 6;
+  B(1, 2) = 9;
+
+  std::cout << A << "\n" << B << "\n";
+
+  Matrix<T> C = A * B;
+  auto D = Matrix<T>::matMatProd(false, A, false, B);
+  std::cout << C << "\n" << D << std::endl;
+
+  std::cout << "----------------" << std::endl;
+
+  Matrix<T> E = A.transpose() * B.transpose();
+  auto f = Matrix<T>::matMatProd(true, A, true, B);
+  std::cout << E << "\n" << f << std::endl;
 }
 
 void test_neural_network() {
@@ -113,34 +175,11 @@ void test_neural_network() {
 
 
 int main(int argc, char **argv) {
-  // func_xor<float>(100, 0.2, 0.001);
-  // test();
-  // test_neural_network();
-
-  if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <input_dir> (<working_dir>) (<target_dir>)";
-    return 1;
-  }
-  std::string working_dir, target_dir;
-
-  if (argc == 3) working_dir = argv[2];
-  else
-    working_dir = "runs";
-
-  if (argc >= 4) target_dir = argv[3];
-  else
-    target_dir = "run_" + utils::timestampAsStr();
-
-  RunConfiguration config(argv[1], working_dir, target_dir);
-  auto controller = std::make_unique<TrainingRunController>();
-
-  RunResult res = controller->launch(config);
-  controller->cleanup();
-
-  if (not res) {
-    std::cerr << "Run failed: " << res.getMessage() << std::endl;
-    return 1;
-  }
+  // func_xor<float>(200, 0.2, 0.002);
+  //test_matMatTransProd<float>();
+  //test_matTransMatProd<float>();
+  //test_matMatProd<float>();
+  test_neural_network();
 
   return 0;
 }
