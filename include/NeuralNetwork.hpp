@@ -288,8 +288,7 @@ namespace nnet {
     template<typename iterator>
     void backward(iterator begin_target, iterator end_target,
                   const std::vector<math::Matrix<real>> &layers,
-                  const std::vector<math::Matrix<real>> &layers_af,
-                  const real learning_rate) {
+                  const std::vector<math::Matrix<real>> &layers_af, const real learning_rate) {
       math::Matrix<real> target(std::distance(begin_target, end_target), 1);
       std::copy(begin_target, end_target, target.begin());
 
@@ -302,10 +301,10 @@ namespace nnet {
 
         gradient.hadamardProd(current_error);
 
-        current_error = weights[i].transpose() * gradient;
+        current_error = math::Matrix<real>::matMatProd(true, weights[i], false, gradient);
 
         gradient *= learning_rate;
-        math::Matrix<real> delta_weight = gradient * layers_af[i].transpose();
+        math::Matrix<real> delta_weight = math::Matrix<real>::matMatProd(false, gradient, true, layers_af[i]);
 
         weights[i] -= delta_weight;
         biases[i] -= gradient;
