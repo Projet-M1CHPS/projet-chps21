@@ -13,6 +13,7 @@ namespace image::transform {
       : width(width), height(height), orig_x(orig_x), orig_y(orig_y){};
 
   Resize::Resize(size_t width, size_t height) : width(width), height(height){};
+  Restriction::Restriction(size_t desired_step) : desired_step(desired_step){};
 
   float _get2DVectorNorm(size_t orig_x, size_t orig_y, size_t dest_x, size_t dest_y) {
     size_t xdist = dest_x - orig_x;
@@ -111,6 +112,14 @@ namespace image::transform {
     // A upscaling(...) function will be defined soon to enhance that particular case.
     downscaling(factors, source, image);
     return true;
+  }
+
+  bool Restriction::transform(GrayscaleImage &image) {
+    unsigned compare_step = desired_step + 1;
+    std::for_each(image.begin(), image.end(), [compare_step](auto &e) {
+      unsigned modulo_value = (e % compare_step);
+      if (modulo_value != 0) { e -= modulo_value; }
+    });
   }
 
   bool Equalize::transform(GrayscaleImage &image) {
