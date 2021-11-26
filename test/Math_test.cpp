@@ -19,6 +19,7 @@ TEST(MatrixTest, CanCreateMatrix) {
   ASSERT_EQ(0, n.getCols());
 }
 
+
 TEST(MatrixTest, CanCopyMatrix) {
   Matrix<float> m(2, 2), n(2, 2);
 
@@ -32,7 +33,23 @@ TEST(MatrixTest, CanCopyMatrix) {
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(1, n(i, j));
   }
+
+  // Should be able to copy an empty matrix
+  Matrix<float> o;
+  n = o;
+
+  ASSERT_EQ(nullptr, o.getData());
+  ASSERT_EQ(0, o.getRows());
+  ASSERT_EQ(0, o.getCols());
+
+  // Should be able to copy with constructor
+  Matrix<float> p(m);
+
+  for (size_t i = 0; i < 2; i++) {
+    for (size_t j = 0; j < 2; j++) ASSERT_EQ(1, p(i, j));
+  }
 }
+
 
 TEST(MatrixTest, CanMoveCopy) {
   Matrix<float> m(2, 2);
@@ -63,10 +80,18 @@ TEST(MatrixTest, CanMoveCopy) {
   ASSERT_EQ(nullptr, n.getData());
   ASSERT_EQ(0, n.getRows());
   ASSERT_EQ(0, n.getCols());
+
+  // should be able to copy an right value matrix
+  Matrix<float> m2(Matrix<float>(3, 2));
+
+  ASSERT_NE(nullptr, m2.getData());
+  ASSERT_EQ(3, m2.getRows());
+  ASSERT_EQ(2, m2.getCols());
 }
 
+
 TEST(MatrixTest, CanIterateOnMatrix) {
-  Matrix<float> m(2, 2);
+  Matrix<float> m(2, 2), n;
 
   m(0, 0) = 1;
   m(0, 1) = 1;
@@ -82,7 +107,13 @@ TEST(MatrixTest, CanIterateOnMatrix) {
     count++;
   }
   ASSERT_EQ(4, count);
+
+  // should be able to iterate on a empty matrix
+  count = 0;
+  for (float f : n) { count++; }
+  ASSERT_EQ(0, count);
 }
+
 
 TEST(MatrixTest, CanAddMatrix) {
   Matrix<float> m(2, 2), n(2, 2);
@@ -109,11 +140,14 @@ TEST(MatrixTest, CanAddMatrix) {
 }
 
 TEST(MatrixTest, ThrowOnInvalidMatrixAdd) {
-  Matrix<float> m(2, 2), n(2, 1);
+  Matrix<float> m(2, 2), n(2, 1), o;
 
   ASSERT_ANY_THROW(auto c = m + n);
   ASSERT_ANY_THROW(m += n);
+  ASSERT_ANY_THROW(auto d = m + o);
+  ASSERT_ANY_THROW(m += o);
 }
+
 
 TEST(MatrixTest, CanSubMatrix) {
   Matrix<float> m(2, 2), n(2, 2);
@@ -140,14 +174,17 @@ TEST(MatrixTest, CanSubMatrix) {
 }
 
 TEST(MatrixTest, ThrowOnInvalidMatrixSub) {
-  Matrix<float> m(2, 2), n(2, 1);
+  Matrix<float> m(2, 2), n(2, 1), o;
 
   ASSERT_ANY_THROW(auto c = m - n);
   ASSERT_ANY_THROW(m -= n);
+  ASSERT_ANY_THROW(auto d = m - o);
+  ASSERT_ANY_THROW(m -= o);
 }
 
+
 TEST(MatrixTest, CanTransposeMatrix) {
-  Matrix<float> n(3, 5);
+  Matrix<float> n(3, 5), o;
 
   utils::random::randomize(n, 0.f, 100.f);
 
@@ -158,7 +195,13 @@ TEST(MatrixTest, CanTransposeMatrix) {
   for (size_t i = 0; i < 3; i++) {
     for (size_t j = 0; j < 5; j++) ASSERT_EQ(n(i, j), t(j, i));
   }
+
+  // should be able to transpose an empty matrix without error
+  auto u = o.transpose();
+  ASSERT_EQ(0, u.getRows());
+  ASSERT_EQ(0, u.getCols());
 }
+
 
 TEST(MatrixTest, CanMultiplyMatrix) {
   Matrix<float> m(2, 2), n(2, 2);
@@ -187,10 +230,12 @@ TEST(MatrixTest, CanMultiplyMatrix) {
 }
 
 TEST(MatrixTest, ThrowOnInvalidMatrixMultiply) {
-  Matrix<float> m(2, 9), n(1, 2);
+  Matrix<float> m(2, 9), n(1, 2), o;
 
   ASSERT_ANY_THROW(m * n);
+  ASSERT_ANY_THROW(m * o);
 }
+
 
 TEST(MatrixTest, CanSumReduce) {
   Matrix<float> m(2, 2);
@@ -210,7 +255,8 @@ TEST(MatrixTest, ThrowOnInvalidSumReduce) {
   ASSERT_ANY_THROW(m.sumReduce());
 }
 
-TEST(MatrixTest, CanMulMatrixWithMatrix) {
+
+TEST(MatrixTest, CanMultiplyMatrixWithMatrix) {
   Matrix<float> m(2, 2), n(2, 2);
 
   m(0, 0) = 1;
@@ -235,13 +281,14 @@ TEST(MatrixTest, CanMulMatrixWithMatrix) {
   }
 }
 
-TEST(MatrixTest, ThrowOnInvalidMatrixMul) {
+TEST(MatrixTest, ThrowOnInvalidMatrixMultiplyWithMatrix) {
   Matrix<float> m(2, 2), n(1, 3);
 
   ASSERT_ANY_THROW(auto c = m * n);
 }
 
-TEST(MatrixTest, CanMulMatrixWithScale) {
+
+TEST(MatrixTest, CanMultiplyMatrixWithScale) {
   Matrix<float> m(2, 2);
   const float scale{2};
 
@@ -262,9 +309,16 @@ TEST(MatrixTest, CanMulMatrixWithScale) {
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) * scale, c(i, j));
   }
+
+  // should be able to multiply an empty matrix
+  // with scalar whithout throwing error
+  Matrix<float> v;
+  auto x = v * scale;
+  v *= scale;
 }
 
-TEST(MatrixTest, CanHadamardMulMatrix) {
+
+TEST(MatrixTest, CanHadamardProdMatrix) {
   Matrix<float> m(2, 3), n(2, 3);
 
   m(0, 0) = 1;
@@ -286,10 +340,12 @@ TEST(MatrixTest, CanHadamardMulMatrix) {
   }
 }
 
-TEST(MatrixTest, ThrowOnInvalidMatrixHadamardMul) {
-  Matrix<float> m(2, 2), n(1, 3);
+TEST(MatrixTest, ThrowOnInvalidMatrixHadamardProd) {
+  Matrix<float> m(2, 2), n(1, 3), o;
 
   ASSERT_ANY_THROW(m.hadamardProd(n));
+  ASSERT_ANY_THROW(o.hadamardProd(m));
+  ASSERT_ANY_THROW(n.hadamardProd(o));
 }
 
 
@@ -312,15 +368,8 @@ TEST(MatrixTest, CanMatMatProdMatAdd) {
 
   Matrix<float> D(2, 1);
 
-  for (size_t i = 0; i < A.getRows(); i++) {
-    for (size_t k = 0; k < A.getCols(); k++) {
-      for (size_t j = 0; j < B.getCols(); j++) { D(i, j) += A(i, k) * B(k, j); }
-    }
-  }
-
-  for (size_t i = 0; i < C.getRows(); i++) {
-    for (size_t j = 0; j < C.getCols(); j++) { D(i, j) += C(i, j); }
-  }
+  D = A * B;
+  D += C;
 
   auto res = Matrix<float>::matMatProdMatAdd(A, B, C);
 
@@ -330,13 +379,15 @@ TEST(MatrixTest, CanMatMatProdMatAdd) {
 }
 
 TEST(MatrixTest, ThrowOnInvalidMatrixMatMatProdMatAdd) {
-  Matrix<float> A(2, 2), B(1, 3), C(2, 3);
+  Matrix<float> A(2, 2), B(1, 3), C(2, 3), o;
 
   ASSERT_ANY_THROW(Matrix<float>::matMatProdMatAdd(A, B, C));
+  ASSERT_ANY_THROW(Matrix<float>::matMatProdMatAdd(A, B, o));
+  ASSERT_ANY_THROW(Matrix<float>::matMatProdMatAdd(A, o, C));
 }
 
 
-TEST(MatrixTest, CanMatMatProd) {
+TEST(MatrixTest, CanMulMatrix) {
   Matrix<float> A(3, 2), B(2, 3), C(3, 2);
 
   A(0, 0) = 1;
@@ -388,75 +439,11 @@ TEST(MatrixTest, CanMatMatProd) {
 }
 
 TEST(MatrixTest, ThrowOnInvalidMatrixMatMatProd) {
-  Matrix<float> A(3, 2), B(2, 3), C(3, 2);
+  Matrix<float> A(3, 2), B(2, 3), C(3, 2), o;
 
   ASSERT_ANY_THROW(Matrix<float>::mul(false, A, false, C));
   ASSERT_ANY_THROW(Matrix<float>::mul(true, A, true, C, 3.f));
   ASSERT_ANY_THROW(Matrix<float>::mul(true, A, false, B));
   ASSERT_ANY_THROW(Matrix<float>::mul(false, A, true, B, 1.f));
-}
-
-
-TEST(MatrixTest, CanMatTransMatProd) {
-  Matrix<float> A(3, 2), B(3, 2);
-
-  A(0, 0) = 1;
-  A(0, 1) = 2;
-  A(1, 0) = 3;
-  A(1, 1) = 4;
-  A(2, 0) = 12;
-  A(2, 1) = 8;
-
-  B(0, 0) = 1;
-  B(0, 1) = 2;
-  B(1, 0) = 3;
-  B(1, 1) = 4;
-  B(2, 0) = 12;
-  B(2, 1) = 8;
-
-  Matrix<float> C = Matrix<float>::matTransMatProd(A, B);
-
-  Matrix<float> c = A.transpose() * B;
-
-  for (size_t i = 0; i < C.getCols(); i++) {
-    for (size_t j = 0; j < C.getRows(); j++) { ASSERT_EQ(c(i, j), C(i, j)); }
-  }
-}
-
-TEST(MatrixTest, ThrowOnInvalidMatrixMatTransMatProd) {
-  Matrix<float> A(3, 2), B(2, 3);
-
-  ASSERT_ANY_THROW(Matrix<float>::matTransMatProd(A, B));
-}
-
-TEST(MatrixTest, CanMatMatTransProd) {
-  Matrix<float> A(3, 2), B(3, 2);
-
-  A(0, 0) = 1;
-  A(0, 1) = 2;
-  A(1, 0) = 3;
-  A(1, 1) = 4;
-  A(2, 0) = 12;
-  A(2, 1) = 8;
-
-  B(0, 0) = 1;
-  B(0, 1) = 2;
-  B(1, 0) = 3;
-  B(1, 1) = 4;
-  B(2, 0) = 12;
-  B(2, 1) = 8;
-
-  Matrix<float> C = Matrix<float>::matMatTransProd(A, B);
-
-  Matrix<float> c = A * B.transpose();
-
-  for (size_t i = 0; i < C.getCols(); i++) {
-    for (size_t j = 0; j < C.getRows(); j++) { ASSERT_EQ(c(i, j), C(i, j)); }
-  }
-}
-
-TEST(MatrixTest, ThrowOnInvalidMatrixMatMatTransProd) {
-  Matrix<float> A(3, 2), B(2, 3);
-
-  ASSERT_ANY_THROW(Matrix<float>::matMatTransProd(A, B));
+  ASSERT_ANY_THROW(Matrix<float>::mul(false, A, true, o, 1.f));
 }

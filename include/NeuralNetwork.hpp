@@ -117,63 +117,6 @@ namespace nnet {
       return *this;
     }
 
-    /** @brief Train the neural network using backpropagation using the given inputs / outputs
-     *
-     * @tparam iterator
-     * @param begin_input
-     * @param end_input
-     * @param begin_target
-     * @param end_target
-     * @param learning_rate
-     */
-    template<typename entry_iterator, typename target_iterator>
-    void train(entry_iterator begin_input, entry_iterator end_input, target_iterator begin_target,
-               target_iterator end_target, const real learning_rate) {
-      const size_t nbInput = std::distance(begin_input, end_input);
-      const size_t nbTarget = std::distance(begin_target, end_target);
-
-      /*if (nbInput != weights.front().getCols() || nbTarget != getOutputSize()) {
-        throw std::runtime_error("Invalid number of input");
-      }*/
-
-      std::vector<math::Matrix<real>> layers;
-      layers.resize(weights.size() + 1);
-      std::vector<math::Matrix<real>> layers_af;
-      layers_af.resize(weights.size() + 1);
-
-      forward(begin_input, end_input, layers, layers_af);
-      backward(begin_target, end_target, layers, layers_af, learning_rate);
-    }
-
-    /** @brief Runs the neural network on the inputs
-     * The outputs are returned as a matrix of reals
-     *
-     * @tparam iterator
-     * @param begin
-     * @param end
-     * @return
-     */
-    template<typename iterator>
-    math::Matrix<real> predict(iterator begin, iterator end) const {
-      const size_t nbInput = std::distance(begin, end);
-
-      if (nbInput != weights.front().getCols()) {
-        throw std::runtime_error("Invalid number of input");
-      }
-
-      math::Matrix<real> current_layer(nbInput, 1);
-      std::copy(begin, end, current_layer.begin());
-
-      for (size_t i = 0; i < weights.size(); i++) {
-        current_layer = math::Matrix<real>::matMatProdMatAdd(weights[i], current_layer, biases[i]);
-
-        // Apply activation function on every element of the matrix
-        auto afunc = af::getAFFromType<real>(activation_functions[i]).first;
-        std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
-      }
-      return current_layer;
-    }
-
     /**
      * @brief Take a vector of sizes correspondig to the number of neurons
      * in each layer and build the network accordingly. Note that weights are not
@@ -262,6 +205,63 @@ namespace nnet {
 
     [[nodiscard]] const std::vector<math::Matrix<real>> &getBiases() const { return biases; }
 
+    /** @brief Train the neural network using backpropagation using the given inputs / outputs
+     *
+     * @tparam iterator
+     * @param begin_input
+     * @param end_input
+     * @param begin_target
+     * @param end_target
+     * @param learning_rate
+     */
+    template<typename entry_iterator, typename target_iterator>
+    void train(entry_iterator begin_input, entry_iterator end_input, target_iterator begin_target,
+               target_iterator end_target, const real learning_rate) {
+      const size_t nbInput = std::distance(begin_input, end_input);
+      const size_t nbTarget = std::distance(begin_target, end_target);
+
+      /*if (nbInput != weights.front().getCols() || nbTarget != getOutputSize()) {
+        throw std::runtime_error("Invalid number of input");
+      }*/
+
+      std::vector<math::Matrix<real>> layers;
+      layers.resize(weights.size() + 1);
+      std::vector<math::Matrix<real>> layers_af;
+      layers_af.resize(weights.size() + 1);
+
+      forward(begin_input, end_input, layers, layers_af);
+      backward(begin_target, end_target, layers, layers_af, learning_rate);
+    }
+
+    /** @brief Runs the neural network on the inputs
+     * The outputs are returned as a matrix of reals
+     *
+     * @tparam iterator
+     * @param begin
+     * @param end
+     * @return
+     */
+    template<typename iterator>
+    math::Matrix<real> predict(iterator begin, iterator end) const {
+      const size_t nbInput = std::distance(begin, end);
+
+      if (nbInput != weights.front().getCols()) {
+        throw std::runtime_error("Invalid number of input");
+      }
+
+      math::Matrix<real> current_layer(nbInput, 1);
+      std::copy(begin, end, current_layer.begin());
+
+      for (size_t i = 0; i < weights.size(); i++) {
+        current_layer = math::Matrix<real>::matMatProdMatAdd(weights[i], current_layer, biases[i]);
+
+        // Apply activation function on every element of the matrix
+        auto afunc = af::getAFFromType<real>(activation_functions[i]).first;
+        std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
+      }
+      return current_layer;
+    }
+
   private:
     template<typename iterator>
     void forward(iterator begin_input, iterator end_input, std::vector<math::Matrix<real>> &layers,
@@ -303,7 +303,8 @@ namespace nnet {
 
         current_error = math::Matrix<real>::mul(true, weights[i], false, gradient);
 
-        math::Matrix<real> delta_weight = math::Matrix<real>::mul(false, gradient, true, layers_af[i], learning_rate);
+        math::Matrix<real> delta_weight =
+                math::Matrix<real>::mul(false, gradient, true, layers_af[i], learning_rate);
 
         weights[i] -= delta_weight;
         biases[i] -= gradient;
