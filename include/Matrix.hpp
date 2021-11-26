@@ -7,7 +7,7 @@ extern "C" {
 #include <iostream>
 #include <memory>
 
-#define USE_BLAS
+//#define USE_BLAS
 
 
 namespace math {
@@ -370,8 +370,8 @@ namespace math {
       return res;
     }
 
-    [[nodiscard]] static Matrix mul(const bool transpose_a, const Matrix &A,
-                                           const bool transpose_b, const Matrix &B) {
+    [[nodiscard]] static Matrix mul(const bool transpose_a, const Matrix &A, const bool transpose_b,
+                                    const Matrix &B, const T alpha = 1.0) {
       const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
 
       if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows)) {
@@ -388,14 +388,22 @@ namespace math {
       size_t k = (transpose_a ? A_rows : A_cols);
 
       if constexpr (std::is_same_v<T, float>) {
-        cblas_sgemm(CblasRowMajor, ta, tb, m, n, k, 1.f, A.getData(), A_cols, B.getData(), B_cols,
+        cblas_sgemm(CblasRowMajor, ta, tb, m, n, k, alpha, A.getData(), A_cols, B.getData(), B_cols,
                     0.f, res.getData(), res.getCols());
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dgemm(CblasRowMajor, ta, tb, m, n, k, 1.0, A.getData(), A_cols, B.getData(), B_cols,
+        cblas_dgemm(CblasRowMajor, ta, tb, m, n, k, alpha, A.getData(), A_cols, B.getData(), B_cols,
                     0.1, res.getData(), res.getCols());
       }
 #else
-      res = A * B.transpose();
+      if (!transpose_a && !transpose_b) {
+        res = (A * alpha) * B;
+      } else if (transpose_a && !transpose_b) {
+        res = (A.transpose() * alpha) * B;
+      } else if (!transpose_a && transpose_b) {
+        res = (A * alpha) * B.transpose();
+      } else {
+        res = (A.transpose() * alpha) * B.transpose();
+      }
 #endif
       return res;
     }
