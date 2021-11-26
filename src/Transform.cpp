@@ -120,6 +120,7 @@ namespace image::transform {
       unsigned modulo_value = (e % compare_step);
       if (modulo_value != 0) { e -= modulo_value; }
     });
+    return true;
   }
 
   bool Equalize::transform(GrayscaleImage &image) {
