@@ -370,7 +370,7 @@ namespace math {
       return res;
     }
 
-    [[nodiscard]] static Matrix matMatProd(const bool transpose_a, const Matrix &A,
+    [[nodiscard]] static Matrix mul(const bool transpose_a, const Matrix &A,
                                            const bool transpose_b, const Matrix &B) {
       const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
 

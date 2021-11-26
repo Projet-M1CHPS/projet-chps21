@@ -360,10 +360,10 @@ TEST(MatrixTest, CanMatMatProd) {
   C(2, 0) = 12;
   C(2, 1) = 8;
 
-  Matrix<float> D = Matrix<float>::matMatProd(false, A, false, B);
-  Matrix<float> E = Matrix<float>::matMatProd(true, A, true, B);
-  Matrix<float> F = Matrix<float>::matMatProd(true, A, false, C);
-  Matrix<float> G = Matrix<float>::matMatProd(false, A, true, C);
+  Matrix<float> D = Matrix<float>::mul(false, A, false, B);
+  Matrix<float> E = Matrix<float>::mul(true, A, true, B);
+  Matrix<float> F = Matrix<float>::mul(true, A, false, C);
+  Matrix<float> G = Matrix<float>::mul(false, A, true, C);
 
   Matrix<float> d = A * B;
   Matrix<float> e = A.transpose() * B.transpose();
@@ -390,10 +390,10 @@ TEST(MatrixTest, CanMatMatProd) {
 TEST(MatrixTest, ThrowOnInvalidMatrixMatMatProd) {
   Matrix<float> A(3, 2), B(2, 3), C(3, 2);
 
-  ASSERT_ANY_THROW(Matrix<float>::matMatProd(false, A, false, C));
-  ASSERT_ANY_THROW(Matrix<float>::matMatProd(true, A, true, C));
-  ASSERT_ANY_THROW(Matrix<float>::matMatProd(true, A, false, B));
-  ASSERT_ANY_THROW(Matrix<float>::matMatProd(false, A, true, B));
+  ASSERT_ANY_THROW(Matrix<float>::mul(false, A, false, C));
+  ASSERT_ANY_THROW(Matrix<float>::mul(true, A, true, C));
+  ASSERT_ANY_THROW(Matrix<float>::mul(true, A, false, B));
+  ASSERT_ANY_THROW(Matrix<float>::mul(false, A, true, B));
 }
 
 
