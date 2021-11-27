@@ -28,6 +28,10 @@ namespace math {
       data = utils::make_aligned_unique<T>(64, rows * cols);
     }
 
+    Matrix(std::initializer_list<T> l) : Matrix(l.size(), 1) {
+      std::copy(l.begin(), l.end(), begin());
+    }
+
     ~Matrix() = default;
 
     T *begin() { return data.get(); }
