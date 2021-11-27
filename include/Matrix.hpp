@@ -2,6 +2,7 @@
 extern "C" {
 #include <cblas.h>
 }
+
 #include "Utils.hpp"
 #include <cmath>
 #include <cstring>
@@ -11,11 +12,13 @@ extern "C" {
 #define USE_BLAS
 
 
-namespace math {
+        namespace math {
 
   template<typename T>
   class Matrix {
   public:
+    enum class MatrixTranspose { NOTRANSPOSE, TRANSPOSE };
+
     // Create an empty matrix, with cols/rows of size 0
     // and no allocation
     // Allowing a matrix to be empty allows for easier copying
@@ -333,35 +336,71 @@ namespace math {
       return res;
     }
 
-    [[nodiscard]] static Matrix matMatTransProd(const Matrix &A, bool transpose_a, T alpha,
-                                                const Matrix &B, bool transpose_b) {
+    [[nodiscard]] static Matrix matTransMatProd(const Matrix &A, const Matrix &B) {
       const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
 
-      if (transpose_a and A_rows != (transpose_b ? B_cols : B_rows)) {
-        throw std::invalid_argument("Matrix size do not match");
-      } else if (not transpose_a and A_cols != (transpose_b ? B_cols : B_rows)) {
+      if (A_rows != B_rows) { throw std::invalid_argument("Matrix dimensions do not match"); }
+
+      Matrix res(A_cols, B_cols);
+
+#ifdef USE_BLAS
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans, A_cols, B_cols, A_rows, 1.f,
+                    A.getData(), A_cols, B.getData(), B_cols, 0.f, res.getData(), B_cols);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, A_cols, B_cols, A_rows, 1.0,
+                    A.getData(), A_cols, B.getData(), B_cols, 0.0, res.getData(), B_cols);
+      }
+#else
+      res = A.transpose() * B;
+#endif
+      return res;
+    }
+
+    [[nodiscard]] static Matrix matMatTransProd(const Matrix &A, const Matrix &B) {
+      const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
+
+      if (A_rows != B_rows) { throw std::invalid_argument("Matrix dimensions do not match"); }
+
+      Matrix res(A_cols, B_cols);
+
+#ifdef USE_BLAS
+      if constexpr (std::is_same_v<T, float>) {
+        cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans, A_cols, B_cols, A_rows, 1.f,
+                    A.getData(), A_cols, B.getData(), B_cols, 0.f, res.getData(), B_cols);
+      } else if constexpr (std::is_same_v<T, double>) {
+        cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, A_cols, B_cols, A_rows, 1.0,
+                    A.getData(), A_cols, B.getData(), B_cols, 0.0, res.getData(), B_cols);
+      }
+#else
+      res = A.transpose() * B;
+#endif
+      return res;
+    }
+
+    [[nodiscard]] static Matrix matMatProd(const bool transpose_a, const Matrix &A,
+                                           const bool transpose_b, const Matrix &B) {
+      const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
+
+      if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows)) {
         throw std::invalid_argument("Matrix size do not match");
       }
 
-      Matrix res(transpose_a ? A_cols : A_rows, transpose_b ? B_rows : B_cols);
-
+      Matrix res((transpose_a ? A_cols : A_rows), (transpose_b ? B_rows : B_cols));
 
 #ifdef USE_BLAS
-
       auto ta = transpose_a ? CblasTrans : CblasNoTrans;
       auto tb = transpose_b ? CblasTrans : CblasNoTrans;
-      size_t l = res.getRows(), n = res.getCols();
-      size_t m = transpose_a ? A_rows : A_cols;
-      size_t lda = transpose_a ? m : l;
-      size_t ldb = transpose_b ? n : m;
-      size_t ldc = n;
+      size_t m = (transpose_a ? A_cols : A_rows);
+      size_t n = (transpose_b ? B_rows : B_cols);
+      size_t k = (transpose_a ? A_rows : A_cols);
 
       if constexpr (std::is_same_v<T, float>) {
-        cblas_sgemm(CblasRowMajor, ta, tb, l, n, m, alpha, A.getData(), lda, B.getData(), ldb, 0.f,
-                    res.getData(), ldc);
+        cblas_sgemm(CblasRowMajor, ta, tb, m, n, k, 1.f, A.getData(), A_cols, B.getData(), B_cols,
+                    0.f, res.getData(), res.getCols());
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dgemm(CblasRowMajor, ta, tb, l, n, m, alpha, A.getData(), lda, B.getData(), ldb, 0.f,
-                    res.getData(), ldc);
+        cblas_dgemm(CblasRowMajor, ta, tb, m, n, k, 1.0, A.getData(), A_cols, B.getData(), B_cols,
+                    0.1, res.getData(), res.getCols());
       }
 #else
       res = A.transpose() * B;
@@ -394,7 +433,7 @@ namespace math {
   }
 
   template<typename T>
-  void randomize(math::Matrix<T> &matrix, T min, T max) {
+  void randomize(math::Matrix<T> & matrix, T min, T max) {
     std::random_device rd;
     std::mt19937 gen(rd());
 

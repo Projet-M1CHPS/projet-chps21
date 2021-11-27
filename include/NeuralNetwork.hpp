@@ -126,7 +126,8 @@ namespace nnet {
      * @param end_target
      * @param learning_rate
      */
-    void train(math::Matrix<real> const& input, math::Matrix<real> const& target, const real learning_rate) {
+    void train(math::Matrix<real> const &input, math::Matrix<real> const &target,
+               const real learning_rate) {
       const size_t nbInput = input.getRows();
       const size_t nbTarget = target.getRows();
 
@@ -298,14 +299,11 @@ namespace nnet {
 
         gradient.hadamardProd(current_error);
 
-        current_error = weights[i].transpose() * gradient;
-        // current_error = math::Matrix<real>::matMatTransProd(weights[i], true, 1.0f, gradient,
-        // false);
+        current_error = math::Matrix<real>::matMatProd(true, weights[i], false, gradient);
 
         gradient *= learning_rate;
-        math::Matrix<real> delta_weight = gradient * layers_af[i].transpose();
-        /*math::Matrix<real> delta_weight = math::Matrix<real>::matMatTransProd(
-                gradient, false, learning_rate, layers_af[i], true);*/
+        math::Matrix<real> delta_weight =
+                math::Matrix<real>::matMatProd(false, gradient, true, layers_af[i]);
 
         weights[i] -= delta_weight;
         biases[i] -= gradient;
