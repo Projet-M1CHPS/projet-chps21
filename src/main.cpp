@@ -3,7 +3,6 @@
 #include "Utils.hpp"
 #include "controlSystem/RunConfiguration.hpp"
 #include "controlSystem/RunControl.hpp"
-#include <array>
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -78,21 +77,45 @@ void test_neural_network() {
 
   std::cout << nn << std::endl;
 
-  auto input = std::vector<float>{0.05, 0.10};
-  auto output = std::vector<float>{0.01, 0.99};
+  math::Matrix<float> input = {0.05, 0.10};
+  math::Matrix<float> output = {0.01, 0.99};
 
-  std::cout << "prediction : \n" << nn.predict(input.begin(), input.end()) << std::endl;
+  std::cout << "prediction : \n" << nn.predict(input) << std::endl;
 
-  nn.train(input.begin(), input.end(), output.begin(), output.end(), 0.5);
+  nn.train(input, output, 0.5);
   std::cout << nn << std::endl;
 }
 
 
 int main(int argc, char **argv) {
-  // func_xor<float>(200, 0.2, 0.002);
+  //func_xor<float>(100, 0.2, 0.001);
+  // test();
   // test_neural_network();
 
-  
+  if (argc < 2) {
+    std::cerr << "Usage: " << argv[0] << " <input_dir> (<working_dir>) (<target_dir>)";
+    return 1;
+  }
+  std::string working_dir, target_dir;
+
+  if (argc == 3) working_dir = argv[2];
+  else
+    working_dir = "runs";
+
+  if (argc >= 4) target_dir = argv[3];
+  else
+    target_dir = "run_" + utils::timestampAsStr();
+
+  RunConfiguration config(argv[1], working_dir, target_dir);
+  auto controller = std::make_unique<TrainingRunController>();
+
+  RunResult res = controller->launch(config);
+  controller->cleanup();
+
+  if (not res) {
+    std::cerr << "Run failed: " << res.getMessage() << std::endl;
+    return 1;
+  }
 
   return 0;
 }

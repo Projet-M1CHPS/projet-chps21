@@ -1,5 +1,6 @@
 #include "controlSystem/RunControl.hpp"
 
+#include <fstream>
 #include <future>
 #include <utility>
 
@@ -13,9 +14,9 @@ namespace control {
 
   namespace {
 
-    std::unique_ptr<AbstractTrainingCache> initCache(WorkingEnvironnement const &env,
-                                                     RunConfiguration const &config) {
-      auto res = std::make_unique<TrainingStash>(config.getInputPath(), false);
+    std::unique_ptr<AbstractImageCache> initCache(WorkingEnvironnement const &env,
+                                                  RunConfiguration const &config) {
+      auto res = std::make_unique<TrainingStash<float>>(config.getInputPath(), true);
 
       return res;
     }
@@ -39,7 +40,6 @@ namespace control {
       res = makeNeuralNetwork(config.getFPPrecision());
 
       // res->setLayersSize(config.getTopology());
-
       // res->setActivationFunction(config.getDefaultFunction());
       // res->setActivationFunction(config.getActivationFunctions());
       return res;
@@ -87,6 +87,11 @@ namespace control {
     res.append("NeuralNetwork.nnet");
     return res;
   }
+  std::filesystem::path WorkingEnvironnement::getOutputPath() const {
+    auto res = working_dir;
+    res.append("output");
+    return res;
+  }
 
   RunResult AbstractRunController::launch(const RunConfiguration &config) {
     if (not fs::exists(config.getInputPath())) return {false, "Invalid input path"};
@@ -98,9 +103,9 @@ namespace control {
 
       run();
 
-    } catch (std::runtime_error &e) { return {false, e.what()}; } catch (std::invalid_argument &e) {
-      return {false, e.what()};
-    } catch (...) { return {false, "Unknown exception thrown during run."}; }
+    } catch (std::exception &e) { return {false, e.what()}; } catch (...) {
+      return {false, "Unknown exception thrown during run."};
+    }
     return RunResult(true);
   }
 
@@ -108,9 +113,10 @@ namespace control {
     if (not state) state = std::make_unique<RunState>();
 
     state->configuration = &config;
-    if (not state->environnement) {
-      state->environnement =
-              WorkingEnvironnement::findOrBuildEnvironnement(config.getTargetDirectory());
+    if (not state->environnement and
+        not(state->environnement =
+                    WorkingEnvironnement::findOrBuildEnvironnement(config.getTargetDirectory()))) {
+      throw std::runtime_error("TrainingRunController: environne,ent setup failed");
     }
 
     auto &env = *state->environnement;
@@ -121,13 +127,19 @@ namespace control {
 
   void TrainingRunController::run() {
     auto &config = *state->configuration;
-    state->cache->init();
+
+    auto frun = [&](auto &cache) {
+      cache.setTargetSize(32, 32);
+      cache.init();
+    };
 
     switch (config.getFPPrecision()) {
       case FloatingPrecision::float32:
+        frun(dynamic_cast<AbstractTrainingCache<float> &>(*state->cache));
         runImpl<float>();
         break;
       case FloatingPrecision::float64:
+        frun(dynamic_cast<AbstractTrainingCache<double> &>(*state->cache));
         runImpl<double>();
         break;
       default:
@@ -148,58 +160,64 @@ namespace control {
     static_assert(std::is_floating_point_v<real>,
                   "TrainingRunController::runImpl: wrong fp type for run controller");
 
-    auto &cache = *state->cache;
+    auto &cache = dynamic_cast<AbstractTrainingCache<real> &>(*state->cache);
 
     nnet::NeuralNetwork<real> nn;
     auto image_size = cache.getTargetSize();
-    nn.setLayersSize(std::vector<size_t>{image_size.first * image_size.second, 10, 2});
-    nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
-    //nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 7);
+
+    nn.setLayersSize(
+            std::vector<size_t>{image_size.first * image_size.second, 64, 32, 16, 8, 2});
+    nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
+    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 0);
+    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 2);
+    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 4);
     nn.randomizeSynapses();
 
-    real error = 1.0, min_error = 0.25, learning_rate = 1.f;
-    size_t count = 0, batch_size = 5;
-    std::cout << std::setprecision(16) << "Training started with: {learning_rate: " << learning_rate
+    real error = 1.0, min_error = 0.1, initial_learning_rate = 1.f, learning_rate = 0.;
+    size_t batch_size = 2, epoch = 0, max_epoch = 200;
+    std::cout << std::setprecision(16)
+              << "Training started with: {initial_learning_rate: " << initial_learning_rate
               << ", min_error: " << min_error << ", batch_size: " << batch_size << "}" << std::endl;
-
+    std::cout << "Max epoch: " << epoch << std::endl;
 
     math::Matrix<real> target(2, 1);
-    target(0, 0) = 0;
-    target(1, 0) = 0;
+    target.fill(0);
 
-    while (error > min_error) {
+    std::ofstream output(state->environnement->getOutputPath() / "error.dat");
+    std::ofstream lr_output(state->environnement->getOutputPath() / "learning_rate.dat");
+
+    while (error > min_error && epoch < max_epoch) {
+      learning_rate = initial_learning_rate * (1 / (1 + 0.9 * static_cast<double>(epoch)));
       for (int i = 0; i < batch_size; i++) {
         for (int j = 0; j < cache.getTrainingSetSize(); j++) {
-          target(0, 0) = 0.f;
-          target(1, 0) = 0.f;
           auto type = cache.getTrainingType(j);
+          target.fill(0);
           target(type, 0) = 1.f;
 
-          nn.train(cache.getTraining(j).begin(), cache.getTraining(j).end(), target.begin(),
-                   target.end(), learning_rate);
+          nn.train(cache.getTraining(j), target, learning_rate);
         }
       }
 
       error = 0.0;
       for (int i = 0; i < cache.getEvalSetSize(); i++) {
         auto type = cache.getEvalType(i);
-        auto res = nn.predict(cache.getEval(i).begin(), cache.getEval(i).end());
-        target(0, 0) = 0.f;
-        target(1, 0) = 0.f;
+        auto res = nn.predict(cache.getEval(i));
+        target.fill(0);
         target(type, 0) = 1.f;
 
-        res -= target;
-        real tmp = std::fabs(res.sumReduce());
-        error += tmp / res.getRows();
+        error += (target - res).l2norm();
       }
 
-      error /= (real) cache.getEvalSetSize();
-      std::cout << "[" << count << "] current_error: " << error << std::endl;
-      count++;
+      error /= cache.getEvalSetSize();
+      output << epoch << " " << error << "\n";
+      lr_output << epoch << " " << learning_rate << "\n";
+      std::cout << "[" << epoch << "] current_error: " << error
+                << " learning_rate: " << learning_rate << std::endl;
+      epoch++;
     }
     for (int i = 0; i < cache.getEvalSetSize(); i++) {
       std::cout << "Image[" << i << "] (Type: " << cache.getEvalType(i) << "), got:\n"
-                << nn.predict(cache.getEval(i).begin(), cache.getEval(i).end()) << std::endl;
+                << nn.predict(cache.getEval(i)) << std::endl;
     }
   }
 
