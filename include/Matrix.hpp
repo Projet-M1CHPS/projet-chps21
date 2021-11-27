@@ -12,7 +12,7 @@ extern "C" {
 #define USE_BLAS
 
 
-        namespace math {
+namespace math {
 
   template<typename T>
   class Matrix {
@@ -123,10 +123,22 @@ extern "C" {
       T sum = 0;
       const size_t stop = cols * rows;
 
-      for (size_t i = 0; i < stop; i++) { sum += std::fabs(data[i]); }
+      for (size_t i = 0; i < stop; i++) { sum += data[i]; }
 
       return sum;
     }
+
+    [[nodiscard]] T l2norm() const {
+      if (not data) { throw std::runtime_error("Cannot sum-reduce a null-sized matrix"); }
+
+      T sum = 0;
+      const size_t stop = cols * rows;
+
+      for (size_t i = 0; i < stop; i++) { sum += data[i] * data[i]; }
+
+      return std::sqrt(sum);
+    }
+
 
     [[nodiscard]] Matrix transpose() const {
       Matrix transposed(cols, rows);
@@ -360,26 +372,26 @@ extern "C" {
     [[nodiscard]] static Matrix matMatTransProd(const Matrix &A, const Matrix &B) {
       const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
 
-      if (A_rows != B_rows) { throw std::invalid_argument("Matrix dimensions do not match"); }
+      if (A_cols != B_cols) { throw std::invalid_argument("Matrix dimensions do not match"); }
 
-      Matrix res(A_cols, B_cols);
+      Matrix res(A_rows, B_rows);
 
 #ifdef USE_BLAS
       if constexpr (std::is_same_v<T, float>) {
-        cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans, A_cols, B_cols, A_rows, 1.f,
-                    A.getData(), A_cols, B.getData(), B_cols, 0.f, res.getData(), B_cols);
+        cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans, A_rows, B_rows, A_cols, 1.f,
+                    A.getData(), A_cols, B.getData(), B_cols, 0.f, res.getData(), res.getCols());
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, A_cols, B_cols, A_rows, 1.0,
                     A.getData(), A_cols, B.getData(), B_cols, 0.0, res.getData(), B_cols);
       }
 #else
-      res = A.transpose() * B;
+      res = A * B.transpose();
 #endif
       return res;
     }
 
-    [[nodiscard]] static Matrix matMatProd(const bool transpose_a, const Matrix &A,
-                                           const bool transpose_b, const Matrix &B) {
+    [[nodiscard]] static Matrix mul(const bool transpose_a, const Matrix &A, const bool transpose_b,
+                                    const Matrix &B, const T alpha = 1.0) {
       const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
 
       if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows)) {
@@ -396,14 +408,22 @@ extern "C" {
       size_t k = (transpose_a ? A_rows : A_cols);
 
       if constexpr (std::is_same_v<T, float>) {
-        cblas_sgemm(CblasRowMajor, ta, tb, m, n, k, 1.f, A.getData(), A_cols, B.getData(), B_cols,
+        cblas_sgemm(CblasRowMajor, ta, tb, m, n, k, alpha, A.getData(), A_cols, B.getData(), B_cols,
                     0.f, res.getData(), res.getCols());
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dgemm(CblasRowMajor, ta, tb, m, n, k, 1.0, A.getData(), A_cols, B.getData(), B_cols,
+        cblas_dgemm(CblasRowMajor, ta, tb, m, n, k, alpha, A.getData(), A_cols, B.getData(), B_cols,
                     0.1, res.getData(), res.getCols());
       }
 #else
-      res = A.transpose() * B;
+      if (!transpose_a && !transpose_b) {
+        res = (A * alpha) * B;
+      } else if (transpose_a && !transpose_b) {
+        res = (A.transpose() * alpha) * B;
+      } else if (!transpose_a && transpose_b) {
+        res = (A * alpha) * B.transpose();
+      } else {
+        res = (A.transpose() * alpha) * B.transpose();
+      }
 #endif
       return res;
     }

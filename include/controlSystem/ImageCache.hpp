@@ -114,7 +114,6 @@ namespace control {
 
       engine->addTransformation(
               std::make_shared<image::transform::Resize>(target_width, target_height));
-      engine->addTransformation(std::make_shared<image::transform::BinaryScale>());
     }
 
     ImageCacheStats stats;

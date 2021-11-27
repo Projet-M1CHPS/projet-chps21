@@ -299,11 +299,9 @@ namespace nnet {
 
         gradient.hadamardProd(current_error);
 
-        current_error = math::Matrix<real>::matMatProd(true, weights[i], false, gradient);
+        current_error = math::Matrix<real>::mul(true, weights[i], false, gradient);
 
-        gradient *= learning_rate;
-        math::Matrix<real> delta_weight =
-                math::Matrix<real>::matMatProd(false, gradient, true, layers_af[i]);
+        math::Matrix<real> delta_weight = math::Matrix<real>::mul(false, gradient, true, layers_af[i], learning_rate);
 
         weights[i] -= delta_weight;
         biases[i] -= gradient;

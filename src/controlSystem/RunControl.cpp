@@ -164,15 +164,7 @@ namespace control {
 
     nnet::NeuralNetwork<real> nn;
     auto image_size = cache.getTargetSize();
-    size_t buff;
 
-    /*nn.setLayersSize(
-            std::vector<size_t>{image_size.first * image_size.second, 64, 64, 32, 32, 16, 8, 2});
-    nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
-    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 0);
-    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 2);
-    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 4);
-    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 6);*/
     nn.setLayersSize(
             std::vector<size_t>{image_size.first * image_size.second, 64, 32, 16, 8, 2});
     nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
@@ -182,7 +174,7 @@ namespace control {
     nn.randomizeSynapses();
 
     real error = 1.0, min_error = 0.1, initial_learning_rate = 1.f, learning_rate = 0.;
-    size_t batch_size = 10, epoch = 0, max_epoch = 200;
+    size_t batch_size = 2, epoch = 0, max_epoch = 200;
     std::cout << std::setprecision(16)
               << "Training started with: {initial_learning_rate: " << initial_learning_rate
               << ", min_error: " << min_error << ", batch_size: " << batch_size << "}" << std::endl;
@@ -213,7 +205,7 @@ namespace control {
         target.fill(0);
         target(type, 0) = 1.f;
 
-        error += (res - target).sumReduce();
+        error += (target - res).l2norm();
       }
 
       error /= cache.getEvalSetSize();
