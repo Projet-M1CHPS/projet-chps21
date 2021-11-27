@@ -10,6 +10,7 @@ namespace image::transform {
     binaryScale,
     inversion,
     equalize,
+    restriction,
     binaryScaleByMedian,
   };
 
@@ -36,6 +37,15 @@ namespace image::transform {
 
   public:
     Crop(size_t width, size_t height, size_t orig_x = 0, size_t orig_y = 0);
+    bool transform(image::GrayscaleImage &image) override;
+  };
+
+  class Restriction : public Transformation {
+  private:
+    size_t desired_step;
+
+  public:
+    Restriction(size_t desired_step = 1);
     bool transform(image::GrayscaleImage &image) override;
   };
 
@@ -73,8 +83,7 @@ namespace image::transform {
     void saveToStream(std::istream &stream) const;
 
     // Insert the transformation at the given position in the list
-    void insertTransformation(size_t position,
-                              std::shared_ptr<Transformation> transformation);
+    void insertTransformation(size_t position, std::shared_ptr<Transformation> transformation);
 
     // Add the transformation at the end of the transformation list
     // (Might be renamed push_back() ?)
@@ -93,7 +102,7 @@ namespace image::transform {
      * @brief Apply all transformations of the transformation list for the
      * given image
      */
-    void apply(image::GrayscaleImage& image) const;
+    void apply(image::GrayscaleImage &image) const;
 
   private:
     // Keeping the transformations identifiers for I/O easily.

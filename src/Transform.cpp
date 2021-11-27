@@ -13,8 +13,14 @@ namespace image::transform {
       : width(width), height(height), orig_x(orig_x), orig_y(orig_y){};
 
   Resize::Resize(size_t width, size_t height) : width(width), height(height){};
+  Restriction::Restriction(size_t desired_step) : desired_step(desired_step){};
 
-  float _get2DVectorNorm(size_t x, size_t y) { return sqrtf(x * x + y * y); }
+  float _get2DVectorNorm(size_t orig_x, size_t orig_y, size_t dest_x, size_t dest_y) {
+    size_t xdist = dest_x - orig_x;
+    size_t ydist = dest_y - orig_y;
+    return sqrtf(xdist * xdist + ydist * ydist);
+  }
+
 
   /**
    * @brief Sub-function for resizing (stable on both up-scaling and down-scaling, but not really
@@ -44,15 +50,19 @@ namespace image::transform {
         size_t orig_right_x = (size_t) std::ceil(factors.first * x);
         size_t orig_up_y = (size_t) std::floor(factors.second * y);
         size_t orig_down_y = (size_t) std::ceil(factors.second * y);
-        float top_left_coef = _get2DVectorNorm(orig_left_x - x, orig_up_y - y);
-        float top_right_coef = _get2DVectorNorm(orig_right_x - x, orig_up_y - y);
-        float bottom_left_coef = _get2DVectorNorm(orig_left_x - x, orig_down_y - y);
-        float bottom_right_coef = _get2DVectorNorm(orig_right_x - x, orig_down_y - y);
+        float top_left_norm = _get2DVectorNorm(x, y, orig_left_x, orig_up_y);
+        float top_right_norm = _get2DVectorNorm(x, y, orig_right_x, orig_up_y);
+        float bottom_left_norm = _get2DVectorNorm(x, y, orig_left_x, orig_down_y);
+        float bottom_right_norm = _get2DVectorNorm(x, y, orig_right_x, orig_down_y);
 
-        grayscale_t mean = (grayscale_t) std::round(
-                (source(orig_left_x, orig_up_y) + source(orig_left_x, orig_down_y) +
-                 source(orig_right_x, orig_up_y) + source(orig_right_x, orig_down_y)) /
-                4.0);
+        float cumul_norm = 2 * (top_left_norm + bottom_right_norm);
+
+        grayscale_t mean =
+                (grayscale_t) std::round((source(orig_left_x, orig_up_y) * top_left_norm +
+                                          source(orig_left_x, orig_down_y) * bottom_left_norm +
+                                          source(orig_right_x, orig_up_y) * top_right_norm +
+                                          source(orig_right_x, orig_down_y) * bottom_right_norm) /
+                                         (cumul_norm));
         dest(x, y) = mean;
       }
     }
@@ -101,6 +111,15 @@ namespace image::transform {
     // Works for both up & down scaling.
     // A upscaling(...) function will be defined soon to enhance that particular case.
     downscaling(factors, source, image);
+    return true;
+  }
+
+  bool Restriction::transform(GrayscaleImage &image) {
+    unsigned compare_step = desired_step + 1;
+    std::for_each(image.begin(), image.end(), [compare_step](auto &e) {
+      unsigned modulo_value = (e % compare_step);
+      if (modulo_value != 0) { e -= modulo_value; }
+    });
     return true;
   }
 

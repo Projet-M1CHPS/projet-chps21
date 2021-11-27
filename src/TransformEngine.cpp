@@ -14,6 +14,7 @@ namespace image::transform {
             {"crop", TransformType::crop},
             {"inversion", TransformType::inversion},
             {"equalize", TransformType::equalize},
+            {"restriction", TransformType::restriction},
             // Add new functions here
     });
 
@@ -32,15 +33,17 @@ namespace image::transform {
           return std::make_shared<BinaryScale>();
         case TransformType::binaryScaleByMedian:
           return std::make_shared<BinaryScaleByMedian>();
-        case TransformType::resize:
-          return std::make_shared<Resize>(0, 0);   // TODO: Rebuild the TransformationEngine system
-        case TransformType::crop:
-          return std::make_shared<Crop>(0, 0, 0,
-                                        0);   // TODO: Rebuild the TransformationEngine system
+        case TransformType::resize:   // TODO: Rebuild the TransformationEngine system
+          return std::make_shared<Resize>(0, 0);
+        case TransformType::crop:   // TODO: Rebuild the TransformationEngine system
+          return std::make_shared<Crop>(0, 0, 0, 0);
         case TransformType::inversion:
           return std::make_shared<Inversion>();
         case TransformType::equalize:
           return std::make_shared<Equalize>();
+        case TransformType::restriction:   // TODO: Rebuild the TransformationEngine system
+          return std::make_shared<Restriction>(32);
+
         // Add new functions here
         default:
           throw "[ERROR]: " + identifier + "is not recognised as a valid Transform. \n" +
@@ -93,13 +96,13 @@ namespace image::transform {
 
   GrayscaleImage TransformEngine::transform(GrayscaleImage const &image) const {
     GrayscaleImage copy = image;
-    for (const std::shared_ptr<Transformation>& tr : transformations) tr->transform(copy);
+    for (const std::shared_ptr<Transformation> &tr : transformations) tr->transform(copy);
 
     return copy;
   }
 
-  void TransformEngine::apply(GrayscaleImage& image) const {
-    for (const std::shared_ptr<Transformation>& tr : transformations) tr->transform(image);
+  void TransformEngine::apply(GrayscaleImage &image) const {
+    for (const std::shared_ptr<Transformation> &tr : transformations) tr->transform(image);
   }
 
 }   // namespace image::transform
