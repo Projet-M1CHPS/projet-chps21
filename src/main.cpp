@@ -101,12 +101,16 @@ void test_neural_network() {
 
   std::cout << nn << std::endl;
 
-  auto input = std::vector<float>{0.05, 0.10};
-  auto output = std::vector<float>{0.01, 0.99};
+  auto input = math::Matrix<float>(2, 1);
+  input(0, 0) = 0.05;
+  input(1, 0) = 0.10;
+  auto output = math::Matrix<float>(2, 1);
+  output(0, 0) = 0.01;
+  output(1, 0) = 0.99;
 
-  std::cout << "prediction : \n" << nn.predict(input.begin(), input.end()) << std::endl;
+  std::cout << "prediction : \n" << nn.predict(input) << std::endl;
 
-  nn.train(input.begin(), input.end(), output.begin(), output.end(), 0.5);
+  nn.train(input, output, 0.5);
   std::cout << nn << std::endl;
 }
 

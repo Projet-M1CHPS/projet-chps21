@@ -50,6 +50,8 @@ namespace math {
 
     [[nodiscard]] size_t getCols() const { return cols; }
 
+    [[nodiscard]] size_t getSize() const { return cols * rows; }
+
     /** @brief Returns element (i, j). Does not perform bound checking
      *
      * @param i
@@ -363,6 +365,10 @@ namespace math {
       return res;
     }
 
+    void fill(T val) {
+      for (size_t i = 0; i < cols * rows; i++) data[i] = val;
+    }
+
   private:
     utils::unique_aligned_ptr<T> data;
     size_t rows = 0, cols = 0;
@@ -394,9 +400,7 @@ namespace math {
     if constexpr (std::is_floating_point_v<T>) {
       std::uniform_real_distribution<> dis(min, max);
       for (size_t i = 0; i < matrix.getRows(); i++)
-        for (size_t j = 0; j < matrix.getCols(); j++) {
-          matrix(i, j) = dis(gen);
-        }
+        for (size_t j = 0; j < matrix.getCols(); j++) { matrix(i, j) = dis(gen); }
 
     } else if constexpr (std::is_integral_v<T>) {
       std::uniform_int_distribution<> dis(min, max);
