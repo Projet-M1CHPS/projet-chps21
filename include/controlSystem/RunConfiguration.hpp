@@ -21,7 +21,6 @@ namespace control {
    */
   class RunConfiguration {
   public:
-    enum Flags : unsigned { reuse_network = 1, save_network = 2, reuse_cache = 4, keep_cache = 8 };
     enum Mode : unsigned { trainingMode = 0, predictMode };
 
     RunConfiguration();
@@ -40,38 +39,28 @@ namespace control {
     [[nodiscard]] std::filesystem::path const &getTargetDirectory() const;
     [[nodiscard]] std::filesystem::path const &getInputPath() const;
 
-    [[nodiscard]] unsigned getRunFlags() const { return run_flags; }
-
-    [[nodiscard]] unsigned getCacheFlags() const;
-    [[nodiscard]] size_t getCacheSize() const;
-
     [[nodiscard]] std::vector<image::transform::TransformType> const &getTransformations() const;
 
     [[nodiscard]] std::vector<af::ActivationFunctionType> const &getActivationFunctions() const;
 
-    /** @brief Return the precision used for the neural network
-     *
-     * @return
-     */
     [[nodiscard]] nnet::FloatingPrecision getFPPrecision() const;
-
     [[nodiscard]] std::vector<size_t> const &getTopology() const;
 
     [[nodiscard]] unsigned getMode() const { return mode; }
 
-  private:
-    std::filesystem::path input_path, working_dir, target_dir;
-    unsigned run_flags;
-    Mode mode;
+    [[nodiscard]] bool isVerbose() const { return true; }
+    [[nodiscard]] std::ostream &out() const { return std::cout; }
 
-    unsigned cache_flags;
-    size_t cache_size;
+  private:
+    bool save_network;
+    nnet::FloatingPrecision precision;
+    std::filesystem::path input_path, working_dir, target_dir;
+    Mode mode;
 
     std::vector<image::transform::TransformType> transformations;
 
     std::vector<size_t> topology;
     std::vector<af::ActivationFunctionType> activation_functions;
-    nnet::FloatingPrecision precision;
   };
 
 }   // namespace control

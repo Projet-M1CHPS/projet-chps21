@@ -7,8 +7,6 @@
 #include <iostream>
 #include <vector>
 
-using namespace control;
-
 template<typename T>
 size_t func_xor(const size_t bach_size, const T learning_rate, const T error_limit) {
   nnet::NeuralNetwork<T> nn;
@@ -86,12 +84,7 @@ void test_neural_network() {
   std::cout << nn << std::endl;
 }
 
-
-int main(int argc, char **argv) {
-  //func_xor<float>(100, 0.2, 0.001);
-  // test();
-  // test_neural_network();
-
+int run_network(int argc, char **argv) {
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <input_dir> (<working_dir>) (<target_dir>)";
     return 1;
@@ -106,16 +99,27 @@ int main(int argc, char **argv) {
   else
     target_dir = "run_" + utils::timestampAsStr();
 
-  RunConfiguration config(argv[1], working_dir, target_dir);
-  auto controller = std::make_unique<TrainingRunController>();
+  control::RunConfiguration config(argv[1], working_dir, target_dir);
+  auto controller = control::TrainingRunController();
+  auto res = controller.launch(config);
 
-  RunResult res = controller->launch(config);
-  controller->cleanup();
+  controller.cleanup();
 
   if (not res) {
-    std::cerr << "Run failed: " << res.getMessage() << std::endl;
+    std::cout << std::endl << "Run failed: " << res.getMessage() << std::endl;
     return 1;
   }
+
+  return 0;
+}
+
+
+int main(int argc, char **argv) {
+  // func_xor<float>(100, 0.2, 0.001);
+  //  test();
+  //  test_neural_network();
+
+  return run_network(argc, argv);
 
   return 0;
 }

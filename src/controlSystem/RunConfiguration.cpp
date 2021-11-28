@@ -7,9 +7,7 @@
 namespace control {
 
   RunConfiguration::RunConfiguration()
-      : run_flags(Flags::save_network | Flags::reuse_network | Flags::reuse_cache |
-                  Flags::keep_cache),
-        cache_size(16_mb), cache_flags(0),
+      :
         precision(nnet::FloatingPrecision::float32), working_dir("series"), mode(trainingMode) {}
   RunConfiguration::RunConfiguration(std::filesystem::path input_path,
                                      std::filesystem::path working_dir,
@@ -33,10 +31,6 @@ namespace control {
   std::filesystem::path const &RunConfiguration::getTargetDirectory() const { return target_dir; }
 
   std::filesystem::path const &RunConfiguration::getInputPath() const { return input_path; }
-
-  unsigned RunConfiguration::getCacheFlags() const { return cache_flags; }
-
-  size_t RunConfiguration::getCacheSize() const { return cache_size; }
 
   std::vector<image::transform::TransformType> const &RunConfiguration::getTransformations() const {
     return transformations;

@@ -1,4 +1,5 @@
 #include "controlSystem/RunControl.hpp"
+#include <controlSystem/StatTracker.hpp>
 
 #include <fstream>
 #include <future>
@@ -14,34 +15,39 @@ namespace control {
 
   namespace {
 
-    std::unique_ptr<AbstractImageCache> initCache(WorkingEnvironnement const &env,
-                                                  RunConfiguration const &config) {
-      auto res = std::make_unique<TrainingStash<float>>(config.getInputPath(), true);
+    /** @brief Create a TCache including its initialization from an input path
+     *
+     * @tparam TCache
+     * @param input
+     * @param shuffle_input
+     * @return
+     */
+    template<typename TCache>
+    std::unique_ptr<AbstractImageCache> createCache(std::filesystem::path const &input,
+                                                    bool shuffle_input, bool verbose) {
+      auto res = std::make_unique<TCache>(input, shuffle_input);
+      res->setTargetSize(16, 16);
+      res->init(verbose, std::cout);
 
+      if (not res) throw std::runtime_error("initCache(): Cache creation failed");
       return res;
     }
 
-    std::unique_ptr<NeuralNetworkBase> loadNN(WorkingEnvironnement const &env,
-                                              RunConfiguration const &config) {
-      auto nnet_path = env.getNeuralNetworkPath();
-      if (fs::exists(nnet_path)) return NeuralNetworkSerializer::loadFromFile(nnet_path);
-      return nullptr;
-    }
+    std::unique_ptr<NeuralNetworkBase> createNN(std::vector<size_t> const &topology,
+                                                FloatingPrecision precision) {
+      std::unique_ptr<NeuralNetworkBase> res = makeNeuralNetwork(precision);
 
-    std::unique_ptr<NeuralNetworkBase> loadOrCreateNN(WorkingEnvironnement const &env,
-                                                      RunConfiguration const &config) {
-      std::unique_ptr<NeuralNetworkBase> res;
+      size_t nlayer = topology.size();
+      res->setLayersSize(topology);
+      res->setActivationFunction(af::ActivationFunctionType::leakyRelu);
 
-      if (config.getRunFlags() & config.reuse_network) {
-        res = loadNN(env, config);
-        if (res) return res;
+      // FIXME: to prevent leaky relu explosion, we alternate leaky relu with sigmoid
+      // We also want the last layer to be a sigmoid
+      for (size_t i = 0; i < nlayer; i++) {
+        if (i == nlayer - 2 or i % 3 == 0)
+          res->setActivationFunction(af::ActivationFunctionType::sigmoid, i);
       }
-
-      res = makeNeuralNetwork(config.getFPPrecision());
-
-      // res->setLayersSize(config.getTopology());
-      // res->setActivationFunction(config.getDefaultFunction());
-      // res->setActivationFunction(config.getActivationFunctions());
+      res->randomizeSynapses();
       return res;
     }
 
@@ -51,143 +57,111 @@ namespace control {
   WorkingEnvironnement::findOrBuildEnvironnement(std::filesystem::path working_dir) {
     if (not fs::exists(working_dir)) fs::create_directories(working_dir);
 
-    fs::path tmp = working_dir;
-    tmp.append("output");
-    if (not fs::exists(tmp)) fs::create_directory(tmp);
-
-    tmp = working_dir;
-    tmp.append("cache");
+    fs::path tmp = working_dir / "output";
     if (not fs::exists(tmp)) fs::create_directory(tmp);
 
     return std::make_unique<WorkingEnvironnement>(std::move(working_dir));
   }
 
-  [[nodiscard]] std::unique_ptr<RunConfiguration> WorkingEnvironnement::loadConfiguration() const {
+  [[nodiscard]] std::unique_ptr<RunConfiguration> WorkingEnvironnement::loadConfiguration() {
     std::cerr << "FIXME: WorkEnv::loadConf() not implemented" << std::endl;
     return nullptr;
   }
 
-  void WorkingEnvironnement::cleanup(RunConfiguration const &config) const {
-    auto flags = config.getRunFlags();
-
-    if (not(flags & RunConfiguration::keep_cache)) { fs::remove_all(getCachePath()); }
-
-    if (flags & RunConfiguration::save_network) {
-      std::cerr << "FIXME: Network save not implemented" << std::endl;
-    }
-  }
-
-  [[nodiscard]] std::filesystem::path WorkingEnvironnement::getCachePath() const {
-    auto res = working_dir;
-    res.append("cache");
-    return res;
-  }
-  [[nodiscard]] std::filesystem::path WorkingEnvironnement::getNeuralNetworkPath() const {
-    auto res = working_dir;
-    res.append("NeuralNetwork.nnet");
-    return res;
-  }
-  std::filesystem::path WorkingEnvironnement::getOutputPath() const {
-    auto res = working_dir;
-    res.append("output");
-    return res;
-  }
-
   RunResult AbstractRunController::launch(const RunConfiguration &config) {
-    if (not fs::exists(config.getInputPath())) return {false, "Invalid input path"};
+    if (not fs::exists(config.getInputPath()))
+      return {false, "AbstractRunController: Invalid input path"};
 
     try {
       if (not state or not state->isValid()) setupState(config);
-
-      if (not state or not state->isValid()) throw std::runtime_error("State setup failed");
-
       run();
 
-    } catch (std::exception &e) { return {false, e.what()}; } catch (...) {
-      return {false, "Unknown exception thrown during run."};
-    }
+    } catch (std::exception &e) { return {false, e.what()}; }
     return RunResult(true);
   }
 
   void TrainingRunController::setupState(const RunConfiguration &config) {
-    if (not state) state = std::make_unique<RunState>();
+    if (not state) state = std::make_unique<ControllerState>();
 
     state->configuration = &config;
-    if (not state->environnement and
-        not(state->environnement =
-                    WorkingEnvironnement::findOrBuildEnvironnement(config.getTargetDirectory()))) {
-      throw std::runtime_error("TrainingRunController: environne,ent setup failed");
+    if (not state->environnement) {
+      state->environnement =
+              WorkingEnvironnement::findOrBuildEnvironnement(config.getTargetDirectory());
+      if (config.isVerbose())
+        config.out() << "Setup working directory " << config.getTargetDirectory() << std::endl;
     }
 
     auto &env = *state->environnement;
 
-    if (not state->cache) state->cache = initCache(env, config);
-    if (not state->network) state->network = loadOrCreateNN(env, config);
+    if (not state->cache) {
+      if (config.isVerbose())
+        config.out() << "Setup cache with input directory: " << config.getInputPath() << std::endl;
+      switch (config.getFPPrecision()) {
+        case FloatingPrecision::float32:
+          state->cache = createCache<TrainingStash<float>>(config.getInputPath(), true,
+                                                           config.isVerbose());
+          break;
+        case FloatingPrecision::float64:
+          state->cache = createCache<TrainingStash<double>>(config.getInputPath(), true,
+                                                            config.isVerbose());
+          break;
+      }
+    }
+    if (not state->network) {
+      // FIXME: placeholder topology
+      std::vector<size_t> topology = {16 * 16, 64, 32, 32, 8, 2};
+      state->network = createNN(topology, config.getFPPrecision());
+    }
   }
 
   void TrainingRunController::run() {
-    auto &config = *state->configuration;
+    auto precision = state->configuration->getFPPrecision();
 
-    auto frun = [&](auto &cache) {
-      cache.setTargetSize(32, 32);
-      cache.init();
-    };
-
-    switch (config.getFPPrecision()) {
+    switch (precision) {
       case FloatingPrecision::float32:
-        frun(dynamic_cast<AbstractTrainingCache<float> &>(*state->cache));
         runImpl<float>();
         break;
       case FloatingPrecision::float64:
-        frun(dynamic_cast<AbstractTrainingCache<double> &>(*state->cache));
         runImpl<double>();
         break;
       default:
-        throw std::runtime_error("Unknown fp precision");
+        throw std::runtime_error("TrainingRunController: Unknown fp precision");
     }
   }
 
   void TrainingRunController::cleanup() {
     if (not state) return;
 
-    state->environnement->cleanup(*state->configuration);
-
     state = nullptr;
   }
 
+  // Main method where the training occurs
   template<typename real>
   void TrainingRunController::runImpl() {
     static_assert(std::is_floating_point_v<real>,
                   "TrainingRunController::runImpl: wrong fp type for run controller");
 
+    auto &config = *state->configuration;
     auto &cache = dynamic_cast<AbstractTrainingCache<real> &>(*state->cache);
+    auto &nn = dynamic_cast<NeuralNetwork<real> &>(*state->network);
 
-    nnet::NeuralNetwork<real> nn;
-    auto image_size = cache.getTargetSize();
+    real initial_learning_rate = 1.f, learning_rate = 0.;
+    size_t batch_size = 10, max_epoch = 100;
+    if (config.isVerbose())
+      config.out() << std::setprecision(8)
+                   << "Training started with: {initial_learning_rate: " << initial_learning_rate
+                   << ", batch_size: " << batch_size << ", Max epoch: " << max_epoch << "}"
+                   << std::endl;
 
-    nn.setLayersSize(
-            std::vector<size_t>{image_size.first * image_size.second, 64, 32, 16, 8, 2});
-    nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
-    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 0);
-    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 2);
-    nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 4);
-    nn.randomizeSynapses();
 
-    real error = 1.0, min_error = 0.1, initial_learning_rate = 1.f, learning_rate = 0.;
-    size_t batch_size = 2, epoch = 0, max_epoch = 200;
-    std::cout << std::setprecision(16)
-              << "Training started with: {initial_learning_rate: " << initial_learning_rate
-              << ", min_error: " << min_error << ", batch_size: " << batch_size << "}" << std::endl;
-    std::cout << "Max epoch: " << epoch << std::endl;
+    auto const &classes = cache.getClasses();
+    CTracker stracker(state->environnement->getOutputPath(), classes.begin(), classes.end());
+    math::Matrix<size_t> confusion(classes.size(), classes.size());
+    math::Matrix<real> target(classes.size(), 1);
 
-    math::Matrix<real> target(2, 1);
-    target.fill(0);
-
-    std::ofstream output(state->environnement->getOutputPath() / "error.dat");
-    std::ofstream lr_output(state->environnement->getOutputPath() / "learning_rate.dat");
-
-    while (error > min_error && epoch < max_epoch) {
-      learning_rate = initial_learning_rate * (1 / (1 + 0.9 * static_cast<double>(epoch)));
+    while (stracker.getEpoch() < max_epoch) {
+      learning_rate =
+              initial_learning_rate * (1 / (1 + 0.9 * static_cast<double>(stracker.getEpoch())));
       for (int i = 0; i < batch_size; i++) {
         for (int j = 0; j < cache.getTrainingSetSize(); j++) {
           auto type = cache.getTrainingType(j);
@@ -198,27 +172,36 @@ namespace control {
         }
       }
 
-      error = 0.0;
+      confusion.fill(0);
       for (int i = 0; i < cache.getEvalSetSize(); i++) {
         auto type = cache.getEvalType(i);
         auto res = nn.predict(cache.getEval(i));
-        target.fill(0);
-        target(type, 0) = 1.f;
+        auto res_type = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
 
-        error += (target - res).l2norm();
+        confusion(res_type, type)++;
       }
+      auto stats = stracker.computeStats(confusion);
+      if (config.isVerbose()) config.out() << stats;
+      stats.dumpToFiles();
+      stracker.nextEpoch();
+    }
 
-      error /= cache.getEvalSetSize();
-      output << epoch << " " << error << "\n";
-      lr_output << epoch << " " << learning_rate << "\n";
-      std::cout << "[" << epoch << "] current_error: " << error
-                << " learning_rate: " << learning_rate << std::endl;
-      epoch++;
-    }
+    if (not config.isVerbose()) return;
+
     for (int i = 0; i < cache.getEvalSetSize(); i++) {
-      std::cout << "Image[" << i << "] (Type: " << cache.getEvalType(i) << "), got:\n"
-                << nn.predict(cache.getEval(i)) << std::endl;
+      auto type = cache.getEvalType(i);
+      auto res = nn.predict(cache.getEval(i));
+      auto res_type = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
+
+      config.out() << "[Image: " << i << "]: type " << classes[type] << "(" << type
+                   << ") output :\n"
+                   << res;
+
+      confusion(res_type, type)++;
     }
+    config.out() << std::endl;
+    auto stats = stracker.computeStats(confusion);
+    stats.classification_report(config.out(), classes);
   }
 
 }   // namespace control

@@ -3,8 +3,13 @@ project(projet-chps21)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# Enable for gprof
-#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg -march=native")
+
+include(CheckCXXCompilerFlag)
+
+CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+if(COMPILER_SUPPORTS_MARCH_NATIVE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+endif()
 
 include(dependency/cmake_coverage.cmake)
 

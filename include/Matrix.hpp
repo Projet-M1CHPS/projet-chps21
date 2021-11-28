@@ -4,6 +4,7 @@ extern "C" {
 }
 
 #include "Utils.hpp"
+#include <cassert>
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -65,7 +66,9 @@ namespace math {
      * @param j
      * @return
      */
-    T &operator()(size_t i, size_t j) { return data[i * cols + j]; };
+    T &operator()(size_t i, size_t j) {
+      return data[i * cols + j];
+    };
 
     /** @brief Returns element (i, j). Does not perform bound checking
      *
@@ -73,7 +76,9 @@ namespace math {
      * @param j
      * @return
      */
-    T const &operator()(size_t i, size_t j) const { return data[i * cols + j]; };
+    T const &operator()(size_t i, size_t j) const {
+      return data[i * cols + j];
+    };
 
     Matrix(const Matrix &other) { *this = other; }
 
@@ -86,7 +91,7 @@ namespace math {
       // NO need to copy an empty matrix
       if (other.data) {
         // If data is unallocated or different size, allocate new memory
-        if (not data or data and rows * cols != other.rows * other.cols) {
+        if (not data or (data and (rows * cols) != (other.rows * other.cols))) {
           data = utils::make_aligned_unique<T>(64, other.rows * other.cols);
         }
         rows = other.rows;
@@ -453,7 +458,7 @@ namespace math {
   }
 
   template<typename T>
-  void randomize(math::Matrix<T> & matrix, T min, T max) {
+  void randomize(math::Matrix<T> &matrix, T min, T max) {
     std::random_device rd;
     std::mt19937 gen(rd());
 

@@ -18,7 +18,8 @@ namespace control {
   namespace {
 
     template<typename inserter>
-    void enumerateFilesInFolder(std::filesystem::path const &input_path, inserter insert_iterator) {
+    std::vector<std::string> enumerateFilesInFolder(std::filesystem::path const &input_path,
+                                                    inserter insert_iterator) {
       std::list<std::filesystem::path> categories_subfolders;
       for (const auto &dirs : std::filesystem::directory_iterator(input_path)) {
         if (dirs.is_directory()) categories_subfolders.push_front(dirs);
@@ -31,6 +32,9 @@ namespace control {
           if (entry.is_regular_file()) *insert_iterator = std::make_pair(entry, category);
         category++;
       }
+      std::vector<std::string> res;
+      for (auto &path : categories_subfolders) res.push_back(path.filename());
+      return res;
     }
 
     template<typename real, typename insert_iterator>
@@ -94,12 +98,14 @@ namespace control {
     template<typename transform_iterator>
     void setupTransformEngine(transform_iterator begin, transform_iterator end);
 
+    virtual bool init(bool verbose, std::ostream &os) = 0;
+
     void setImageScaling(ScalePolicy policy) {
       scale_policy = policy;
       target_width = target_height = 0;
     }
 
-    [[nodiscard]] std::pair<size_t, size_t> getTargetSize() {
+    [[nodiscard]] std::pair<size_t, size_t> getTargetSize() const {
       return {target_width, target_height};
     }
 
@@ -129,8 +135,6 @@ namespace control {
     AbstractTrainingCache() : is_init(false) {}
     ~AbstractTrainingCache() override = default;
 
-    virtual bool init() = 0;
-
     virtual math::Matrix<real> const &getEval(size_t index) = 0;
     [[nodiscard]] size_t getEvalType(size_t index) const {
       if (index > eval_set.size())
@@ -153,9 +157,12 @@ namespace control {
 
     [[nodiscard]] ImageCacheStats const &getStats() { return stats; }
 
+    [[nodiscard]] std::vector<std::string> const &getClasses() const { return classes; }
+
   protected:
     std::vector<std::pair<std::filesystem::path, size_t>> eval_set;
     std::vector<std::pair<std::filesystem::path, size_t>> training_set;
+    std::vector<std::string> classes;
 
     void setupResizeTransform() override {
       size_t width = 0, height = 0;
@@ -194,8 +201,30 @@ namespace control {
           not std::filesystem::exists(input_path / "train"))
         throw std::runtime_error("TrainingImageStash: input path doesn't exist or is invalid");
 
-      enumerateFilesInFolder(input_path / "train", std::back_inserter(this->training_set));
-      enumerateFilesInFolder(input_path / "eval", std::back_inserter(this->eval_set));
+      auto train_classes =
+              enumerateFilesInFolder(input_path / "train", std::back_inserter(this->training_set));
+      auto eval_classes =
+              enumerateFilesInFolder(input_path / "eval", std::back_inserter(this->eval_set));
+
+      if (train_classes != eval_classes) {
+        std::cerr << "TrainingStash: Warning, eval and training set do not possess the same "
+                     "classes.\n";
+        std::cerr << "Eval is missing classes:\n ";
+        for (auto &c : train_classes) {
+          auto it = std::find(eval_classes.begin(), eval_classes.end(), c);
+          if (it == train_classes.end()) { std::cerr << "\t" << *it << std::endl; }
+        }
+        std::cerr << "While train is missing classes:\n ";
+        for (auto &c : eval_classes) {
+          auto it = std::find(train_classes.begin(), train_classes.end(), c);
+
+          if (it == train_classes.end()) { std::cerr << "\t" << *it << std::endl; }
+        }
+        std::cerr << "Continuing with largest class number" << std::endl;
+        auto &largest_set = (train_classes > eval_classes) ? train_classes : eval_classes;
+        this->classes = std::move(largest_set);
+      } else
+        this->classes = std::move(train_classes);
 
       if (shuffle_input) {
         std::random_device rd;
@@ -208,35 +237,33 @@ namespace control {
 
     ~TrainingStash() override = default;
 
-    bool init() override {
+    bool init(bool verbose, std::ostream &os) override {
       if (this->is_init) return true;
 
       loaded_eval_set.reserve(this->eval_set.size());
       loaded_training_set.reserve(this->training_set.size());
 
-
       this->setupResizeTransform();
-      auto engine_ptr = this->engine.get();
 
-      size_t cache_size = 0, counter = 0, total = this->eval_set.size() + this->training_set.size();
+      size_t cache_size = 0;
+      if (verbose)
+        os << "Loading " << this->eval_set.size() << " input from eval set..." << std::endl;
       for (auto const &pair : this->eval_set) {
-        counter++;
-        bool res = loadImage<real>(pair.first, std::back_inserter(loaded_eval_set), engine_ptr);
-        if (not res) std::cerr << "Failed to load image " << pair.first << "." << std::endl;
-        else
-          cache_size += loaded_eval_set.back().getSize() * sizeof(real);
-        std::cout << "[" << counter << "/" << total << "] Loading " << pair.first
-                  << " cache_size: " << cache_size / 1_mb << "mb\n";
-      }
-
-      for (auto const &pair : this->training_set) {
-        counter++;
-        bool res = loadImage<real>(pair.first, std::back_inserter(loaded_training_set), engine_ptr);
+        bool res = loadImage<real>(pair.first, std::back_inserter(loaded_eval_set),
+                                   this->engine.get());
         if (not res) std::cerr << "Failed to load image " << pair.first << "." << std::endl;
         else
           cache_size += loaded_training_set.back().getSize();
-        std::cout << "[" << counter << "/" << total << "] Loading " << pair.first
-                  << " cache_size: " << cache_size / 1_mb << "mb\n";
+      }
+
+      if (verbose)
+        os << "Loading " << this->training_set.size() << " input from training set..." << std::endl;
+      for (auto const &pair : this->training_set) {
+        bool res = loadImage<real>(pair.first, std::back_inserter(loaded_training_set),
+                                   this->engine.get());
+        if (not res) std::cerr << "Failed to load image " << pair.first << "." << std::endl;
+        else
+          cache_size += loaded_training_set.back().getSize();
       }
 
       return true;

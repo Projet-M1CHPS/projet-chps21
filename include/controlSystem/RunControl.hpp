@@ -49,17 +49,21 @@ namespace control {
     static std::unique_ptr<WorkingEnvironnement>
     findOrBuildEnvironnement(std::filesystem::path working_dir);
 
-    [[nodiscard]] std::unique_ptr<RunConfiguration> loadConfiguration() const;
-    void cleanup(RunConfiguration const &config) const;
-    [[nodiscard]] std::filesystem::path getCachePath() const;
-    [[nodiscard]] std::filesystem::path getOutputPath() const;
-    [[nodiscard]] std::filesystem::path getNeuralNetworkPath() const;
+    [[nodiscard]] static std::unique_ptr<RunConfiguration> loadConfiguration();
+
+    [[nodiscard]] std::filesystem::path getCachePath() const { return working_dir / "cache"; }
+
+    [[nodiscard]] std::filesystem::path getOutputPath() const { return working_dir / "output"; }
+
+    [[nodiscard]] std::filesystem::path getNeuralNetworkPath() const {
+      return working_dir / "network.nnet";
+    }
 
   private:
     std::filesystem::path working_dir;
   };
 
-  struct RunState {
+  struct ControllerState {
     std::unique_ptr<nnet::NeuralNetworkBase> network;
     std::unique_ptr<AbstractImageCache> cache;
     std::unique_ptr<WorkingEnvironnement> environnement;
@@ -90,16 +94,16 @@ namespace control {
     AbstractRunController(AbstractRunController &&other) = delete;
     AbstractRunController &operator=(AbstractRunController &&other) = delete;
 
-    [[nodiscard]] RunState *getState() { return state.get(); }
+    [[nodiscard]] ControllerState *getState() { return state.get(); }
 
-    [[nodiscard]] std::unique_ptr<RunState> yieldState() { return std::move(state); }
+    [[nodiscard]] std::unique_ptr<ControllerState> yieldState() { return std::move(state); }
 
-    void setState(std::unique_ptr<RunState> other_state) { state = std::move(other_state); }
+    void setState(std::unique_ptr<ControllerState> other_state) { state = std::move(other_state); }
     virtual void cleanup() = 0;
 
 
   protected:
-    std::unique_ptr<RunState> state;
+    std::unique_ptr<ControllerState> state;
 
   private:
     virtual void run() = 0;
@@ -121,5 +125,4 @@ namespace control {
 
     void setupState(RunConfiguration const &config) override;
   };
-
 }   // namespace control
