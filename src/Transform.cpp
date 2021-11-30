@@ -6,6 +6,7 @@
 #include <iostream>
 #include <math.h>
 #include <numeric>
+#include <stdexcept>
 
 namespace image::transform {
 
@@ -102,18 +103,13 @@ namespace image::transform {
 
   bool Crop::transform(GrayscaleImage &image) {
     if (orig_x < 0 || orig_y < 0 || width <= 0 || height <= 0) {
-      std::cout << "Crop can not be applied on this image: new origin needs to be greater or equal "
-                   "than (0,0) and new dimensions needs to be strictly greater than (0,0)"
-                << std::endl;
-      return false;
+      throw std::invalid_argument(
+              "Crop can not be applied on this image: new origin needs to be greater or equal than "
+              "(0,0) and new dimensions needs to be strictly greater than (0,0)");
     } else if (orig_x + width > image.getWidth()) {
-      std::cout << "Crop can not be applied on this image: orig_x[" << orig_x << "] + width["
-                << width << "] > image.width[" << image.getWidth() << "]" << std::endl;
-      return false;
+      throw std::invalid_argument("Crop::transform: orig_x + width > image.getWidth()");
     } else if (orig_y + height > image.getHeight()) {
-      std::cout << "Crop can not be applied on this image: orig_y[" << orig_y << "] + height["
-                << height << "] > image.height[" << image.getHeight() << "]" << std::endl;
-      return false;
+      throw std::invalid_argument("Crop::transform: orig_y + height > image.getHeight()");
     }
     const image::GrayscaleImage source =
             image;   // In order to modify the image ref, we first need to copy it.
@@ -128,13 +124,11 @@ namespace image::transform {
 
   bool Resize::transform(GrayscaleImage &image) {
     if (width <= 0 || height <= 0) {
-      std::cout << "Resize can not be applied on this image: new dimensions needs to be strictly "
-                   "greater than (0,0)"
-                << std::endl;
-      return false;
+      throw std::invalid_argument("Resize can not be applied on this image: new dimensions needs "
+                                  "to be strictly greater than (0,0)");
     } else if (height == image.getHeight() &&
                width == image.getWidth())   // Case where we don't need to resize the image.
-      return false;
+      return true;
     const image::GrayscaleImage source =
             image;   // In order to modify the image ref, we first need to copy it.
     image.setSize(width, height);

@@ -27,6 +27,11 @@ namespace image::transform {
     size_t width, height;
 
   public:
+    /**
+     * Resize the given image to the desired dimensions.
+     * 
+     * Attention text This transformations implies losses. We can not assure that a double-resize image will be the same.
+     */
     Resize(size_t width, size_t height);
     bool transform(image::GrayscaleImage &image) override;
   };
@@ -36,44 +41,80 @@ namespace image::transform {
     size_t width, height, orig_x, orig_y;
 
   public:
+    /**
+     * Transforms the given image into a view of itself from the given origin and with the desired dimensions.
+     * 
+     * Every original image data out the view will be lost.
+     * 
+     * @param orig_x column origin index (0 is left border)
+     * @param orig_y row origin index (0 is top border)
+     */
     Crop(size_t width, size_t height, size_t orig_x = 0, size_t orig_y = 0);
     bool transform(image::GrayscaleImage &image) override;
   };
+
 
   class Restriction : public Transformation {
   private:
     size_t desired_step;
 
   public:
+    /**
+     * @brief Add a desired_step between each colors of the given image. The result is an image with
+     * less colors and so more "stricts" edges.
+     *
+     * @param desired_step 1 by default, step between two colors.
+     */
     Restriction(size_t desired_step = 1);
     bool transform(image::GrayscaleImage &image) override;
   };
 
+  /**
+   * @brief Equalize the given image colors repartition. (A half-white & half-black image turns into
+   * a full-gray image)
+   */
   class Equalize : public Transformation {
   public:
     bool transform(image::GrayscaleImage &image) override;
   };
 
+  /**
+   * @brief Apply a Gaussian blur on the given image.
+   */
   class Filter : public Transformation {
-    public:
-      bool transform(image::GrayscaleImage &image) override;
+  public:
+    bool transform(image::GrayscaleImage &image) override;
   };
-  
+
+  /**
+   * @brief Transforms every pixels of the given image in black, but edges areas in white.
+   *
+   * @param image at the end, will be a black & white image.
+   */
   class Edges : public Transformation {
   public:
     bool transform(image::GrayscaleImage &image) override;
   };
 
+  /**
+   * @brief Turns the given image in black & white. Based on the mean image color.
+   */
   class BinaryScale : public Transformation {
   public:
     bool transform(image::GrayscaleImage &image) override;
   };
 
+  /**
+   * @brief Turns the given image in black & white. Based on the median image color.
+   */
   class BinaryScaleByMedian : public Transformation {
   public:
     bool transform(image::GrayscaleImage &image) override;
   };
 
+  /**
+   * @brief Inverts colors for the given image. White turns into black, etc.
+   */
   class Inversion : public Transformation {
   public:
     bool transform(image::GrayscaleImage &image) override;
