@@ -214,13 +214,10 @@ TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
   b2(0, 0) = 0.60;   // b1
   b2(1, 0) = 0.60;   // b2
 
-  //auto input = std::vector<float>{0.05, 0.10};
-  //auto output = std::vector<float>{0.01, 0.99};
-
   math::Matrix<float> input{0.05, 0.10};
   math::Matrix<float> output{0.01, 0.99};
 
-  auto prediction = nn.predict(input.begin(), input.end());
+  auto prediction = nn.predict(input);
   ASSERT_NEAR(0.751365f, prediction(0, 0), 0.005);
   ASSERT_NEAR(0.772928f, prediction(1, 0), 0.005);
   ASSERT_EQ(prediction.getRows(), 2);
