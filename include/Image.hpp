@@ -131,10 +131,14 @@ namespace image {
      */
     [[nodiscard]] size_t getSize() const { return height * width; }
 
+    /**
+     * @brief Change the images dimensions properties (width, height) and re-allocate the pixels array accordingly.
+     */
     void setSize(size_t new_width, size_t new_height) {
+      if(new_width <= 0) throw std::invalid_argument("setSize needs a new_width > 0");
+      else if(new_height <= 0) throw std::invalid_argument("setSize needs a new_height > 0");
       width = new_width;
       height = new_height;
-      pixel_data.reset();
       pixel_data = std::make_unique<grayscale_t[]>(width * height);
     }
 
