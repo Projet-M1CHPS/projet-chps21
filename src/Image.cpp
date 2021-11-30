@@ -82,7 +82,7 @@ namespace image {
 
   grayscale_t GrayscaleImage::getPixel(unsigned int x, unsigned int y) const {
     if (x > width && y > getHeight()) throw std::out_of_range("Out of range access in image");
-    return pixel_data.get()[x];
+    return pixel_data.get()[x + y * this->height];
   }
 
   double GrayscaleImage::getDifference(GrayscaleImage const &other) const {
@@ -177,10 +177,27 @@ namespace image {
 
   std::vector<image::GrayscaleImage> ImageSerializer::loadDirectory(fs::path const &directory_path) {
     std::vector<image::GrayscaleImage> img_list;
+
+    if (!fs::exists(directory_path)){
+      throw std::runtime_error("Error: " + directory_path.string() + " doesnt exist. No images were loaded. Empty vector has been returned.\n");
+      return img_list;
+    }
+    if (!fs::is_directory(directory_path)) {
+      throw std::runtime_error("Error: " + directory_path.string() + " is not a directory. No images were loaded. Empty vector has been returned.\n");
+      return img_list;
+    }
+    if ((fs::status(directory_path).permissions() & fs::perms::others_read) == fs::perms::none) {
+      throw std::runtime_error("Error: " + directory_path.string() + " is not readable. No images were loaded. Empty vector has been returned.\n");
+      return img_list;
+    }
+
     for (const auto & file : fs::directory_iterator(directory_path))
         if (std::regex_match ((std::string)file.path(), std::regex("(.*)(\\.png)") )) {
           img_list.push_back(image::ImageSerializer::load(file.path()));
         }
+    if (img_list.size() == 0) {
+      throw std::runtime_error("Warning, no images were loaded. The directory doesnt contain any readable images.\n");
+    }
     return img_list;
   }
 
