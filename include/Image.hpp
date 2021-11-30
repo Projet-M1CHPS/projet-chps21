@@ -188,6 +188,12 @@ namespace image {
      */
     static void save(std::string const &filename, const GrayscaleImage &image);
 
+    /** @brief Returns a vector containing all the png images located in the given directory
+     *
+     * @param directory_path 
+     */
+    static std::vector<image::GrayscaleImage> loadDirectory(std::filesystem::path const &directory_path);
+
     static std::tuple<int, int, int> loadInfo(std::filesystem::path const &path);
 
   private:
