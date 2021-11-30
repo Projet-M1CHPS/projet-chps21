@@ -172,6 +172,40 @@ namespace image::transform {
     return true;
   }
 
+  bool Edges::transform(GrayscaleImage &image) {
+    size_t cap = 50;   // over 1020
+    int sobel_x[9] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
+    int sobel_y[9] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
+    std::vector<size_t> edges;
+    for (size_t y = 1; y < image.getHeight() - 1; y++) {
+      for (size_t x = 1; x < image.getWidth() - 1; x++) {
+        int current[9] = {image(x - 1, y - 1), image(x - 1, y), image(x - 1, y + 1),
+                          image(x, y - 1),     image(x, y),     image(x, y + 1),
+                          image(x + 1, y - 1), image(x + 1, y), image(x + 1, y + 1)};
+
+        int gx = 0;
+        int gy = 0;
+        for (int i = 0; i < 9; i++) {
+          gx += sobel_x[i] * current[i];
+          gy += sobel_y[i] * current[i];
+        }
+
+        if (std::abs(gx) >= cap || std::abs(gy) >= cap) edges.push_back(y * image.getHeight() + x);
+      }
+    }
+
+    size_t cur_edge = 0;
+    for (size_t i = image.getWidth() + 1; i < image.getSize() - image.getWidth(); i++) {
+      if (edges[cur_edge] == i) {
+        image.getData()[i] = 255U;
+        cur_edge += 1;
+      } else
+        image.getData()[i] = 0U;
+    }
+    return true;
+  }
+
+
   bool Equalize::transform(GrayscaleImage &image) {
     std::vector<double> ratio_histogram = image.createRatioHistogram();
 
