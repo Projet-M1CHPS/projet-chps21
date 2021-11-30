@@ -10,34 +10,35 @@ TEST(ImageTest, DifferenceBetweenDifferentImageDimensions) {
 }
 
 TEST(ImageTest, SaveAndLoadRandomImage) {
+    std::filesystem::create_directory("SaveAndLoadRandomImage_TestDir"); //create a dir to store the test images
+
     image::GrayscaleImage a = image::ImageSerializer::createRandomNoiseImage(128,128);
-    image::ImageSerializer::save("testImage.png", a);
-    image::GrayscaleImage b = image::ImageSerializer::load("testImage.png");
+    image::ImageSerializer::save("SaveAndLoadRandomImage_TestDir/testImage.png", a);
+    image::GrayscaleImage b = image::ImageSerializer::load("SaveAndLoadRandomImage_TestDir/testImage.png");
     ASSERT_EQ(a.getDifference(b), 0.0);
-    std::remove("testImage.png");
+
+    std::filesystem::remove_all("SaveAndLoadRandomImage_TestDir"); // delete the test dir
 }
 
-TEST(ImageTest, LoadPngDirectory) { // TODO: make cleaner version
+TEST(ImageTest, LoadPngDirectory) {
+    std::filesystem::create_directory("LoadPngDirectory_TestDir"); //create a dir to store the test images
+
     image::GrayscaleImage a = image::ImageSerializer::createRandomNoiseImage(128,128);
     image::GrayscaleImage b = image::ImageSerializer::createRandomNoiseImage(128,128);
     image::GrayscaleImage c = image::ImageSerializer::createRandomNoiseImage(128,128);
     image::GrayscaleImage d = image::ImageSerializer::createRandomNoiseImage(128,128);
     image::GrayscaleImage e = image::ImageSerializer::createRandomNoiseImage(128,128);
 
-    image::ImageSerializer::save("testImageA.png", a);
-    image::ImageSerializer::save("testImageB.png", b);
-    image::ImageSerializer::save("testImageC.png", c);
-    image::ImageSerializer::save("testImageD.png", d);
-    image::ImageSerializer::save("testImageE.png", e);
+    image::ImageSerializer::save("LoadPngDirectory_TestDir/testImageA.png", a);
+    image::ImageSerializer::save("LoadPngDirectory_TestDir/testImageB.png", b);
+    image::ImageSerializer::save("LoadPngDirectory_TestDir/testImageC.png", c);
+    image::ImageSerializer::save("LoadPngDirectory_TestDir/testImageD.png", d);
+    image::ImageSerializer::save("LoadPngDirectory_TestDir/testImageE.png", e);
 
-    std::vector<image::GrayscaleImage> img_list =  image::ImageSerializer::loadDirectory(".");
+    std::vector<image::GrayscaleImage> img_list =  image::ImageSerializer::loadDirectory("LoadPngDirectory_TestDir");
     ASSERT_EQ(img_list.size(), 5);
 
-    std::remove("testImageA.png");
-    std::remove("testImageB.png");
-    std::remove("testImageC.png");
-    std::remove("testImageD.png");
-    std::remove("testImageE.png");
+    std::filesystem::remove_all("LoadPngDirectory_TestDir"); // delete the test dir
 }
 
 /* TESTS TO ADD
