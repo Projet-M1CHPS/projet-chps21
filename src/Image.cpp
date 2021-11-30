@@ -10,6 +10,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <string>
 #include <vector>
 
@@ -155,9 +156,6 @@ namespace image {
     return ImageSerializer::createRandomNoiseImage((size_t) (rand() % 389) + 124, (size_t) (rand() % 389) + 124);
   }
 
-  /**
-   * @param filename any image file supported by stb.
-   */
   GrayscaleImage ImageSerializer::load(fs::path const &filename) {
 
     int width, height, channels;
@@ -172,16 +170,20 @@ namespace image {
     return res;
   }
 
-  /**
-   * @brief Saves a grayscale as a png file
-   *
-   * @param filename absolute or relative path
-   * @param image
-   */
   void ImageSerializer::save(std::string const &filename, GrayscaleImage const &image) {
     stbi_write_png(filename.c_str(), image.getWidth(), image.getHeight(), 1,
                    image.getData(), image.getWidth());
   }
+
+  std::vector<image::GrayscaleImage> ImageSerializer::loadDirectory(fs::path const &directory_path) {
+    std::vector<image::GrayscaleImage> img_list;
+    for (const auto & file : fs::directory_iterator(directory_path))
+        if (std::regex_match ((std::string)file.path(), std::regex("(.*)(\\.png)") )) {
+          img_list.push_back(image::ImageSerializer::load(file.path()));
+        }
+    return img_list;
+  }
+
   std::tuple<int, int, int> ImageSerializer::loadInfo(fs::path const& path) {
 
     int width, height, canals;
