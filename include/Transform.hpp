@@ -54,6 +54,11 @@ namespace image::transform {
     bool transform(image::GrayscaleImage &image) override;
   };
 
+  class Filter : public Transformation {
+    public:
+      bool transform(image::GrayscaleImage &image) override;
+  };
+  
   class BinaryScale : public Transformation {
   public:
     bool transform(image::GrayscaleImage &image) override;

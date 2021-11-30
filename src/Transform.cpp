@@ -15,6 +15,38 @@ namespace image::transform {
   Resize::Resize(size_t width, size_t height) : width(width), height(height){};
   Restriction::Restriction(size_t desired_step) : desired_step(desired_step){};
 
+  namespace filtering_subfunctions {
+
+    float gaussian2D(size_t x, size_t y) {
+      float sigma = 1.84f;
+      return expf(-(x * x + y * y) / (2 * sigma * sigma)) * (1 / (2 * M_PI * sigma * sigma));
+    }
+
+    void gaussianFilter(float *filter, size_t dimension) {
+      int half_d = std::floor(dimension / 2);
+      int origin = half_d * dimension + half_d;
+      // Indexes (y,x) represents the offset from the center of the matrix (necessary for the
+      // gaussian function)
+      for (int y = -half_d; y <= half_d; y++) {
+        for (int x = -half_d; x <= half_d; x++) {
+          float val = filter[origin + y * dimension + x] = gaussian2D(x, y);
+        }
+      }
+    }
+
+    float applyFilterAt(const GrayscaleImage &img, size_t orig_x, size_t orig_y, float *filter,
+                        size_t dimension) {
+      float sum = .0f;
+      size_t filter_idx = 0;
+      for (int y = 0; y < dimension; y++)
+        for (int x = 0; x < dimension; x++) {
+          sum += img(orig_x + x, orig_y + y) * filter[filter_idx++];
+        }
+      return sum;
+    }
+  }   // namespace filtering_subfunctions
+
+
   float _get2DVectorNorm(size_t orig_x, size_t orig_y, size_t dest_x, size_t dest_y) {
     size_t xdist = dest_x - orig_x;
     size_t ydist = dest_y - orig_y;
@@ -120,6 +152,23 @@ namespace image::transform {
       unsigned modulo_value = (e % compare_step);
       if (modulo_value != 0) { e -= modulo_value; }
     });
+    return true;
+  }
+
+  // TODO: Improve performance, really slow.
+  bool Filter::transform(GrayscaleImage &image) {
+    size_t dimension = 11;   // Needs to be odd (2n+1)
+
+    float *filter = (float *) malloc(sizeof(float) * dimension * dimension);
+    size_t half_d = std::floor(dimension / 2);
+    filtering_subfunctions::gaussianFilter(filter, dimension);
+
+    for (size_t y = half_d; y < image.getHeight() - half_d; y++)
+      for (size_t x = half_d; x < image.getWidth() - half_d; x++)
+        image(x, y) = filtering_subfunctions::applyFilterAt(image, x - half_d, y - half_d, filter,
+                                                            dimension);
+
+    free(filter);
     return true;
   }
 
