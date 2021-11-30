@@ -2,12 +2,14 @@
 extern "C" {
 #include <cblas.h>
 }
+
+#include "Utils.hpp"
 #include <cmath>
 #include <cstring>
 #include <iostream>
 #include <memory>
 
-//#define USE_BLAS
+#define USE_BLAS
 
 
 namespace math {
@@ -24,7 +26,11 @@ namespace math {
     Matrix(size_t rows, size_t cols) : rows(rows), cols(cols) {
       if (rows == 0 || cols == 0) { return; }
 
-      data = std::make_unique<T[]>(rows * cols);
+      data = utils::make_aligned_unique<T>(64, rows * cols);
+    }
+
+    Matrix(std::initializer_list<T> l) : Matrix(l.size(), 1) {
+      std::copy(l.begin(), l.end(), begin());
     }
 
     ~Matrix() = default;
@@ -48,6 +54,8 @@ namespace math {
     [[nodiscard]] size_t getRows() const { return rows; }
 
     [[nodiscard]] size_t getCols() const { return cols; }
+
+    [[nodiscard]] size_t getSize() const { return cols * rows; }
 
     /** @brief Returns element (i, j). Does not perform bound checking
      *
@@ -77,7 +85,7 @@ namespace math {
       if (other.data) {
         // If data is unallocated or different size, allocate new memory
         if (not data or data and rows * cols != other.rows * other.cols) {
-          data = std::make_unique<T[]>(other.rows * other.cols);
+          data = utils::make_aligned_unique<T>(64, other.rows * other.cols);
         }
         rows = other.rows;
         cols = other.cols;
@@ -113,10 +121,22 @@ namespace math {
       T sum = 0;
       const size_t stop = cols * rows;
 
-      for (size_t i = 0; i < stop; i++) { sum += std::fabs(data[i]); }
+      for (size_t i = 0; i < stop; i++) { sum += data[i]; }
 
       return sum;
     }
+
+    [[nodiscard]] T l2norm() const {
+      if (not data) { throw std::runtime_error("Cannot sum-reduce a null-sized matrix"); }
+
+      T sum = 0;
+      const size_t stop = cols * rows;
+
+      for (size_t i = 0; i < stop; i++) { sum += data[i] * data[i]; }
+
+      return std::sqrt(sum);
+    }
+
 
     [[nodiscard]] Matrix transpose() const {
       Matrix transposed(cols, rows);
@@ -406,8 +426,12 @@ namespace math {
       return res;
     }
 
+    void fill(T val) {
+      for (size_t i = 0; i < cols * rows; i++) data[i] = val;
+    }
+
   private:
-    std::unique_ptr<T[]> data = nullptr;
+    utils::unique_aligned_ptr<T> data;
     size_t rows = 0, cols = 0;
   };
 
@@ -424,6 +448,25 @@ namespace math {
       if (++j % cols == 0) { os << "\n"; }
     }
     return os;
+  }
+
+  template<typename T>
+  void randomize(math::Matrix<T> & matrix, T min, T max) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    static constexpr bool handled = std::is_floating_point_v<T> or std::is_integral_v<T>;
+    static_assert(handled, "Type not supported");
+
+    if constexpr (std::is_floating_point_v<T>) {
+      std::uniform_real_distribution<> dis(min, max);
+      for (size_t i = 0; i < matrix.getRows(); i++)
+        for (size_t j = 0; j < matrix.getCols(); j++) { matrix(i, j) = dis(gen); }
+
+    } else if constexpr (std::is_integral_v<T>) {
+      std::uniform_int_distribution<> dis(min, max);
+      for (auto &elem : matrix) elem = dis(gen);
+    }
   }
 
 }   // namespace math

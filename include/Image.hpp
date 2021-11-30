@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <memory>
 #include <vector>
+#include "Matrix.hpp"
 
 namespace image {
   using grayscale_t = unsigned char;
@@ -187,4 +188,18 @@ namespace image {
 
   private:
   };
+
+  template<typename real>
+  math::Matrix<real> imageToMatrix(GrayscaleImage const& image, real normalize = 1.0) {
+    math::Matrix<real> res(image.getHeight() * image.getWidth(), 1);
+
+    auto data = res.getData();
+    auto image_data = image.getData();
+
+    for (size_t i = 0; i < image.getSize(); i++) {
+      data[i] = image_data[i] / normalize;
+    }
+
+    return res;
+  }
 }   // namespace image

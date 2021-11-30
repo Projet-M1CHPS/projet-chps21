@@ -1,5 +1,6 @@
 #include "Utils.hpp"
 #include <iostream>
+#include <malloc.h>
 
 namespace utils {
 
@@ -19,8 +20,7 @@ namespace utils {
 
 
   // Delegate to the other constructor
-  IOException::IOException(const std::string &msg) noexcept
-      : IOException(msg.c_str()) {}
+  IOException::IOException(const std::string &msg) noexcept : IOException(msg.c_str()) {}
 
   // Prefix the message with "IOException: " and forwardd it to the base
   // constructor

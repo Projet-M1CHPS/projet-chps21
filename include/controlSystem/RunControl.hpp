@@ -52,6 +52,7 @@ namespace control {
     [[nodiscard]] std::unique_ptr<RunConfiguration> loadConfiguration() const;
     void cleanup(RunConfiguration const &config) const;
     [[nodiscard]] std::filesystem::path getCachePath() const;
+    [[nodiscard]] std::filesystem::path getOutputPath() const;
     [[nodiscard]] std::filesystem::path getNeuralNetworkPath() const;
 
   private:
@@ -60,7 +61,7 @@ namespace control {
 
   struct RunState {
     std::unique_ptr<nnet::NeuralNetworkBase> network;
-    std::unique_ptr<AbstractTrainingCache> cache;
+    std::unique_ptr<AbstractImageCache> cache;
     std::unique_ptr<WorkingEnvironnement> environnement;
     RunConfiguration const *configuration;
 

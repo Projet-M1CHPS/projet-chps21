@@ -186,7 +186,7 @@ TEST(MatrixTest, ThrowOnInvalidMatrixSub) {
 TEST(MatrixTest, CanTransposeMatrix) {
   Matrix<float> n(3, 5), o;
 
-  utils::random::randomize(n, 0.f, 100.f);
+  math:randomize(n, 0.f, 100.f);
 
   auto t = n.transpose();
   ASSERT_EQ(5, t.getRows());

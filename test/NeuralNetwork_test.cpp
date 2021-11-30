@@ -117,21 +117,28 @@ TEST(NeuralNetworkPrecisionTest, CanConvertStrToPrecision) {
   ASSERT_EQ(nnet::FloatingPrecision::float64, nnet::strToFPrecision("float64"));
 }
 
+TEST(NeuralNetworkTest, ThrowOnInvalidInput) {
+  nnet::NeuralNetwork<float> nn;
+  nn.setLayersSize(std::vector<size_t>{2, 2, 1});
+  math::Matrix<float> input = {1, 2, 3, 4};
+
+  ASSERT_ANY_THROW(nn.predict(input));
+}
 
 TEST(NeuralNetworkTest, ThrowOnInvalidInputOrTarget) {
   nnet::NeuralNetwork<float> nn1;
   nn1.setLayersSize(std::vector<size_t>{2, 2, 1});
-  std::vector<float> input1 = {1, 2, 3, 4};
-  std::vector<float> target1 = {1};
+  math::Matrix<float> input1 = {1, 2, 3, 4};
+  math::Matrix<float> target1 = {1};
 
-  ASSERT_ANY_THROW(nn1.train(input1.begin(), input1.end(), target1.begin(), target1.end(), 0.1));
+  ASSERT_ANY_THROW(nn1.train(input1, target1, 0.1));
 
   nnet::NeuralNetwork<float> nn2;
   nn2.setLayersSize(std::vector<size_t>{2, 2, 1});
-  std::vector<float> input2 = {1, 2};
-  std::vector<float> target2 = {1, 2, 3};
+  math::Matrix<float> input2 = {1, 2};
+  math::Matrix<float> target2 = {1, 2, 3};
 
-  ASSERT_ANY_THROW(nn2.train(input2.begin(), input2.end(), target2.begin(), target2.end(), 0.1));
+  ASSERT_ANY_THROW(nn2.train(input2, target2, 0.1));
 }
 
 
@@ -151,8 +158,8 @@ TEST(NeuralNetworkTest, SimpleNeuralTest) {
     for (auto &e : i) { e = 1.f; }
   }
 
-  std::vector<float> input{1, 1};
-  auto output = nn.predict(input.begin(), input.end());
+  math::Matrix<float> input{1, 1};
+  auto output = nn.predict(input);
 
   ASSERT_NEAR(361.f, output(0, 0), 0.005);
 }
@@ -173,8 +180,8 @@ TEST(NeuralNetworkTest, ComplexNeuralTest) {
     for (auto &e : i) { e = 1.f; }
   }
 
-  std::vector<double> input{1, 1};
-  math::Matrix<double> output = nn.predict(input.begin(), input.end());
+  math::Matrix<double> input{1, 1};
+  auto output = nn.predict(input);
 
   ASSERT_NEAR(82.f, output(0, 0), 0.005);
   ASSERT_NEAR(82.f, output(1, 0), 0.005);
@@ -207,8 +214,11 @@ TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
   b2(0, 0) = 0.60;   // b1
   b2(1, 0) = 0.60;   // b2
 
-  auto input = std::vector<float>{0.05, 0.10};
-  auto output = std::vector<float>{0.01, 0.99};
+  //auto input = std::vector<float>{0.05, 0.10};
+  //auto output = std::vector<float>{0.01, 0.99};
+
+  math::Matrix<float> input{0.05, 0.10};
+  math::Matrix<float> output{0.01, 0.99};
 
   auto prediction = nn.predict(input.begin(), input.end());
   ASSERT_NEAR(0.751365f, prediction(0, 0), 0.005);
@@ -216,7 +226,7 @@ TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
   ASSERT_EQ(prediction.getRows(), 2);
   ASSERT_EQ(prediction.getCols(), 1);
   
-  nn.train(input.begin(), input.end(), output.begin(), output.end(), 0.5);
+  nn.train(input, output, 0.5);
   
   math::Matrix<float> &w1_ = nn.getWeights()[0];
   math::Matrix<float> &b1_ = nn.getBiases()[0];
