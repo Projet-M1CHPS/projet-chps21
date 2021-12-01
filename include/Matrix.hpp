@@ -17,8 +17,6 @@ namespace math {
   template<typename T>
   class Matrix {
   public:
-    enum class MatrixTranspose { NOTRANSPOSE, TRANSPOSE };
-
     // Create an empty matrix, with cols/rows of size 0
     // and no allocation
     // Allowing a matrix to be empty allows for easier copying
