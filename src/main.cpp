@@ -1,8 +1,7 @@
 #include "ActivationFunction.hpp"
 #include "NeuralNetwork.hpp"
 #include "Utils.hpp"
-#include "controlSystem/RunConfiguration.hpp"
-#include "controlSystem/RunControl.hpp"
+#include "controlSystem/controllerParameters.hpp"
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -114,12 +113,28 @@ int run_network(int argc, char **argv) {
 }
 
 
+using namespace control;
+
 int main(int argc, char **argv) {
   // func_xor<float>(100, 0.2, 0.001);
   //  test();
   //  test_neural_network();
 
-  return run_network(argc, argv);
+  std::filesystem::path input_path = ".";
+
+  TrainingParameters parameters(RunPolicy::create, input_path, nullptr, "runs/test");
+  parameters.setTrainingSetLoader<ImageTrainingSetLoader>(16, 16);
+  parameters.setRunPolicy(RunPolicy::create);
+
+  std::vector<size_t> topology = {16 * 16, 64, 32, 8, 2};
+  parameters.setTopology(topology.begin(), topology.end());
+
+  ClassifierController controller(std::cout, true, true, true);
+  ControllerResult res = controller.run(parameters);
+
+  if (not res) { std::cout << "Run failed: " << res << std::endl; }
+
+  return res.getStatus();
 
   return 0;
 }

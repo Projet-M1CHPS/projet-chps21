@@ -132,9 +132,7 @@ namespace image {
     [[nodiscard]] size_t getSize() const { return height * width; }
 
     void setSize(size_t new_width, size_t new_height) {
-      width = new_width;
-      height = new_height;
-      pixel_data.reset();
+      std::tie(width, height) = {new_width, new_height};
       pixel_data = std::make_unique<grayscale_t[]>(width * height);
     }
 
@@ -146,7 +144,7 @@ namespace image {
 
   private:
     std::unique_ptr<grayscale_t[]> pixel_data;
-    size_t width{}, height{};
+    size_t width, height;
   };
 
   /**

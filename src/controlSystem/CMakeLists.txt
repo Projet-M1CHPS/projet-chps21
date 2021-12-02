@@ -1,9 +1,8 @@
 
 
 add_library(controlSystem
-        RunControl.cpp ${CMAKE_SOURCE_DIR}/include/controlSystem/RunControl.hpp
-        RunConfiguration.cpp ${CMAKE_SOURCE_DIR}/include/controlSystem/RunConfiguration.hpp
-        ImageCache.cpp ${CMAKE_SOURCE_DIR}/include/controlSystem/ImageCache.hpp
-        StatTracker.cpp ${CMAKE_SOURCE_DIR}/include/controlSystem/StatTracker.hpp)
+        controllerParameters.cpp ${CMAKE_SOURCE_DIR}/include/controlSystem/controllerParameters.hpp
+        setLoader.cpp ${CMAKE_SOURCE_DIR}/include/controlSystem/setLoader.hpp
+        inputSet.cpp ${CMAKE_SOURCE_DIR}/include/controlSystem/inputSet.hpp)
 
-target_include_directories(controlSystem PRIVATE ${CMAKE_SOURCE_DIR}/include/ ${BLAS_INCLUDE_DIRS})
+target_include_directories(controlSystem PUBLIC "${CMAKE_SOURCE_DIR}/include")
