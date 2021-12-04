@@ -178,3 +178,41 @@ TEST(TrainingSetTest, CanUnload) {
   EXPECT_NO_THROW(training_set.unload());
   EXPECT_TRUE(training_set.empty());
 }
+
+TEST(TrainingSetTest, CanShufleTrainingSet) {
+  TrainingSet training_set;
+
+  std::vector<size_t> indexes(10);
+
+  for (size_t i = 0; i < 10; i++) {
+    training_set.appendToTrainingSet(std::to_string(i), i, math::Matrix<float>({(float) i}));
+    indexes[i] = i;
+  }
+  training_set.shuffleTrainingSet(std::random_device()());
+
+  EXPECT_TRUE(std::is_permutation(indexes.begin(), indexes.end(),
+                                  training_set.getTrainingSetCategories().begin()));
+  for (size_t i = 0; i < 10; i++) {
+    EXPECT_EQ(training_set.getTrainingCategory(i), training_set.getTrainingMat(i)(0, 0));
+    EXPECT_EQ(training_set.getTrainingCategory(i), std::stoi(training_set.getTrainingPath(i)));
+  }
+}
+
+TEST(TrainingSetTest, CanShufleEvalSet) {
+  TrainingSet training_set;
+
+  std::vector<size_t> indexes(10);
+
+  for (size_t i = 0; i < 10; i++) {
+    training_set.appendToEvalSet(std::to_string(i), i, math::Matrix<float>({(float) i}));
+    indexes[i] = i;
+  }
+  training_set.shuffleEvalSet(std::random_device()());
+
+  EXPECT_TRUE(std::is_permutation(indexes.begin(), indexes.end(),
+                                  training_set.getEvalSetCategories().begin()));
+  for (size_t i = 0; i < 10; i++) {
+    EXPECT_EQ(training_set.getEvalCategory(i), training_set.getEvalMat(i)(0, 0));
+    EXPECT_EQ(training_set.getEvalCategory(i), std::stoi(training_set.getEvalPath(i)));
+  }
+}

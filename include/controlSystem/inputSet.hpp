@@ -78,6 +78,13 @@ namespace control {
       return eval_set[index];
     }
 
+    [[nodiscard]] std::vector<math::FloatMatrix> getTrainingSet() const { return training_set; }
+    [[nodiscard]] std::vector<math::FloatMatrix> getEvalSet() const { return eval_set; };
+    [[nodiscard]] std::vector<size_t> getEvalSetCategories() const { return eval_set_categories; }
+    [[nodiscard]] std::vector<size_t> getTrainingSetCategories() const {
+      return training_set_categories;
+    }
+
     [[nodiscard]] size_t getTrainingCategory(size_t index) const {
       if (index >= training_set_categories.size())
         throw std::out_of_range("TrainingSet::getTrainingCategory: index out of range");
@@ -106,9 +113,8 @@ namespace control {
       categories.insert(categories.begin(), begin, end);
     }
 
-    void appendToTrainingSet(std::filesystem::path path, size_t category,
-                             math::Matrix<float> &&mat);
-    void appendToEvalSet(std::filesystem::path path, size_t category, math::Matrix<float> &&mat);
+    void appendToTrainingSet(std::filesystem::path path, size_t category, math::FloatMatrix &&mat);
+    void appendToEvalSet(std::filesystem::path path, size_t category, math::FloatMatrix &&mat);
 
     void shuffleTrainingSet(size_t seed);
     void shuffleEvalSet(size_t seed);
@@ -126,8 +132,8 @@ namespace control {
     std::vector<std::filesystem::path> training_set_files;
     std::vector<std::filesystem::path> eval_set_files;
 
-    std::vector<math::Matrix<float>> training_set;
-    std::vector<math::Matrix<float>> eval_set;
+    std::vector<math::FloatMatrix> training_set;
+    std::vector<math::FloatMatrix> eval_set;
 
     std::vector<size_t> training_set_categories;
     std::vector<size_t> eval_set_categories;
