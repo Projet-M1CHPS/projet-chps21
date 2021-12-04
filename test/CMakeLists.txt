@@ -84,6 +84,7 @@ target_code_coverage(ActivationFunction_test ALL)
 
 
 include(GoogleTest)
+add_subdirectory(controlSystem)
 gtest_discover_tests(Math_test)
 gtest_discover_tests(NeuralNetwork_test)
 

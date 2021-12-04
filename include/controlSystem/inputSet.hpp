@@ -2,6 +2,7 @@
 #include "Matrix.hpp"
 #include <filesystem>
 #include <iostream>
+#include <ranges>
 #include <vector>
 
 namespace control {
@@ -20,6 +21,7 @@ namespace control {
       if (index >= inputs_path.size()) {
         throw std::out_of_range("InputSet::getPath Index out of range");
       }
+      return inputs_path[index];
     }
 
     math::Matrix<float> const &operator[](size_t index) const {
@@ -54,41 +56,43 @@ namespace control {
     TrainingSet &operator=(TrainingSet &&other) = default;
 
     [[nodiscard]] std::filesystem::path const &getTrainingPath(size_t index) const {
-      if (index > training_set_files.size())
+      if (index >= training_set_files.size())
         throw std::out_of_range("TrainingSet::getTrainingPath: index out of range");
       return training_set_files[index];
     }
     [[nodiscard]] std::filesystem::path const &getEvalPath(size_t index) const {
-      if (index > eval_set_files.size())
+      if (index >= eval_set_files.size())
         throw std::out_of_range("TrainingSet::getEvalPath: index out of range");
       return eval_set_files[index];
     }
 
     [[nodiscard]] math::Matrix<float> const &getTrainingMat(size_t index) const {
-      if (index > training_set.size())
+      if (index >= training_set.size())
         throw std::out_of_range("TrainingSet::getTrainingMat: index out of range");
       return training_set[index];
     }
 
     [[nodiscard]] math::Matrix<float> const &getEvalMat(size_t index) const {
-      if (index > eval_set.size())
+      if (index >= eval_set.size())
         throw std::out_of_range("TrainingSet::getEvalMat: index out of range");
       return eval_set[index];
     }
 
     [[nodiscard]] size_t getTrainingCategory(size_t index) const {
-      if (index > training_set_categories.size())
+      if (index >= training_set_categories.size())
         throw std::out_of_range("TrainingSet::getTrainingCategory: index out of range");
       return training_set_categories[index];
     }
     [[nodiscard]] size_t getEvalCategory(size_t index) const {
-      if (index > eval_set_categories.size())
+      if (index >= eval_set_categories.size())
         throw std::out_of_range("TrainingSet::getEvalCategory: index out of range");
       return eval_set_categories[index];
     }
 
+    [[nodiscard]] size_t getCategoryCount() const { return categories.size(); }
+
     [[nodiscard]] std::string const &getCategory(size_t index) const {
-      if (index > categories.size())
+      if (index >= categories.size())
         throw std::out_of_range("TrainingSet::getCategory: index out of range");
       return categories[index];
     }

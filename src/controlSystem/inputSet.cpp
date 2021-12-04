@@ -49,4 +49,19 @@ namespace control {
   size_t TrainingSet::evalSetSize() const { return eval_set.size(); }
 
   void TrainingSet::unload() { *this = std::move(TrainingSet()); }
+
+  std::ostream &operator<<(std::ostream &os, InputSet const &set) {
+    os << "Input set contains " << set.size() << " elements: " << std::endl;
+    for (auto const &input : set.inputs_path) { os << "\t" << input << std::endl; }
+    return os;
+  }
+
+  std::ostream &operator<<(std::ostream &os, TrainingSet const &set) {
+    os << "Training set contains " << set.trainingSetSize() << " training elements and "
+       << set.evalSetSize() << " eval set elements. \nTraining set: " << std::endl;
+    for (auto const &input : set.training_set_files) { os << "\t" << input << std::endl; }
+    os << "Eval set: " << std::endl;
+    for (auto const &input : set.eval_set_files) { os << "\t" << input << std::endl; }
+    return os;
+  }
 }   // namespace control

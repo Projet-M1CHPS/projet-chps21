@@ -8,7 +8,7 @@ namespace control {
   TrainingSet control::ImageTrainingSetLoader::load(const std::filesystem::path &input_path,
                                                     bool verbose, std::ostream *out) {
     if (not fs::exists(input_path) or not fs::exists(input_path / "eval") or
-        not fs::exists(input_path / "training"))
+        not fs::exists(input_path / "train"))
       throw std::invalid_argument(
               "ImageTrainingSetLoader: The input path does not exist or is invalid");
 
@@ -18,7 +18,7 @@ namespace control {
 
     // List every categories in both training and eval
     std::vector<std::filesystem::path> training_categories, eval_categories;
-    for (const auto &it : fs::directory_iterator(input_path / "training")) {
+    for (const auto &it : fs::directory_iterator(input_path / "train")) {
       if (fs::is_directory(it)) training_categories.push_back(it.path());
     }
 
@@ -33,7 +33,7 @@ namespace control {
     // Load the training set
     if (verbose)
       *out << "ImageTrainingSetLoader: Loading " << training_categories.size()
-           << "categories from training set... (This can take a while)" << std::endl;
+           << " categories from training set... (This can take a while)" << std::endl;
     for (size_t cat = 0; auto const &category : training_categories) {
       for (auto &it : fs::directory_iterator(category)) {
         if (not fs::is_regular_file(it)) continue;
@@ -51,7 +51,7 @@ namespace control {
     // Load the eval set
     if (verbose)
       *out << "ImageTrainingSetLoader: Loading " << eval_categories.size()
-           << "categories from eval set... (This can take a while)" << std::endl;
+           << " categories from eval set... (This can take a while)" << std::endl;
     for (size_t cat = 0; auto const &category : eval_categories) {
       for (auto &it : fs::directory_iterator(category)) {
         if (not fs::is_regular_file(it)) continue;

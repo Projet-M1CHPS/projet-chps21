@@ -83,36 +83,6 @@ void test_neural_network() {
   std::cout << nn << std::endl;
 }
 
-int run_network(int argc, char **argv) {
-  if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <input_dir> (<working_dir>) (<target_dir>)";
-    return 1;
-  }
-  std::string working_dir, target_dir;
-
-  if (argc == 3) working_dir = argv[2];
-  else
-    working_dir = "runs";
-
-  if (argc >= 4) target_dir = argv[3];
-  else
-    target_dir = "run_" + utils::timestampAsStr();
-
-  control::RunConfiguration config(argv[1], working_dir, target_dir);
-  auto controller = control::TrainingRunController();
-  auto res = controller.launch(config);
-
-  controller.cleanup();
-
-  if (not res) {
-    std::cout << std::endl << "Run failed: " << res.getMessage() << std::endl;
-    return 1;
-  }
-
-  return 0;
-}
-
-
 using namespace control;
 
 int main(int argc, char **argv) {
@@ -129,12 +99,18 @@ int main(int argc, char **argv) {
   std::vector<size_t> topology = {16 * 16, 64, 32, 8, 2};
   parameters.setTopology(topology.begin(), topology.end());
 
+  ImageTrainingSetLoader loader(16, 16);
+  auto set = loader.load("/home/thukisdo/Bureau/truncated_testing_set", true, &std::cout);
+  std::cout << set;
+
+  /*
   ClassifierController controller(std::cout, true, true, true);
   ControllerResult res = controller.run(parameters);
 
+
   if (not res) { std::cout << "Run failed: " << res << std::endl; }
 
-  return res.getStatus();
+  return res.getStatus(); */
 
   return 0;
 }
