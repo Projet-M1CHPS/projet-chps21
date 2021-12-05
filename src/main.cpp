@@ -1,7 +1,7 @@
 #include "ActivationFunction.hpp"
 #include "NeuralNetwork.hpp"
 #include "Utils.hpp"
-#include "controlSystem/controllerParameters.hpp"
+#include "controlSystem/controller.hpp"
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -92,19 +92,17 @@ int main(int argc, char **argv) {
 
   std::filesystem::path input_path = ".";
 
-  CTParameters parameters(RunPolicy::create, input_path, nullptr, "runs/test");
-  parameters.setTrainingSetLoader<CITSLoader>(16, 16);
+  CTParams parameters(RunPolicy::create, input_path, nullptr, "runs/test");
+  parameters.setTrainingSetLoader<CITCLoader>(16, 16);
 
   std::vector<size_t> topology = {16 * 16, 64, 32, 8, 2};
   parameters.setTopology(topology.begin(), topology.end());
 
-  ClassifierController controller(std::cout, true, true, true);
-  ControllerResult res = controller.run(parameters);
+  CTController controller(parameters);
+  ControllerResult res = controller.run(true, &std::cout);
 
 
-  if (not res) { std::cout << "Run failed: " << res << std::endl; }
+  if (not res) { res.print(std::cout); }
 
-  return res.getStatus();
-
-  return 0;
+  return (bool) res;
 }

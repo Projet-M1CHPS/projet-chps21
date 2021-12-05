@@ -103,7 +103,7 @@ namespace control {
     [[nodiscard]] std::filesystem::path const &getWorkingPath() const { return working_path; }
     void setWorkingPath(std::filesystem::path path) { working_path = std::move(path); }
 
-    [[nodiscard]] SetLoader &getTrainingSetLoader() {
+    [[nodiscard]] SetLoader &getSetLoader() {
       if (not ts_loader)
         throw std::runtime_error("TrainingParameters: Training set loader undefined");
       return *ts_loader;
@@ -164,8 +164,9 @@ namespace control {
     std::filesystem::path output_path;
   };
 
-  using CTParameters = TrainingParameters<CTSLoader>;
+  using CTParams = TrainingParameters<CTCLoader>;
 
+  template<class Loader>
   class RunParameters : public controllerParameters {
   public:
     RunParameters(std::filesystem::path const &input_path, std::shared_ptr<SetLoader> loader,
@@ -207,5 +208,7 @@ namespace control {
     std::filesystem::path output_path;
     std::shared_ptr<SetLoader> loader;
   };
+
+  // using CParams = RunParameters<CSLoader>;
 
 }   // namespace control

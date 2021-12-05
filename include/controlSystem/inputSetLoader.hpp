@@ -3,6 +3,7 @@
 #include "Image.hpp"
 #include "Transform.hpp"
 #include "inputSet.hpp"
+#include "trainingCollection.hpp"
 #include <filesystem>
 #include <set>
 
@@ -27,11 +28,11 @@ namespace control {
   template<class TrainingSet>
   class TSLoader {
   public:
-    [[nodiscard]] virtual TrainingSet load(std::filesystem::path const &input_path, bool verbose,
-                                           std::ostream *out) = 0;
+    [[nodiscard]] virtual std::shared_ptr<TrainingSet> load(std::filesystem::path const &input_path,
+                                                            bool verbose, std::ostream *out) = 0;
   };
 
-  class CTSLoader : public TSLoader<ClassifierTrainingSet> {
+  class CTCLoader : public TSLoader<ClassifierTrainingCollection> {
   public:
     template<typename iterator>
     void setClasses(iterator begin, iterator end) {
@@ -47,12 +48,12 @@ namespace control {
     std::shared_ptr<std::set<ClassLabel>> classes;
   };
 
-  class CITSLoader : public CTSLoader {
+  class CITCLoader : public CTCLoader {
   public:
-    CITSLoader(size_t width, size_t height) : target_width(width), target_height(height) {}
+    CITCLoader(size_t width, size_t height) : target_width(width), target_height(height) {}
 
-    [[nodiscard]] ClassifierTrainingSet load(std::filesystem::path const &input_path, bool verbose,
-                                             std::ostream *out) override;
+    [[nodiscard]] std::shared_ptr<ClassifierTrainingCollection>
+    load(std::filesystem::path const &input_path, bool verbose, std::ostream *out) override;
 
     [[nodiscard]] image::transform::TransformEngine &getPreProcessEngine() { return pre_process; }
     [[nodiscard]] image::transform::TransformEngine const &getPreProcessEngine() const {
@@ -66,9 +67,9 @@ namespace control {
 
   private:
     void loadClasses(std::filesystem::path const &input_path);
-    void loadEvalSet(ClassifierTrainingSet &res, const std::filesystem::path &input_path,
+    void loadEvalSet(ClassifierTrainingCollection &res, const std::filesystem::path &input_path,
                      bool verbose, std::ostream *out);
-    void loadTrainingSet(ClassifierTrainingSet &res, std::filesystem::path const &input_path,
+    void loadTrainingSet(ClassifierTrainingCollection &res, std::filesystem::path const &input_path,
                          bool verbose, std::ostream *out);
 
     void loadSet(ClassifierInputSet &res, std::filesystem::path const &input_path);

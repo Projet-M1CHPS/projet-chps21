@@ -7,7 +7,7 @@ namespace fs = std::filesystem;
 namespace control {
 
 
-  void CITSLoader::loadClasses(fs::path const &input_path) {
+  void CITCLoader::loadClasses(fs::path const &input_path) {
     if (not fs::exists(input_path / "train"))
       throw std::runtime_error("CITSLoader: train folder not found");
 
@@ -57,21 +57,22 @@ namespace control {
                   });
   }
 
-  void CITSLoader::loadEvalSet(ClassifierTrainingSet &res, const std::filesystem::path &input_path,
-                               bool verbose, std::ostream *out) {
+  void CITCLoader::loadEvalSet(ClassifierTrainingCollection &res,
+                               const std::filesystem::path &input_path, bool verbose,
+                               std::ostream *out) {
     if (verbose) *out << "\tLoading eval set... (Hold on, This may take a while)" << std::endl;
     auto &eval_set = res.getEvalSet();
     loadSet(eval_set, input_path / "eval");
   }
 
-  void CITSLoader::loadTrainingSet(ClassifierTrainingSet &res, fs::path const &input_path,
+  void CITCLoader::loadTrainingSet(ClassifierTrainingCollection &res, fs::path const &input_path,
                                    bool verbose, std::ostream *out) {
     if (verbose) *out << "\tLoading training set... (Hold on, This may take a while)" << std::endl;
     auto &training_set = res.getTrainingSet();
     loadSet(training_set, input_path / "eval");
   }
 
-  void CITSLoader::loadSet(ClassifierInputSet &res, const std::filesystem::path &input_path) {
+  void CITCLoader::loadSet(ClassifierInputSet &res, const std::filesystem::path &input_path) {
     image::transform::Resize resize(target_width, target_height);
 
     for (auto &c : *classes) {
@@ -93,8 +94,9 @@ namespace control {
     }
   }
 
-  ClassifierTrainingSet control::CITSLoader::load(const std::filesystem::path &input_path,
-                                                  bool verbose, std::ostream *out) {
+  std::shared_ptr<ClassifierTrainingCollection>
+  control::CITCLoader::load(const std::filesystem::path &input_path, bool verbose,
+                            std::ostream *out) {
     if (not fs::exists(input_path) or not fs::exists(input_path / "eval") or
         not fs::exists(input_path / "train"))
       throw std::invalid_argument(
@@ -113,12 +115,12 @@ namespace control {
     } else if (classes->empty())
       throw std::runtime_error("ImageTrainingSetLoader: Need at-least one class, none were given");
 
-    ClassifierTrainingSet res(classes);
+    auto res = std::make_shared<ClassifierTrainingCollection>(classes);
 
-    loadEvalSet(res, input_path, verbose, out);
-    loadTrainingSet(res, input_path, verbose, out);
+    loadEvalSet(*res, input_path, verbose, out);
+    loadTrainingSet(*res, input_path, verbose, out);
 
-    if (verbose) *out << "Done loading " << res.size() << " elements" << std::endl;
+    if (verbose) *out << "Done loading " << res->size() << " elements" << std::endl;
 
     return res;
   }

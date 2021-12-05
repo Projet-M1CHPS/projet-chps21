@@ -41,20 +41,6 @@ namespace control {
     std::shuffle(set_labels.begin(), set_labels.end(), rng);
   }
 
-  void ClassifierTrainingSet::shuffleTrainingSet(size_t seed) { training_set.shuffle(seed); }
-
-  void ClassifierTrainingSet::shuffleEvalSet(size_t seed) { eval_set.shuffle(seed); }
-
-  void ClassifierTrainingSet::shuffleSets(size_t seed) {
-    shuffleTrainingSet(seed);
-    shuffleEvalSet(seed);
-  }
-
-  void ClassifierTrainingSet::unload() {
-    training_set.unload();
-    eval_set.unload();
-  }
-
   std::ostream &operator<<(std::ostream &os, InputSet const &set) {
     for (auto const &input : set.inputs_path) { os << "\t" << input << std::endl; }
     return os;
@@ -67,28 +53,6 @@ namespace control {
          << ", class_name: " << label.getName() << std::endl;
     }
     return os;
-  }
-
-  std::ostream &operator<<(std::ostream &os, ClassifierTrainingSet const &set) {
-    os << "Classifier training set: " << std::endl;
-    os << "\tTraining set contains " << set.training_set.size() << " elements" << std::endl;
-    os << "\tEvaluation set contains " << set.eval_set.size() << " elements" << std::endl;
-
-    os << "Classes: " << std::endl;
-    for (auto const &label : *set.class_labels) { os << label << std::endl; }
-
-    return os;
-  }
-
-  ClassifierTrainingSet::ClassifierTrainingSet()
-      : class_labels(std::make_shared<std::set<ClassLabel>>()) {
-    training_set = ClassifierInputSet(class_labels);
-    eval_set = ClassifierInputSet(class_labels);
-  }
-  ClassifierTrainingSet::ClassifierTrainingSet(std::shared_ptr<std::set<ClassLabel>> classes)
-      : class_labels(std::move(classes)) {
-    training_set = ClassifierInputSet(class_labels);
-    eval_set = ClassifierInputSet(class_labels);
   }
 
   std::ostream &operator<<(std::ostream &os, const ClassLabel &label) {
