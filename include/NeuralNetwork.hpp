@@ -353,6 +353,27 @@ namespace nnet {
       }
     }
 
+    void backward(math::Matrix<real> target, const std::vector<math::Matrix<real>> &layers,
+                  const std::vector<math::Matrix<real>> &layers_af,
+                  RproppTrainingMethod<real> &trainer) {
+      math::Matrix<real> current_error = layers_af[layers_af.size() - 1] - target;
+
+      for (long i = weights.size() - 1; i >= 0; i--) {
+        math::Matrix<real> derivative(layers[i + 1]);
+        auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
+        std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
+
+        derivative.hadamardProd(current_error);
+
+        current_error = math::Matrix<real>::mul(true, weights[i], false, derivative);
+
+        math::Matrix<real> gradient =
+                math::Matrix<real>::mul(false, derivative, true, layers_af[i], 1.0);
+
+        trainer.compute(i, weights[i], gradient);
+      }
+    }
+
   private:
     std::vector<math::Matrix<real>> weights;
     std::vector<math::Matrix<real>> biases;
