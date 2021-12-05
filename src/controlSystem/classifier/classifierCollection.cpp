@@ -6,13 +6,13 @@ namespace fs = std::filesystem;
 namespace control::classifier {
 
   ClassifierTrainingCollection::ClassifierTrainingCollection()
-      : class_labels(std::make_shared<std::set<ClassLabel>>()) {
+      : class_labels(std::make_shared<std::vector<ClassLabel>>()) {
     training_set = ClassifierInputSet(class_labels);
     eval_set = ClassifierInputSet(class_labels);
   }
 
   ClassifierTrainingCollection::ClassifierTrainingCollection(
-          std::shared_ptr<std::set<ClassLabel>> classes)
+          std::shared_ptr<std::vector<ClassLabel>> classes)
       : class_labels(std::move(classes)) {
     training_set = ClassifierInputSet(class_labels);
     eval_set = ClassifierInputSet(class_labels);
@@ -87,11 +87,11 @@ namespace control::classifier {
       }
       throw std::runtime_error("CITSLoader: train and eval classes are not the same");
     }
-    classes = std::make_shared<std::set<ClassLabel>>();
+    classes = std::make_shared<std::vector<ClassLabel>>();
 
     std::for_each(training_classes.begin(), training_classes.end(),
                   [this](const std::filesystem::path &p) {
-                    this->classes->insert(ClassLabel(classes->size(), p.string()));
+                    this->classes->push_back(ClassLabel(classes->size(), p.string()));
                   });
   }
 

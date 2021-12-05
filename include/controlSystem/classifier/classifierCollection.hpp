@@ -9,7 +9,7 @@ namespace control::classifier {
 
   public:
     ClassifierTrainingCollection();
-    ClassifierTrainingCollection(std::shared_ptr<std::set<ClassLabel>> classes);
+    ClassifierTrainingCollection(std::shared_ptr<std::vector<ClassLabel>> classes);
 
     ClassifierTrainingCollection(ClassifierTrainingCollection const &other) = delete;
 
@@ -24,8 +24,8 @@ namespace control::classifier {
 
     [[nodiscard]] size_t categoryCount() const { return class_labels->size(); }
 
-    [[nodiscard]] std::set<ClassLabel> &getLabels() { return *class_labels; }
-    [[nodiscard]] std::set<ClassLabel> const &getLabels() const { return *class_labels; }
+    [[nodiscard]] std::vector<ClassLabel> &getLabels() { return *class_labels; }
+    [[nodiscard]] std::vector<ClassLabel> const &getLabels() const { return *class_labels; }
 
     template<typename iterator>
     void setCategories(iterator begin, iterator end) {
@@ -44,7 +44,7 @@ namespace control::classifier {
 
   private:
     ClassifierInputSet training_set, eval_set;
-    std::shared_ptr<std::set<ClassLabel>> class_labels;
+    std::shared_ptr<std::vector<ClassLabel>> class_labels;
   };
 
 
@@ -52,16 +52,18 @@ namespace control::classifier {
   public:
     template<typename iterator>
     void setClasses(iterator begin, iterator end) {
-      if (not classes) classes = std::make_shared<std::set<ClassLabel>>();
+      if (not classes) classes = std::make_shared<std::vector<ClassLabel>>();
       classes->clear();
       for (auto it = begin; it != end; ++it) { classes->insert(*it); }
+
+      std::sort(classes->begin(), classes->end());
     }
 
-    [[nodiscard]] std::shared_ptr<std::set<ClassLabel>> getClasses() { return classes; }
-    [[nodiscard]] std::shared_ptr<std::set<ClassLabel>> getClasses() const { return classes; }
+    [[nodiscard]] std::shared_ptr<std::vector<ClassLabel>> getClasses() { return classes; }
+    [[nodiscard]] std::shared_ptr<std::vector<ClassLabel>> getClasses() const { return classes; }
 
   protected:
-    std::shared_ptr<std::set<ClassLabel>> classes;
+    std::shared_ptr<std::vector<ClassLabel>> classes;
   };
 
   class CITCLoader : public CTCLoader {

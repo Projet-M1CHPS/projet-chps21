@@ -14,7 +14,7 @@ namespace control::classifier {
       return;
     }
 
-    if (not class_labels->contains(*label)) {
+    if (std::find(class_labels->begin(), class_labels->end(), *label) == class_labels->end()) {
       throw std::runtime_error(
               "ClassifierInputSet::append: label doesn't belong to this classifier");
     }

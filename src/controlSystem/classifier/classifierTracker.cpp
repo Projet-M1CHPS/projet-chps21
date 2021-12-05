@@ -51,7 +51,7 @@ namespace control::classifier {
     CTrackerState &s = *state;
     for (size_t i = 0; i < nclass; i++) {
       s.getPrecOutput(i) << epoch << " " << stats(i, 0) << std::endl;
-      s.getRecallOutput(i) << epoch << epoch << " " << stats(i, 0) << std::endl;
+      s.getRecallOutput(i) << epoch << " " << stats(i, 1) << std::endl;
       s.getF1Output(i) << epoch << " " << stats(i, 2) << std::endl;
     }
 
@@ -60,13 +60,13 @@ namespace control::classifier {
     s.getAvgF1Output() << epoch << " " << avg_f1score << std::endl;
   }
 
-  void CStats::classification_report(std::ostream &os, std::set<ClassLabel> const &labels) const {
+  void CStats::classification_report(std::ostream &os,
+                                     std::vector<ClassLabel> const &labels) const {
     size_t nclass = stats.getRows();
 
-    for (size_t i = 0; auto const &c : labels) {
-      os << "[" << c << "] precision: " << stats(i, 0) << ", recall: " << stats(i, 1)
+    for (size_t i = 0; i < nclass; i++) {
+      os << "[" << labels[i] << "] precision: " << stats(i, 0) << ", recall: " << stats(i, 1)
          << ", f1-score: " << stats(i, 2) << std::endl;
-      i++;
     }
     os << "average accuracy: " << avg_precision << std::endl;
     os << "average recall: " << avg_recall << std::endl;

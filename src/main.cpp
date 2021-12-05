@@ -86,11 +86,7 @@ void test_neural_network() {
 using namespace control;
 using namespace control::classifier;
 
-int main(int argc, char **argv) {
-  // func_xor<float>(100, 0.2, 0.001);
-  //  test();
-  //  test_neural_network();
-
+bool test_image() {
   std::filesystem::path input_path = "/home/thukisdo/Bureau/truncated_testing_set";
 
   auto loader = std::make_shared<CITCLoader>(16, 16);
@@ -111,4 +107,11 @@ int main(int argc, char **argv) {
   if (not res) { res.print(std::cout); }
 
   return (bool) res;
+}
+
+int main(int argc, char **argv) {
+  // func_xor<float>(100, 0.2, 0.001);
+  //  test();
+  //  test_neural_network();
+  return test_image();
 }

@@ -39,7 +39,7 @@ namespace control::classifier {
   public:
     ClassifierInputSet() = default;
 
-    explicit ClassifierInputSet(std::shared_ptr<std::set<ClassLabel>> labels)
+    explicit ClassifierInputSet(std::shared_ptr<std::vector<ClassLabel>> labels)
         : class_labels(std::move(labels)) {}
 
     [[nodiscard]] ClassLabel const &getLabel(size_t index) const {
@@ -50,7 +50,7 @@ namespace control::classifier {
     }
 
     [[nodiscard]] std::vector<ClassLabel const *> const &getLabels() const { return set_labels; }
-    [[nodiscard]] std::set<ClassLabel> const &getClassLabels() const { return *class_labels; }
+    [[nodiscard]] std::vector<ClassLabel> const &getClassLabels() const { return *class_labels; }
 
 
     void append(std::filesystem::path path, math::Matrix<float> &&mat) override;
@@ -65,7 +65,7 @@ namespace control::classifier {
 
   protected:
     std::vector<ClassLabel const *> set_labels;
-    std::shared_ptr<std::set<ClassLabel>> class_labels;
+    std::shared_ptr<std::vector<ClassLabel>> class_labels;
   };
 
 }   // namespace control::classifier

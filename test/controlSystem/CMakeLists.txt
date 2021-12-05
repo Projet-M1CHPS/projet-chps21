@@ -1,10 +1,15 @@
 
-add_executable(ControlSystem_test InputSet_test.cpp InputSetLoader_test.cpp)
-target_include_directories(ControlSystem_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+add_executable(ControlSystem_test InputSet_test.cpp InputSetLoader_test.cpp ClassifierCollection_test.cpp)
+target_include_directories(ControlSystem_test
+        PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/include/controlSystem
+        ${CMAKE_SOURCE_DIR}/include/controlSystem/classifier)
 
 target_link_libraries(
         ControlSystem_test PUBLIC
-        controlSystem
+        ControlSystem
+        Classifier
         gtest_main
 )
 

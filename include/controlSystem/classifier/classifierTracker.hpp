@@ -76,7 +76,7 @@ namespace control::classifier {
 
   public:
     CStats() = delete;
-    void classification_report(std::ostream &os, std::set<ClassLabel> const &labels) const;
+    void classification_report(std::ostream &os, std::vector<ClassLabel> const &labels) const;
     void dumpToFiles();
 
   private:
