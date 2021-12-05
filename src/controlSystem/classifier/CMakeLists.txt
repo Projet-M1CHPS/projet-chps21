@@ -10,3 +10,4 @@ add_library(Classifier
 target_include_directories(Classifier PUBLIC ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/include/controlSystem/classifier
         )
+target_code_coverage(Classifier)

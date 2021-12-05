@@ -4,12 +4,12 @@
 using namespace control;
 
 TEST(InputSetTest, CanBuildEmptySet) {
-  InputSet input_set;
+  InputSet<float> input_set;
   EXPECT_EQ(0, input_set.size());
 }
 
 TEST(InputSetTest, ReturnsSetSize) {
-  InputSet input_set;
+  InputSet<float> input_set;
   EXPECT_EQ(0, input_set.size());
   EXPECT_TRUE(input_set.empty());
   input_set.append("test", math::Matrix<float>());
@@ -22,7 +22,7 @@ TEST(InputSetTest, ReturnsSetSize) {
 }
 
 TEST(InputSetTest, CanAppendToSet) {
-  InputSet input_set;
+  InputSet<float> input_set;
 
   input_set.append("test", math::Matrix<float>({1, 2, 3}));
   input_set.append("test2", math::Matrix<float>({3, 2}));
@@ -49,7 +49,7 @@ TEST(InputSetTest, CanAppendToSet) {
 }
 
 TEST(InputSetTest, ThrowOnInvalidIndex) {
-  InputSet input_set;
+  InputSet<float> input_set;
   EXPECT_ANY_THROW(input_set[0]);
 
   input_set.append("", math::Matrix<float>());
@@ -57,11 +57,11 @@ TEST(InputSetTest, ThrowOnInvalidIndex) {
 }
 
 TEST(InputSetTest, CanUnload) {
-  InputSet input_set;
+  InputSet<float> input_set;
   input_set.append("test", math::Matrix<float>());
   input_set.unload();
   EXPECT_EQ(0, input_set.size());
 
-  input_set = InputSet();
+  input_set = InputSet<float>();
   EXPECT_NO_THROW(input_set.unload());
 }

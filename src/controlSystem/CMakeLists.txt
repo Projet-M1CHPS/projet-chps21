@@ -10,3 +10,4 @@ add_library(ControlSystem
 add_subdirectory(classifier)
 
 target_include_directories(ControlSystem PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/include/controlSystem")
+target_code_coverage(ControlSystem)

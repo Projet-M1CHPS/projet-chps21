@@ -92,7 +92,7 @@ bool test_image() {
   auto loader = std::make_shared<CITCLoader>(16, 16);
   auto &engine = loader->getPostProcessEngine();
   engine.addTransformation(std::make_shared<image::transform::BinaryScaleByMedian>());
-  engine.addTransformation(std::make_shared<image::transform::Inversion>());
+  // engine.addTransformation(std::make_shared<image::transform::Inversion>());
 
   CTParams parameters(RunPolicy::create, input_path, loader, "runs/test");
 
