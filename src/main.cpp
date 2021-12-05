@@ -92,25 +92,19 @@ int main(int argc, char **argv) {
 
   std::filesystem::path input_path = ".";
 
-  TrainingParameters parameters(RunPolicy::create, input_path, nullptr, "runs/test");
-  parameters.setTrainingSetLoader<ImageTrainingSetLoader>(16, 16);
-  parameters.setRunPolicy(RunPolicy::create);
+  CTParameters parameters(RunPolicy::create, input_path, nullptr, "runs/test");
+  parameters.setTrainingSetLoader<CITSLoader>(16, 16);
 
   std::vector<size_t> topology = {16 * 16, 64, 32, 8, 2};
   parameters.setTopology(topology.begin(), topology.end());
 
-  ImageTrainingSetLoader loader(16, 16);
-  auto set = loader.load("/home/thukisdo/Bureau/truncated_testing_set", true, &std::cout);
-  std::cout << set;
-
-  /*
   ClassifierController controller(std::cout, true, true, true);
   ControllerResult res = controller.run(parameters);
 
 
   if (not res) { std::cout << "Run failed: " << res << std::endl; }
 
-  return res.getStatus(); */
+  return res.getStatus();
 
   return 0;
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "NeuralNetwork.hpp"
-#include "setLoader.hpp"
+#include "inputSetLoader.hpp"
 #include <filesystem>
 #include <memory>
 #include <utility>
@@ -72,6 +72,7 @@ namespace control {
   /** Regroups parameters required for launching a training run
    *
    */
+  template<class SetLoader>
   class TrainingParameters : public controllerParameters {
   public:
     /** Setup a working environnement for training a network, along the run policy and the set
@@ -87,12 +88,12 @@ namespace control {
      * @param output_path Where the neural network will be save / retrieved, along other data
      */
     TrainingParameters(RunPolicy policy, std::filesystem::path const &input_path,
-                       std::shared_ptr<TrainingSetLoader> loader,
-                       std::filesystem::path working_path, std::filesystem::path output_path = "")
+                       std::shared_ptr<SetLoader> loader, std::filesystem::path working_path,
+                       const std::filesystem::path &output_path = "")
         : controllerParameters(input_path), training_method(nnet::TrainingMethod::standard),
           ts_loader(std::move(loader)), working_path(std::move(working_path)) {
       this->policy = policy;
-      if (output_path != "") this->output_path = std::move(output_path);
+      if (output_path != "") this->output_path = output_path;
       else
         this->output_path = working_path / "output";
     }
@@ -102,21 +103,19 @@ namespace control {
     [[nodiscard]] std::filesystem::path const &getWorkingPath() const { return working_path; }
     void setWorkingPath(std::filesystem::path path) { working_path = std::move(path); }
 
-    [[nodiscard]] TrainingSetLoader &getTrainingSetLoader() {
+    [[nodiscard]] SetLoader &getTrainingSetLoader() {
       if (not ts_loader)
         throw std::runtime_error("TrainingParameters: Training set loader undefined");
       return *ts_loader;
     }
 
-    [[nodiscard]] TrainingSetLoader const &getTrainingSetLoader() const {
+    [[nodiscard]] SetLoader const &getSetLoader() const {
       if (not ts_loader)
         throw std::runtime_error("TrainingParameters: Training set loader undefined");
       return *ts_loader;
     }
 
-    void setTrainingSetLoader(std::shared_ptr<TrainingSetLoader> loader) {
-      ts_loader = std::move(loader);
-    }
+    void setTrainingSetLoader(std::shared_ptr<SetLoader> loader) { ts_loader = std::move(loader); }
 
     template<class loader, typename... Types>
     void setTrainingSetLoader(Types &&...args) {
@@ -160,10 +159,12 @@ namespace control {
     nnet::TrainingMethod training_method;
     std::vector<size_t> topology;
 
-    std::shared_ptr<TrainingSetLoader> ts_loader;
+    std::shared_ptr<SetLoader> ts_loader;
     std::filesystem::path working_path;
     std::filesystem::path output_path;
   };
+
+  using CTParameters = TrainingParameters<CTSLoader>;
 
   class RunParameters : public controllerParameters {
   public:

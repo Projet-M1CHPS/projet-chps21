@@ -1,12 +1,12 @@
 
-add_executable(InputSet_test InputSet_test.cpp)
-target_include_directories(InputSet_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+add_executable(ControlSystem_test InputSet_test.cpp InputSetLoader_test.cpp)
+target_include_directories(ControlSystem_test PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 target_link_libraries(
-        InputSet_test PUBLIC
+        ControlSystem_test PUBLIC
         controlSystem
         gtest_main
 )
 
-target_code_coverage(InputSet_test ALL)
-gtest_discover_tests(InputSet_test)
+target_code_coverage(ControlSystem_test ALL)
+gtest_discover_tests(ControlSystem_test)

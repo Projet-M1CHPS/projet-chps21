@@ -13,7 +13,7 @@ add_library(Image STATIC
         Image.cpp ${CMAKE_SOURCE_DIR}/include/Image.hpp
         ${CMAKE_SOURCE_DIR}/dependency/stb_image.h
         ${CMAKE_SOURCE_DIR}/dependency/stb_image_write.h
-)
+        )
 set_target_properties(Image PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 # Uses the stb library located in dependency
 target_include_directories(Image PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/dependency")
@@ -30,9 +30,9 @@ target_code_coverage(Transform)
 
 set(BLA_VENDOR OpenBLAS)
 find_package(BLAS REQUIRED)
-if(BLAS_FOUND)
+if (BLAS_FOUND)
   include_directories(/opt/OpenBLAS/include/)
-endif(BLAS_FOUND)
+endif (BLAS_FOUND)
 
 add_library(NeuralNetwork STATIC
         NeuralNetwork.cpp ${CMAKE_SOURCE_DIR}/include/NeuralNetwork.hpp
@@ -51,4 +51,4 @@ add_executable(main main.cpp)
 set_target_properties(main PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(main PUBLIC "${CMAKE_SOURCE_DIR}/include")
 
-target_link_libraries(main PRIVATE controlSystem Image Transform NeuralNetwork pthread ${BLAS_LIBRARIES})
+target_link_libraries(main PRIVATE controlSystem Transform Image NeuralNetwork pthread ${BLAS_LIBRARIES})

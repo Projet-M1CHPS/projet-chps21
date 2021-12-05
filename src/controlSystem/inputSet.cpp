@@ -1,4 +1,5 @@
 #include <controlSystem/inputSet.hpp>
+#include <utility>
 
 namespace control {
 
@@ -7,61 +8,91 @@ namespace control {
     inputs.push_back(std::move(mat));
   }
 
-  void TrainingSet::appendToTrainingSet(std::filesystem::path path, size_t category,
-                                        math::Matrix<float> &&mat) {
-    training_set_files.push_back(std::move(path));
-    training_set.push_back(std::move(mat));
-    training_set_categories.push_back(category);
+  void ClassifierInputSet::append(std::filesystem::path path, math::Matrix<float> &&mat) {
+    InputSet::append(std::move(path), std::move(mat));
+    set_labels.push_back(&ClassLabel::unknown);
   }
 
-  void TrainingSet::appendToEvalSet(std::filesystem::path path, size_t category,
-                                    math::Matrix<float> &&mat) {
-    eval_set_files.push_back(std::move(path));
-    eval_set.push_back(std::move(mat));
-    eval_set_categories.push_back(category);
+  void ClassifierInputSet::append(std::filesystem::path path, ClassLabel const *label,
+                                  math::Matrix<float> &&mat) {
+    if (label == nullptr) {
+      append(std::move(path), std::move(mat));
+      return;
+    }
+
+    if (not class_labels->contains(*label)) {
+      throw std::runtime_error(
+              "ClassifierInputSet::append: label doesn't belong to this classifier");
+    }
+
+    InputSet::append(std::move(path), std::move(mat));
+
+    set_labels.push_back(label);
   }
 
-  void TrainingSet::shuffleTrainingSet(size_t seed) {
+  void ClassifierInputSet::shuffle(size_t seed) {
     std::mt19937_64 rng(seed);
-    std::shuffle(training_set_files.begin(), training_set_files.end(), rng);
+    std::shuffle(inputs_path.begin(), inputs_path.end(), rng);
+
     rng.seed(seed);
-    std::shuffle(training_set.begin(), training_set.end(), rng);
+    std::shuffle(inputs.begin(), inputs.end(), rng);
+
     rng.seed(seed);
-    std::shuffle(training_set_categories.begin(), training_set_categories.end(), rng);
+    std::shuffle(set_labels.begin(), set_labels.end(), rng);
   }
 
-  void TrainingSet::shuffleEvalSet(size_t seed) {
-    std::mt19937_64 rng(seed);
-    std::shuffle(eval_set_files.begin(), eval_set_files.end(), rng);
-    rng.seed(seed);
-    std::shuffle(eval_set.begin(), eval_set.end(), rng);
-    rng.seed(seed);
-    std::shuffle(eval_set_categories.begin(), eval_set_categories.end(), rng);
-  }
+  void ClassifierTrainingSet::shuffleTrainingSet(size_t seed) { training_set.shuffle(seed); }
 
-  void TrainingSet::shuffleSets(size_t seed) {
+  void ClassifierTrainingSet::shuffleEvalSet(size_t seed) { eval_set.shuffle(seed); }
+
+  void ClassifierTrainingSet::shuffleSets(size_t seed) {
     shuffleTrainingSet(seed);
     shuffleEvalSet(seed);
   }
 
-  size_t TrainingSet::trainingSetSize() const { return training_set.size(); }
-
-  size_t TrainingSet::evalSetSize() const { return eval_set.size(); }
-
-  void TrainingSet::unload() { *this = std::move(TrainingSet()); }
+  void ClassifierTrainingSet::unload() {
+    training_set.unload();
+    eval_set.unload();
+  }
 
   std::ostream &operator<<(std::ostream &os, InputSet const &set) {
-    os << "Input set contains " << set.size() << " elements: " << std::endl;
     for (auto const &input : set.inputs_path) { os << "\t" << input << std::endl; }
     return os;
   }
 
-  std::ostream &operator<<(std::ostream &os, TrainingSet const &set) {
-    os << "Training set contains " << set.trainingSetSize() << " training elements and "
-       << set.evalSetSize() << " eval set elements. \nTraining set: " << std::endl;
-    for (auto const &input : set.training_set_files) { os << "\t" << input << std::endl; }
-    os << "Eval set: " << std::endl;
-    for (auto const &input : set.eval_set_files) { os << "\t" << input << std::endl; }
+  std::ostream &operator<<(std::ostream &os, const ClassifierInputSet &set) {
+    for (size_t i = 0; i < set.size(); i++) {
+      auto const &label = set.getLabel(i);
+      os << "\t" << set.getPath(i) << "(class_id: " << label.getId()
+         << ", class_name: " << label.getName() << std::endl;
+    }
+    return os;
+  }
+
+  std::ostream &operator<<(std::ostream &os, ClassifierTrainingSet const &set) {
+    os << "Classifier training set: " << std::endl;
+    os << "\tTraining set contains " << set.training_set.size() << " elements" << std::endl;
+    os << "\tEvaluation set contains " << set.eval_set.size() << " elements" << std::endl;
+
+    os << "Classes: " << std::endl;
+    for (auto const &label : *set.class_labels) { os << label << std::endl; }
+
+    return os;
+  }
+
+  ClassifierTrainingSet::ClassifierTrainingSet()
+      : class_labels(std::make_shared<std::set<ClassLabel>>()) {
+    training_set = ClassifierInputSet(class_labels);
+    eval_set = ClassifierInputSet(class_labels);
+  }
+  ClassifierTrainingSet::ClassifierTrainingSet(std::shared_ptr<std::set<ClassLabel>> classes)
+      : class_labels(std::move(classes)) {
+    training_set = ClassifierInputSet(class_labels);
+    eval_set = ClassifierInputSet(class_labels);
+  }
+
+  std::ostream &operator<<(std::ostream &os, const ClassLabel &label) {
+    os << "\tclass_id: " << label.getId() << ", class_name: " << label.getName();
     return os;
   }
 }   // namespace control

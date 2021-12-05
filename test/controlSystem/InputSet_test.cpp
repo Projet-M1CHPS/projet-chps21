@@ -66,153 +66,89 @@ TEST(InputSetTest, CanUnload) {
   EXPECT_NO_THROW(input_set.unload());
 }
 
-TEST(TrainingSetTest, CanCreateEmpty) {
-  TrainingSet training_set;
-  EXPECT_EQ(0, training_set.size());
+TEST(ClassifierInputSet, CanBuildEmptySet) {
+  ClassifierInputSet input_set;
+  EXPECT_EQ(0, input_set.size());
 }
 
-TEST(TrainingSetTest, CanAppendToEval) {
-  TrainingSet training_set;
-  training_set.appendToEvalSet("test", 2, math::Matrix<float>({1, 2, 3}));
-  training_set.appendToEvalSet("test2", 1, math::Matrix<float>({3, 2}));
-  EXPECT_EQ(2, training_set.size());
+TEST(ClassifierInputSet, CanAppend) {
+  auto map = std::make_shared<std::unordered_map<size_t, ClassLabel>>();
+  map->emplace(1, ClassLabel(1, "Test"));
 
-  EXPECT_STREQ("test", training_set.getEvalPath(0).c_str());
-  EXPECT_STREQ("test2", training_set.getEvalPath(1).c_str());
+  ClassifierInputSet input_set(map);
+  input_set.append("test", math::Matrix<float>({1, 2, 3}));
+
+  EXPECT_EQ(1, input_set.size());
+  EXPECT_STREQ("test", input_set.getPath(0).c_str());
 
   {
-    auto &mat = training_set.getEvalMat(0);
+    auto &mat = input_set[0];
     EXPECT_EQ(1, mat.getCols());
     EXPECT_EQ(3, mat.getRows());
     EXPECT_EQ(1, mat(0, 0));
     EXPECT_EQ(2, mat(1, 0));
     EXPECT_EQ(3, mat(2, 0));
   }
+
+  auto label = input_set.getLabel(0);
+  EXPECT_TRUE(label == ClassLabel::unknown);
+
+  input_set.append("test2", &map->at(1), math::Matrix<float>({2, 3}));
+  EXPECT_EQ(2, input_set.size());
+  EXPECT_STREQ("test2", input_set.getPath(1).c_str());
+
   {
-    auto &mat = training_set.getEvalMat(1);
+    auto &mat = input_set[1];
     EXPECT_EQ(1, mat.getCols());
     EXPECT_EQ(2, mat.getRows());
-    EXPECT_EQ(3, mat(0, 0));
-    EXPECT_EQ(2, mat(1, 0));
+    EXPECT_EQ(2, mat(0, 0));
+    EXPECT_EQ(3, mat(1, 0));
+  }
+
+  label = input_set.getLabel(1);
+  EXPECT_TRUE(label.getId() == 1);
+  EXPECT_STREQ("Test", label.getName().c_str());
+}
+
+TEST(ClassifierInputSet, ThrowOnInvalidIndex) {
+  ClassifierInputSet training_set;
+
+  EXPECT_ANY_THROW(training_set.getLabel(0));
+}
+
+TEST(ClassifierInputSet, CanShuffle) {
+  auto map = std::make_shared<std::unordered_map<size_t, ClassLabel>>();
+
+  for (size_t i = 0; i < 10; i++) { map->emplace(i, ClassLabel(i, "Test")); }
+
+
+  ClassifierInputSet training_set(map);
+
+  std::vector<ClassLabel *> indexes(10);
+
+  for (size_t i = 0; i < 10; i++) {
+    training_set.append(std::to_string(i), &map->at(i), math::Matrix<float>({(float) i}));
+    indexes[i] = &map->at(i);
+  }
+  training_set.shuffle(std::random_device()());
+
+  EXPECT_TRUE(
+          std::is_permutation(indexes.begin(), indexes.end(), training_set.getLabels().begin()));
+
+  for (size_t i = 0; i < 10; i++) {
+    EXPECT_EQ(training_set.getLabel(i).getId(), training_set[i](0, 0));
+    EXPECT_EQ(training_set[i](0, 0), std::stoi(training_set.getPath(i)));
   }
 }
 
-TEST(TrainingSetTest, CanAppendToTraining) {
-  TrainingSet training_set;
-  training_set.appendToTrainingSet("test", 2, math::Matrix<float>({1, 2, 3}));
-  training_set.appendToTrainingSet("test2", 1, math::Matrix<float>({3, 2}));
-  EXPECT_EQ(2, training_set.size());
-
-  EXPECT_STREQ("test", training_set.getTrainingPath(0).c_str());
-  EXPECT_STREQ("test2", training_set.getTrainingPath(1).c_str());
-
-  {
-    auto &mat = training_set.getTrainingMat(0);
-    EXPECT_EQ(1, mat.getCols());
-    EXPECT_EQ(3, mat.getRows());
-    EXPECT_EQ(1, mat(0, 0));
-    EXPECT_EQ(2, mat(1, 0));
-    EXPECT_EQ(3, mat(2, 0));
-  }
-  {
-    auto &mat = training_set.getTrainingMat(1);
-    EXPECT_EQ(1, mat.getCols());
-    EXPECT_EQ(2, mat.getRows());
-    EXPECT_EQ(3, mat(0, 0));
-    EXPECT_EQ(2, mat(1, 0));
-  }
-}
-
-TEST(TrainingSetTest, CanReturnSize) {
-  TrainingSet training_set;
-  EXPECT_EQ(0, training_set.trainingSetSize());
-  EXPECT_EQ(0, training_set.evalSetSize());
-  EXPECT_TRUE(training_set.empty());
-
-  training_set.appendToTrainingSet("test", 1, math::Matrix<float>());
-  training_set.appendToTrainingSet("test", 1, math::Matrix<float>());
-  training_set.appendToTrainingSet("test", 1, math::Matrix<float>());
-
-  EXPECT_EQ(3, training_set.trainingSetSize());
-  EXPECT_EQ(0, training_set.evalSetSize());
-  EXPECT_FALSE(training_set.empty());
-
-  training_set.appendToEvalSet("test", 1, math::Matrix<float>());
-  training_set.appendToEvalSet("test", 1, math::Matrix<float>());
-  training_set.appendToEvalSet("test", 1, math::Matrix<float>());
-
-  EXPECT_EQ(3, training_set.trainingSetSize());
-  EXPECT_EQ(3, training_set.evalSetSize());
-  EXPECT_FALSE(training_set.empty());
-}
-
-TEST(TrainingSetTest, CanSetCategories) {
-  TrainingSet training_set;
-  auto categories = {"0", "1", "2"};
-  training_set.setCategories(categories.begin(), categories.end());
-  EXPECT_EQ(3, training_set.getCategoryCount());
-  auto &categories2 = training_set.getCategories();
-
-  EXPECT_TRUE(std::equal(categories.begin(), categories.end(), categories2.begin()));
-}
-
-TEST(TrainingSetTest, ThrowOnInvalidIndex) {
-  TrainingSet training_set;
-
-  EXPECT_ANY_THROW(training_set.getCategory(0));
-  EXPECT_ANY_THROW(training_set.getEvalMat(0));
-  EXPECT_ANY_THROW(training_set.getEvalPath(0));
-  EXPECT_ANY_THROW(training_set.getTrainingMat(0));
-  EXPECT_ANY_THROW(training_set.getTrainingPath(0));
-}
-
-TEST(TrainingSetTest, CanUnload) {
-  TrainingSet training_set;
+TEST(ClassifierInputSet, CanUnload) {
+  ClassifierInputSet training_set;
 
   EXPECT_NO_THROW(training_set.unload());
-  training_set.appendToTrainingSet("test", 1, math::Matrix<float>());
-  training_set.appendToEvalSet("test", 1, math::Matrix<float>());
-  auto categories = {"0", "1", "2"};
-  training_set.setCategories(categories.begin(), categories.end());
+  training_set.append("test", math::Matrix<float>());
+  training_set.append("test", math::Matrix<float>());
 
   EXPECT_NO_THROW(training_set.unload());
   EXPECT_TRUE(training_set.empty());
-}
-
-TEST(TrainingSetTest, CanShufleTrainingSet) {
-  TrainingSet training_set;
-
-  std::vector<size_t> indexes(10);
-
-  for (size_t i = 0; i < 10; i++) {
-    training_set.appendToTrainingSet(std::to_string(i), i, math::Matrix<float>({(float) i}));
-    indexes[i] = i;
-  }
-  training_set.shuffleTrainingSet(std::random_device()());
-
-  EXPECT_TRUE(std::is_permutation(indexes.begin(), indexes.end(),
-                                  training_set.getTrainingSetCategories().begin()));
-  for (size_t i = 0; i < 10; i++) {
-    EXPECT_EQ(training_set.getTrainingCategory(i), training_set.getTrainingMat(i)(0, 0));
-    EXPECT_EQ(training_set.getTrainingCategory(i), std::stoi(training_set.getTrainingPath(i)));
-  }
-}
-
-TEST(TrainingSetTest, CanShufleEvalSet) {
-  TrainingSet training_set;
-
-  std::vector<size_t> indexes(10);
-
-  for (size_t i = 0; i < 10; i++) {
-    training_set.appendToEvalSet(std::to_string(i), i, math::Matrix<float>({(float) i}));
-    indexes[i] = i;
-  }
-  training_set.shuffleEvalSet(std::random_device()());
-
-  EXPECT_TRUE(std::is_permutation(indexes.begin(), indexes.end(),
-                                  training_set.getEvalSetCategories().begin()));
-  for (size_t i = 0; i < 10; i++) {
-    EXPECT_EQ(training_set.getEvalCategory(i), training_set.getEvalMat(i)(0, 0));
-    EXPECT_EQ(training_set.getEvalCategory(i), std::stoi(training_set.getEvalPath(i)));
-  }
+  EXPECT_TRUE(training_set.getLabels().empty());
 }

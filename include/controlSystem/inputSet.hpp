@@ -3,6 +3,8 @@
 #include <filesystem>
 #include <iostream>
 #include <ranges>
+#include <set>
+#include <utility>
 #include <vector>
 
 namespace control {
@@ -17,7 +19,7 @@ namespace control {
     InputSet(InputSet &&other) = default;
     InputSet &operator=(InputSet &&other) = default;
 
-    std::filesystem::path const &getPath(size_t index) {
+    std::filesystem::path const &getPath(size_t index) const {
       if (index >= inputs_path.size()) {
         throw std::out_of_range("InputSet::getPath Index out of range");
       }
@@ -31,90 +33,120 @@ namespace control {
       return inputs[index];
     }
 
-    void append(std::filesystem::path path, math::Matrix<float> &&mat);
+    virtual void append(std::filesystem::path path, math::Matrix<float> &&mat);
+
+    using Iterator = std::vector<math::FloatMatrix>::iterator;
+    using ConstIterator = std::vector<math::FloatMatrix>::const_iterator;
+
+    [[nodiscard]] Iterator begin() { return inputs.begin(); }
+    [[nodiscard]] Iterator end() { return inputs.end(); }
+
+    [[nodiscard]] ConstIterator begin() const { return inputs.begin(); }
+    [[nodiscard]] ConstIterator end() const { return inputs.end(); }
 
     [[nodiscard]] bool empty() const { return inputs.empty(); }
     [[nodiscard]] size_t size() const { return inputs.size(); }
-    void unload() { *this = std::move(InputSet()); }
+    virtual void unload() { *this = std::move(InputSet()); }
 
-  private:
+
+  protected:
     std::vector<std::filesystem::path> inputs_path;
-    std::vector<math::Matrix<float>> inputs;
+    std::vector<math::FloatMatrix> inputs;
   };
 
-  std::ostream &operator<<(std::ostream &os, InputSet const &set);
-
-  class TrainingSet {
-    friend std::ostream &operator<<(std::ostream &os, TrainingSet const &set);
+  class ClassLabel {
+    friend std::ostream &operator<<(std::ostream &os, ClassLabel const &label);
 
   public:
-    TrainingSet() = default;
+    ClassLabel(size_t id, std::string name) : id(id), name(std::move(name)) {}
+    [[nodiscard]] size_t getId() const { return id; }
+    [[nodiscard]] std::string const &getName() const { return name; }
 
-    TrainingSet(TrainingSet const &other) = delete;
+    void setId(size_t id) { this->id = id; }
+    void setName(std::string name) { this->name = std::move(name); }
 
-    TrainingSet(TrainingSet &&other) = default;
-    TrainingSet &operator=(TrainingSet &&other) = default;
-
-    [[nodiscard]] std::filesystem::path const &getTrainingPath(size_t index) const {
-      if (index >= training_set_files.size())
-        throw std::out_of_range("TrainingSet::getTrainingPath: index out of range");
-      return training_set_files[index];
-    }
-    [[nodiscard]] std::filesystem::path const &getEvalPath(size_t index) const {
-      if (index >= eval_set_files.size())
-        throw std::out_of_range("TrainingSet::getEvalPath: index out of range");
-      return eval_set_files[index];
+    static ClassLabel const &getUnknown() {
+      static ClassLabel unknown(0, "Unknown");
+      return unknown;
     }
 
-    [[nodiscard]] math::Matrix<float> const &getTrainingMat(size_t index) const {
-      if (index >= training_set.size())
-        throw std::out_of_range("TrainingSet::getTrainingMat: index out of range");
-      return training_set[index];
+    inline static ClassLabel const &unknown = getUnknown();
+
+    bool operator==(ClassLabel const &other) const { return id == other.id && name == other.name; }
+    bool operator!=(ClassLabel const &other) const { return !(*this == other); }
+
+    bool operator>(ClassLabel const &other) const { return id > other.id; }
+    bool operator<(ClassLabel const &other) const { return id < other.id; }
+
+
+  private:
+    size_t id;
+    std::string name;
+  };
+
+  class ClassifierInputSet : public InputSet {
+    friend std::ostream &operator<<(std::ostream &os, ClassifierInputSet const &set);
+
+  public:
+    ClassifierInputSet() = default;
+
+    explicit ClassifierInputSet(std::shared_ptr<std::set<ClassLabel>> labels)
+        : class_labels(std::move(labels)) {}
+
+    [[nodiscard]] ClassLabel const &getLabel(size_t index) const {
+      if (index >= set_labels.size()) {
+        throw std::out_of_range("ClassifierInputSet::getSetLabel Index out of range");
+      }
+      return *set_labels[index];
     }
 
-    [[nodiscard]] math::Matrix<float> const &getEvalMat(size_t index) const {
-      if (index >= eval_set.size())
-        throw std::out_of_range("TrainingSet::getEvalMat: index out of range");
-      return eval_set[index];
+    [[nodiscard]] std::vector<ClassLabel const *> const &getLabels() const { return set_labels; }
+    [[nodiscard]] std::set<ClassLabel> const &getClassLabels() const { return *class_labels; }
+
+
+    void append(std::filesystem::path path, math::Matrix<float> &&mat) override;
+    void append(std::filesystem::path path, ClassLabel const *label, math::Matrix<float> &&mat);
+
+    void shuffle(size_t seed);
+
+    void unload() override {
+      InputSet::unload();
+      set_labels.clear();
     }
 
-    [[nodiscard]] std::vector<math::FloatMatrix> getTrainingSet() const { return training_set; }
-    [[nodiscard]] std::vector<math::FloatMatrix> getEvalSet() const { return eval_set; };
-    [[nodiscard]] std::vector<size_t> getEvalSetCategories() const { return eval_set_categories; }
-    [[nodiscard]] std::vector<size_t> getTrainingSetCategories() const {
-      return training_set_categories;
-    }
+  protected:
+    std::vector<ClassLabel const *> set_labels;
+    std::shared_ptr<std::set<ClassLabel>> class_labels;
+  };
 
-    [[nodiscard]] size_t getTrainingCategory(size_t index) const {
-      if (index >= training_set_categories.size())
-        throw std::out_of_range("TrainingSet::getTrainingCategory: index out of range");
-      return training_set_categories[index];
-    }
-    [[nodiscard]] size_t getEvalCategory(size_t index) const {
-      if (index >= eval_set_categories.size())
-        throw std::out_of_range("TrainingSet::getEvalCategory: index out of range");
-      return eval_set_categories[index];
-    }
+  class ClassifierTrainingSet {
+    friend std::ostream &operator<<(std::ostream &os, ClassifierTrainingSet const &set);
 
-    [[nodiscard]] size_t getCategoryCount() const { return categories.size(); }
+  public:
+    ClassifierTrainingSet();
+    ClassifierTrainingSet(std::shared_ptr<std::set<ClassLabel>> classes);
 
-    [[nodiscard]] std::string const &getCategory(size_t index) const {
-      if (index >= categories.size())
-        throw std::out_of_range("TrainingSet::getCategory: index out of range");
-      return categories[index];
-    }
-    [[nodiscard]] std::vector<std::string> const &getCategories() const { return categories; }
+    ClassifierTrainingSet(ClassifierTrainingSet const &other) = delete;
+
+    ClassifierTrainingSet(ClassifierTrainingSet &&other) = default;
+    ClassifierTrainingSet &operator=(ClassifierTrainingSet &&other) = default;
+
+    [[nodiscard]] ClassifierInputSet &getTrainingSet() { return training_set; }
+    [[nodiscard]] ClassifierInputSet const &getTrainingSet() const { return training_set; }
+
+    [[nodiscard]] ClassifierInputSet &getEvalSet() { return eval_set; };
+    [[nodiscard]] ClassifierInputSet const &getEvalSet() const { return eval_set; };
+
+    [[nodiscard]] size_t categoryCount() const { return class_labels->size(); }
+
+    [[nodiscard]] std::set<ClassLabel> &getLabels() { return *class_labels; }
+    [[nodiscard]] std::set<ClassLabel> const &getLabels() const { return *class_labels; }
 
     template<typename iterator>
     void setCategories(iterator begin, iterator end) {
-      categories.clear();
-
-      categories.reserve(std::distance(begin, end));
-      categories.insert(categories.begin(), begin, end);
+      class_labels->clear();
+      class_labels->insert(class_labels->begin(), begin, end);
     }
-
-    void appendToTrainingSet(std::filesystem::path path, size_t category, math::FloatMatrix &&mat);
-    void appendToEvalSet(std::filesystem::path path, size_t category, math::FloatMatrix &&mat);
 
     void shuffleTrainingSet(size_t seed);
     void shuffleEvalSet(size_t seed);
@@ -123,24 +155,11 @@ namespace control {
     [[nodiscard]] bool empty() const { return training_set.empty() && eval_set.empty(); }
     [[nodiscard]] size_t size() const { return training_set.size() + eval_set.size(); }
 
-    [[nodiscard]] size_t trainingSetSize() const;
-    [[nodiscard]] size_t evalSetSize() const;
-
     void unload();
 
   private:
-    std::vector<std::filesystem::path> training_set_files;
-    std::vector<std::filesystem::path> eval_set_files;
-
-    std::vector<math::FloatMatrix> training_set;
-    std::vector<math::FloatMatrix> eval_set;
-
-    std::vector<size_t> training_set_categories;
-    std::vector<size_t> eval_set_categories;
-
-    std::vector<std::string> categories;
+    ClassifierInputSet training_set, eval_set;
+    std::shared_ptr<std::set<ClassLabel>> class_labels;
   };
-
-  std::ostream &operator<<(std::ostream &os, TrainingSet const &);
 
 }   // namespace control
