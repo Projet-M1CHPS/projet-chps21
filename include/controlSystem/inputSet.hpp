@@ -19,7 +19,7 @@ namespace control {
     InputSet(InputSet &&other) = default;
     InputSet &operator=(InputSet &&other) = default;
 
-    std::filesystem::path const &getPath(size_t index) const {
+    [[nodiscard]] std::filesystem::path const &getPath(size_t index) const {
       if (index >= inputs_path.size()) {
         throw std::out_of_range("InputSet::getPath Index out of range");
       }

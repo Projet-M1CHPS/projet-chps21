@@ -1,10 +1,12 @@
 
 #pragma once
 #include "Matrix.hpp"
+#include "classifierInputSet.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <vector>
 
 namespace control::classifier {
@@ -28,9 +30,9 @@ namespace control::classifier {
       f1_outputs = std::make_shared<std::vector<std::ofstream>>();
 
       for (auto it = class_begin; it != class_end; it++) {
-        prec_outputs->emplace_back(output_dir / (*it + "_prec.dat"));
-        recall_outputs->emplace_back(output_dir / (*it + "_recall.dat"));
-        f1_outputs->emplace_back(output_dir / (*it + "_f1.dat"));
+        prec_outputs->emplace_back(output_dir / (it->getName() + "_prec.dat"));
+        recall_outputs->emplace_back(output_dir / (it->getName() + "_recall.dat"));
+        f1_outputs->emplace_back(output_dir / (it->getName() + "_f1.dat"));
       }
     }
 
@@ -74,7 +76,7 @@ namespace control::classifier {
 
   public:
     CStats() = delete;
-    void classification_report(std::ostream &os, const std::vector<std::string> &classes);
+    void classification_report(std::ostream &os, std::set<ClassLabel> const &labels) const;
     void dumpToFiles();
 
   private:

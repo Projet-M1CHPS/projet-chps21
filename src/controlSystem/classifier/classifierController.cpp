@@ -46,6 +46,7 @@ namespace control::classifier {
     loadTrainingSet(is_verbose, os);
     network = std::make_shared<nnet::NeuralNetwork<float>>();
     network->setLayersSize(params->getTopology());
+    network->randomizeSynapses();
 
     return {true, "Training set loaded"};
   }
@@ -58,6 +59,7 @@ namespace control::classifier {
     try {
       if (not training_collection) {
         training_collection = params->getSetLoader().load(params->getInputPath(), is_verbose, os);
+        training_collection->shuffleSets(std::random_device()());
       }
     } catch (std::exception &e) {
       throw std::runtime_error("Error while loading training set: " + std::string(e.what()));
@@ -71,13 +73,12 @@ namespace control::classifier {
     }
 
     double initial_learning_rate = 1.f, learning_rate = 0.;
-    size_t batch_size = 10, max_epoch = 100;
+    size_t batch_size = 20, max_epoch = 100;
     if (is_verbose)
       *os << std::setprecision(8)
           << "Training started with: {initial_learning_rate: " << initial_learning_rate
           << ", batch_size: " << batch_size << ", Max epoch: " << max_epoch << "}" << std::endl;
 
-    training_collection->shuffleSets(std::random_device()());
     auto &training_set = training_collection->getTrainingSet();
     auto &eval_set = training_collection->getEvalSet();
     auto const &classes = training_collection->getLabels();
@@ -88,7 +89,7 @@ namespace control::classifier {
 
     while (stracker.getEpoch() < max_epoch) {
       learning_rate =
-              initial_learning_rate * (1 / (1 + 0.9 * static_cast<double>(stracker.getEpoch())));
+              initial_learning_rate * (1 / (1 + 0.7 * static_cast<double>(stracker.getEpoch())));
       for (int i = 0; i < batch_size; i++) {
         for (int j = 0; j < training_set.size(); j++) {
           auto type = training_set.getLabel(j).getId();
@@ -121,12 +122,14 @@ namespace control::classifier {
       auto res = network->predict(eval_set[i]);
       auto res_type = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
 
-      *os << "[Image: " << i << "]: type " << type << " output :\n" << res;
+      *os << "[Image: " << i << "]: (" << type << ") output :\n" << res;
       confusion(res_type, type.getId())++;
     }
     *os << std::endl;
     auto stats = stracker.computeStats(confusion);
     stats.classification_report(*os, classes);
+
+    return {true, "Training finished"};
   }
 
 }   // namespace control::classifier

@@ -91,10 +91,15 @@ int main(int argc, char **argv) {
   //  test();
   //  test_neural_network();
 
-  std::filesystem::path input_path = ".";
+  std::filesystem::path input_path = "/home/thukisdo/Bureau/truncated_testing_set";
+
+  auto loader = std::make_shared<CITCLoader>(16, 16);
+  auto &engine = loader->getPostProcessEngine();
+  engine.addTransformation(std::make_shared<image::transform::BinaryScaleByMedian>());
 
   CTParams parameters(RunPolicy::create, input_path, nullptr, "runs/test");
   parameters.setTrainingSetLoader<CITCLoader>(16, 16);
+
 
   std::vector<size_t> topology = {16 * 16, 64, 32, 8, 2};
   parameters.setTopology(topology.begin(), topology.end());
