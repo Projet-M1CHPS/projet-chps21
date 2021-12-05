@@ -1,5 +1,6 @@
 #include "ActivationFunction.hpp"
 #include "NeuralNetwork.hpp"
+#include "TrainingMethod.hpp"
 #include "Utils.hpp"
 #include "controlSystem/RunConfiguration.hpp"
 #include "controlSystem/RunControl.hpp"
@@ -7,34 +8,57 @@
 #include <iostream>
 #include <vector>
 
+
 using namespace control;
 
 template<typename T>
 size_t func_xor(const size_t bach_size, const T learning_rate, const T error_limit) {
+  std::vector<size_t> topology{2, 3, 3, 1};
+
   nnet::NeuralNetwork<T> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 3, 3, 1});
+  nn.setLayersSize(topology);
   nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
-  // nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 2);
   nn.randomizeSynapses();
+
+  nnet::StandardTrainingMethod<T> std_mt(learning_rate);
+  nnet::MomentumTrainingMethod<T> mom_mt(topology, learning_rate, 0.9);
 
   std::cout << nn << std::endl;
 
-  std::vector<std::vector<T>> input{{1, 1}, {1, 0}, {0, 1}, {0, 0}};
-  std::vector<T> target{0, 1, 1, 0};
+  std::vector<math::Matrix<T>> input(4);
+  std::vector<math::Matrix<T>> target(4);
+
+  for (size_t i = 0; i < 4; i++) {
+    input[i] = math::Matrix<T>(2, 1);
+    target[i] = math::Matrix<T>(1, 1);
+  }
+  input[0](0, 0) = 0.f;
+  input[0](1, 0) = 0.f;
+  input[1](0, 0) = 1.f;
+  input[1](1, 0) = 0.f;
+  input[2](0, 0) = 0.f;
+  input[2](1, 0) = 1.f;
+  input[3](0, 0) = 1.f;
+  input[3](1, 0) = 1.f;
+
+
+  target[0](0, 0) = 0.f;
+  target[1](0, 0) = 1.f;
+  target[2](0, 0) = 1.f;
+  target[3](0, 0) = 0.f;
 
   T error = 1.0;
   size_t count = 0;
   while (error > error_limit) {
     for (int i = 0; i < bach_size; i++) {
       for (int j = 0; j < 4; j++) {
-        nn.train(input[j].begin(), input[j].end(), target.begin() + j, target.begin() + j + 1,
-                 learning_rate);
+        nn.train(input[j], target[j], std_mt);
       }
     }
 
     error = 0.0;
     for (int i = 0; i < input.size(); i++)
-      error += std::fabs(nn.predict(input[i].begin(), input[i].end())(0, 0) - target[i]);
+      error += std::fabs(nn.predict(input[i])(0, 0) - target[i](0, 0));
     error /= input.size();
     std::cout << std::setprecision(17) << error << std::endl;
     count++;
@@ -44,53 +68,103 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
   std::cout << "Result"
             << "---> " << count << " iterations" << std::endl;
   for (int i = 0; i < input.size(); i++) {
-    std::cout << input[i][0] << "|" << input[i][1] << " = "
-              << nn.predict(input[i].begin(), input[i].end()) << "(" << target[i] << ")"
-              << std::endl;
+    std::cout << input[i](0, 0) << "|" << input[i](1, 0) << " = " << nn.predict(input[i]) << "("
+              << target[i] << ")" << std::endl;
   }
   return count;
 }
 
-void test_neural_network() {
-  nnet::NeuralNetwork<float> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 2, 2});
-  nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
+template<typename T>
+void new_func_xor(const size_t bach_size, const T learning_rate, const T error_limit) {
+  nnet::NeuralNetwork<T> nn1;
+  std::vector<size_t> topology = {2, 3, 3, 1};
+  nn1.setLayersSize(topology);
+  nn1.setActivationFunction(af::ActivationFunctionType::sigmoid);
+  nn1.randomizeSynapses();
 
-  math::Matrix<float> &w1 = nn.getWeights()[0];
-  math::Matrix<float> &b1 = nn.getBiases()[0];
-  math::Matrix<float> &w2 = nn.getWeights()[1];
-  math::Matrix<float> &b2 = nn.getBiases()[1];
+  nnet::NeuralNetwork<T> nn2(nn1);
+  nn2.setLayersSize(topology);
+  nn2.setActivationFunction(af::ActivationFunctionType::sigmoid);
 
-  w1(0, 0) = 0.15;   // w1
-  w1(0, 1) = 0.20;   // w3
-  w1(1, 0) = 0.25;   // w2
-  w1(1, 1) = 0.30;   // w4
-  b1(0, 0) = 0.35;   // b1
-  b1(1, 0) = 0.35;   // b2
+  auto &w1 = nn1.getWeights();
+  auto &w2 = nn2.getWeights();
+  for (size_t i = 0; i < w1.size(); i++) w2[i] = w1[i];
 
-  w2(0, 0) = 0.40;   // w1
-  w2(0, 1) = 0.45;   // w3
-  w2(1, 0) = 0.50;   // w2
-  w2(1, 1) = 0.55;   // w4
-  b2(0, 0) = 0.60;   // b1
-  b2(1, 0) = 0.60;   // b2
+  nnet::StandardTrainingMethod<T> tmStandard(0.2f);
+  nnet::MomentumTrainingMethod<T> tmMomentum(topology, 0.1f, 0.9f);
 
-  std::cout << nn << std::endl;
+  std::cout << nn1 << std::endl;
+  std::cout << nn2 << std::endl;
 
-  math::Matrix<float> input = {0.05, 0.10};
-  math::Matrix<float> output = {0.01, 0.99};
+  std::vector<math::Matrix<T>> input(4);
+  std::vector<math::Matrix<T>> target(4);
+  for (size_t i = 0; i < 4; i++) {
+    input[i] = math::Matrix<T>(2, 1);
+    target[i] = math::Matrix<T>(1, 1);
+  }
+  input[0](0, 0) = 0.f;
+  input[0](1, 0) = 0.f;
+  input[1](0, 0) = 1.f;
+  input[1](1, 0) = 0.f;
+  input[2](0, 0) = 0.f;
+  input[2](1, 0) = 1.f;
+  input[3](0, 0) = 1.f;
+  input[3](1, 0) = 1.f;
 
-  std::cout << "prediction : \n" << nn.predict(input) << std::endl;
+  target[0](0, 0) = 0.f;
+  target[1](0, 0) = 1.f;
+  target[2](0, 0) = 1.f;
+  target[3](0, 0) = 0.f;
 
-  nn.train(input, output, 0.5);
-  std::cout << nn << std::endl;
+  for (int z = 0; z < 2; z++) {
+    T error = 1.0;
+    size_t count = 0;
+    while (error > error_limit && count < 600) {
+      for (int i = 0; i < bach_size; i++) {
+        for (int j = 0; j < 4; j++) {
+          if (z == 0) {
+            nn1.train(input[j], target[j], tmStandard);
+          } else {
+            nn2.train(input[j], target[j], tmMomentum);
+          }
+        }
+      }
+
+      error = 0.0;
+      for (int i = 0; i < input.size(); i++) {
+        if (z == 0) error += std::fabs(nn1.predict(input[i])(0, 0) - target[i](0, 0));
+        else
+          error += std::fabs(nn2.predict(input[i])(0, 0) - target[i](0, 0));
+      }
+      error /= input.size();
+      std::cout << std::setprecision(17) << error << std::endl;
+      count++;
+    }
+
+    if (z == 0) {
+      std::cout << nn1 << std::endl;
+      std::cout << "Result"
+                << "---> " << count << " iterations" << std::endl;
+      for (int i = 0; i < input.size(); i++) {
+        std::cout << input[i](0, 0) << "|" << input[i](1, 0) << " = " << nn1.predict(input[i])
+                  << "(" << target[i](0, 0) << ")" << std::endl;
+      }
+    } else {
+      std::cout << nn2 << std::endl;
+      std::cout << "Result"
+                << "---> " << count << " iterations" << std::endl;
+      for (int i = 0; i < input.size(); i++) {
+        std::cout << input[i](0, 0) << "|" << input[i](1, 0) << " = " << nn2.predict(input[i])
+                  << "(" << target[i](0, 0) << ")" << std::endl;
+      }
+    }
+  }
 }
 
-
 int main(int argc, char **argv) {
-  //func_xor<float>(100, 0.2, 0.001);
-  // test();
-  // test_neural_network();
+  //func_xor<float>(100, 0.2, 0.01);
+  //new_func_xor<float>(100, 0.2, 0.000001);
+
 
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <input_dir> (<working_dir>) (<target_dir>)";

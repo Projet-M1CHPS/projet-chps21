@@ -1,4 +1,5 @@
 #include "NeuralNetwork.hpp"
+#include "TrainingMethod.hpp"
 #include <gtest/gtest.h>
 
 #include <vector>
@@ -128,17 +129,20 @@ TEST(NeuralNetworkTest, ThrowOnInvalidInput) {
 TEST(NeuralNetworkTest, ThrowOnInvalidInputOrTarget) {
   nnet::NeuralNetwork<float> nn1;
   nn1.setLayersSize(std::vector<size_t>{2, 2, 1});
+
+  nnet::StandardTrainingMethod<float> stdTrain(0.1);
+
   math::Matrix<float> input1 = {1, 2, 3, 4};
   math::Matrix<float> target1 = {1};
 
-  ASSERT_ANY_THROW(nn1.train(input1, target1, 0.1));
+  ASSERT_ANY_THROW(nn1.train(input1, target1, stdTrain));
 
   nnet::NeuralNetwork<float> nn2;
   nn2.setLayersSize(std::vector<size_t>{2, 2, 1});
   math::Matrix<float> input2 = {1, 2};
   math::Matrix<float> target2 = {1, 2, 3};
 
-  ASSERT_ANY_THROW(nn2.train(input2, target2, 0.1));
+  ASSERT_ANY_THROW(nn2.train(input2, target2, stdTrain));
 }
 
 
@@ -195,6 +199,8 @@ TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
   nn.setLayersSize(std::vector<size_t>{2, 2, 2});
   nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
 
+  nnet::StandardTrainingMethod<float> stdTrain(0.5);
+
   math::Matrix<float> &w1 = nn.getWeights()[0];
   math::Matrix<float> &b1 = nn.getBiases()[0];
   math::Matrix<float> &w2 = nn.getWeights()[1];
@@ -223,7 +229,7 @@ TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
   ASSERT_EQ(prediction.getRows(), 2);
   ASSERT_EQ(prediction.getCols(), 1);
   
-  nn.train(input, output, 0.5);
+  nn.train(input, output, stdTrain);
   
   math::Matrix<float> &w1_ = nn.getWeights()[0];
   math::Matrix<float> &b1_ = nn.getBiases()[0];
@@ -237,16 +243,8 @@ TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
   ASSERT_NEAR(0.299502f, w1_(1, 1), 0.005);
 
   //
-  ASSERT_NEAR(0.341229f, b1_(0, 0), 0.005);
-  ASSERT_NEAR(0.340046f, b1_(1, 0), 0.005);
-
-  //
   ASSERT_NEAR(0.358916f, w2_(0, 0), 0.005);
   ASSERT_NEAR(0.408666f, w2_(0, 1), 0.005);
   ASSERT_NEAR(0.511301f, w2_(1, 0), 0.005);
   ASSERT_NEAR(0.561378f, w2_(1, 1), 0.005);
-  
-  //
-  ASSERT_NEAR(0.461501f, b2_(0, 0), 0.005);
-  ASSERT_NEAR(0.638098f, b2_(1, 0), 0.005);
 }

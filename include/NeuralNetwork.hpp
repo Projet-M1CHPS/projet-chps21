@@ -2,6 +2,7 @@
 
 #include "ActivationFunction.hpp"
 #include "Matrix.hpp"
+#include "TrainingMethod.hpp"
 #include "Utils.hpp"
 #include <cmath>
 #include <functional>
@@ -126,8 +127,9 @@ namespace nnet {
      * @param end_target
      * @param learning_rate
      */
+    template<typename TrainingMethod>
     void train(math::Matrix<real> const &input, math::Matrix<real> const &target,
-               const real learning_rate) {
+               TrainingMethod &tm) {
       const size_t nbInput = input.getRows();
       const size_t nbTarget = target.getRows();
 
@@ -141,7 +143,7 @@ namespace nnet {
       layers_af.resize(weights.size() + 1);
 
       forward(input, layers, layers_af);
-      backward(target, layers, layers_af, learning_rate);
+      backward(target, layers, layers_af, tm);
     }
 
     /** @brief Runs the neural network on the inputs
@@ -248,8 +250,8 @@ namespace nnet {
       }
 
       for (auto &layer : biases) {
-        double x = std::sqrt(2.0 / (double) layer.getRows());
-        math::randomize<real>(layer, -x, x);
+         double x = std::sqrt(2.0 / (double) layer.getRows());
+         math::randomize<real>(layer, -x, x);
       }
     }
 
@@ -306,6 +308,48 @@ namespace nnet {
 
         weights[i] -= delta_weight;
         biases[i] -= gradient;
+      }
+    }
+
+    void backward(math::Matrix<real> target, const std::vector<math::Matrix<real>> &layers,
+                  const std::vector<math::Matrix<real>> &layers_af,
+                  StandardTrainingMethod<real> &trainer) {
+      math::Matrix<real> current_error = layers_af[layers_af.size() - 1] - target;
+
+      for (long i = weights.size() - 1; i >= 0; i--) {
+        math::Matrix<real> derivative(layers[i + 1]);
+        auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
+        std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
+
+        derivative.hadamardProd(current_error);
+
+        current_error = math::Matrix<real>::mul(true, weights[i], false, derivative);
+
+        math::Matrix<real> gradient =
+                math::Matrix<real>::mul(false, derivative, true, layers_af[i], 1.0);
+
+        trainer.compute(weights[i], gradient);
+      }
+    }
+
+    void backward(math::Matrix<real> target, const std::vector<math::Matrix<real>> &layers,
+                  const std::vector<math::Matrix<real>> &layers_af,
+                  MomentumTrainingMethod<real> &trainer) {
+      math::Matrix<real> current_error = layers_af[layers_af.size() - 1] - target;
+
+      for (long i = weights.size() - 1; i >= 0; i--) {
+        math::Matrix<real> derivative(layers[i + 1]);
+        auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
+        std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
+
+        derivative.hadamardProd(current_error);
+
+        current_error = math::Matrix<real>::mul(true, weights[i], false, derivative);
+
+        math::Matrix<real> gradient =
+                math::Matrix<real>::mul(false, derivative, true, layers_af[i], 1.0);
+
+        trainer.compute(i, weights[i], gradient);
       }
     }
 
