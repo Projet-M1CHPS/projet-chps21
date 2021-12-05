@@ -18,21 +18,6 @@ namespace control::classifier {
     eval_set = ClassifierInputSet(class_labels);
   }
 
-
-  void ClassifierTrainingCollection::shuffleTrainingSet(size_t seed) { training_set.shuffle(seed); }
-
-  void ClassifierTrainingCollection::shuffleEvalSet(size_t seed) { eval_set.shuffle(seed); }
-
-  void ClassifierTrainingCollection::shuffleSets(size_t seed) {
-    shuffleTrainingSet(seed);
-    shuffleEvalSet(seed);
-  }
-
-  void ClassifierTrainingCollection::unload() {
-    training_set.unload();
-    eval_set.unload();
-  }
-
   std::ostream &operator<<(std::ostream &os, ClassifierTrainingCollection const &set) {
     os << "Classifier training set: " << std::endl;
     os << "\tTraining set contains " << set.training_set.size() << " elements" << std::endl;
@@ -87,11 +72,11 @@ namespace control::classifier {
       }
       throw std::runtime_error("CITSLoader: train and eval classes are not the same");
     }
-    classes = std::make_shared<std::vector<ClassLabel>>();
 
+    classes = std::make_shared<std::vector<ClassLabel>>();
     std::for_each(training_classes.begin(), training_classes.end(),
                   [this](const std::filesystem::path &p) {
-                    this->classes->push_back(ClassLabel(classes->size(), p.string()));
+                    this->classes->emplace_back(classes->size(), p.string());
                   });
   }
 
@@ -107,7 +92,7 @@ namespace control::classifier {
                                    bool verbose, std::ostream *out) {
     if (verbose) *out << "\tLoading training set... (Hold on, This may take a while)" << std::endl;
     auto &training_set = res.getTrainingSet();
-    loadSet(training_set, input_path / "eval");
+    loadSet(training_set, input_path / "train");
   }
 
   void CITCLoader::loadSet(ClassifierInputSet &res, const std::filesystem::path &input_path) {

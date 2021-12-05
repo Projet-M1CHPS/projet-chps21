@@ -4,7 +4,10 @@
 
 namespace control::classifier {
 
-  ControllerResult CTController::run(bool is_verbose, std::ostream *os) {
+  /** This function should not throw on error
+   *
+   */
+  ControllerResult CTController::run(bool is_verbose, std::ostream *os) noexcept {
     auto &param = *params;
     RunPolicy policy = param.getRunPolicy();
 
@@ -45,9 +48,13 @@ namespace control::classifier {
   ControllerResult CTController::create(bool is_verbose, std::ostream *os) {
     loadTrainingSet(is_verbose, os);
     network = std::make_shared<nnet::NeuralNetwork<float>>();
-    network->setLayersSize(params->getTopology());
+    auto topology = params->getTopology();
+
+    topology.push_back(training_collection->classCount());
+    network->setLayersSize(topology);
     network->randomizeSynapses();
 
+    network->setActivationFunction(af::ActivationFunctionType::sigmoid);
     return {true, "Training set loaded"};
   }
 
@@ -72,24 +79,35 @@ namespace control::classifier {
       throw std::runtime_error("CTController: train called with missing training set or network");
     }
 
-    double initial_learning_rate = 1.f, learning_rate = 0.;
-    size_t batch_size = 20, max_epoch = 100;
+    auto &classes = training_collection->getClasses();
+    size_t nclass = training_collection->classCount();
+    CTracker stracker(params->getWorkingPath() / "output", classes.begin(), classes.end());
+
+    trainingLoop(is_verbose, os, stracker);
+    if (is_verbose) printPostTrainingStats(*os, stracker);
+
+    return {true, "Training finished"};
+  }
+
+  void CTController::trainingLoop(bool is_verbose, std::ostream *os, CTracker &stracker) {
+    double initial_learning_rate = 0.5f, learning_rate = 0.;
+    size_t batch_size = 5, max_epoch = 400;
     if (is_verbose)
-      *os << std::setprecision(8)
+      *os << std::setprecision(16)
           << "Training started with: {initial_learning_rate: " << initial_learning_rate
           << ", batch_size: " << batch_size << ", Max epoch: " << max_epoch << "}" << std::endl;
 
     auto &training_set = training_collection->getTrainingSet();
     auto &eval_set = training_collection->getEvalSet();
-    auto const &classes = training_collection->getLabels();
+    auto const &classes = training_collection->getClasses();
 
-    CTracker stracker(params->getWorkingPath() / "output", classes.begin(), classes.end());
-    math::Matrix<size_t> confusion(classes.size(), classes.size());
-    math::FloatMatrix target(classes.size(), 1);
+    size_t nclass = classes.size();
+    math::Matrix<size_t> confusion(nclass, nclass);
+    math::FloatMatrix target(nclass, 1);
 
     while (stracker.getEpoch() < max_epoch) {
       learning_rate =
-              initial_learning_rate * (1 / (1 + 0.7 * static_cast<double>(stracker.getEpoch())));
+              initial_learning_rate * (1 / (1 + 0.5 * static_cast<double>(stracker.getEpoch())));
       for (int i = 0; i < batch_size; i++) {
         for (int j = 0; j < training_set.size(); j++) {
           auto type = training_set.getLabel(j).getId();
@@ -114,22 +132,25 @@ namespace control::classifier {
       stats.dumpToFiles();
       stracker.nextEpoch();
     }
+  }
 
-    if (not is_verbose) return {true, "Training finished"};
+  void CTController::printPostTrainingStats(std::ostream &os, CTracker &stracker) {
+    auto &eval_set = training_collection->getEvalSet();
+    auto &classes = training_collection->getClasses();
+    size_t nclass = classes.size();
+    math::Matrix<size_t> confusion(nclass, nclass);
 
     for (int i = 0; i < eval_set.size(); i++) {
       auto &type = eval_set.getLabel(i);
       auto res = network->predict(eval_set[i]);
       auto res_type = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
 
-      *os << "[Image: " << i << "]: (" << type << ") output :\n" << res;
+      os << "[Image: " << i << "]: (" << type << ") output :\n" << res;
       confusion(res_type, type.getId())++;
     }
-    *os << std::endl;
+    os << std::endl;
     auto stats = stracker.computeStats(confusion);
-    stats.classification_report(*os, classes);
-
-    return {true, "Training finished"};
+    stats.classification_report(os, classes);
   }
 
 }   // namespace control::classifier

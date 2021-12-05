@@ -2,6 +2,11 @@
 #include "controller.hpp"
 #include <iostream>
 
-namespace classifier {
+namespace control {
 
-}   // namespace classifier
+  std::ostream &operator<<(std::ostream &os, const control::ControllerResult &res) {
+    res.print(os);
+    return os;
+  }
+
+}   // namespace control

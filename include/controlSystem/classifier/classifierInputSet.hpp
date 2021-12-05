@@ -33,7 +33,7 @@ namespace control::classifier {
     std::string name;
   };
 
-  class ClassifierInputSet : public InputSet {
+  class ClassifierInputSet : public InputSet<float> {
     friend std::ostream &operator<<(std::ostream &os, ClassifierInputSet const &set);
 
   public:

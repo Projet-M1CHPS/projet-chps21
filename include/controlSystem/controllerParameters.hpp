@@ -164,10 +164,11 @@ namespace control {
     std::filesystem::path output_path;
   };
 
+
   template<class Loader>
   class RunParameters : public controllerParameters {
   public:
-    RunParameters(std::filesystem::path const &input_path, std::shared_ptr<SetLoader> loader,
+    RunParameters(std::filesystem::path const &input_path, std::shared_ptr<Loader> loader,
                   std::filesystem::path network_path, std::filesystem::path output_path = "")
         : controllerParameters(input_path), loader(std::move(loader)),
           network_path(std::move(network_path)), output_path(std::move(output_path)) {}
@@ -183,17 +184,17 @@ namespace control {
 
     void setOutputPath(std::filesystem::path path) { output_path = std::move(path); }
 
-    SetLoader &getSetLoader() {
+    Loader &getSetLoader() {
       if (not loader) throw std::runtime_error("RunParameters: Training set loader undefined");
       return *loader;
     }
 
-    [[nodiscard]] SetLoader const &getSetLoader() const {
+    [[nodiscard]] Loader const &getSetLoader() const {
       if (not loader) throw std::runtime_error("RunParameters: Training set loader undefined");
       return *loader;
     }
 
-    void setSetLoader(std::shared_ptr<SetLoader> new_loader) { loader = std::move(new_loader); }
+    void setSetLoader(std::shared_ptr<Loader> new_loader) { loader = std::move(new_loader); }
 
     template<class sloader, typename... Types>
     void setSetloader(Types &&...args) {
@@ -204,6 +205,6 @@ namespace control {
   private:
     std::filesystem::path network_path;
     std::filesystem::path output_path;
-    std::shared_ptr<SetLoader> loader;
+    std::shared_ptr<Loader> loader;
   };
 }   // namespace control
