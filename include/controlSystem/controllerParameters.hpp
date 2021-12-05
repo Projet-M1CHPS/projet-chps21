@@ -164,8 +164,6 @@ namespace control {
     std::filesystem::path output_path;
   };
 
-  using CTParams = TrainingParameters<CTCLoader>;
-
   template<class Loader>
   class RunParameters : public controllerParameters {
   public:
@@ -208,7 +206,4 @@ namespace control {
     std::filesystem::path output_path;
     std::shared_ptr<SetLoader> loader;
   };
-
-  // using CParams = RunParameters<CSLoader>;
-
 }   // namespace control

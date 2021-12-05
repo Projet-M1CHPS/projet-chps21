@@ -1,11 +1,13 @@
+
 #pragma once
 #include "Matrix.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <vector>
 
-namespace control {
+namespace control::classifier {
 
   class CTrackerState {
   public:
@@ -81,7 +83,7 @@ namespace control {
 
     size_t epoch;
     std::shared_ptr<CTrackerState> state;
-    math::Matrix<double> stats;
+    math::DoubleMatrix stats;
     double avg_precision, avg_recall, avg_f1score;
   };
 
@@ -90,7 +92,8 @@ namespace control {
   class CTracker {
   public:
     template<typename iterator>
-    CTracker(std::filesystem::path const &output_path, iterator const class_begin, iterator const class_end)
+    CTracker(std::filesystem::path const &output_path, iterator const class_begin,
+             iterator const class_end)
         : epoch(0), state(std::make_shared<CTrackerState>(output_path, class_begin, class_end)) {}
 
     [[nodiscard]] CStats computeStats(math::Matrix<size_t> const &confusion) {
@@ -104,5 +107,4 @@ namespace control {
     std::shared_ptr<CTrackerState> state;
     size_t epoch;
   };
-
-}   // namespace control
+}   // namespace control::classifier

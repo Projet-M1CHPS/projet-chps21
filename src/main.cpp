@@ -1,7 +1,7 @@
 #include "ActivationFunction.hpp"
 #include "NeuralNetwork.hpp"
 #include "Utils.hpp"
-#include "controlSystem/controller.hpp"
+#include "controlSystem/classifier/classifierController.hpp"
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -84,6 +84,7 @@ void test_neural_network() {
 }
 
 using namespace control;
+using namespace control::classifier;
 
 int main(int argc, char **argv) {
   // func_xor<float>(100, 0.2, 0.001);

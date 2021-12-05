@@ -1,11 +1,12 @@
 
 
-add_library(controlSystem
+add_library(ControlSystem
         controllerParameters.cpp ${CMAKE_SOURCE_DIR}/include/controlSystem/controllerParameters.hpp
         inputSetLoader.cpp ${CMAKE_SOURCE_DIR}/include/controlSystem/inputSetLoader.hpp
         inputSet.cpp ${CMAKE_SOURCE_DIR}/include/controlSystem/inputSet.hpp
         controller.cpp ${CMAKE_SOURCE_DIR}/include/controlSystem/controller.hpp
-        trainingCollection.cpp ${CMAKE_SOURCE_DIR}/include/controlSystem/trainingCollection.hpp
         )
 
-target_include_directories(controlSystem PUBLIC "${CMAKE_SOURCE_DIR}/include")
+add_subdirectory(classifier)
+
+target_include_directories(ControlSystem PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_SOURCE_DIR}/include/controlSystem")
