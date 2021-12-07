@@ -9,7 +9,10 @@
 #include <vector>
 
 
-using namespace control;
+#include "Optimizer.hpp"
+
+
+// using namespace control;
 
 template<typename T>
 size_t func_xor(const size_t bach_size, const T learning_rate, const T error_limit) {
@@ -22,6 +25,8 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
 
   nnet::StandardTrainingMethod<T> std_mt(learning_rate);
   nnet::MomentumTrainingMethod<T> mom_mt(topology, learning_rate, 0.9);
+
+  nnet::MLPOptimizer<T> opt(&nn, &mom_mt);
 
   std::cout << nn << std::endl;
 
@@ -51,9 +56,7 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
   size_t count = 0;
   while (error > error_limit) {
     for (int i = 0; i < bach_size; i++) {
-      for (int j = 0; j < 4; j++) {
-        nn.train(input[j], target[j], std_mt);
-      }
+      for (int j = 0; j < 4; j++) { opt.train(input[j], target[j]); }
     }
 
     error = 0.0;
@@ -93,6 +96,9 @@ void new_func_xor(const size_t bach_size, const T learning_rate, const T error_l
   nnet::StandardTrainingMethod<T> tmStandard(0.2f);
   nnet::MomentumTrainingMethod<T> tmMomentum(topology, 0.1f, 0.9f);
 
+  nnet::MLPOptimizer<T> opt1(&nn1, &tmStandard);
+  nnet::MLPOptimizer<T> opt2(&nn2, &tmMomentum);
+
   std::cout << nn1 << std::endl;
   std::cout << nn2 << std::endl;
 
@@ -123,9 +129,9 @@ void new_func_xor(const size_t bach_size, const T learning_rate, const T error_l
       for (int i = 0; i < bach_size; i++) {
         for (int j = 0; j < 4; j++) {
           if (z == 0) {
-            nn1.train(input[j], target[j], tmStandard);
+            opt1.train(input[j], target[j]);
           } else {
-            nn2.train(input[j], target[j], tmMomentum);
+            opt2.train(input[j], target[j]);
           }
         }
       }
@@ -161,9 +167,16 @@ void new_func_xor(const size_t bach_size, const T learning_rate, const T error_l
   }
 }
 
+
+void test();
+
+
 int main(int argc, char **argv) {
-  //func_xor<float>(100, 0.2, 0.01);
+  // func_xor<float>(100, 0.2, 0.01);
   //new_func_xor<float>(100, 0.2, 0.000001);
+  // test();
+
+
 
 
   if (argc < 2) {
@@ -180,10 +193,10 @@ int main(int argc, char **argv) {
   else
     target_dir = "run_" + utils::timestampAsStr();
 
-  RunConfiguration config(argv[1], working_dir, target_dir);
-  auto controller = std::make_unique<TrainingRunController>();
+  control::RunConfiguration config(argv[1], working_dir, target_dir);
+  auto controller = std::make_unique<control::TrainingRunController>();
 
-  RunResult res = controller->launch(config);
+  control::RunResult res = controller->launch(config);
   controller->cleanup();
 
   if (not res) {

@@ -1,22 +1,30 @@
 #pragma once
 
-#include "Matrix.hpp"
-#include "NeuralNetwork.hpp"
 #include <vector>
+
+#include "BackpropStorage.hpp"
+#include "Matrix.hpp"
 
 
 namespace nnet {
-  template<typename T>
-  class NeuralNetwork;
 
   template<typename T>
-  class StandardTrainingMethod {
+  class TrainingMethod {
+  public:
+    TrainingMethod() = default;
+    virtual ~TrainingMethod() = default;
+
+    virtual void compute(BackpropStorage<T> &storage) = 0;
+  };
+
+  template<typename T>
+  class StandardTrainingMethod : public TrainingMethod<T> {
   public:
     StandardTrainingMethod(const T learningRate) : learningRate(learningRate) {}
     virtual ~StandardTrainingMethod() = default;
 
-    void compute(math::Matrix<T> &weights, const math::Matrix<T> &gradient) {
-      weights -= (gradient * learningRate);
+    void compute(BackpropStorage<T> &storage) {
+      storage.weights[storage.index] -= (storage.gradient * learningRate);
     }
 
   private:
@@ -25,7 +33,32 @@ namespace nnet {
 
 
   template<typename T>
-  class MomentumTrainingMethod {
+  class DecayTrainingMethod : public TrainingMethod<T> {
+  public:
+    DecayTrainingMethod(const T lr_0, const T dr)
+        : learningRate_0(lr_0), decayRate(dr), learningRate(lr_0), epoch(0) {}
+    virtual ~DecayTrainingMethod() = default;
+
+    void compute(BackpropStorage<T> &storage) {
+      storage.weights[storage.index] -= (storage.gradient * learningRate);
+    }
+
+    void incrEpoch() {
+      epoch++;
+      learningRate = (1 / (1 + decayRate * epoch)) * static_cast<T>(learningRate_0);
+    }
+
+  private:
+    const T learningRate_0;
+    const T decayRate;
+    T learningRate;
+
+    size_t epoch = 0;
+  };
+
+
+  template<typename T>
+  class MomentumTrainingMethod : public TrainingMethod<T> {
   public:
     MomentumTrainingMethod(const std::vector<size_t> &topology, const T learningRate,
                            const T momentum)
@@ -36,10 +69,10 @@ namespace nnet {
     }
     virtual ~MomentumTrainingMethod() = default;
 
-    void compute(const size_t index, math::Matrix<T> &weights, const math::Matrix<T> &gradient) {
-      auto dw = (gradient * learningRate) + (dw_old[index] * momentum);
-      weights -= dw;
-      dw_old[index] = std::move(dw);
+    void compute(BackpropStorage<T> &storage) {
+      auto dw = (storage.gradient * learningRate) + (dw_old[storage.index] * momentum);
+      storage.weights[storage.index] -= dw;
+      dw_old[storage.index] = std::move(dw);
     }
 
   private:
@@ -50,9 +83,11 @@ namespace nnet {
 
 
   template<typename T>
-  class RproppTrainingMethod {
+  class RPropPTrainingMethod : public TrainingMethod<T> {
   public:
-    RproppTrainingMethod(const std::vector<size_t> &topology) {
+    RPropPTrainingMethod(const std::vector<size_t> &topology, const T eta_p = 1.2,
+                         const T eta_m = 0.5, const T lr_max = 50.0, const T lr_min = 1e-6)
+        : eta_plus(eta_p), eta_minus(eta_m), lr_max(lr_max), lr_min(lr_min) {
       for (size_t i = 0; i < topology.size() - 1; i++) {
         lr_old.push_back(math::Matrix<T>(topology[i + 1], topology[i]));
         gradient_old.push_back(math::Matrix<T>(topology[i + 1], topology[i]));
@@ -60,32 +95,33 @@ namespace nnet {
       for (auto &&i : lr_old) { i.fill(0.1); }
       for (auto &&i : gradient_old) { i.fill(1.0); }
     }
-    virtual ~RproppTrainingMethod() = default;
+    virtual ~RPropPTrainingMethod() = default;
 
-    void compute(const size_t index, math::Matrix<T> &weights, const math::Matrix<T> &gradient) {
-      for (size_t i = 0; i < weights.getRows(); i++) {
-        for (size_t j = 0; j < weights.getCols(); j++) {
+
+    void compute(BackpropStorage<T> &storage) {
+      for (size_t i = 0; i < storage.weights[storage.index].getRows(); i++) {
+        for (size_t j = 0; j < storage.weights[storage.index].getCols(); j++) {
           T dw = 0.0;
-          if (gradient(i, j) * gradient_old[index](i, j) > 0.0) {
-            lr_old[index](i, j) = std::min(eta_plus * lr_old[index](i, j), lr_max);
-            if (gradient(i, j) > 0) dw = -1 * lr_old[index](i, j);
+          if (storage.gradient(i, j) * gradient_old[storage.index](i, j) > 0.0) {
+            lr_old[storage.index](i, j) = std::min(eta_plus * lr_old[storage.index](i, j), lr_max);
+            if (storage.gradient(i, j) > 0) dw = -1 * lr_old[storage.index](i, j);
             else
-              dw = lr_old[index](i, j);
-            weights(i, j) = weights(i, j) + dw;
-          } else if (gradient(i, j) * gradient_old[index](i, j) < 0.0) {
-            if (gradient_old[index](i, j) > 0) dw = -1 * lr_old[index](i, j);
+              dw = lr_old[storage.index](i, j);
+            storage.weights[storage.index](i, j) = storage.weights[storage.index](i, j) + dw;
+          } else if (storage.gradient(i, j) * gradient_old[storage.index](i, j) < 0.0) {
+            if (gradient_old[storage.index](i, j) > 0) dw = -1 * lr_old[storage.index](i, j);
             else
-              dw = lr_old[index](i, j);
-            weights(i, j) = weights(i, j) - dw;
-            lr_old[index](i, j) = std::max(eta_minus * lr_old[index](i, j), lr_min);
-            gradient(i, j) = 0.0;
+              dw = lr_old[storage.index](i, j);
+            storage.weights[storage.index](i, j) = storage.weights[storage.index](i, j) - dw;
+            lr_old[storage.index](i, j) = std::max(eta_minus * lr_old[storage.index](i, j), lr_min);
+            storage.gradient(i, j) = 0.0;
           } else {
-            if (gradient(i, j) > 0) dw = -1 * lr_old[index](i, j);
+            if (storage.gradient(i, j) > 0) dw = -1 * lr_old[storage.index](i, j);
             else
-              dw = lr_old[index](i, j);
-            weights(i, j) = weights(i, j) + dw;
+              dw = lr_old[storage.index](i, j);
+            storage.weights[storage.index](i, j) = storage.weights[storage.index](i, j) + dw;
           }
-          gradient_old[index](i, j) = gradient(i, j);
+          gradient_old[storage.index](i, j) = storage.gradient(i, j);
         }
       }
     }
@@ -93,11 +129,10 @@ namespace nnet {
   private:
     std::vector<math::Matrix<T>> lr_old;
     std::vector<math::Matrix<T>> gradient_old;
-    const T eta_plus = 1.2;
-    const T eta_minus = 0.5;
-    const T lr_max = 50.0;
-    const T lr_min = 0.000001;
+    const T eta_plus;
+    const T eta_minus;
+    const T lr_max;
+    const T lr_min;
   };
-
 
 }   // namespace nnet
