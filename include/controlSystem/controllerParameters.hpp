@@ -1,7 +1,7 @@
 #pragma once
 
-#include "NeuralNetwork.hpp"
 #include "inputSetLoader.hpp"
+#include "neuralNetwork/NeuralNetwork.hpp"
 #include <filesystem>
 #include <memory>
 #include <utility>
@@ -90,7 +90,7 @@ namespace control {
     TrainingParameters(RunPolicy policy, std::filesystem::path const &input_path,
                        std::shared_ptr<SetLoader> loader, std::filesystem::path working_path,
                        const std::filesystem::path &output_path = "")
-        : controllerParameters(input_path), training_method(nnet::TrainingMethod::standard),
+        : controllerParameters(input_path), training_method(nnet::TrainingAlgorithm::standard),
           ts_loader(std::move(loader)), working_path(std::move(working_path)) {
       this->policy = policy;
       if (output_path != "") this->output_path = output_path;
@@ -122,8 +122,8 @@ namespace control {
       ts_loader = std::make_shared<loader>(std::forward<Types>(args)...);
     }
 
-    [[nodiscard]] nnet::TrainingMethod getTrainingMethod() const { return training_method; }
-    void setTrainingMethod(nnet::TrainingMethod tm) { training_method = tm; }
+    [[nodiscard]] nnet::TrainingAlgorithm getTrainingAlgorithm() const { return training_method; }
+    void setTrainingAlgorithm(nnet::TrainingAlgorithm tm) { training_method = tm; }
 
     /** Returns the topology of the network. First element is the input size, and last element is
      * the output. Any element in-between are considered hidden layers.
@@ -156,7 +156,7 @@ namespace control {
 
 
   private:
-    nnet::TrainingMethod training_method;
+    nnet::TrainingAlgorithm training_method;
     std::vector<size_t> topology;
 
     std::shared_ptr<SetLoader> ts_loader;

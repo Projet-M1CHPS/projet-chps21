@@ -1,6 +1,8 @@
 
 #include "classifierController.hpp"
 #include "classifierTracker.hpp"
+#include "neuralNetwork/NeuralNetwork.hpp"
+#include "neuralNetwork/Optimizer.hpp"
 
 namespace control::classifier {
 
@@ -105,6 +107,10 @@ namespace control::classifier {
     math::Matrix<size_t> confusion(nclass, nclass);
     math::FloatMatrix target(nclass, 1);
 
+    nnet::DecayTrainingMethod<float> decay(initial_learning_rate, 0.9f);
+    nnet::RPropPTrainingMethod<float> rprop(network->getLayersSize());
+    nnet::MLPOptimizer<float> optimizer(network.get(), &rprop);
+
     while (stracker.getEpoch() < max_epoch) {
       learning_rate =
               initial_learning_rate * (1 / (1 + 0.5 * static_cast<double>(stracker.getEpoch())));
@@ -114,7 +120,8 @@ namespace control::classifier {
           target.fill(0);
           target(type, 0) = 1.f;
 
-          network->train(training_set[j], target, learning_rate);
+
+          optimizer.train(training_set[j], target);
         }
       }
 
