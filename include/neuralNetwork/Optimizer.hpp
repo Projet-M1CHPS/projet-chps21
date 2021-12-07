@@ -6,8 +6,6 @@
 #include "Matrix.hpp"
 #include "NeuralNetwork.hpp"
 #include "TrainingMethod.hpp"
-#include <execution>
-
 
 namespace nnet {
 
@@ -87,8 +85,7 @@ namespace nnet {
       for (storage.index = weights.size() - 1; storage.index >= 0; storage.index--) {
         math::Matrix<T> derivative(layers[storage.index + 1]);
         auto dafunc = af::getAFFromType<T>(activation_functions[storage.index]).second;
-        std::transform(std::execution::unseq, derivative.cbegin(), derivative.cend(),
-                       derivative.begin(), dafunc);
+        std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
 
         derivative.hadamardProd(storage.current_error);
 
