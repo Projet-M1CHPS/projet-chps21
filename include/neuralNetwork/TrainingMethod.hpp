@@ -29,7 +29,7 @@ namespace nnet {
     virtual ~StandardTrainingMethod() = default;
 
     void compute(BackpropStorage<T> &storage) {
-      storage.weights[storage.index] -= (storage.gradient * learningRate);
+      storage.weights->at(storage.index) -= (storage.gradient * learningRate);
     }
 
   private:
