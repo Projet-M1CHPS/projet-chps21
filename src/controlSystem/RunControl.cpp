@@ -1,4 +1,6 @@
 #include "controlSystem/RunControl.hpp"
+#include "Optimizer.hpp"
+#include "TrainingMethod.hpp"
 
 #include <fstream>
 #include <future>
@@ -165,8 +167,8 @@ namespace control {
     nnet::NeuralNetwork<real> nn;
     auto image_size = cache.getTargetSize();
 
-    nn.setLayersSize(
-            std::vector<size_t>{image_size.first * image_size.second, 64, 32, 16, 8, 2});
+    const std::vector<size_t> topology{image_size.first * image_size.second, 64, 32, 16, 8, 2};
+    nn.setLayersSize(topology);
     nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
     nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 0);
     nn.setActivationFunction(af::ActivationFunctionType::sigmoid, 2);
@@ -179,6 +181,10 @@ namespace control {
               << "Training started with: {initial_learning_rate: " << initial_learning_rate
               << ", min_error: " << min_error << ", batch_size: " << batch_size << "}" << std::endl;
     std::cout << "Max epoch: " << epoch << std::endl;
+
+    nnet::DecayTrainingMethod<real> decay(initial_learning_rate, 0.9f);
+    nnet::RPropPTrainingMethod<real> rprop(topology);
+    nnet::MLPOptimizer<real> optimizer(&nn, &rprop);
 
     math::Matrix<real> target(2, 1);
     target.fill(0);
@@ -194,7 +200,7 @@ namespace control {
           target.fill(0);
           target(type, 0) = 1.f;
 
-          nn.train(cache.getTraining(j), target, learning_rate);
+          optimizer.train(cache.getTraining(j), target);
         }
       }
 
@@ -214,6 +220,7 @@ namespace control {
       std::cout << "[" << epoch << "] current_error: " << error
                 << " learning_rate: " << learning_rate << std::endl;
       epoch++;
+      decay.incrEpoch();
     }
     for (int i = 0; i < cache.getEvalSetSize(); i++) {
       std::cout << "Image[" << i << "] (Type: " << cache.getEvalType(i) << "), got:\n"
