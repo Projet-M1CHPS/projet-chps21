@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Matrix.hpp"
 #include <filesystem>
 #include <memory>
 #include <vector>
-#include "Matrix.hpp"
 
 namespace image {
   using grayscale_t = unsigned char;
@@ -132,9 +132,7 @@ namespace image {
     [[nodiscard]] size_t getSize() const { return height * width; }
 
     void setSize(size_t new_width, size_t new_height) {
-      width = new_width;
-      height = new_height;
-      pixel_data.reset();
+      std::tie(width, height) = {new_width, new_height};
       pixel_data = std::make_unique<grayscale_t[]>(width * height);
     }
 
@@ -146,7 +144,7 @@ namespace image {
 
   private:
     std::unique_ptr<grayscale_t[]> pixel_data;
-    size_t width{}, height{};
+    size_t width, height;
   };
 
   /**
@@ -190,15 +188,13 @@ namespace image {
   };
 
   template<typename real>
-  math::Matrix<real> imageToMatrix(GrayscaleImage const& image, real normalize = 1.0) {
+  math::Matrix<real> imageToMatrix(GrayscaleImage const &image, real normalize = 1.0) {
     math::Matrix<real> res(image.getHeight() * image.getWidth(), 1);
 
     auto data = res.getData();
     auto image_data = image.getData();
 
-    for (size_t i = 0; i < image.getSize(); i++) {
-      data[i] = image_data[i] / normalize;
-    }
+    for (size_t i = 0; i < image.getSize(); i++) { data[i] = image_data[i] / normalize; }
 
     return res;
   }

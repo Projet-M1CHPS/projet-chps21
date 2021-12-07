@@ -9,10 +9,10 @@ namespace nnet {
   template<typename T>
   class BackpropStorage {
   public:
-    BackpropStorage(std::vector<math::Matrix<T>> &w) : weights(w){};
+    BackpropStorage(std::vector<math::Matrix<T>> &w) : weights(&w){};
     ~BackpropStorage() = default;
 
-    math::Matrix<T> &getWeights() const { return weights[index]; }
+    math::Matrix<T> &getWeights() const { return *weights[index]; }
 
     const long getIndex() const { return index; }
     void setIndex(const long i) { index = i; }
@@ -24,7 +24,7 @@ namespace nnet {
     void setError(const math::Matrix<T> &e) { current_error = e; }
 
   public:
-    std::vector<math::Matrix<T>> &weights;
+    std::vector<math::Matrix<T>> *weights;
     long index = 0;
     math::Matrix<T> gradient;
     math::Matrix<T> current_error;

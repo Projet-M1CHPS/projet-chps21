@@ -7,7 +7,6 @@
 #include "NeuralNetwork.hpp"
 #include "TrainingMethod.hpp"
 
-
 namespace nnet {
 
   template<typename T>

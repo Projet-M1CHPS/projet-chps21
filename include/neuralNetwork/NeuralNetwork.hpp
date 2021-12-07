@@ -235,7 +235,7 @@ namespace nnet {
 
     [[nodiscard]] const std::vector<math::Matrix<real>> &getBiases() const { return biases; }
 
-    
+
   private:
     std::vector<math::Matrix<real>> weights;
     std::vector<math::Matrix<real>> biases;

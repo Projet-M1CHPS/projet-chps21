@@ -2,8 +2,7 @@
 #include "NeuralNetwork.hpp"
 #include "TrainingMethod.hpp"
 #include "Utils.hpp"
-#include "controlSystem/RunConfiguration.hpp"
-#include "controlSystem/RunControl.hpp"
+#include "controlSystem/classifier/classifierController.hpp"
 #include <iomanip>
 #include <iostream>
 #include <vector>
@@ -168,41 +167,35 @@ void new_func_xor(const size_t bach_size, const T learning_rate, const T error_l
 }
 
 
-void test();
+using namespace control;
+using namespace control::classifier;
 
+bool test_image() {
+  // FIXME: placeholder path
+  std::filesystem::path input_path = "truncated_testing_set";
+
+  auto loader = std::make_shared<CITCLoader>(16, 16);
+  auto &engine = loader->getPostProcessEngine();
+  engine.addTransformation(std::make_shared<image::transform::BinaryScaleByMedian>());
+  // engine.addTransformation(std::make_shared<image::transform::Inversion>());
+
+  CTParams parameters(RunPolicy::create, input_path, loader, "runs/test");
+
+  std::vector<size_t> topology = {16 * 16, 64, 32, 16, 8};
+  parameters.setTopology(topology.begin(), topology.end());
+
+  CTController controller(parameters);
+  ControllerResult res = controller.run(true, &std::cout);
+
+
+  if (not res) { std::cout << res << std::endl; }
+
+  return (bool) res;
+}
 
 int main(int argc, char **argv) {
   // func_xor<float>(100, 0.2, 0.01);
-  //new_func_xor<float>(100, 0.2, 0.000001);
-  // test();
+  // new_func_xor<float>(100, 0.2, 0.000001);
 
-
-
-
-  if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <input_dir> (<working_dir>) (<target_dir>)";
-    return 1;
-  }
-  std::string working_dir, target_dir;
-
-  if (argc == 3) working_dir = argv[2];
-  else
-    working_dir = "runs";
-
-  if (argc >= 4) target_dir = argv[3];
-  else
-    target_dir = "run_" + utils::timestampAsStr();
-
-  control::RunConfiguration config(argv[1], working_dir, target_dir);
-  auto controller = std::make_unique<control::TrainingRunController>();
-
-  control::RunResult res = controller->launch(config);
-  controller->cleanup();
-
-  if (not res) {
-    std::cerr << "Run failed: " << res.getMessage() << std::endl;
-    return 1;
-  }
-
-  return 0;
+  return test_image();
 }

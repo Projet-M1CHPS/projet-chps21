@@ -1,6 +1,6 @@
 #include "NeuralNetwork.hpp"
-#include "TrainingMethod.hpp"
 #include "Optimizer.hpp"
+#include "TrainingMethod.hpp"
 #include <gtest/gtest.h>
 
 #include <vector>
@@ -234,9 +234,9 @@ TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
   ASSERT_NEAR(0.772928f, prediction(1, 0), 0.005);
   ASSERT_EQ(prediction.getRows(), 2);
   ASSERT_EQ(prediction.getCols(), 1);
-  
+
   opti.train(input, output);
-  
+
   math::Matrix<float> &w1_ = nn.getWeights()[0];
   math::Matrix<float> &b1_ = nn.getBiases()[0];
   math::Matrix<float> &w2_ = nn.getWeights()[1];

@@ -1,4 +1,4 @@
-#include <ActivationFunction.hpp>
+#include "ActivationFunction.hpp"
 
 namespace af {
 
