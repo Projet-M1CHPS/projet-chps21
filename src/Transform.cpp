@@ -216,7 +216,7 @@ namespace image::transform {
   }
 
   void binaryScalingByCap(GrayscaleImage &image, grayscale_t cap) {
-    std::for_each(image.begin(), image.end(), [cap](auto &e) { e = e < cap ? 0U : 255U; });
+    std::for_each(image.begin(), image.end(), [cap](auto &e) { e = e <= cap ? 0U : 255U; });
   }
 
   bool BinaryScale::transform(GrayscaleImage &image) {
@@ -227,13 +227,12 @@ namespace image::transform {
 
   bool BinaryScaleByMedian::transform(GrayscaleImage &image) {
     std::vector<double> brightness_histogram = image.createRatioHistogram();
-
-    grayscale_t median_brightness = 0;
+    grayscale_t median_brightness = 254;
     double cumul = 0.0;
     for (size_t i = 0; i < max_brightness; i++) {
       cumul += brightness_histogram[i];
-      if (cumul > .5) {
-        median_brightness = (grayscale_t) ((i > 0) ? i - 1 : 0);
+      if (cumul >= .5) {
+        median_brightness = (grayscale_t) i;
         break;
       }
     }
