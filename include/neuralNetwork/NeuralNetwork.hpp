@@ -64,7 +64,7 @@ namespace nnet {
 
     [[nodiscard]] virtual size_t getInputSize() const = 0;
 
-    [[nodiscard]] virtual std::vector<size_t> getLayersSize() const = 0;
+    [[nodiscard]] virtual std::vector<size_t> getTopology() const = 0;
 
     virtual void setActivationFunction(af::ActivationFunctionType type) = 0;
 
@@ -186,11 +186,12 @@ namespace nnet {
       return weights.front().getCols();
     }
 
-    [[nodiscard]] std::vector<size_t> getLayersSize() const override {
+    [[nodiscard]] std::vector<size_t> getTopology() const override {
       std::vector<size_t> res;
 
-      res.reserve(weights.size());
+      res.reserve(weights.size() + 1);
 
+      res.push_back(getInputSize());
       for (auto &w : weights) { res.push_back(w.getRows()); }
       return res;
     }

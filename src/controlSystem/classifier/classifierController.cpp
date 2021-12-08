@@ -56,7 +56,11 @@ namespace control::classifier {
     network->setLayersSize(topology);
     network->randomizeSynapses();
 
-    network->setActivationFunction(af::ActivationFunctionType::sigmoid);
+    network->setActivationFunction(af::ActivationFunctionType::leakyRelu);
+    network->setActivationFunction(af::ActivationFunctionType::sigmoid, 0);
+    network->setActivationFunction(af::ActivationFunctionType::sigmoid, 2);
+    network->setActivationFunction(af::ActivationFunctionType::sigmoid, 4);
+
     return {true, "Training set loaded"};
   }
 
@@ -73,6 +77,7 @@ namespace control::classifier {
     } catch (std::exception &e) {
       throw std::runtime_error("Error while loading training set: " + std::string(e.what()));
     }
+    std::filesystem::create_directory(params->getWorkingPath() / "cache");
   }
 
 
@@ -85,6 +90,7 @@ namespace control::classifier {
     size_t nclass = training_collection->classCount();
     CTracker stracker(params->getWorkingPath() / "output", classes.begin(), classes.end());
 
+    printPostTrainingStats(*os, stracker);
     trainingLoop(is_verbose, os, stracker);
     if (is_verbose) printPostTrainingStats(*os, stracker);
 
@@ -93,9 +99,9 @@ namespace control::classifier {
 
   void CTController::trainingLoop(bool is_verbose, std::ostream *os, CTracker &stracker) {
     double initial_learning_rate = 0.5f, learning_rate = 0.;
-    size_t batch_size = 5, max_epoch = 400;
+    size_t batch_size = 5, max_epoch = 1000;
     if (is_verbose)
-      *os << std::setprecision(16)
+      *os << std::setprecision(32)
           << "Training started with: {initial_learning_rate: " << initial_learning_rate
           << ", batch_size: " << batch_size << ", Max epoch: " << max_epoch << "}" << std::endl;
 
@@ -107,13 +113,13 @@ namespace control::classifier {
     math::Matrix<size_t> confusion(nclass, nclass);
     math::FloatMatrix target(nclass, 1);
 
-    nnet::DecayTrainingMethod<float> decay(initial_learning_rate, 0.9f);
-    nnet::RPropPTrainingMethod<float> rprop(network->getLayersSize());
-    nnet::MLPOptimizer<float> optimizer(network.get(), &rprop);
+    nnet::DecayTrainingMethod<float> decay(1.0f, 0.9f);
+    nnet::StandardTrainingMethod<float> std(0.01f);
+    nnet::RPropPTrainingMethod<float> rprop(network->getTopology());
+    nnet::MomentumTrainingMethod<float> momentum(network->getTopology(), 0.01f, 0.2);
+    nnet::MLPOptimizer<float> optimizer(network.get(), &decay);
 
     while (stracker.getEpoch() < max_epoch) {
-      learning_rate =
-              initial_learning_rate * (1 / (1 + 0.5 * static_cast<double>(stracker.getEpoch())));
       for (int i = 0; i < batch_size; i++) {
         for (int j = 0; j < training_set.size(); j++) {
           auto type = training_set.getLabel(j).getId();
@@ -138,6 +144,7 @@ namespace control::classifier {
       if (is_verbose) *os << stats;
       stats.dumpToFiles();
       stracker.nextEpoch();
+      decay.incrEpoch();
     }
   }
 
@@ -146,6 +153,7 @@ namespace control::classifier {
     auto &classes = training_collection->getClasses();
     size_t nclass = classes.size();
     math::Matrix<size_t> confusion(nclass, nclass);
+    confusion.fill(0);
 
     for (int i = 0; i < eval_set.size(); i++) {
       auto &type = eval_set.getLabel(i);

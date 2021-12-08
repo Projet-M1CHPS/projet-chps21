@@ -75,7 +75,7 @@ namespace nnet {
       }
     }
 
-    void backward(math::Matrix<T> target) {
+    void backward(math::Matrix<T> const &target) {
       auto &weights = neuralNetwork->getWeights();
       auto &biases = neuralNetwork->getBiases();
       auto &activation_functions = neuralNetwork->getActivationFunctions();

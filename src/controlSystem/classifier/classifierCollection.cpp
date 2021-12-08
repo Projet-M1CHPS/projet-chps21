@@ -104,12 +104,17 @@ namespace control::classifier {
         throw std::runtime_error("CITSLoader: " + input_path.string() + " is missing class id: " +
                                  std::to_string(c.getId()) + " (\"" + c.getName() + "\")");
 
+      fs::create_directories("tmp_cache/" + c.getName());
       for (auto &entry : fs::directory_iterator(target_path)) {
         if (fs::is_regular_file(entry)) {
           image::GrayscaleImage img = image::ImageSerializer::load(entry);
           pre_process.apply(img);
           resize.transform(img);
           post_process.apply(img);
+
+          image::ImageSerializer::save(
+                  "tmp_cache/" + c.getName() + "/" + entry.path().filename().string(), img);
+
           auto mat = image::imageToMatrix<float>(img, 255);
           res.append(entry, &c, std::move(mat));
         }

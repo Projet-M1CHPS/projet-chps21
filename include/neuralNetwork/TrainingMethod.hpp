@@ -26,7 +26,6 @@ namespace nnet {
   class StandardTrainingMethod : public TrainingMethod<T> {
   public:
     StandardTrainingMethod(const T learningRate) : learningRate(learningRate) {}
-    virtual ~StandardTrainingMethod() = default;
 
     void compute(BackpropStorage<T> &storage) {
       storage.weights->at(storage.index) -= (storage.gradient * learningRate);
@@ -42,7 +41,6 @@ namespace nnet {
   public:
     DecayTrainingMethod(const T lr_0, const T dr)
         : learningRate_0(lr_0), decayRate(dr), learningRate(lr_0), epoch(0) {}
-    virtual ~DecayTrainingMethod() = default;
 
     void compute(BackpropStorage<T> &storage) {
       storage.weights->at(storage.index) -= (storage.gradient * learningRate);
@@ -72,7 +70,6 @@ namespace nnet {
         dw_old.push_back(math::Matrix<T>(topology[i + 1], topology[i]));
       }
     }
-    virtual ~MomentumTrainingMethod() = default;
 
     void compute(BackpropStorage<T> &storage) {
       auto dw = (storage.gradient * learningRate) + (dw_old[storage.index] * momentum);
@@ -100,8 +97,6 @@ namespace nnet {
       for (auto &i : lr_old) { i.fill(0.1); }
       for (auto &i : gradient_old) { i.fill(1.0); }
     }
-    virtual ~RPropPTrainingMethod() = default;
-
 
     void compute(BackpropStorage<T> &storage) {
       auto &weights = storage.weights->at(storage.index);

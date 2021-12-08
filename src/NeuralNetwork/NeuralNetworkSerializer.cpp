@@ -6,18 +6,13 @@
 
 namespace nnet {
 
-  void NeuralNetworkSerializer::saveToFile(std::string const &path,
-                                           NeuralNetworkBase const &nn,
+  void NeuralNetworkSerializer::saveToFile(std::string const &path, NeuralNetworkBase const &nn,
                                            NNSerializerFlags const &flags) {
     std::ios::openmode mode = std::ios::out;
-    if (flags & NNSerializerFlags::BINARY_MODE) {
-      mode |= std::ios::binary;
-    }
+    if (flags & NNSerializerFlags::BINARY_MODE) { mode |= std::ios::binary; }
 
     std::ofstream file(path, mode);
-    if (!file.is_open()) {
-      throw std::runtime_error("Could not open file " + path);
-    }
+    if (!file.is_open()) { throw std::runtime_error("Could not open file " + path); }
     // if the serialization fails, we want to delete the file
     try {
       saveToStream(file, nn, flags);
@@ -29,8 +24,7 @@ namespace nnet {
     }
   }
 
-  void NeuralNetworkSerializer::saveToStream(std::ostream &stream,
-                                             NeuralNetworkBase const &nn,
+  void NeuralNetworkSerializer::saveToStream(std::ostream &stream, NeuralNetworkBase const &nn,
                                              NNSerializerFlags const &flags) {
     stream << fPrecisionToStr(nn.getPrecision()) << "\n";
     if (flags & NNSerializerFlags::BINARY_MODE) {
@@ -40,9 +34,9 @@ namespace nnet {
     }
   }
 
-  void NeuralNetworkSerializer::binarySaveToStream(
-          std::ostream &os, NeuralNetworkBase const &nn, NNSerializerFlags const &flags) {
-    auto layers = nn.getLayersSize();
+  void NeuralNetworkSerializer::binarySaveToStream(std::ostream &os, NeuralNetworkBase const &nn,
+                                                   NNSerializerFlags const &flags) {
+    auto layers = nn.getTopology();
     size_t layer_size = layers.size();
     // Write the number of layers
     os.write(reinterpret_cast<char const *>(&layer_size), sizeof(size_t));
@@ -57,8 +51,7 @@ namespace nnet {
       os.write(" ", sizeof(char));
     }
 
-    auto f = [&]<class NN>(std::ostream &os, NN const &nn,
-                           NNSerializerFlags const &flags) {
+    auto f = [&]<class NN>(std::ostream &os, NN const &nn, NNSerializerFlags const &flags) {
       using real = typename NN::value_type;
 
       auto const &weights = nn.getWeights();
@@ -67,16 +60,14 @@ namespace nnet {
       for (auto const &w : weights) {
         // output the whole array at once
         size_t weight_size = w.getRows() * w.getCols();
-        os.write(reinterpret_cast<char const *>(w.getData()),
-                 sizeof(real) * weight_size);
+        os.write(reinterpret_cast<char const *>(w.getData()), sizeof(real) * weight_size);
       }
 
       auto const &biases = nn.getBiases();
       for (auto const &w : biases) {
         // output the whole array at once
         size_t weight_size = w.getRows() * w.getCols();
-        os.write(reinterpret_cast<char const *>(w.getData()),
-                 sizeof(real) * weight_size);
+        os.write(reinterpret_cast<char const *>(w.getData()), sizeof(real) * weight_size);
       }
     };
 
@@ -92,18 +83,15 @@ namespace nnet {
     }
   }
 
-  void NeuralNetworkSerializer::AsciiSaveToStream(std::ostream &os,
-                                                  NeuralNetworkBase const &nn,
+  void NeuralNetworkSerializer::AsciiSaveToStream(std::ostream &os, NeuralNetworkBase const &nn,
                                                   NNSerializerFlags const &flags) {
-    auto layers = nn.getLayersSize();
+    auto layers = nn.getTopology();
     size_t layer_size = layers.size();
     // Write the number of layers
     os << layer_size << " ";
     // output the whole array at once
 
-    for (auto i : layers) {
-      os << i << " ";
-    }
+    for (auto i : layers) { os << i << " "; }
 
     auto const &activations = nn.getActivationFunctions();
 
@@ -113,8 +101,7 @@ namespace nnet {
     }
     os << std::endl;
 
-    auto f = [&]<class NN>(std::ostream &os, NN const &nn,
-                           NNSerializerFlags const &flags) {
+    auto f = [&]<class NN>(std::ostream &os, NN const &nn, NNSerializerFlags const &flags) {
       using real = typename NN::value_type;
 
       auto const &weights = nn.getWeights();
@@ -150,8 +137,7 @@ namespace nnet {
     utils::error("FIXME: loadFromFile Not implemented");
   }
 
-  std::unique_ptr<NeuralNetworkBase>
-  NeuralNetworkSerializer::loadFromStream(std::istream &stream) {
+  std::unique_ptr<NeuralNetworkBase> NeuralNetworkSerializer::loadFromStream(std::istream &stream) {
     utils::error("FIXME: loadFromStream Not implemented");
   }
 

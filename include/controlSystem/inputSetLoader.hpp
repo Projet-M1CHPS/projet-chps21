@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Image.hpp"
-#include "Transform.hpp"
+#include "image/Image.hpp"
+#include "image/Transform.hpp"
 #include "inputSet.hpp"
 #include <filesystem>
 #include <set>

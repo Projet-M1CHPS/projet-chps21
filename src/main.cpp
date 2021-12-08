@@ -172,12 +172,12 @@ using namespace control::classifier;
 
 bool test_image() {
   // FIXME: placeholder path
-  std::filesystem::path input_path = "truncated_testing_set";
+  std::filesystem::path input_path = "/home/thukisdo/Bureau/truncated_testing_set";
 
   auto loader = std::make_shared<CITCLoader>(16, 16);
   auto &engine = loader->getPostProcessEngine();
-  engine.addTransformation(std::make_shared<image::transform::BinaryScaleByMedian>());
-  // engine.addTransformation(std::make_shared<image::transform::Inversion>());
+  // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
+  //    engine.addTransformation(std::make_shared<image::transform::Inversion>());
 
   CTParams parameters(RunPolicy::create, input_path, loader, "runs/test");
 
@@ -195,7 +195,8 @@ bool test_image() {
 
 int main(int argc, char **argv) {
   // func_xor<float>(100, 0.2, 0.01);
-  // new_func_xor<float>(100, 0.2, 0.000001);
+  //  new_func_xor<float>(100, 0.2, 0.000001);
 
   return test_image();
+  //  return 0;
 }

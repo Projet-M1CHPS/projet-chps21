@@ -26,24 +26,10 @@ target_link_libraries(
 
 target_code_coverage(Math_test ALL)
 
-
-add_executable(
-        Image_test
-        Image_test.cpp
-        Transform_test.cpp
-)
-
-target_link_libraries(
-        Image_test PUBLIC
-        Image
-        gtest_main
-)
-
-target_code_coverage(Image_test ALL)
-
 include(GoogleTest)
+add_subdirectory(image)
 add_subdirectory(controlSystem)
 add_subdirectory(neuralNetwork)
 
 gtest_discover_tests(Math_test)
-gtest_discover_tests(Image_test)
+
