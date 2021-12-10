@@ -117,7 +117,7 @@ namespace control::classifier {
     nnet::StandardTrainingMethod<float> std(0.01f);
     nnet::RPropPTrainingMethod<float> rprop(network->getTopology());
     nnet::MomentumTrainingMethod<float> momentum(network->getTopology(), 0.01f, 0.2);
-    nnet::MLPOptimizer<float> optimizer(network.get(), &decay);
+    nnet::MLPStochOptimizer<float> optimizer(network.get(), &decay);
 
     while (stracker.getEpoch() < max_epoch) {
       for (int i = 0; i < batch_size; i++) {
@@ -144,7 +144,7 @@ namespace control::classifier {
       if (is_verbose) *os << stats;
       stats.dumpToFiles();
       stracker.nextEpoch();
-      decay.incrEpoch();
+      decay.update();
     }
   }
 

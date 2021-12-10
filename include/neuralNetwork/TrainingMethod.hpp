@@ -20,6 +20,7 @@ namespace nnet {
     virtual ~TrainingMethod() = default;
 
     virtual void compute(BackpropStorage<T> &storage) = 0;
+    virtual void update(){};
   };
 
   template<typename T>
@@ -46,7 +47,7 @@ namespace nnet {
       storage.weights->at(storage.index) -= (storage.gradient * learningRate);
     }
 
-    void incrEpoch() {
+    void update() {
       epoch++;
       learningRate = (1 / (1 + decayRate * epoch)) * static_cast<T>(learningRate_0);
     }
@@ -68,6 +69,7 @@ namespace nnet {
         : learningRate(learningRate), momentum(momentum) {
       for (size_t i = 0; i < topology.size() - 1; i++) {
         dw_old.push_back(math::Matrix<T>(topology[i + 1], topology[i]));
+        dw_old.back().fill(0.0);
       }
     }
 
@@ -78,8 +80,43 @@ namespace nnet {
     }
 
   private:
+    const T learningRate;
+    const T momentum;
+    std::vector<math::Matrix<T>> dw_old;
+  };
+
+
+  template<typename T>
+  class MomentumDecayTrainingMethod : public TrainingMethod<T> {
+  public:
+    MomentumDecayTrainingMethod(const std::vector<size_t> &topology, const T lr_0, const T dr,
+                                const T mom)
+        : learningRate_0(lr_0), learningRate(lr_0), momentum(mom), decayRate(dr) {
+      for (size_t i = 0; i < topology.size() - 1; i++) {
+        dw_old.push_back(math::Matrix<T>(topology[i + 1], topology[i]));
+        dw_old.back().fill(0.0);
+      }
+    }
+
+    void compute(BackpropStorage<T> &storage) {
+      auto dw = (storage.gradient * learningRate) + (dw_old[storage.index] * momentum);
+      storage.weights->at(storage.index) -= dw;
+      dw_old[storage.index] = std::move(dw);
+    }
+
+    void update() {
+      epoch++;
+      learningRate = (1 / (1 + decayRate * epoch)) * static_cast<T>(learningRate_0);
+    }
+
+  private:
+    const T learningRate_0;
+    const T decayRate;
     T learningRate;
-    T momentum;
+    const T momentum;
+
+    size_t epoch = 0;
+
     std::vector<math::Matrix<T>> dw_old;
   };
 
@@ -95,31 +132,26 @@ namespace nnet {
         gradient_old.push_back(math::Matrix<T>(topology[i + 1], topology[i]));
       }
       for (auto &i : lr_old) { i.fill(0.1); }
-      for (auto &i : gradient_old) { i.fill(1.0); }
+      for (auto &i : gradient_old) { i.fill(0.0); }
     }
 
     void compute(BackpropStorage<T> &storage) {
       auto &weights = storage.weights->at(storage.index);
+
       for (size_t i = 0; i < weights.getRows(); i++) {
         for (size_t j = 0; j < weights.getCols(); j++) {
           T dw = 0.0;
           if (storage.gradient(i, j) * gradient_old[storage.index](i, j) > 0.0) {
             lr_old[storage.index](i, j) = std::min(eta_plus * lr_old[storage.index](i, j), lr_max);
-            if (storage.gradient(i, j) > 0) dw = -1 * lr_old[storage.index](i, j);
-            else
-              dw = lr_old[storage.index](i, j);
+            if (storage.gradient(i, j) > 0) dw = -1 * lr_old[storage.index](i, j); else dw = lr_old[storage.index](i, j);
             weights(i, j) = weights(i, j) + dw;
           } else if (storage.gradient(i, j) * gradient_old[storage.index](i, j) < 0.0) {
-            if (gradient_old[storage.index](i, j) > 0) dw = -1 * lr_old[storage.index](i, j);
-            else
-              dw = lr_old[storage.index](i, j);
+            if (gradient_old[storage.index](i, j) > 0) dw = -1 * lr_old[storage.index](i, j); else dw = lr_old[storage.index](i, j);
             weights(i, j) = weights(i, j) - dw;
             lr_old[storage.index](i, j) = std::max(eta_minus * lr_old[storage.index](i, j), lr_min);
             storage.gradient(i, j) = 0.0;
           } else {
-            if (storage.gradient(i, j) > 0) dw = -1 * lr_old[storage.index](i, j);
-            else
-              dw = lr_old[storage.index](i, j);
+            if (storage.gradient(i, j) > 0) dw = -1 * lr_old[storage.index](i, j); else dw = lr_old[storage.index](i, j);
             weights(i, j) = weights(i, j) + dw;
           }
           gradient_old[storage.index](i, j) = storage.gradient(i, j);

@@ -132,7 +132,7 @@ TEST(NeuralNetworkTest, ThrowOnInvalidInputOrTarget) {
   nn1.setLayersSize(std::vector<size_t>{2, 2, 1});
 
   nnet::StandardTrainingMethod<float> stdTrain1(0.1);
-  nnet::MLPOptimizer<float> opti1(&nn1, &stdTrain1);
+  nnet::MLPStochOptimizer<float> opti1(&nn1, &stdTrain1);
 
   math::Matrix<float> input1 = {1, 2, 3, 4};
   math::Matrix<float> target1 = {1};
@@ -145,7 +145,7 @@ TEST(NeuralNetworkTest, ThrowOnInvalidInputOrTarget) {
   math::Matrix<float> target2 = {1, 2, 3};
 
   nnet::StandardTrainingMethod<float> stdTrain2(0.1);
-  nnet::MLPOptimizer<float> opti2(&nn2, &stdTrain2);
+  nnet::MLPStochOptimizer<float> opti2(&nn2, &stdTrain2);
 
   ASSERT_ANY_THROW(opti2.train(input2, target2));
 }
@@ -205,7 +205,7 @@ TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
   nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
 
   nnet::StandardTrainingMethod<float> stdTrain(0.5);
-  nnet::MLPOptimizer<float> opti(&nn, &stdTrain);
+  nnet::MLPStochOptimizer<float> opti(&nn, &stdTrain);
 
   math::Matrix<float> &w1 = nn.getWeights()[0];
   math::Matrix<float> &b1 = nn.getBiases()[0];
