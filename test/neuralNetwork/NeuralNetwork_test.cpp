@@ -1,6 +1,6 @@
 #include "NeuralNetwork.hpp"
+#include "OptimizationMethod.hpp"
 #include "Optimizer.hpp"
-#include "TrainingMethod.hpp"
 #include <gtest/gtest.h>
 
 #include <vector>
@@ -131,7 +131,7 @@ TEST(NeuralNetworkTest, ThrowOnInvalidInputOrTarget) {
   nnet::NeuralNetwork<float> nn1;
   nn1.setLayersSize(std::vector<size_t>{2, 2, 1});
 
-  nnet::StandardTrainingMethod<float> stdTrain1(0.1);
+  nnet::SGDOptimization<float> stdTrain1(0.1);
   nnet::MLPStochOptimizer<float> opti1(&nn1, &stdTrain1);
 
   math::Matrix<float> input1 = {1, 2, 3, 4};
@@ -144,7 +144,7 @@ TEST(NeuralNetworkTest, ThrowOnInvalidInputOrTarget) {
   math::Matrix<float> input2 = {1, 2};
   math::Matrix<float> target2 = {1, 2, 3};
 
-  nnet::StandardTrainingMethod<float> stdTrain2(0.1);
+  nnet::SGDOptimization<float> stdTrain2(0.1);
   nnet::MLPStochOptimizer<float> opti2(&nn2, &stdTrain2);
 
   ASSERT_ANY_THROW(opti2.train(input2, target2));
@@ -204,7 +204,7 @@ TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
   nn.setLayersSize(std::vector<size_t>{2, 2, 2});
   nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
 
-  nnet::StandardTrainingMethod<float> stdTrain(0.5);
+  nnet::SGDOptimization<float> stdTrain(0.5);
   nnet::MLPStochOptimizer<float> opti(&nn, &stdTrain);
 
   math::Matrix<float> &w1 = nn.getWeights()[0];

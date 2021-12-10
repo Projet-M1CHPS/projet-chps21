@@ -5,63 +5,71 @@
 #include "BackpropStorage.hpp"
 #include "Matrix.hpp"
 #include "NeuralNetwork.hpp"
-#include "TrainingMethod.hpp"
+#include "OptimizationMethod.hpp"
 
 namespace nnet {
 
   template<typename T>
   class Optimizer {
   public:
-    Optimizer(NeuralNetwork<T> *const nn, TrainingMethod<T> *const tm)
-        : neuralNetwork(nn), trainingMethod(tm) {}
+    Optimizer(NeuralNetwork<T> *const nn, OptimizationMethod<T> *const tm)
+        : neural_network(nn), opti_meth(tm) {}
+
+    Optimizer(const Optimizer<T> &other) = delete;
+    Optimizer(Optimizer<T> &&other) noexcept = default;
+
+    Optimizer<T> &operator=(const Optimizer<T> &other) = delete;
+    Optimizer<T> &operator=(Optimizer<T> &&other) noexcept = default;
+
+    NeuralNetwork<T> *getNeuralNetwork() const { return neural_network; }
+
+    OptimizationMethod<T> *getOptimizationMethod() const { return opti_meth; }
+
     virtual ~Optimizer() = default;
 
-    virtual void train(const math::Matrix<T> &inputs, const math::Matrix<T> &targets) = 0;
-    virtual void train(const std::vector<math::Matrix<T>> &inputs,
-                       const std::vector<math::Matrix<T>> &targets) = 0;
-
   protected:
-    NeuralNetwork<T> *const neuralNetwork;
-    TrainingMethod<T> *const trainingMethod;
+    NeuralNetwork<T> *const neural_network;
+    OptimizationMethod<T> *const opti_meth;
   };
 
 
   template<typename T>
   class MLPStochOptimizer : public Optimizer<T> {
   public:
-    MLPStochOptimizer(NeuralNetwork<T> *const nn, TrainingMethod<T> *const tm)
-        : Optimizer<T>(nn, tm), storage(this->neuralNetwork->getWeights()) {
+    MLPStochOptimizer(NeuralNetwork<T> *const nn, OptimizationMethod<T> *const tm)
+        : Optimizer<T>(nn, tm), storage(this->neural_network->getWeights()) {
       layers.resize(nn->getWeights().size() + 1);
       layers_af.resize(nn->getWeights().size() + 1);
     };
 
-    ~MLPStochOptimizer() = default;
-
-    void train(const math::Matrix<T> &input, const math::Matrix<T> &target) override {
+    void train(const math::Matrix<T> &input, const math::Matrix<T> &target) {
       const size_t nbInput = input.getRows();
       const size_t nbTarget = target.getRows();
 
-      auto &weights = this->neuralNetwork->getWeights();
+      auto &weights = this->neural_network->getWeights();
 
-      if (nbInput != this->neuralNetwork->getInputSize() ||
-          nbTarget != this->neuralNetwork->getOutputSize()) {
+      if (nbInput != this->neural_network->getInputSize() ||
+          nbTarget != this->neural_network->getOutputSize()) {
         throw std::runtime_error("Invalid number of inputs");
       }
 
       forward(input);
-      storage.current_error = layers_af[layers_af.size() - 1] - target;
+      storage.getError() = layers_af[layers_af.size() - 1] - target;
       backward(target);
     }
 
-    void train(const std::vector<math::Matrix<T>> &inputs,
-               const std::vector<math::Matrix<T>> &targets) {}
+    template<typename input_iterator, typename target_iterator>
+    void train(const input_iterator begin, const input_iterator end,
+               const target_iterator target_begin) {
+      for (auto it = begin; it != end; ++it, ++target_begin) { train(*it, *target_begin); }
+    }
 
 
   private:
     void forward(math::Matrix<T> const &inputs) {
-      auto &weights = this->neuralNetwork->getWeights();
-      auto &biases = this->neuralNetwork->getBiases();
-      auto &activation_functions = this->neuralNetwork->getActivationFunctions();
+      auto &weights = this->neural_network->getWeights();
+      auto &biases = this->neural_network->getBiases();
+      auto &activation_functions = this->neural_network->getActivationFunctions();
 
       layers[0] = inputs;
       layers_af[0] = inputs;
@@ -89,29 +97,26 @@ namespace nnet {
     }
 
     void backward(math::Matrix<T> const &target) {
-      auto &weights = this->neuralNetwork->getWeights();
-      auto &biases = this->neuralNetwork->getBiases();
-      auto &activation_functions = this->neuralNetwork->getActivationFunctions();
+      auto &weights = this->neural_network->getWeights();
+      auto &biases = this->neural_network->getBiases();
+      auto &activation_functions = this->neural_network->getActivationFunctions();
 
       // storage.current_error = layers_af[layers_af.size() - 1] - target;
 
-      std::cout << "gradient" << std::endl;
-      for (storage.index = weights.size() - 1; storage.index >= 0; storage.index--) {
-        math::Matrix<T> derivative(layers[storage.index + 1]);
-        auto dafunc = af::getAFFromType<T>(activation_functions[storage.index]).second;
+      for (long i = weights.size() - 1; i >= 0; i--) {
+        storage.setIndex(i);
+
+        math::Matrix<T> derivative = std::move(layers[i + 1]);
+        auto dafunc = af::getAFFromType<T>(activation_functions[i]).second;
         std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
 
-        derivative.hadamardProd(storage.current_error);
+        derivative.hadamardProd(storage.getError());
 
-        storage.current_error =
-                math::Matrix<T>::mul(true, weights[storage.index], false, derivative);
+        storage.getError() = math::Matrix<T>::mul(true, weights[i], false, derivative);
 
-        storage.gradient =
-                math::Matrix<T>::mul(false, derivative, true, layers_af[storage.index], 1.0);
+        storage.getGradient() = math::Matrix<T>::mul(false, derivative, true, layers_af[i], 1.0);
 
-        std::cout << storage.gradient << std::endl;
-
-        // this->trainingMethod->compute(storage);
+        this->opti_meth->compute(storage);
       }
     }
 
@@ -127,8 +132,8 @@ namespace nnet {
   template<typename T>
   class MLPBatchOptimizer : public Optimizer<T> {
   public:
-    MLPBatchOptimizer(NeuralNetwork<T> *const nn, TrainingMethod<T> *const tm)
-        : Optimizer<T>(nn, tm), storage(this->neuralNetwork->getWeights()) {
+    MLPBatchOptimizer(NeuralNetwork<T> *const nn, OptimizationMethod<T> *const tm)
+        : Optimizer<T>(nn, tm), storage(this->neural_network->getWeights()) {
       layers.resize(nn->getWeights().size() + 1);
       layers_af.resize(nn->getWeights().size() + 1);
 
@@ -145,58 +150,44 @@ namespace nnet {
 
     ~MLPBatchOptimizer() = default;
 
-    void train(const math::Matrix<T> &input, const math::Matrix<T> &target) override {
-      const size_t nbInput = input.getRows();
-      const size_t nbTarget = target.getRows();
-
-      auto &weights = this->neuralNetwork->getWeights();
-
-      if (nbInput != this->neuralNetwork->getInputSize() ||
-          nbTarget != this->neuralNetwork->getOutputSize()) {
-        throw std::runtime_error("Invalid number of inputs");
-      }
-
-      forward(input);
-      storage.current_error = layers_af[layers_af.size() - 1] - target;
-      backward(target);
-    }
-
     void train(const std::vector<math::Matrix<T>> &inputs,
                const std::vector<math::Matrix<T>> &targets) {
-      for (size_t i = 0; i < avg_gradients.size(); i++) {
-        avg_gradients[i].fill(0.0);
-        avg_errors[i].fill(0.0);
-      }
+      train(inputs.begin(), inputs.end(), targets.begin());
+    }
 
-      for (size_t i = 0; i < inputs.size(); i++) {
-        forward(inputs[i]);
+    template<typename input_iterator, typename target_iterator>
+    void train(const input_iterator begin, const input_iterator end,
+               const target_iterator targets_beg) {
+      size_t n = std::distance(begin, end);
 
-        storage.current_error = layers_af[layers_af.size() - 1] - targets[i];
+      auto mat_reset = [](math::Matrix<T> &m) { m.fill(0.0); };
+      std::for_each(avg_gradients.begin(), avg_gradients.end(), mat_reset);
+      std::for_each(avg_errors.begin(), avg_errors.end(), mat_reset);
 
+      size_t i = 0;
+      auto it_target = targets_beg;
+
+      for (auto it = begin; it != end; it++, it_target++, i++) {
+        forward(*it);
+        storage.getError() = layers_af[layers_af.size() - 1] - *it_target;
         computeGradient();
       }
 
-      // std::cout << "Gradients computed" << std::endl;
+      for (auto &it : avg_gradients) { it *= ((T) 1.0 / n); }
 
-      for (auto &i : avg_gradients) {
-        i *= (T) 1.0 / inputs.size();
-        // std::cout << i << std::endl;
-      }
-
-
-      for (storage.index = this->neuralNetwork->getWeights().size() - 1; storage.index >= 0;
-           storage.index--) {
-        storage.gradient = avg_gradients[storage.index];
-        storage.current_error = avg_errors[storage.index];
-        this->trainingMethod->compute(storage);
+      for (i = this->neural_network->getWeights().size() - 1; i >= 0; i--) {
+        storage.getGradient() = std::move(avg_gradients[i]);
+        storage.getError() = std::move(avg_errors[i]);
+        storage.setIndex(i);
+        this->opti_meth->compute(storage);
       }
     }
 
   private:
     void forward(math::Matrix<T> const &inputs) {
-      auto &weights = this->neuralNetwork->getWeights();
-      auto &biases = this->neuralNetwork->getBiases();
-      auto &activation_functions = this->neuralNetwork->getActivationFunctions();
+      auto &weights = this->neural_network->getWeights();
+      auto &biases = this->neural_network->getBiases();
+      auto &activation_functions = this->neural_network->getActivationFunctions();
 
       layers[0] = inputs;
       layers_af[0] = inputs;
@@ -224,51 +215,51 @@ namespace nnet {
     }
 
     void computeGradient() {
-      auto &weights = this->neuralNetwork->getWeights();
-      auto &biases = this->neuralNetwork->getBiases();
-      auto &activation_functions = this->neuralNetwork->getActivationFunctions();
+      auto &weights = this->neural_network->getWeights();
+      auto &biases = this->neural_network->getBiases();
+      auto &activation_functions = this->neural_network->getActivationFunctions();
 
-      for (storage.index = weights.size() - 1; storage.index >= 0; storage.index--) {
-        math::Matrix<T> derivative(layers[storage.index + 1]);
-        auto dafunc = af::getAFFromType<T>(activation_functions[storage.index]).second;
+      // Avoid the loop index underflowing back to +inf
+      if (weights.empty()) return;
+
+      for (long i = weights.size() - 1; i >= 0; i--) {
+        storage.setIndex(i);
+
+        math::Matrix<T> derivative(layers[i + 1]);
+        auto dafunc = af::getAFFromType<T>(activation_functions[i]).second;
         std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
 
-        derivative.hadamardProd(storage.current_error);
+        derivative.hadamardProd(storage.getError());
 
-        // avg_errors[storage.index] += storage.current_error;
+        storage.getError() = math::Matrix<T>::mul(true, weights[i], false, derivative);
 
-        storage.current_error =
-                math::Matrix<T>::mul(true, weights[storage.index], false, derivative);
+        storage.getGradient() = math::Matrix<T>::mul(false, derivative, true, layers_af[i], 1.0);
 
-        storage.gradient =
-                math::Matrix<T>::mul(false, derivative, true, layers_af[storage.index], 1.0);
-
-        // std::cout << "rapide\n" << storage.gradient << std::endl;
-
-        avg_gradients[storage.index] += storage.gradient;
+        avg_gradients[i] += storage.getGradient();
       }
     }
 
     void backward(math::Matrix<T> const &target) {
-      auto &weights = this->neuralNetwork->getWeights();
-      auto &biases = this->neuralNetwork->getBiases();
-      auto &activation_functions = this->neuralNetwork->getActivationFunctions();
+      auto &weights = this->neural_network->getWeights();
+      auto &biases = this->neural_network->getBiases();
+      auto &activation_functions = this->neural_network->getActivationFunctions();
 
+      // Avoid the loop index underflowing back to +inf
+      if (weights.empty()) return;
 
-      for (storage.index = weights.size() - 1; storage.index >= 0; storage.index--) {
-        math::Matrix<T> derivative(layers[storage.index + 1]);
+      for (long i = weights.size() - 1; i >= 0; i--) {
+        math::Matrix<T> derivative = std::move(layers[storage.index + 1]);
         auto dafunc = af::getAFFromType<T>(activation_functions[storage.index]).second;
         std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
 
         derivative.hadamardProd(storage.current_error);
 
-        storage.current_error =
-                math::Matrix<T>::mul(true, weights[storage.index], false, derivative);
+        storage.getError() = math::Matrix<T>::mul(true, weights[storage.index], false, derivative);
 
-        storage.gradient =
+        storage.getGradient() =
                 math::Matrix<T>::mul(false, derivative, true, layers_af[storage.index], 1.0);
 
-        this->trainingMethod->compute(storage);
+        this->opti_meth->compute(storage);
       }
     }
 

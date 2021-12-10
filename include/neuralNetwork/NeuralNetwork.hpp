@@ -2,7 +2,7 @@
 
 #include "ActivationFunction.hpp"
 #include "Matrix.hpp"
-#include "TrainingMethod.hpp"
+#include "OptimizationMethod.hpp"
 #include "Utils.hpp"
 #include <cmath>
 #include <functional>

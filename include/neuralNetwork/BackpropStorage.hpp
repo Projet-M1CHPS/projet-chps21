@@ -9,23 +9,35 @@ namespace nnet {
   template<typename T>
   class BackpropStorage {
   public:
-    BackpropStorage(std::vector<math::Matrix<T>> &w) : weights(&w){};
+    explicit BackpropStorage(std::vector<math::Matrix<T>> &w) : weights(&w){};
+
+    BackpropStorage(BackpropStorage const &other) = delete;
+    BackpropStorage(BackpropStorage &&other) noexcept = default;
+
+    BackpropStorage &operator=(BackpropStorage const &other) = delete;
+    BackpropStorage &operator=(BackpropStorage &&other) = default;
+
     ~BackpropStorage() = default;
 
-    math::Matrix<T> &getWeights() const { return *weights[index]; }
+    math::Matrix<T> &getWeights(size_t i) { return *weights[i]; }
+    math::Matrix<T> const &getWeights(size_t i) const { return *weights[i]; }
+
+    math::Matrix<T> &getWeights() { return weights->at(index); }
+    math::Matrix<T> const &getWeights() const { return weights->at(index); }
 
     const long getIndex() const { return index; }
     void setIndex(const long i) { index = i; }
 
+    math::Matrix<T> &getGradient() { return gradient; }
     const math::Matrix<T> &getGradient() const { return gradient; }
-    void setGradient(const math::Matrix<T> &g) { gradient = g; }
 
+    math::Matrix<T> &getError() { return current_error; }
     const math::Matrix<T> &getError() const { return current_error; }
-    void setError(const math::Matrix<T> &e) { current_error = e; }
 
-  public:
-    std::vector<math::Matrix<T>> *weights;
+  private:
     long index = 0;
+
+    std::vector<math::Matrix<T>> *weights;
     math::Matrix<T> gradient;
     math::Matrix<T> current_error;
   };
