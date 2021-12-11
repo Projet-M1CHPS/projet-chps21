@@ -8,21 +8,33 @@ namespace control::classifier {
       : epoch(epoch), avg_f1score(0), avg_precision(0), avg_recall(0), state(std::move(state)) {
     stats = math::Matrix<double>(confusion.getRows(), 3);
 
-    stats.fill(0);
+    stats.fill(0.0);
     for (size_t i = 0; i < confusion.getRows(); i++) {
       size_t sum = 0;
 
       // Compute the precision
       for (size_t j = 0; j < confusion.getCols(); j++) { sum += confusion(i, j); }
-      stats(i, 0) = static_cast<double>(confusion(i, i)) / static_cast<double>(sum);
+      if (sum == 0) {
+        stats(i, 0) = 0;
+      } else {
+        stats(i, 0) = static_cast<double>(confusion(i, i)) / static_cast<double>(sum);
+      }
 
       // Compute the recall
       sum = 0;
       for (size_t j = 0; j < confusion.getRows(); j++) { sum += confusion(j, i); }
-      stats(i, 1) = static_cast<double>(confusion(i, i)) / static_cast<double>(sum);
+      if (sum == 0) {
+        stats(i, 1) = 0;
+      } else {
+        stats(i, 1) = static_cast<double>(confusion(i, i)) / static_cast<double>(sum);
+      }
 
-      // The f1 score is the harmonic mean of both the recall and the precision
-      stats(i, 2) = 2 * (stats(i, 0) * stats(i, 1)) / (stats(i, 0) + stats(i, 1));
+      if (stats(i, 0) == 0 && stats(i, 1) == 0) {
+        stats(i, 2) = 0;
+      } else {
+        // The f1 score is the harmonic mean of both the recall and the precision
+        stats(i, 2) = 2 * stats(i, 0) * stats(i, 1) / (stats(i, 0) + stats(i, 1));
+      }
 
       avg_precision += stats(i, 0);
       avg_recall += stats(i, 1);

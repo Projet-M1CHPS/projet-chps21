@@ -303,18 +303,24 @@ void batch(const size_t bach_size, const T learning_rate, const T error_limit) {
 using namespace control;
 using namespace control::classifier;
 
-bool test_image() {
+bool test_image(std::vector<std::string> const &args) {
   // FIXME: placeholder path
-  std::filesystem::path input_path = "/home/thukisdo/Bureau/testing_set";
+  if (args.size() < 2) {
+    std::cerr << "Usage: " << args[0] << " <input_path> (<working_path>)" << std::endl;
+    return false;
+  }
 
-  auto loader = std::make_shared<CITCLoader>(40, 40);
+  std::filesystem::path input_path = args[1];
+  std::filesystem::path working_path = args.size() == 3 ? args[2] : "runs/test";
+
+  auto loader = std::make_shared<CITCLoader>(24, 24);
   auto &engine = loader->getPostProcessEngine();
   // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
   //    engine.addTransformation(std::make_shared<image::transform::Inversion>());
 
   CTParams parameters(RunPolicy::create, input_path, loader, "runs/test");
 
-  std::vector<size_t> topology = {40 * 40, 64, 64, 64, 64, 64, 64};
+  std::vector<size_t> topology = {24 * 24, 32, 32, 32, 32, 32, 32};
   parameters.setTopology(topology.begin(), topology.end());
 
   CTController controller(parameters);
@@ -341,6 +347,9 @@ int main(int argc, char **argv) {
   }*/
   // std::cout << "average : " << sum / 1000 << std::endl;
 
-  return test_image();
+  std::vector<std::string> args;
+  for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);
+
+  return test_image(args);
   return 0;
 }

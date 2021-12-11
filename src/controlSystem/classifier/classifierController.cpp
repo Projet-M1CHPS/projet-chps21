@@ -100,7 +100,7 @@ namespace control::classifier {
 
   void CTController::trainingLoop(bool is_verbose, std::ostream *os, CTracker &stracker) {
     double initial_learning_rate = 0.5f, learning_rate = 0.;
-    size_t batch_size = 5, max_epoch = 500;
+    size_t batch_size = 5, max_epoch = 200;
     if (is_verbose)
       *os << std::setprecision(32)
           << "Training started with: {initial_learning_rate: " << initial_learning_rate
@@ -118,7 +118,8 @@ namespace control::classifier {
     nnet::SGDOptimization<float> std(0.01f);
     nnet::RPropPOptimization<float> rprop(network->getTopology());
     nnet::MomentumOptimization<float> momentum(network->getTopology(), 0.01f, 0.9f);
-    nnet::DecayMomentumOptimization<float> momentum_decay(network->getTopology(), 0.5f, 0.1f, 0.9f);
+    nnet::DecayMomentumOptimization<float> momentum_decay(network->getTopology(), 0.01f, 0.01f,
+                                                          0.9f);
     nnet::MLPStochOptimizer<float> optimizer(network.get(), &decay);
 
     std::vector<math::FloatMatrix> training_targets;

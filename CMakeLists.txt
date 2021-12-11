@@ -13,7 +13,9 @@ if (COMPILER_SUPPORTS_MARCH_NATIVE)
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xhost -qmkl -qmkl=parallel")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -qmkl")
+  # Intel compilers are not supported for coverage tests
+  set(CODE_COVERAGE OFF)
   message(STATUS ${CMAKE_CXX_FLAGS})
 endif ()
 
