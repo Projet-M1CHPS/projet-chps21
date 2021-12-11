@@ -12,6 +12,11 @@ if (COMPILER_SUPPORTS_MARCH_NATIVE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 endif ()
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xhost -qmkl -qmkl=parallel")
+  message(STATUS ${CMAKE_CXX_FLAGS})
+endif ()
+
 include(dependency/cmake_coverage.cmake)
 
 # We remove googletest and the std from the coverage report

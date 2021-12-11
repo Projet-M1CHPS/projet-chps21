@@ -106,7 +106,7 @@ namespace nnet {
       for (long i = weights.size() - 1; i >= 0; i--) {
         storage.setIndex(i);
 
-        math::Matrix<T> derivative = std::move(layers[i + 1]);
+        math::Matrix<T> derivative(layers[i + 1]);
         auto dafunc = af::getAFFromType<T>(activation_functions[i]).second;
         std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
 
@@ -160,11 +160,11 @@ namespace nnet {
                const target_iterator targets_beg) {
       size_t n = std::distance(begin, end);
 
-      auto mat_reset = [](math::Matrix<T> &m) { m.fill(0.0); };
+      auto mat_reset = [](math::Matrix<T> &m) { m.fill(0); };
       std::for_each(avg_gradients.begin(), avg_gradients.end(), mat_reset);
       std::for_each(avg_errors.begin(), avg_errors.end(), mat_reset);
 
-      size_t i = 0;
+      long i = 0;
       auto it_target = targets_beg;
 
       for (auto it = begin; it != end; it++, it_target++, i++) {
@@ -176,8 +176,8 @@ namespace nnet {
       for (auto &it : avg_gradients) { it *= ((T) 1.0 / n); }
 
       for (i = this->neural_network->getWeights().size() - 1; i >= 0; i--) {
-        storage.getGradient() = std::move(avg_gradients[i]);
-        storage.getError() = std::move(avg_errors[i]);
+        storage.getGradient() = avg_gradients[i];
+        storage.getError() = avg_errors[i];
         storage.setIndex(i);
         this->opti_meth->compute(storage);
       }
@@ -248,7 +248,7 @@ namespace nnet {
       if (weights.empty()) return;
 
       for (long i = weights.size() - 1; i >= 0; i--) {
-        math::Matrix<T> derivative = std::move(layers[storage.index + 1]);
+        math::Matrix<T> derivative(layers[storage.index + 1]);
         auto dafunc = af::getAFFromType<T>(activation_functions[storage.index]).second;
         std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
 

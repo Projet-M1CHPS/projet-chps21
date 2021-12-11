@@ -457,8 +457,7 @@ namespace math {
 
     if constexpr (std::is_floating_point_v<T>) {
       std::uniform_real_distribution<> dis(min, max);
-      for (size_t i = 0; i < matrix.getRows(); i++)
-        for (size_t j = 0; j < matrix.getCols(); j++) { matrix(i, j) = dis(gen); }
+      for (auto &elem : matrix) { elem = dis(gen); }
 
     } else if constexpr (std::is_integral_v<T>) {
       std::uniform_int_distribution<> dis(min, max);

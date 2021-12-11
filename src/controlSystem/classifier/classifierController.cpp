@@ -60,6 +60,7 @@ namespace control::classifier {
     network->setActivationFunction(af::ActivationFunctionType::sigmoid, 0);
     network->setActivationFunction(af::ActivationFunctionType::sigmoid, 2);
     network->setActivationFunction(af::ActivationFunctionType::sigmoid, 4);
+    network->setActivationFunction(af::ActivationFunctionType::sigmoid, 5);
 
     return {true, "Training set loaded"};
   }
@@ -113,12 +114,12 @@ namespace control::classifier {
     math::Matrix<size_t> confusion(nclass, nclass);
     math::FloatMatrix target(nclass, 1);
 
-    nnet::DecayOptimization<float> decay(1.0f, 0.2f);
+    nnet::DecayOptimization<float> decay(0.01f, 0.01f);
     nnet::SGDOptimization<float> std(0.01f);
     nnet::RPropPOptimization<float> rprop(network->getTopology());
     nnet::MomentumOptimization<float> momentum(network->getTopology(), 0.01f, 0.9f);
-    nnet::DecayMomentumOptimization<float> momentum_decay(network->getTopology(), 0.1f, 0.5f, 0.9f);
-    nnet::MLPStochOptimizer<float> optimizer(network.get(), &momentum_decay);
+    nnet::DecayMomentumOptimization<float> momentum_decay(network->getTopology(), 0.5f, 0.1f, 0.9f);
+    nnet::MLPStochOptimizer<float> optimizer(network.get(), &decay);
 
     std::vector<math::FloatMatrix> training_targets;
     for (size_t i = 0; auto const &set : training_set) {
@@ -140,6 +141,7 @@ namespace control::classifier {
         }
         // optimizer.train(training_set.begin(), training_set.end(), training_targets.begin());
       }
+      training_set.shuffle(std::random_device{}());
 
       confusion.fill(0);
       for (int i = 0; i < eval_set.size(); i++) {

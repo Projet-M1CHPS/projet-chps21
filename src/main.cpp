@@ -19,15 +19,15 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
 
   nnet::NeuralNetwork<T> nn;
   nn.setLayersSize(topology);
-  nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
+  nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
   nn.randomizeSynapses();
 
   nnet::SGDOptimization<T> std_mt(learning_rate);
-  nnet::MomentumOptimization<T> mom_mt(topology, learning_rate, 0.8);
+  nnet::MomentumOptimization<T> mom_mt(topology, learning_rate, 0.9);
   nnet::DecayOptimization<T> decay_mt(learning_rate, 0.01f);
-  nnet::DecayMomentumOptimization<T> momDecay_mt(topology, learning_rate, 0.01f, 0.8f);
+  nnet::DecayMomentumOptimization<T> momDecay_mt(topology, learning_rate, 0.01f, 0.9f);
 
-  nnet::MLPStochOptimizer<T> opt(&nn, &std_mt);
+  nnet::MLPStochOptimizer<T> opt(&nn, &momDecay_mt);
 
   // std::cout << nn << std::endl;
 
@@ -57,7 +57,7 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
 
   T error = 1.0;
   size_t count = 0;
-  while (error > error_limit && count < 1000) {
+  while (error > error_limit && count < 5000) {
     for (int i = 0; i < bach_size; i++) {
       for (int j = 0; j < 4; j++) { opt.train(input[j], target[j]); }
     }
@@ -89,7 +89,7 @@ size_t func_xor_batch(const size_t bach_size, const T learning_rate, const T err
 
   nnet::NeuralNetwork<T> nn;
   nn.setLayersSize(topology);
-  nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
+  nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
   nn.randomizeSynapses();
 
   nnet::SGDOptimization<T> std_mt(learning_rate);
@@ -98,7 +98,7 @@ size_t func_xor_batch(const size_t bach_size, const T learning_rate, const T err
   nnet::DecayMomentumOptimization<T> momDecay_mt(topology, learning_rate, 0.01f, 0.8f);
   nnet::RPropPOptimization<T> rprop_mt(topology);
 
-  nnet::MLPBatchOptimizer<T> opt(&nn, &rprop_mt);
+  nnet::MLPBatchOptimizer<T> opt(&nn, &momDecay_mt);
 
   std::cout << nn << std::endl;
 
@@ -126,8 +126,8 @@ size_t func_xor_batch(const size_t bach_size, const T learning_rate, const T err
 
   T error = 1.0;
   size_t count = 0;
-  while (error > error_limit && count < 5000) {
-    for (int i = 0; i < bach_size; i++) { opt.train(input, target); }
+  while (error > error_limit && count < 1000) {
+    for (int i = 0; i < bach_size; i++) { opt.train(input.begin(), input.end(), target.begin()); }
 
     error = 0.0;
     for (int i = 0; i < input.size(); i++)
@@ -307,14 +307,14 @@ bool test_image() {
   // FIXME: placeholder path
   std::filesystem::path input_path = "/home/thukisdo/Bureau/testing_set";
 
-  auto loader = std::make_shared<CITCLoader>(16, 16);
+  auto loader = std::make_shared<CITCLoader>(40, 40);
   auto &engine = loader->getPostProcessEngine();
   // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
   //    engine.addTransformation(std::make_shared<image::transform::Inversion>());
 
   CTParams parameters(RunPolicy::create, input_path, loader, "runs/test");
 
-  std::vector<size_t> topology = {16 * 16, 64, 32, 16, 8};
+  std::vector<size_t> topology = {40 * 40, 64, 64, 64, 64, 64, 64};
   parameters.setTopology(topology.begin(), topology.end());
 
   CTController controller(parameters);
@@ -327,7 +327,7 @@ bool test_image() {
 }
 
 int main(int argc, char **argv) {
-  // func_xor<float>(100, 0.1, 0.01);
+  // func_xor<float>(1, 0.01, 0.01);
   //  func_xor_batch<float>(1, 0.4, 0.00000000001);
 
 

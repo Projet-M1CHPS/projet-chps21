@@ -19,8 +19,8 @@ namespace nnet {
 
     ~BackpropStorage() = default;
 
-    math::Matrix<T> &getWeights(size_t i) { return *weights[i]; }
-    math::Matrix<T> const &getWeights(size_t i) const { return *weights[i]; }
+    math::Matrix<T> &getWeights(size_t i) { return weights->at(i); }
+    math::Matrix<T> const &getWeights(size_t i) const { return weights->at(i); }
 
     math::Matrix<T> &getWeights() { return weights->at(index); }
     math::Matrix<T> const &getWeights() const { return weights->at(index); }

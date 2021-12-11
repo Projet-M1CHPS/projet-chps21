@@ -26,14 +26,14 @@ namespace nnet {
   template<typename T>
   class SGDOptimization : public OptimizationMethod<T> {
   public:
-    SGDOptimization(const T learningRate) : learningRate(learningRate) {}
+    SGDOptimization(const T learningRate) : learning_r(learningRate) {}
 
     void compute(BackpropStorage<T> &storage) override {
-      storage.getWeights() -= (storage.getGradient() * learningRate);
+      storage.getWeights() -= (storage.getGradient() * learning_r);
     }
 
   private:
-    const T learningRate;
+    const T learning_r;
   };
 
 
@@ -92,33 +92,34 @@ namespace nnet {
   public:
     DecayMomentumOptimization(const std::vector<size_t> &topology, const T lr_0, const T dr,
                               const T mom)
-        : learningRate_0(lr_0), learningRate(lr_0), momentum(mom), decayRate(dr) {
+        : initial_lr(lr_0), learning_r(lr_0), momentum(mom), decay_r(dr) {
       for (size_t i = 0; i < topology.size() - 1; i++) {
-        dw_old.push_back(math::Matrix<T>(topology[i + 1], topology[i]));
-        dw_old.back().fill(0.0);
+        old_weight_change.push_back(math::Matrix<T>(topology[i + 1], topology[i]));
+        old_weight_change.back().fill(0.0);
       }
     }
 
     void compute(BackpropStorage<T> &storage) {
-      auto dw = (storage.getGradient() * learningRate) + (dw_old[storage.getIndex()] * momentum);
+      auto dw = (storage.getGradient() * learning_r) +
+                (old_weight_change[storage.getIndex()] * momentum);
       storage.getWeights() -= dw;
-      dw_old[storage.getIndex()] = std::move(dw);
+      old_weight_change[storage.getIndex()] = std::move(dw);
     }
 
     void update() {
       epoch++;
-      learningRate = (1 / (1 + decayRate * epoch)) * static_cast<T>(learningRate_0);
+      learning_r = (1 / (1 + decay_r * epoch)) * static_cast<T>(initial_lr);
     }
 
   private:
-    const T learningRate_0;
-    const T decayRate;
-    T learningRate;
+    const T initial_lr;
+    const T decay_r;
+    T learning_r;
     const T momentum;
 
     size_t epoch = 0;
 
-    std::vector<math::Matrix<T>> dw_old;
+    std::vector<math::Matrix<T>> old_weight_change;
   };
 
 
@@ -161,7 +162,7 @@ namespace nnet {
       for (size_t i = 0; i < weights.getRows(); i++) {
         for (size_t j = 0; j < weights.getCols(); j++) {
           T weight_change = 0.0;
-          T change = sign(gradient(i, j) * old_gradients[index](i, j));
+          T change = sign(gradient(i, j) * old_gradient(i, j));
 
           // The gradient is converging in the same direction as the previous update
           // Increase the delta to converge faster

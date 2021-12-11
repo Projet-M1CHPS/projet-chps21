@@ -24,8 +24,6 @@ namespace control::classifier {
       // The f1 score is the harmonic mean of both the recall and the precision
       stats(i, 2) = 2 * (stats(i, 0) * stats(i, 1)) / (stats(i, 0) + stats(i, 1));
 
-      for (size_t j = 0; j < 3; j++)
-        if (std::isnan(stats(i, j))) stats(i, j) = 0.0;
       avg_precision += stats(i, 0);
       avg_recall += stats(i, 1);
       avg_f1score += stats(i, 2);
