@@ -60,6 +60,7 @@ namespace control::classifier {
     network->setActivationFunction(af::ActivationFunctionType::sigmoid, 0);
     network->setActivationFunction(af::ActivationFunctionType::sigmoid, 2);
     network->setActivationFunction(af::ActivationFunctionType::sigmoid, 4);
+    network->setActivationFunction(af::ActivationFunctionType::sigmoid, 5);
 
     return {true, "Training set loaded"};
   }
@@ -72,7 +73,7 @@ namespace control::classifier {
     try {
       if (not training_collection) {
         training_collection = params->getSetLoader().load(params->getInputPath(), is_verbose, os);
-        training_collection->shuffleSets(std::random_device()());
+        training_collection->shuffleSets(std::random_device{}());
       }
     } catch (std::exception &e) {
       throw std::runtime_error("Error while loading training set: " + std::string(e.what()));
@@ -99,7 +100,7 @@ namespace control::classifier {
 
   void CTController::trainingLoop(bool is_verbose, std::ostream *os, CTracker &stracker) {
     double initial_learning_rate = 0.5f, learning_rate = 0.;
-    size_t batch_size = 5, max_epoch = 1000;
+    size_t batch_size = 5, max_epoch = 200;
     if (is_verbose)
       *os << std::setprecision(32)
           << "Training started with: {initial_learning_rate: " << initial_learning_rate
@@ -113,11 +114,21 @@ namespace control::classifier {
     math::Matrix<size_t> confusion(nclass, nclass);
     math::FloatMatrix target(nclass, 1);
 
-    nnet::DecayTrainingMethod<float> decay(1.0f, 0.9f);
-    nnet::StandardTrainingMethod<float> std(0.01f);
-    nnet::RPropPTrainingMethod<float> rprop(network->getTopology());
-    nnet::MomentumTrainingMethod<float> momentum(network->getTopology(), 0.01f, 0.2);
-    nnet::MLPOptimizer<float> optimizer(network.get(), &decay);
+    nnet::DecayOptimization<float> decay(0.01f, 0.01f);
+    nnet::SGDOptimization<float> std(0.01f);
+    nnet::RPropPOptimization<float> rprop(network->getTopology());
+    nnet::MomentumOptimization<float> momentum(network->getTopology(), 0.01f, 0.9f);
+    nnet::DecayMomentumOptimization<float> momentum_decay(network->getTopology(), 0.01f, 0.01f,
+                                                          0.9f);
+    nnet::MLPStochOptimizer<float> optimizer(network.get(), &decay);
+
+    std::vector<math::FloatMatrix> training_targets;
+    for (size_t i = 0; auto const &set : training_set) {
+      target.fill(0);
+      target(training_set.getLabel(i).getId(), 0) = 1.f;
+      training_targets.push_back(target);
+      i++;
+    }
 
     while (stracker.getEpoch() < max_epoch) {
       for (int i = 0; i < batch_size; i++) {
@@ -129,7 +140,9 @@ namespace control::classifier {
 
           optimizer.train(training_set[j], target);
         }
+        // optimizer.train(training_set.begin(), training_set.end(), training_targets.begin());
       }
+      training_set.shuffle(std::random_device{}());
 
       confusion.fill(0);
       for (int i = 0; i < eval_set.size(); i++) {
@@ -144,7 +157,8 @@ namespace control::classifier {
       if (is_verbose) *os << stats;
       stats.dumpToFiles();
       stracker.nextEpoch();
-      decay.incrEpoch();
+      momentum_decay.update();
+      decay.update();
     }
   }
 

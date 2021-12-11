@@ -64,9 +64,7 @@ namespace math {
      * @param j
      * @return
      */
-    T &operator()(size_t i, size_t j) {
-      return data[i * cols + j];
-    };
+    T &operator()(size_t i, size_t j) { return data[i * cols + j]; };
 
     /** @brief Returns element (i, j). Does not perform bound checking
      *
@@ -74,9 +72,7 @@ namespace math {
      * @param j
      * @return
      */
-    T const &operator()(size_t i, size_t j) const {
-      return data[i * cols + j];
-    };
+    T const &operator()(size_t i, size_t j) const { return data[i * cols + j]; };
 
     Matrix(const Matrix &other) { *this = other; }
 
@@ -455,18 +451,13 @@ namespace math {
     return os;
   }
 
-  template<typename T>
+  template<typename T, typename = std::enable_if<std::is_floating_point_v<T>>>
   void randomize(math::Matrix<T> &matrix, T min, T max) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-
-    static constexpr bool handled = std::is_floating_point_v<T> or std::is_integral_v<T>;
-    static_assert(handled, "Type not supported");
+    std::mt19937 gen(std::random_device{}());
 
     if constexpr (std::is_floating_point_v<T>) {
       std::uniform_real_distribution<> dis(min, max);
-      for (size_t i = 0; i < matrix.getRows(); i++)
-        for (size_t j = 0; j < matrix.getCols(); j++) { matrix(i, j) = dis(gen); }
+      for (auto &elem : matrix) { elem = dis(gen); }
 
     } else if constexpr (std::is_integral_v<T>) {
       std::uniform_int_distribution<> dis(min, max);
