@@ -312,12 +312,13 @@ void setupLogger() {
 
 bool test_image(std::vector<std::string> const &args) {
   // FIXME: placeholder path
+  setupLogger();
+
   if (args.size() < 2) {
-    std::cerr << "Usage: " << args[0] << " <input_path> (<working_path>)" << std::endl;
+    tscl::logger("Usage: " + args[0] + " <input_path> (<working_path>)", tscl::Log::Error);
     return false;
   }
 
-  setupLogger();
 
   std::filesystem::path input_path = args[1];
   std::filesystem::path working_path = args.size() == 3 ? args[2] : "runs/test";
@@ -327,7 +328,7 @@ bool test_image(std::vector<std::string> const &args) {
   // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
   // engine.addTransformation(std::make_shared<image::transform::Inversion>());
 
-  std::shared_ptr<nnet::MLPModelOptimizer> optimizer =
+  std::shared_ptr<nnet::MLPModelOptimizer<float>> optimizer =
           nnet::OptimizerFactory::makeMLPModelOptimizer(nnet::ModelOptimizerType::stochastic,
                                                         nnet::OptimizationAlgorithm::momentum,
                                                         0.01f, 0.9f);

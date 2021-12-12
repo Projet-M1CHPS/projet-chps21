@@ -140,14 +140,10 @@ namespace control {
 
     /** Refer to @getTopology
      *
-     * @tparam iterator
      * @param begin
      * @param end
      */
-    template<typename iterator>
-    void setTopology(nnet::MLPTopology topo) {
-      topology = std::move(topo);
-    }
+    void setTopology(nnet::MLPTopology topo) { topology = std::move(topo); }
 
     /** The how the controller will behave when an existing network is found inside the output_path
      *
@@ -163,6 +159,7 @@ namespace control {
     std::shared_ptr<SetLoader> ts_loader;
     std::filesystem::path working_path;
     std::filesystem::path output_path;
+    size_t max_training_epoch;
   };
 
 

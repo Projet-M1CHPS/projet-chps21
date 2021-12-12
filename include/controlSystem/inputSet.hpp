@@ -88,6 +88,15 @@ namespace control {
      */
     [[nodiscard]] size_t size() const { return inputs.size(); }
 
+    /** Returns a vector containing every matrices stored in the set
+     *
+     * Unfortunately, this breaks the genericity of the class, but it is easier than implementing an
+     * any_iterator
+     *
+     * @return
+     */
+    [[nodiscard]] std::vector<math::Matrix<real>> const &getVector() { return inputs; }
+
     /** Detroy every element in the set
      *
      */

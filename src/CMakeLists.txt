@@ -15,10 +15,10 @@ target_code_coverage(Utils)
 add_subdirectory(tscl)
 add_subdirectory(image)
 add_subdirectory(controlSystem)
-add_subdirectory(NeuralNetwork)
+add_subdirectory(neuralNetwork)
 
 add_executable(main main.cpp)
 set_target_properties(main PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(main PUBLIC "${INCLUDE_DR}")
 
-target_link_libraries(main PRIVATE ControlSystem Image NeuralNetwork pthread tscl ${BLAS_LIBRARIES})
+target_link_libraries(main PRIVATE ControlSystem Image neuralNetwork pthread tscl ${BLAS_LIBRARIES})

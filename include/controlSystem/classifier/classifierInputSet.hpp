@@ -52,7 +52,6 @@ namespace control::classifier {
     [[nodiscard]] std::vector<ClassLabel const *> const &getLabels() const { return set_labels; }
     [[nodiscard]] std::vector<ClassLabel> const &getClassLabels() const { return *class_labels; }
 
-
     void append(std::filesystem::path path, math::Matrix<float> &&mat) override;
     void append(std::filesystem::path path, ClassLabel const *label, math::Matrix<float> &&mat);
 

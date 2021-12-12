@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ActivationFunction.hpp"
 #include "Matrix.hpp"
 #include "Utils.hpp"
+#include "neuralNetwork/ActivationFunction.hpp"
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -109,11 +109,9 @@ namespace nnet {
      */
     MLPerceptron() = default;
 
-    MLPerceptron(const MLPerceptron &other) : MLPBase(getFPPrecision<real>()) { *this = other; }
+    MLPerceptron(const MLPerceptron &other) : MLPBase() { *this = other; }
 
-    MLPerceptron(MLPerceptron &&other) noexcept : MLPBase(getFPPrecision<real>()) {
-      *this = std::move(other);
-    }
+    MLPerceptron(MLPerceptron &&other) noexcept : MLPBase() { *this = std::move(other); }
 
     MLPerceptron &operator=(const MLPerceptron &) = default;
 

@@ -1,17 +1,15 @@
 #pragma once
 
-#include <vector>
-
-#include "BackpropStorage.hpp"
+#include "MLPModel.hpp"
 #include "MLPerceptron.hpp"
-#include "Matrix.hpp"
-#include "Model.hpp"
 #include "OptimizationMethod.hpp"
+#include "neuralNetwork/ModelOptimizer.hpp"
+#include <iostream>
 
 namespace nnet {
 
   template<typename real = float>
-  class MLPModelOptimizer {
+  class MLPModelOptimizer : public ModelOptimizer<real> {
   public:
     MLPModelOptimizer(MLPModel<real> *const model, OptimizationMethod<real> *const tm)
         : neural_network(&model->getPerceptron()), opti_meth(tm) {}
@@ -27,6 +25,11 @@ namespace nnet {
 
     virtual ~MLPModelOptimizer() = default;
 
+    virtual void optimize(const std::vector<math::Matrix<real>> &inputs,
+                          const std::vector<math::Matrix<real>> &targets) = 0;
+
+    virtual void update() { opti_meth->update(); }
+
   protected:
     MLPerceptron<real> *const neural_network;
     OptimizationMethod<real> *const opti_meth;
@@ -34,13 +37,14 @@ namespace nnet {
 
 
   template<typename real = float>
-  class MLPModelStochOptimizer : public MLPModelOptimizer<real> {
+  class MLPModelStochOptimizer final : public MLPModelOptimizer<real> {
   public:
     MLPModelStochOptimizer(MLPModel<real> *const model, OptimizationMethod<real> *const tm)
         : MLPModelOptimizer<real>(model, tm), storage(this->neural_network->getWeights()) {
       layers.resize(this->neural_network->getWeights().size() + 1);
       layers_af.resize(this->neural_network->getWeights().size() + 1);
     };
+
 
     void train(const math::Matrix<real> &input, const math::Matrix<real> &target) {
       const size_t nbInput = input.getRows();
@@ -58,13 +62,12 @@ namespace nnet {
       backward(target);
     }
 
-    template<typename input_iterator, typename target_iterator>
-    void train(const input_iterator begin, const input_iterator end,
-               const target_iterator target_begin) {
-      auto target = target_begin;
-      for (auto it = begin; it != end; ++it, ++target) { train(*it, *target); }
-    }
 
+    void optimize(const std::vector<math::Matrix<real>> &inputs,
+                  const std::vector<math::Matrix<real>> &targets) override {
+      if (inputs.size() != targets.size()) { throw std::runtime_error("Invalid number of inputs"); }
+      for (size_t i = 0; i < inputs.size(); ++i) { train(inputs[i], targets[i]); }
+    }
 
   private:
     void forward(math::Matrix<real> const &inputs) {
@@ -131,7 +134,7 @@ namespace nnet {
 
 
   template<typename real = float>
-  class MLPBatchOptimizer : public MLPModelOptimizer<real> {
+  class MLPBatchOptimizer final : public MLPModelOptimizer<real> {
   public:
     MLPBatchOptimizer(MLPerceptron<real> *const nn, OptimizationMethod<real> *const tm)
         : MLPModelOptimizer<real>(nn, tm), storage(this->neural_network->getWeights()) {
@@ -151,32 +154,23 @@ namespace nnet {
 
     ~MLPBatchOptimizer() = default;
 
-    void train(const std::vector<math::Matrix<real>> &inputs,
-               const std::vector<math::Matrix<real>> &targets) {
-      train(inputs.begin(), inputs.end(), targets.begin());
-    }
-
-    template<typename input_iterator, typename target_iterator>
-    void train(const input_iterator begin, const input_iterator end,
-               const target_iterator targets_beg) {
-      size_t n = std::distance(begin, end);
+    void optimize(const std::vector<math::Matrix<real>> &inputs,
+                  const std::vector<math::Matrix<real>> &targets) override {
+      size_t n = inputs.size();
 
       auto mat_reset = [](math::Matrix<real> &m) { m.fill(0); };
       std::for_each(avg_gradients.begin(), avg_gradients.end(), mat_reset);
       std::for_each(avg_errors.begin(), avg_errors.end(), mat_reset);
 
-      long i = 0;
-      auto it_target = targets_beg;
-
-      for (auto it = begin; it != end; it++, it_target++, i++) {
-        forward(*it);
-        storage.getError() = layers_af[layers_af.size() - 1] - *it_target;
+      for (long i = 0; i < n; i++) {
+        forward(inputs[i]);
+        storage.getError() = layers_af[layers_af.size() - 1] - targets[i];
         computeGradient();
       }
 
       for (auto &it : avg_gradients) { it *= ((real) 1.0 / n); }
 
-      for (i = this->neural_network->getWeights().size() - 1; i >= 0; i--) {
+      for (long i = this->neural_network->getWeights().size() - 1; i >= 0; i--) {
         storage.setIndex(i);
         storage.getGradient() = avg_gradients[i];
         storage.getError() = avg_errors[i];
@@ -276,6 +270,5 @@ namespace nnet {
     std::vector<math::Matrix<real>> avg_errors;
     std::vector<math::Matrix<real>> avg_gradients;
   };
-
 
 }   // namespace nnet

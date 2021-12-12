@@ -1,6 +1,6 @@
 #pragma once
 
-#include "neuralNetwork/MLPModelOptimizer.hpp"
-#include "neuralNetwork/MLPSerializer.hpp"
+#include "neuralNetwork/ActivationFunction.hpp"
 #include "neuralNetwork/Model.hpp"
-#include "neuralNetwork/OptimizationMethod.hpp"
+#include "neuralNetwork/ModelOptimizer.hpp"
+#include "neuralNetwork/Perceptron/Perceptron.hpp"

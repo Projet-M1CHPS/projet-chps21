@@ -1,5 +1,5 @@
-#include "MLPModelOptimizer.hpp"
 #include "MLPerceptron.hpp"
+#include "ModelOptimizer.hpp"
 #include "OptimizationMethod.hpp"
 #include <gtest/gtest.h>
 

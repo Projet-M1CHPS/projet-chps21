@@ -156,7 +156,7 @@ namespace control::classifier {
                  tscl::Log::Information);
     while (stracker.getEpoch() < max_epoch) {
       for (int i = 0; i < batch_size; i++) {
-        optimizer.train(training_set.begin(), training_set.end(), training_targets.begin());
+        optimizer.optimize(training_set.getVector(), training_targets);
       }
       training_set.shuffle(std::random_device{}());
 
