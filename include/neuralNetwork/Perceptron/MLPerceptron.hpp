@@ -172,6 +172,7 @@ namespace nnet {
         biases.push_back(math::Matrix<real>(topology[i + 1], 1));
         activation_functions.push_back(af::ActivationFunctionType::sigmoid);
       }
+      this->topology = topology;
     }
 
     void setActivationFunction(af::ActivationFunctionType type) {

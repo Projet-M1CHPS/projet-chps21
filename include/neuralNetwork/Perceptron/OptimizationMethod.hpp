@@ -9,6 +9,7 @@
 
 namespace nnet {
 
+
   /** Keep this in sync with new classes
    *
    */
@@ -20,6 +21,7 @@ namespace nnet {
     OptimizationMethod() = default;
     virtual ~OptimizationMethod() = default;
 
+    virtual void setPerceptron(MLPerceptron<real> &perceptron) {}
     virtual void compute(BackpropStorage<real> &storage) = 0;
     virtual void update(){};
   };
@@ -65,8 +67,13 @@ namespace nnet {
   template<typename real = float>
   class MomentumOptimization : public OptimizationMethod<real> {
   public:
-    MomentumOptimization(const MLPTopology &topology, const real learning_rate, const real momentum)
-        : lr(learning_rate), momentum(momentum) {
+    MomentumOptimization(const real learning_rate, const real momentum)
+        : lr(learning_rate), momentum(momentum) {}
+
+    void setPerceptron(MLPerceptron<real> &perceptron) override {
+      old_weight_change.clear();
+
+      auto &topology = perceptron.getTopology();
       for (size_t i = 0; i < topology.size() - 1; i++) {
         old_weight_change.push_back(math::Matrix<real>(topology[i + 1], topology[i]));
         old_weight_change.back().fill(0.0);
@@ -80,6 +87,7 @@ namespace nnet {
       old_weight_change[storage.getIndex()] = std::move(weight_change);
     }
 
+
   private:
     const real lr;
     const real momentum;
@@ -90,23 +98,28 @@ namespace nnet {
   template<typename real = float>
   class DecayMomentumOptimization : public OptimizationMethod<real> {
   public:
-    DecayMomentumOptimization(const MLPTopology &topology, const real lr_0, const real dr,
-                              const real mom)
-        : initial_lr(lr_0), learning_r(lr_0), momentum(mom), decay_r(dr) {
+    DecayMomentumOptimization(const real lr_0, const real dr, const real mom)
+        : initial_lr(lr_0), learning_r(lr_0), momentum(mom), decay_r(dr) {}
+
+    void setPerceptron(MLPerceptron<real> &perceptron) override {
+      old_weight_change.clear();
+
+      auto &topology = perceptron.getTopology();
       for (size_t i = 0; i < topology.size() - 1; i++) {
         old_weight_change.push_back(math::Matrix<real>(topology[i + 1], topology[i]));
         old_weight_change.back().fill(0.0);
       }
     }
 
-    void compute(BackpropStorage<real> &storage) {
+
+    void compute(BackpropStorage<real> &storage) override {
       auto dw = (storage.getGradient() * learning_r) +
                 (old_weight_change[storage.getIndex()] * momentum);
       storage.getWeights() -= dw;
       old_weight_change[storage.getIndex()] = std::move(dw);
     }
 
-    void update() {
+    void update() override {
       epoch++;
       learning_r = (1 / (1 + decay_r * epoch)) * static_cast<real>(initial_lr);
     }
@@ -126,9 +139,16 @@ namespace nnet {
   template<typename real = float>
   class RPropPOptimization : public OptimizationMethod<real> {
   public:
-    RPropPOptimization(const MLPTopology &topology, const real eta_p = 1.2, const real eta_m = 0.5,
-                       const real lr_max = 50.0, const real lr_min = 1e-6)
-        : eta_plus(eta_p), eta_minus(eta_m), update_max(lr_max), update_min(lr_min) {
+    RPropPOptimization(const real eta_p = 1.2, const real eta_m = 0.5, const real lr_max = 50.0,
+                       const real lr_min = 1e-6)
+        : eta_plus(eta_p), eta_minus(eta_m), update_max(lr_max), update_min(lr_min) {}
+
+    void setPerceptron(MLPerceptron<real> &perceptron) override {
+      weights_updates.clear();
+      old_gradients.clear();
+      weights_changes.clear();
+
+      auto &topology = perceptron->getTopology();
       for (size_t i = 0; i < topology.size() - 1; i++) {
         weights_updates.push_back(math::Matrix<real>(topology[i + 1], topology[i]));
         weights_updates.back().fill(0.1);
@@ -201,5 +221,24 @@ namespace nnet {
     const real update_max;
     const real update_min;
   };
+
+  template<typename real, typename... Args,
+           typename = std::enable_if<std::is_floating_point_v<real>>>
+  std::unique_ptr<OptimizationMethod<real>> makeOptimizationFromAlgo(OptimizationAlgorithm algo,
+                                                                     Args &&...args) {
+    switch (algo) {
+      case OptimizationAlgorithm::standard:
+        return std::make_unique<SGDOptimization<real>>(std::forward<Args>(args)...);
+      case OptimizationAlgorithm::momentum:
+        return std::make_unique<MomentumOptimization<real>>(std::forward<Args>(args)...);
+      case OptimizationAlgorithm::decay:
+        return std::make_unique<DecayOptimization<real>>(std::forward<Args>(args)...);
+      case OptimizationAlgorithm::rpropPlus:
+        return std::make_unique<RPropPOptimization<real>>(std::forward<Args>(args)...);
+      default:
+        throw std::runtime_error("Unknown optimization algorithm");
+    }
+    return nullptr;
+  }
 
 }   // namespace nnet

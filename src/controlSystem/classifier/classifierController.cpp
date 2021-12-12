@@ -87,9 +87,11 @@ namespace control::classifier {
     auto topology = params->getTopology();
     topology.push_back(training_collection->classCount());
 
-    model = nnet::MLPModelFactory<float>::randomSigReluAlt(nnet::MLPTopology(topology));
+    model = nnet::MLPModelFactory<float>::randomSigReluAlt(topology);
+    auto &optimizer = params->getOptimizer();
+    optimizer.setModel(*model);
 
-    return {true, "Training set loaded"};
+    return {true, "Model created"};
   }
 
   ControllerResult CTController::checkModel() { return {false, "not implemented"}; }
@@ -158,7 +160,7 @@ namespace control::classifier {
       for (int i = 0; i < batch_size; i++) {
         optimizer.optimize(training_set.getVector(), training_targets);
       }
-      training_set.shuffle(std::random_device{}());
+      // training_set.shuffle(std::random_device{}());
 
       confusion.fill(0);
       for (int i = 0; i < eval_set.size(); i++) {

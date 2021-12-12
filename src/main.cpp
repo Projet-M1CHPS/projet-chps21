@@ -328,16 +328,16 @@ bool test_image(std::vector<std::string> const &args) {
   // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
   // engine.addTransformation(std::make_shared<image::transform::Inversion>());
 
-  std::shared_ptr<nnet::MLPModelOptimizer<float>> optimizer =
+  std::shared_ptr<nnet::ModelOptimizer<float>> optimizer =
           nnet::OptimizerFactory<float>::makeMLPModelOptimizer(
-                  nnet::ModelOptimizerType::stochastic, nnet::OptimizationAlgorithm::momentum,
-                  0.01f, 0.9f);
+                  nnet::ModelOptimizerType::stochastic,
+                  std::make_shared<nnet::DecayMomentumOptimization<float>>(0.01, 0.1, 0.9));
 
   CTParams parameters(RunPolicy::create, input_path, loader, optimizer, "runs/test");
 
-  nnet::MLPTopology topology = {32 * 32, 64, 64, 64, 64};
+  nnet::MLPTopology topology = {32 * 32, 64, 32, 16, 8};
   parameters.setTopology(topology);
-  parameters.setMaxEpoch(100);
+  // parameters.setMaxEpoch(100);
 
   CTController controller(parameters);
   logger(tscl::StringLog("Launching run", Log::Information));

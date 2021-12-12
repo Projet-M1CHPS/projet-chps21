@@ -11,8 +11,7 @@ namespace nnet {
   template<typename real = float>
   class MLPModelOptimizer : public ModelOptimizer<real> {
   public:
-    MLPModelOptimizer(MLPModel<real> *const model, OptimizationMethod<real> *const tm)
-        : neural_network(&model->getPerceptron()), opti_meth(tm) {}
+    MLPModelOptimizer(std::shared_ptr<OptimizationMethod<real>> tm) : opti_meth(tm) {}
 
     MLPModelOptimizer(const MLPModelOptimizer<real> &other) = delete;
     MLPModelOptimizer(MLPModelOptimizer<real> &&other) noexcept = default;
@@ -25,25 +24,25 @@ namespace nnet {
 
     virtual ~MLPModelOptimizer() = default;
 
-    virtual void optimize(const std::vector<math::Matrix<real>> &inputs,
-                          const std::vector<math::Matrix<real>> &targets) = 0;
+    void setModel(Model<real> &model) override {
+      auto &mlp_model = dynamic_cast<MLPModel<real> &>(model);
+      neural_network = &mlp_model.getPerceptron();
+      opti_meth->setPerceptron(*neural_network);
+    }
 
-    virtual void update() { opti_meth->update(); }
+    void update() override { opti_meth->update(); }
 
   protected:
-    MLPerceptron<real> *const neural_network;
-    OptimizationMethod<real> *const opti_meth;
+    MLPerceptron<real> *neural_network;
+    std::shared_ptr<OptimizationMethod<real>> opti_meth;
   };
 
 
   template<typename real = float>
   class MLPModelStochOptimizer final : public MLPModelOptimizer<real> {
   public:
-    MLPModelStochOptimizer(MLPModel<real> *const model, OptimizationMethod<real> *const tm)
-        : MLPModelOptimizer<real>(model, tm), storage(this->neural_network->getWeights()) {
-      layers.resize(this->neural_network->getWeights().size() + 1);
-      layers_af.resize(this->neural_network->getWeights().size() + 1);
-    };
+    MLPModelStochOptimizer(std::shared_ptr<OptimizationMethod<real>> tm)
+        : MLPModelOptimizer<real>(tm){};
 
 
     void train(const math::Matrix<real> &input, const math::Matrix<real> &target) {
@@ -51,9 +50,9 @@ namespace nnet {
       const size_t nbTarget = target.getRows();
 
       auto &weights = this->neural_network->getWeights();
+      auto &topology = this->neural_network->getTopology();
 
-      if (nbInput != this->neural_network->getInputSize() ||
-          nbTarget != this->neural_network->getOutputSize()) {
+      if (nbInput != topology.getInputSize() || nbTarget != topology.getOutputSize()) {
         throw std::runtime_error("Invalid number of inputs");
       }
 
@@ -62,6 +61,16 @@ namespace nnet {
       backward(target);
     }
 
+    void setModel(Model<real> &model) override {
+      MLPModelOptimizer<real>::setModel(model);
+      auto &mlp_model = dynamic_cast<MLPModel<real> &>(model);
+
+      auto &perceptron = mlp_model.getPerceptron();
+
+      storage = BackpropStorage<real>(perceptron.getWeights());
+      layers.resize(perceptron.getWeights().size() + 1);
+      layers_af.resize(perceptron.getWeights().size() + 1);
+    }
 
     void optimize(const std::vector<math::Matrix<real>> &inputs,
                   const std::vector<math::Matrix<real>> &targets) override {
@@ -136,23 +145,29 @@ namespace nnet {
   template<typename real = float>
   class MLPBatchOptimizer final : public MLPModelOptimizer<real> {
   public:
-    MLPBatchOptimizer(MLPerceptron<real> *const nn, OptimizationMethod<real> *const tm)
-        : MLPModelOptimizer<real>(nn, tm), storage(this->neural_network->getWeights()) {
-      layers.resize(nn->getWeights().size() + 1);
-      layers_af.resize(nn->getWeights().size() + 1);
+    explicit MLPBatchOptimizer(std::shared_ptr<OptimizationMethod<real>> tm)
+        : MLPModelOptimizer<real>(tm) {}
 
-      const auto &topology = nn->getTopology();
+    void setModel(Model<real> &model) override {
+      MLPModelOptimizer<real>::setModel(model);
+      auto &mlp_model = dynamic_cast<MLPModel<real> &>(model);
 
-      for (size_t i = 0; i < nn->getWeights().size(); i++) {
+      auto &perceptron = mlp_model.getPerceptron();
+      auto &topology = perceptron.getTopology();
+
+      storage = BackpropStorage<real>(this->neural_network->getWeights());
+
+      layers.resize(perceptron.getWeights().size() + 1);
+      layers_af.resize(perceptron.getWeights().size() + 1);
+
+      for (size_t i = 0; i < perceptron.getWeights().size(); i++) {
         avg_gradients.push_back(math::Matrix<real>(topology[i + 1], topology[i]));
         avg_errors.push_back(math::Matrix<real>(topology[i + 1], 1));
 
         avg_gradients[i].fill(0.0);
         avg_errors[i].fill(0.0);
       }
-    };
-
-    ~MLPBatchOptimizer() = default;
+    }
 
     void optimize(const std::vector<math::Matrix<real>> &inputs,
                   const std::vector<math::Matrix<real>> &targets) override {

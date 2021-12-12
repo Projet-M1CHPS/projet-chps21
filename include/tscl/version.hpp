@@ -18,7 +18,7 @@ namespace tscl {
 
     Version() { *this = current; }
 
-    Version(std::string version);
+    Version(std::string const &version);
     Version(size_t major, size_t minor, size_t patch, std::string tweak = "");
 
     static void setCurrent(Version const &version) { _current = version; }

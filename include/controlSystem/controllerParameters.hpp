@@ -89,7 +89,7 @@ namespace control {
      */
     TrainingParameters(RunPolicy policy, std::filesystem::path const &input_path,
                        std::shared_ptr<SetLoader> loader,
-                       const std::shared_ptr<nnet::MLPModelOptimizer<float>> &optim,
+                       std::shared_ptr<nnet::ModelOptimizer<float>> optim,
                        std::filesystem::path working_path,
                        const std::filesystem::path &output_path = "")
         : controllerParameters(input_path), ts_loader(std::move(loader)),
@@ -124,8 +124,8 @@ namespace control {
       ts_loader = std::make_shared<loader>(std::forward<Types>(args)...);
     }
 
-    [[nodiscard]] nnet::MLPModelOptimizer<float> &getOptimizer() { return *optimizer; }
-    [[nodiscard]] nnet::MLPModelOptimizer<float> const &getOptimizer() const { return *optimizer; }
+    [[nodiscard]] nnet::ModelOptimizer<float> &getOptimizer() { return *optimizer; }
+    [[nodiscard]] nnet::ModelOptimizer<float> const &getOptimizer() const { return *optimizer; }
 
 
     /** Returns the topology of the network. First element is the input size, and last element is
@@ -153,7 +153,7 @@ namespace control {
 
 
   private:
-    std::shared_ptr<nnet::MLPModelOptimizer<float>> optimizer;
+    std::shared_ptr<nnet::ModelOptimizer<float>> optimizer;
     nnet::MLPTopology topology;
 
     std::shared_ptr<SetLoader> ts_loader;

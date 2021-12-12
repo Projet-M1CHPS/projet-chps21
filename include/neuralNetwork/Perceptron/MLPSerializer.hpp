@@ -94,8 +94,9 @@ namespace nnet {
 
     MLPMetadata const *save(std::filesystem::path const &p) { return nullptr; }
 
-    std::unique_ptr<MLPerceptron<real>> load();
-    std::unique_ptr<MLPerceptron<real>> load(std::filesystem::path const &path);
+    std::unique_ptr<MLPerceptron<real>> load() { return nullptr; }
+
+    std::unique_ptr<MLPerceptron<real>> load(std::filesystem::path const &path) { return nullptr; }
 
   private:
     std::filesystem::path path;

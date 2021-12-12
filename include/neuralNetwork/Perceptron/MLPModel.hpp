@@ -2,6 +2,7 @@
 
 #include "MLPSerializer.hpp"
 #include "MLPerceptron.hpp"
+#include "neuralNetwork/Model.hpp"
 
 namespace nnet {
   template<typename real = float, typename = std::enable_if<std::is_floating_point_v<real>>>
@@ -114,7 +115,7 @@ namespace nnet {
       mlp.randomizeWeight();
       mlp.setActivationFunction(af::ActivationFunctionType::leakyRelu);
 
-      for (size_t i = 0; i < topology.size(); i++) {
+      for (size_t i = 0; i < topology.size() - 1; i++) {
         if (i % 2 == 0 or i == topology.size() - 1) {
           mlp.setActivationFunction(af::ActivationFunctionType::sigmoid, i);
         }
