@@ -38,7 +38,7 @@ namespace control {
   template<class TrainingSet>
   class TSLoader {
   public:
-    [[nodiscard]] virtual std::shared_ptr<TrainingSet> load(std::filesystem::path const &input_path,
-                                                            bool verbose, std::ostream *out) = 0;
+    [[nodiscard]] virtual std::shared_ptr<TrainingSet>
+    load(std::filesystem::path const &input_path) = 0;
   };
 }   // namespace control

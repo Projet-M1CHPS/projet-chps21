@@ -1,7 +1,7 @@
 #pragma once
 
+#include "Network.hpp"
 #include "inputSetLoader.hpp"
-#include "neuralNetwork/NeuralNetwork.hpp"
 #include <filesystem>
 #include <memory>
 #include <utility>
@@ -88,10 +88,12 @@ namespace control {
      * @param output_path Where the neural network will be save / retrieved, along other data
      */
     TrainingParameters(RunPolicy policy, std::filesystem::path const &input_path,
-                       std::shared_ptr<SetLoader> loader, std::filesystem::path working_path,
+                       std::shared_ptr<SetLoader> loader,
+                       const std::shared_ptr<nnet::MLPModelOptimizer<float>> &optim,
+                       std::filesystem::path working_path,
                        const std::filesystem::path &output_path = "")
-        : controllerParameters(input_path), training_method(nnet::OptimizationAlgorithm::standard),
-          ts_loader(std::move(loader)), working_path(std::move(working_path)) {
+        : controllerParameters(input_path), ts_loader(std::move(loader)),
+          optimizer(std::move(optim)), working_path(std::move(working_path)) {
       this->policy = policy;
       if (output_path != "") this->output_path = output_path;
       else
@@ -122,10 +124,9 @@ namespace control {
       ts_loader = std::make_shared<loader>(std::forward<Types>(args)...);
     }
 
-    [[nodiscard]] nnet::OptimizationAlgorithm getTrainingAlgorithm() const {
-      return training_method;
-    }
-    void setTrainingAlgorithm(nnet::OptimizationAlgorithm tm) { training_method = tm; }
+    [[nodiscard]] nnet::MLPModelOptimizer<float> &getOptimizer() { return *optimizer; }
+    [[nodiscard]] nnet::MLPModelOptimizer<float> const &getOptimizer() const { return *optimizer; }
+
 
     /** Returns the topology of the network. First element is the input size, and last element is
      * the output. Any element in-between are considered hidden layers.
@@ -135,7 +136,7 @@ namespace control {
      *
      * @return The required topology of the network
      */
-    [[nodiscard]] std::vector<size_t> const &getTopology() const { return topology; }
+    [[nodiscard]] nnet::MLPTopology const &getTopology() const { return topology; }
 
     /** Refer to @getTopology
      *
@@ -144,10 +145,8 @@ namespace control {
      * @param end
      */
     template<typename iterator>
-    void setTopology(iterator begin, iterator end) {
-      topology.clear();
-
-      std::copy(begin, end, std::back_inserter(topology));
+    void setTopology(nnet::MLPTopology topo) {
+      topology = std::move(topo);
     }
 
     /** The how the controller will behave when an existing network is found inside the output_path
@@ -158,8 +157,8 @@ namespace control {
 
 
   private:
-    nnet::OptimizationAlgorithm training_method;
-    std::vector<size_t> topology;
+    std::shared_ptr<nnet::MLPModelOptimizer<float>> optimizer;
+    nnet::MLPTopology topology;
 
     std::shared_ptr<SetLoader> ts_loader;
     std::filesystem::path working_path;

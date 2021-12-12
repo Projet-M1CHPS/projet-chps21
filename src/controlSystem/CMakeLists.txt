@@ -12,6 +12,7 @@ add_library(ControlSystem
         classifier/classifierController.cpp ${CLASSIFIER_INCLUDE_DIR}/classifierController.hpp
         classifier/classifierInputSet.cpp ${CLASSIFIER_INCLUDE_DIR}/classifierInputSet.hpp
         classifier/classifierTracker.cpp ${CLASSIFIER_INCLUDE_DIR}/classifierTracker.hpp
+        ${INCLUDE_DIR}/Control.hpp
         )
 
 target_include_directories(ControlSystem PUBLIC "${INCLUDE_DIR}" "${CURRENT_INCLUDE_DIR}" "${CLASSIFIER_INCLUDE_DIR}")

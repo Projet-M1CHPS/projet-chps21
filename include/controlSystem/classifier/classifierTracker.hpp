@@ -79,6 +79,10 @@ namespace control::classifier {
     void classification_report(std::ostream &os, std::vector<ClassLabel> const &labels) const;
     void dumpToFiles();
 
+    [[nodiscard]] double getAvgPrec() const { return avg_precision; }
+    [[nodiscard]] double getAvgRecall() const { return avg_recall; }
+    [[nodiscard]] double getAvgF1() const { return avg_f1score; }
+
   private:
     CStats(size_t epoch, math::Matrix<size_t> const &confusion,
            std::shared_ptr<CTrackerState> state);

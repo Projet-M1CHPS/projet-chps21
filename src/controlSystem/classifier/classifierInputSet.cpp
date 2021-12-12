@@ -45,7 +45,7 @@ namespace control::classifier {
   }
 
   std::ostream &operator<<(std::ostream &os, const ClassLabel &label) {
-    os << "\tclass_id: " << label.getId() << ", class_name: " << label.getName();
+    os << "class_id: " << label.getId() << ", class_name: " << label.getName();
     return os;
   }
 }   // namespace control::classifier

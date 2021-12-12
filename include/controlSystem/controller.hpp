@@ -49,7 +49,7 @@ namespace control {
   class Controller {
   public:
     virtual ~Controller() = default;
-    virtual ControllerResult run(bool is_verbose, std::ostream *os) noexcept = 0;
+    virtual ControllerResult run() noexcept = 0;
 
     /** Return the controller's network
      *
@@ -57,19 +57,19 @@ namespace control {
      *
      * @return
      */
-    [[nodiscard]] nnet::NeuralNetwork<real> *getNetwork() { return network.get(); }
-    [[nodiscard]] nnet::NeuralNetwork<real> const *getNetwork() const { return network.get(); }
+    [[nodiscard]] nnet::MLPerceptron<real> *getNetwork() { return model.get(); }
+    [[nodiscard]] nnet::MLPerceptron<real> const *getNetwork() const { return model.get(); }
 
     /** Returns a shared_ptr pointing to the controller's network
      *
      * @return
      */
-    [[nodiscard]] std::shared_ptr<nnet::NeuralNetwork<real>> getNetworkPtr() { return network; }
-    [[nodiscard]] std::shared_ptr<nnet::NeuralNetwork<real> const> getNetworkPtr() const {
-      return network;
+    [[nodiscard]] std::shared_ptr<nnet::MLPerceptron<real>> getModelPtr() { return model; }
+    [[nodiscard]] std::shared_ptr<nnet::MLPerceptron<real> const> getModelPtr() const {
+      return model;
     }
 
   protected:
-    std::shared_ptr<nnet::NeuralNetwork<real>> network;
+    std::shared_ptr<nnet::MLPModel<real>> model;
   };
 }   // namespace control

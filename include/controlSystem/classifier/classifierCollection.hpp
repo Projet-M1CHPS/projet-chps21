@@ -141,7 +141,7 @@ namespace control::classifier {
      * @return
      */
     [[nodiscard]] std::shared_ptr<ClassifierTrainingCollection>
-    load(std::filesystem::path const &input_path, bool verbose, std::ostream *out) override;
+    load(std::filesystem::path const &input_path) override;
 
     /** Returns the transformation engine that gets applied before the rescaling
      *
@@ -166,10 +166,9 @@ namespace control::classifier {
 
   private:
     void loadClasses(std::filesystem::path const &input_path);
-    void loadEvalSet(ClassifierTrainingCollection &res, const std::filesystem::path &input_path,
-                     bool verbose, std::ostream *out);
-    void loadTrainingSet(ClassifierTrainingCollection &res, std::filesystem::path const &input_path,
-                         bool verbose, std::ostream *out);
+    void loadEvalSet(ClassifierTrainingCollection &res, const std::filesystem::path &input_path);
+    void loadTrainingSet(ClassifierTrainingCollection &res,
+                         std::filesystem::path const &input_path);
 
     void loadSet(ClassifierInputSet &res, std::filesystem::path const &input_path);
 

@@ -1,5 +1,6 @@
 
 #include "classifierCollection.hpp"
+#include "tscl.hpp"
 
 namespace fs = std::filesystem;
 
@@ -31,11 +32,15 @@ namespace control::classifier {
 
 
   void CITCLoader::loadClasses(fs::path const &input_path) {
-    if (not fs::exists(input_path / "train"))
+    if (not fs::exists(input_path / "train")) {
+      tscl::logger("Train folder not found in " + input_path.string(), tscl::Log::Error);
       throw std::runtime_error("CITSLoader: train folder not found");
+    }
 
-    if (not fs::exists(input_path / "eval"))
+    if (not fs::exists(input_path / "eval")) {
+      tscl::logger("Eval folder not found in " + input_path.string(), tscl::Log::Error);
       throw std::runtime_error("CITSLoader: eval folder not found");
+    }
 
     std::vector<std::filesystem::path> training_classes, eval_classes;
     std::for_each(fs::directory_iterator(input_path / "train"), fs::directory_iterator(),
@@ -53,11 +58,12 @@ namespace control::classifier {
 
 
     if (not std::equal(training_classes.begin(), training_classes.end(), eval_classes.begin())) {
-      std::cerr << "CITSLoader: train and eval classes are not the same" << std::endl;
+      tscl::logger("Training and evaluation classes are not the same", tscl::Log::Error);
       size_t i = 0, j = 0;
       while (i < training_classes.size() and j < eval_classes.size()) {
         while (training_classes[i] != eval_classes[j] and i < eval_classes.size()) {
-          std::cerr << "Class " << training_classes[i] << " is not in eval" << std::endl;
+          tscl::logger("Training class " + training_classes[i].string() + " not found in eval",
+                       tscl::Log::Error);
           i++;
         }
         i++;
@@ -65,10 +71,12 @@ namespace control::classifier {
       }
 
       for (; i < training_classes.size(); i++) {
-        std::cerr << "Class " << eval_classes[i] << " is not in train" << std::endl;
+        tscl::logger("Training class " + eval_classes[i].string() + " not found in eval",
+                     tscl::Log::Error);
       }
       for (; j < eval_classes.size(); j++) {
-        std::cerr << "Class " << eval_classes[i] << " is not in train" << std::endl;
+        tscl::logger("Eval class " + eval_classes[j].string() + " not found in training",
+                     tscl::Log::Error);
       }
       throw std::runtime_error("CITSLoader: train and eval classes are not the same");
     }
@@ -81,16 +89,14 @@ namespace control::classifier {
   }
 
   void CITCLoader::loadEvalSet(ClassifierTrainingCollection &res,
-                               const std::filesystem::path &input_path, bool verbose,
-                               std::ostream *out) {
-    if (verbose) *out << "\tLoading eval set... (Hold on, This may take a while)" << std::endl;
+                               const std::filesystem::path &input_path) {
+    tscl::logger("Loading eval set (Hold on, this may take a while)", tscl::Log::Information);
     auto &eval_set = res.getEvalSet();
     loadSet(eval_set, input_path / "eval");
   }
 
-  void CITCLoader::loadTrainingSet(ClassifierTrainingCollection &res, fs::path const &input_path,
-                                   bool verbose, std::ostream *out) {
-    if (verbose) *out << "\tLoading training set... (Hold on, This may take a while)" << std::endl;
+  void CITCLoader::loadTrainingSet(ClassifierTrainingCollection &res, fs::path const &input_path) {
+    tscl::logger("Loading training set (Hold on, this may take a while)", tscl::Log::Information);
     auto &training_set = res.getTrainingSet();
     loadSet(training_set, input_path / "train");
   }
@@ -100,9 +106,12 @@ namespace control::classifier {
 
     for (auto &c : *classes) {
       fs::path target_path = input_path / c.getName();
-      if (not fs::exists(target_path))
+      if (not fs::exists(target_path)) {
+        tscl::logger("Class " + c.getName() + " not found in " + input_path.string(),
+                     tscl::Log::Error);
         throw std::runtime_error("CITSLoader: " + input_path.string() + " is missing class id: " +
                                  std::to_string(c.getId()) + " (\"" + c.getName() + "\")");
+      }
 
       fs::create_directories("tmp_cache/" + c.getName());
       for (auto &entry : fs::directory_iterator(target_path)) {
@@ -123,31 +132,42 @@ namespace control::classifier {
   }
 
   std::shared_ptr<ClassifierTrainingCollection>
-  CITCLoader::load(const std::filesystem::path &input_path, bool verbose, std::ostream *out) {
+  CITCLoader::load(const std::filesystem::path &input_path) {
     if (not fs::exists(input_path) or not fs::exists(input_path / "eval") or
-        not fs::exists(input_path / "train"))
+        not fs::exists(input_path / "train")) {
+      tscl::logger("CITCLoader: " + input_path.string() + " is not a valid CITC directory",
+                   tscl::Log::Error);
       throw std::invalid_argument(
               "ImageTrainingSetLoader: The input path does not exist or is invalid");
+    }
 
 
-    if (verbose) *out << "Loading Classifier training set at " << input_path << std::endl;
+    tscl::logger("Loading Classifier training collection at " + input_path.string(),
+                 tscl::Log::Information);
     if (not classes) {
-      if (verbose) std::cout << "\tLoading classes..." << std::endl;
+      tscl::logger("Loading classes", tscl::Log::Debug);
       loadClasses(input_path);
-      if (classes->empty()) throw std::runtime_error("ImageTrainingSetLoader: No classes found");
-      else if (verbose) {
-        *out << "\tFound " << classes->size() << " classes: " << std::endl;
-        for (auto &c : *classes) *out << "\t" << c << std::endl;
+      if (classes->empty()) {
+        tscl::logger("CITCLoader: No classes found in " + input_path.string(), tscl::Log::Error);
+        throw std::runtime_error("ImageTrainingSetLoader: No classes found");
       }
-    } else if (classes->empty())
-      throw std::runtime_error("ImageTrainingSetLoader: Need at-least one class, none were given");
+      tscl::logger("Found " + std::to_string(classes->size()) + " classes", tscl::Log::Information);
+      std::stringstream ss;
+
+      for (auto &c : *classes) ss << c.getName() << ", ";
+      tscl::logger("\tClasses: " + ss.str(), tscl::Log::Debug);
+    } else if (classes->empty()) {
+      tscl::logger("CITCLoader: Need at-least one class, none were given", tscl::Log::Error);
+      throw std::runtime_error("CITCLoader: Need at-least one class, none were given");
+    }
 
     auto res = std::make_shared<ClassifierTrainingCollection>(classes);
 
-    loadEvalSet(*res, input_path, verbose, out);
-    loadTrainingSet(*res, input_path, verbose, out);
+    loadEvalSet(*res, input_path);
+    loadTrainingSet(*res, input_path);
 
-    if (verbose) *out << "Done loading " << res->size() << " elements" << std::endl;
+    tscl::logger("Loaded " + std::to_string(res->getTrainingSet().size()) + " inputs",
+                 tscl::Log::Information);
 
     return res;
   }

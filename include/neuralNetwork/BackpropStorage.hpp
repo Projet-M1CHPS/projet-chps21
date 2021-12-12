@@ -6,7 +6,7 @@
 
 namespace nnet {
 
-  template<typename T>
+  template<typename T = float>
   class BackpropStorage {
   public:
     explicit BackpropStorage(std::vector<math::Matrix<T>> &w) : weights(&w){};

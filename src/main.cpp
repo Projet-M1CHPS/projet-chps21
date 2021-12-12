@@ -1,14 +1,11 @@
-#include "ActivationFunction.hpp"
-#include "NeuralNetwork.hpp"
-#include "OptimizationMethod.hpp"
-#include "Utils.hpp"
-#include "controlSystem/classifier/classifierController.hpp"
+#include "Control.hpp"
+#include "Network.hpp"
+#include "ProjectVersion.hpp"
+#include "tscl.hpp"
+
 #include <iomanip>
 #include <iostream>
 #include <vector>
-
-
-#include "Optimizer.hpp"
 
 
 // using namespace control;
@@ -17,19 +14,20 @@ template<typename T>
 size_t func_xor(const size_t bach_size, const T learning_rate, const T error_limit) {
   std::vector<size_t> topology{2, 3, 3, 1};
 
-  nnet::NeuralNetwork<T> nn;
-  nn.setLayersSize(topology);
-  nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
-  nn.randomizeSynapses();
+  nnet::MLPerceptron<T> nn;
+  nn.setTopology(topology);
+  nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
+  nn.randomizeWeight();
 
   nnet::SGDOptimization<T> std_mt(learning_rate);
   nnet::MomentumOptimization<T> mom_mt(topology, learning_rate, 0.9);
-  nnet::DecayOptimization<T> decay_mt(learning_rate, 0.01f);
+  nnet::DecayOptimization<T> decay_mt(learning_rate, 0.1f);
   nnet::DecayMomentumOptimization<T> momDecay_mt(topology, learning_rate, 0.01f, 0.9f);
+  nnet::RPropPOptimization<T> rprop(topology);
 
-  nnet::MLPStochOptimizer<T> opt(&nn, &momDecay_mt);
+  nnet::MLPModelStochOptimizer<T> opt(&nn, &decay_mt);
 
-  // std::cout << nn << std::endl;
+  std::cout << nn << std::endl;
 
   std::vector<math::Matrix<T>> input(4);
   std::vector<math::Matrix<T>> target(4);
@@ -53,20 +51,18 @@ size_t func_xor(const size_t bach_size, const T learning_rate, const T error_lim
   target[2](0, 0) = 0.f;
   target[3](0, 0) = 1.f;
 
-  for (int j = 0; j < 4; j++) { opt.train(input[j], target[j]); }
+  // for (int j = 0; j < 4; j++) { opt.train(input[j], target[j]); }
 
   T error = 1.0;
   size_t count = 0;
-  while (error > error_limit && count < 5000) {
-    for (int i = 0; i < bach_size; i++) {
-      for (int j = 0; j < 4; j++) { opt.train(input[j], target[j]); }
-    }
+  while (error > error_limit && count < 1000) {
+    for (int i = 0; i < bach_size; i++) { opt.train(input.begin(), input.end(), target.begin()); }
 
     error = 0.0;
     for (int i = 0; i < input.size(); i++)
       error += std::fabs(nn.predict(input[i])(0, 0) - target[i](0, 0));
     error /= input.size();
-    std::cout << count << " " << std::setprecision(17) << error << std::endl;
+    // std::cout << count << " " << std::setprecision(17) << error << std::endl;
     count++;
     momDecay_mt.update();
     decay_mt.update();
@@ -87,10 +83,10 @@ template<typename T>
 size_t func_xor_batch(const size_t bach_size, const T learning_rate, const T error_limit) {
   std::vector<size_t> topology{2, 3, 3, 1};
 
-  nnet::NeuralNetwork<T> nn;
-  nn.setLayersSize(topology);
-  nn.setActivationFunction(af::ActivationFunctionType::leakyRelu);
-  nn.randomizeSynapses();
+  nnet::MLPerceptron<T> nn;
+  nn.setTopology(topology);
+  nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
+  nn.randomizeWeight();
 
   nnet::SGDOptimization<T> std_mt(learning_rate);
   nnet::MomentumOptimization<T> mom_mt(topology, learning_rate, 0.8);
@@ -153,14 +149,14 @@ size_t func_xor_batch(const size_t bach_size, const T learning_rate, const T err
 
 template<typename T>
 void new_func_xor(const size_t bach_size, const T learning_rate, const T error_limit) {
-  nnet::NeuralNetwork<T> nn1;
+  nnet::MLPerceptron<T> nn1;
   std::vector<size_t> topology = {2, 3, 3, 1};
-  nn1.setLayersSize(topology);
+  nn1.setTopology(topology);
   nn1.setActivationFunction(af::ActivationFunctionType::sigmoid);
-  nn1.randomizeSynapses();
+  nn1.randomizeWeight();
 
-  nnet::NeuralNetwork<T> nn2(nn1);
-  nn2.setLayersSize(topology);
+  nnet::MLPerceptron<T> nn2(nn1);
+  nn2.setTopology(topology);
   nn2.setActivationFunction(af::ActivationFunctionType::sigmoid);
 
   auto &w1 = nn1.getWeights();
@@ -170,8 +166,8 @@ void new_func_xor(const size_t bach_size, const T learning_rate, const T error_l
   nnet::SGDOptimization<T> tmStandard(0.2f);
   nnet::MomentumOptimization<T> tmMomentum(topology, 0.1f, 0.9f);
 
-  nnet::MLPStochOptimizer<T> opt1(&nn1, &tmStandard);
-  nnet::MLPStochOptimizer<T> opt2(&nn2, &tmMomentum);
+  nnet::MLPModelStochOptimizer<T> opt1(&nn1, &tmStandard);
+  nnet::MLPModelStochOptimizer<T> opt2(&nn2, &tmMomentum);
 
   std::cout << nn1 << std::endl;
   std::cout << nn2 << std::endl;
@@ -244,14 +240,14 @@ void new_func_xor(const size_t bach_size, const T learning_rate, const T error_l
 
 template<typename T>
 void batch(const size_t bach_size, const T learning_rate, const T error_limit) {
-  nnet::NeuralNetwork<T> nn1;
+  nnet::MLPerceptron<T> nn1;
   std::vector<size_t> topology = {2, 3, 3, 1};
-  nn1.setLayersSize(topology);
+  nn1.setTopology(topology);
   nn1.setActivationFunction(af::ActivationFunctionType::sigmoid);
-  nn1.randomizeSynapses();
+  nn1.randomizeWeight();
 
-  nnet::NeuralNetwork<T> nn2(nn1);
-  nn2.setLayersSize(topology);
+  nnet::MLPerceptron<T> nn2(nn1);
+  nn2.setTopology(topology);
   nn2.setActivationFunction(af::ActivationFunctionType::sigmoid);
 
   auto &w1 = nn1.getWeights();
@@ -265,7 +261,7 @@ void batch(const size_t bach_size, const T learning_rate, const T error_limit) {
   nnet::SGDOptimization<T> tmStandard1(0.2f);
   nnet::SGDOptimization<T> tmStandard2(0.2f);
 
-  nnet::MLPStochOptimizer<T> opt1(&nn1, &tmStandard1);
+  nnet::MLPModelStochOptimizer<T> opt1(&nn1, &tmStandard1);
   nnet::MLPBatchOptimizer<T> opt2(&nn2, &tmStandard2);
 
   std::cout << nn1 << std::endl;
@@ -302,6 +298,17 @@ void batch(const size_t bach_size, const T learning_rate, const T error_limit) {
 
 using namespace control;
 using namespace control::classifier;
+using namespace tscl;
+
+void setupLogger() {
+  auto &handler = logger.addHandler<StreamLogHandler>("term", std::cout);
+  handler.tsType(tscl::timestamp_t::Partial);
+  handler.minLvl(Log::Trace);
+  // handler.enable(false);
+
+  auto &thandler = logger.addHandler<StreamLogHandler>("file", "logs.txt");
+  thandler.minLvl(Log::Information);
+}
 
 bool test_image(std::vector<std::string> const &args) {
   // FIXME: placeholder path
@@ -310,22 +317,30 @@ bool test_image(std::vector<std::string> const &args) {
     return false;
   }
 
+  setupLogger();
+
   std::filesystem::path input_path = args[1];
   std::filesystem::path working_path = args.size() == 3 ? args[2] : "runs/test";
 
-  auto loader = std::make_shared<CITCLoader>(24, 24);
+  auto loader = std::make_shared<CITCLoader>(32, 32);
   auto &engine = loader->getPostProcessEngine();
   // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
-  //    engine.addTransformation(std::make_shared<image::transform::Inversion>());
+  // engine.addTransformation(std::make_shared<image::transform::Inversion>());
 
-  CTParams parameters(RunPolicy::create, input_path, loader, "runs/test");
+  std::shared_ptr<nnet::MLPModelOptimizer> optimizer =
+          nnet::OptimizerFactory::makeMLPModelOptimizer(nnet::ModelOptimizerType::stochastic,
+                                                        nnet::OptimizationAlgorithm::momentum,
+                                                        0.01f, 0.9f);
 
-  std::vector<size_t> topology = {24 * 24, 32, 32, 32, 32, 32, 32};
-  parameters.setTopology(topology.begin(), topology.end());
+  CTParams parameters(RunPolicy::create, input_path, loader, optimizer, "runs/test");
+
+  nnet::MLPTopology topology = {32 * 32, 64, 64, 64, 64};
+  parameters.setTopology(topology);
+  parameters.setMaxEpoch(100);
 
   CTController controller(parameters);
-  ControllerResult res = controller.run(true, &std::cout);
-
+  logger(tscl::StringLog("Launching run", Log::Information));
+  ControllerResult res = controller.run();
 
   if (not res) { std::cout << "ERROR: " << res << std::endl; }
 
@@ -333,20 +348,21 @@ bool test_image(std::vector<std::string> const &args) {
 }
 
 int main(int argc, char **argv) {
-  // func_xor<float>(1, 0.01, 0.01);
-  //  func_xor_batch<float>(1, 0.4, 0.00000000001);
+  // func_xor<float>(100, 1.0, 0.01);
+  //   func_xor_batch<float>(1, 0.4, 0.00000000001);
 
 
   /*size_t sum = 0;
   for(size_t i = 0; i < 100; i++)
-  {
+
     std::cout << i;
     std::flush(std::cout);
     //sum += func_xor<float>(100, 0.2, 0.01);
     sum += func_xor_batch<float>(100, 0.2, 0.1);
   }*/
-  // std::cout << "average : " << sum / 1000 << std::endl;
+  // std::cout << "average : " << sum / 1000 << std::endl;*/
 
+  Version::setCurrent(Version(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TWEAK));
   std::vector<std::string> args;
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);
 

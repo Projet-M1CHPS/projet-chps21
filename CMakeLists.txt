@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(projet-chps21)
+project(projet-chps21 VERSION 0.2.0.1)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,6 +20,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
 endif ()
 
 include(dependency/cmake_coverage.cmake)
+configure_file(include/tscl/ProjectConstant.hpp.in include/ProjectVersion.hpp)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 # We remove googletest and the std from the coverage report
 # We also remove the test directory, since templated functions that are used

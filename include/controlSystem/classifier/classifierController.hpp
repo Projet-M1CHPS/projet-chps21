@@ -32,17 +32,17 @@ namespace control::classifier {
      * @param os
      * @return
      */
-    ControllerResult run(bool is_verbose, std::ostream *os) noexcept override;
+    ControllerResult run() noexcept override;
 
   private:
-    ControllerResult load(bool is_verbose, std::ostream *os);
-    ControllerResult create(bool is_verbose, std::ostream *os);
-    ControllerResult checkModel(bool is_verbose, std::ostream *os);
-    void loadTrainingSet(bool is_verbose, std::ostream *os);
+    ControllerResult load();
+    ControllerResult create();
+    ControllerResult checkModel();
+    void loadCollection();
 
-    ControllerResult train(bool is_verbose, std::ostream *os);
-    void trainingLoop(bool is_verbose, std::ostream *os, CTracker &stracker);
-    void printPostTrainingStats(std::ostream &os, CTracker &stracker);
+    ControllerResult train();
+    void trainingLoop(CTracker &stracker);
+    void printPostTrainingStats(CTracker &stracker);
 
     std::shared_ptr<CTParams> params;
     std::shared_ptr<ClassifierTrainingCollection> training_collection;

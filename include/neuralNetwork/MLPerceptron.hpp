@@ -2,7 +2,6 @@
 
 #include "ActivationFunction.hpp"
 #include "Matrix.hpp"
-#include "OptimizationMethod.hpp"
 #include "Utils.hpp"
 #include <cmath>
 #include <functional>
@@ -24,63 +23,73 @@ namespace nnet {
     float64,
   };
 
+  class MLPTopology {
+    friend std::ostream &operator<<(std::ostream &os, const MLPTopology &topology);
 
-  FloatingPrecision strToFPrecision(const std::string &str);
-  const char *fPrecisionToStr(FloatingPrecision fp);
+  public:
+    MLPTopology() = default;
+    MLPTopology(std::initializer_list<size_t> list) : layers(list) {}
+    explicit MLPTopology(std::vector<size_t> sizes) : layers(std::move(sizes)) {}
 
-  /**
-   * @brief Convert a static type to the corresponding enum type
-   *
-   * @tparam typename
-   * @return FloatingPrecision
-   */
-  template<typename T>
-  FloatingPrecision getFPPrecision() {
-    if constexpr (std::is_same_v<float, T>) {
-      return FloatingPrecision::float32;
-    } else if constexpr (std::is_same_v<double, T>) {
-      return FloatingPrecision::float64;
-    } else {
-      // dirty trick to prevent the compiler for evaluating the else branch
-      static_assert(!sizeof(T), "Invalid floating point type");
+
+    size_t &operator[](size_t i) {
+      if (i > layers.size()) { throw std::out_of_range("Index out of range"); }
+      return layers[i];
     }
-  }
+
+    size_t const &operator[](size_t i) const {
+      if (i > layers.size()) { throw std::out_of_range("Index out of range"); }
+      return layers[i];
+    }
+
+    [[nodiscard]] size_t getInputSize() const { return layers.front(); }
+    void setInputSize(size_t i) { layers.front() = i; }
+
+    [[nodiscard]] size_t getOutputSize() const { return layers.back(); }
+    void setOutputSize(size_t i) { layers.back() = i; }
+    void push_back(size_t i) { layers.push_back(i); }
+
+    [[nodiscard]] bool empty() const { return layers.empty(); }
+    [[nodiscard]] size_t size() const { return layers.size(); }
+
+    using iterator = std::vector<size_t>::iterator;
+    using const_iterator = std::vector<size_t>::const_iterator;
+
+    iterator begin() { return layers.begin(); }
+    iterator end() { return layers.end(); }
+
+    static MLPTopology fromString(const std::string &str) {
+      std::vector<size_t> layers;
+      std::stringstream ss(str);
+      std::string token;
+      while (std::getline(ss, token, ',')) { layers.push_back(std::stoi(token)); }
+      return MLPTopology(layers);
+    }
+
+    [[nodiscard]] const_iterator begin() const { return layers.begin(); }
+    [[nodiscard]] const_iterator end() const { return layers.end(); }
+
+  private:
+    std::vector<size_t> layers;
+  };
 
   /**
    * @brief Interface for a neural network
    *
    */
-  class NeuralNetworkBase {
+  class MLPBase {
   public:
-    NeuralNetworkBase() = delete;
+    MLPBase() = default;
 
-    virtual ~NeuralNetworkBase() = default;
+    virtual ~MLPBase() = default;
 
-    [[nodiscard]] FloatingPrecision getPrecision() const { return precision; }
+    virtual void setTopology(MLPTopology const &topology) = 0;
+    [[nodiscard]] MLPTopology const &getTopology() const { return topology; }
 
-    virtual void setLayersSize(std::vector<size_t> const &layers) = 0;
-
-    [[nodiscard]] virtual size_t getOutputSize() const = 0;
-
-    [[nodiscard]] virtual size_t getInputSize() const = 0;
-
-    [[nodiscard]] virtual std::vector<size_t> getTopology() const = 0;
-
-    virtual void setActivationFunction(af::ActivationFunctionType type) = 0;
-
-    virtual void setActivationFunction(af::ActivationFunctionType af, size_t layer) = 0;
-
-    [[nodiscard]] virtual const std::vector<af::ActivationFunctionType> &
-    getActivationFunctions() const = 0;
-
-    virtual void randomizeSynapses() = 0;
+    virtual void randomizeWeight() = 0;
 
   protected:
-    // The precision has no reason to change, so no need for setter method
-    // And the ctor can be protected
-    explicit NeuralNetworkBase(FloatingPrecision precision) : precision(precision) {}
-
-    FloatingPrecision precision = FloatingPrecision::float32;
+    MLPTopology topology;
   };
 
   /**
@@ -89,8 +98,8 @@ namespace nnet {
    *
    * @tparam real
    */
-  template<typename real>
-  class NeuralNetwork final : public NeuralNetworkBase {
+  template<typename real = float, typename = std::enable_if<std::is_floating_point_v<real>>>
+  class MLPerceptron final : public MLPBase {
   public:
     using value_type = real;
 
@@ -98,19 +107,17 @@ namespace nnet {
      * @brief Construct a new Neural Network object with no layer
      *
      */
-    NeuralNetwork() : NeuralNetworkBase(getFPPrecision<real>()) {}
+    MLPerceptron() = default;
 
-    NeuralNetwork(const NeuralNetwork &other) : NeuralNetworkBase(getFPPrecision<real>()) {
-      *this = other;
-    }
+    MLPerceptron(const MLPerceptron &other) : MLPBase(getFPPrecision<real>()) { *this = other; }
 
-    NeuralNetwork(NeuralNetwork &&other) noexcept : NeuralNetworkBase(getFPPrecision<real>()) {
+    MLPerceptron(MLPerceptron &&other) noexcept : MLPBase(getFPPrecision<real>()) {
       *this = std::move(other);
     }
 
-    NeuralNetwork &operator=(const NeuralNetwork &) = default;
+    MLPerceptron &operator=(const MLPerceptron &) = default;
 
-    NeuralNetwork &operator=(NeuralNetwork &&other) noexcept {
+    MLPerceptron &operator=(MLPerceptron &&other) noexcept {
       weights = std::move(other.weights);
       biases = std::move(other.biases);
       activation_functions = std::move(other.activation_functions);
@@ -154,60 +161,32 @@ namespace nnet {
      *
      * @param layers
      */
-    void setLayersSize(std::vector<size_t> const &layers) override {
-      if (layers.empty()) return;
-      if (layers.size() < 2) { throw std::runtime_error("Requires atleast 2 layers"); }
+    void setTopology(MLPTopology const &topology) override {
+      if (topology.empty()) return;
+      if (topology.size() < 2) { throw std::runtime_error("Requires atleast 2 layers"); }
 
       weights.clear();
       biases.clear();
-      for (size_t i = 0; i < layers.size() - 1; i++) {
+      for (size_t i = 0; i < topology.size() - 1; i++) {
         // Create a matrix of size (layers[i + 1] x layers[i])
         // So that each weight matrix can be multiplied by the previous layer
-        weights.push_back(math::Matrix<real>(layers[i + 1], layers[i]));
-        biases.push_back(math::Matrix<real>(layers[i + 1], 1));
+        weights.push_back(math::Matrix<real>(topology[i + 1], topology[i]));
+        biases.push_back(math::Matrix<real>(topology[i + 1], 1));
         activation_functions.push_back(af::ActivationFunctionType::sigmoid);
       }
     }
 
-    [[nodiscard]] size_t getOutputSize() const override {
-      // The last operation is <Mm x Mn> * <Om * On>
-      // So the output is <Mm * On> where On is 1
-
-      if (weights.empty()) { return 0; }
-
-      return weights.back().getRows();
-    }
-
-    [[nodiscard]] size_t getInputSize() const override {
-      // The first operation is <Mm x Mn> * <Om * On>
-      // So the input is of size <Mn * On> where On is 1
-      if (weights.empty()) { return 0; }
-
-      return weights.front().getCols();
-    }
-
-    [[nodiscard]] std::vector<size_t> getTopology() const override {
-      std::vector<size_t> res;
-
-      res.reserve(weights.size() + 1);
-
-      res.push_back(getInputSize());
-      for (auto &w : weights) { res.push_back(w.getRows()); }
-      return res;
-    }
-
-    void setActivationFunction(af::ActivationFunctionType type) override {
+    void setActivationFunction(af::ActivationFunctionType type) {
       for (auto &activation_function : activation_functions) { activation_function = type; }
     }
 
-    void setActivationFunction(af::ActivationFunctionType af, size_t layer) override {
+    void setActivationFunction(af::ActivationFunctionType af, size_t layer) {
       if (layer >= weights.size()) { throw std::invalid_argument("Invalid layer"); }
 
       activation_functions[layer] = af;
     }
 
-    [[nodiscard]] const std::vector<af::ActivationFunctionType> &
-    getActivationFunctions() const override {
+    [[nodiscard]] const std::vector<af::ActivationFunctionType> &getActivationFunctions() const {
       return activation_functions;
     }
 
@@ -216,7 +195,7 @@ namespace nnet {
      *
      * @param seed
      */
-    void randomizeSynapses() override {
+    void randomizeWeight() override {
       for (auto &layer : weights) {
         double x = std::sqrt(2.0 / (double) layer.getRows());
         math::randomize<real>(layer, -x, x);
@@ -247,7 +226,7 @@ namespace nnet {
 
   // std::ostream& operator<<(std::ostream& os, const Pair<T, U>& p)
   template<typename T>
-  std::ostream &operator<<(std::ostream &os, const NeuralNetwork<T> &nn) {
+  std::ostream &operator<<(std::ostream &os, const MLPerceptron<T> &nn) {
     const size_t size = nn.getWeights().size();
     os << "-------input-------\n";
     for (size_t i = 0; i < size; i++) {
@@ -261,6 +240,6 @@ namespace nnet {
     return os;
   }
 
-  std::unique_ptr<NeuralNetworkBase> makeNeuralNetwork(FloatingPrecision precision);
+  std::unique_ptr<MLPBase> makeNeuralNetwork(FloatingPrecision precision);
 
 }   // namespace nnet
