@@ -49,7 +49,7 @@ namespace nnet {
 
     void update() override {
       epoch++;
-      curr_lr = (1 / (1 + decay_r * epoch)) * static_cast<T>(initial_lr);
+      curr_lr = (1 / (1 + decay_r * epoch)) * initial_lr;
     }
 
   private:
@@ -57,7 +57,7 @@ namespace nnet {
     const T decay_r;
     T curr_lr;
 
-    size_t epoch;
+    size_t epoch = 0;
   };
 
 
