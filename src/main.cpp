@@ -329,9 +329,9 @@ bool test_image(std::vector<std::string> const &args) {
   // engine.addTransformation(std::make_shared<image::transform::Inversion>());
 
   std::shared_ptr<nnet::MLPModelOptimizer<float>> optimizer =
-          nnet::OptimizerFactory::makeMLPModelOptimizer(nnet::ModelOptimizerType::stochastic,
-                                                        nnet::OptimizationAlgorithm::momentum,
-                                                        0.01f, 0.9f);
+          nnet::OptimizerFactory<float>::makeMLPModelOptimizer(
+                  nnet::ModelOptimizerType::stochastic, nnet::OptimizationAlgorithm::momentum,
+                  0.01f, 0.9f);
 
   CTParams parameters(RunPolicy::create, input_path, loader, optimizer, "runs/test");
 
