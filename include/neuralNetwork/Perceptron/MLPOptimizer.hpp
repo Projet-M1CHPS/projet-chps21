@@ -12,6 +12,7 @@ namespace nnet {
   class MLPModelOptimizer : public ModelOptimizer<real> {
   public:
     MLPModelOptimizer(std::shared_ptr<OptimizationMethod<real>> tm) : opti_meth(tm) {}
+    virtual ~MLPModelOptimizer() = default;
 
     MLPModelOptimizer(const MLPModelOptimizer<real> &other) = delete;
     MLPModelOptimizer(MLPModelOptimizer<real> &&other) noexcept = default;
@@ -19,10 +20,9 @@ namespace nnet {
     MLPModelOptimizer<real> &operator=(const MLPModelOptimizer<real> &other) = delete;
     MLPModelOptimizer<real> &operator=(MLPModelOptimizer<real> &&other) noexcept = default;
 
-    MLPerceptron<real> *getNeuralNetwork() const { return neural_network; }
+    MLPerceptron<real> *gePerceptron() const { return neural_network; }
     OptimizationMethod<real> *getOptimizationMethod() const { return opti_meth; }
 
-    virtual ~MLPModelOptimizer() = default;
 
     void setModel(Model<real> &model) override {
       auto &mlp_model = dynamic_cast<MLPModel<real> &>(model);

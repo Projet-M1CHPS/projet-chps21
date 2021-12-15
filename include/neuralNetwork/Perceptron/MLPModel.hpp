@@ -104,6 +104,7 @@ namespace nnet {
       auto res = std::make_unique<RModel>();
       auto &mlp = res->getPerceptron();
       mlp.setTopology(topology);
+      mlp.setActivationFunction(af::ActivationFunctionType::sigmoid);
       mlp.randomizeSynapses();
       return res;
     }

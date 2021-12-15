@@ -13,5 +13,5 @@ add_library(NeuralNetwork STATIC
         )
 set_target_properties(NeuralNetwork PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 target_include_directories(NeuralNetwork PUBLIC "${INCLUDE_DIR}" "${CURRENT_INCLUDE_DIR}")
-target_link_libraries(NeuralNetwork PUBLIC m Utils Perceptron ${BLAS_LIBRARIES})
+target_link_libraries(NeuralNetwork PUBLIC m Utils Perceptron BLAS::BLAS)
 target_code_coverage(NeuralNetwork)

@@ -6,17 +6,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(CheckCXXCompilerFlag)
 
-CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
-
-if (COMPILER_SUPPORTS_MARCH_NATIVE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fast -qmkl")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -fast -O3 -qmkl -ipo -lm")
   # Intel compilers are not supported for coverage tests
   set(CODE_COVERAGE OFF)
   message(STATUS ${CMAKE_CXX_FLAGS})
+else ()
+  CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+
+  if (COMPILER_SUPPORTS_MARCH_NATIVE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+  endif ()
 endif ()
 
 include(dependency/cmake_coverage.cmake)

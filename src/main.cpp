@@ -319,14 +319,18 @@ bool test_image(std::vector<std::string> const &args) {
     return false;
   }
 
+  tscl::logger("Current version: " + tscl::Version::current.to_string(), tscl::Log::Information);
+
 
   std::filesystem::path input_path = args[1];
   std::filesystem::path working_path = args.size() == 3 ? args[2] : "runs/test";
 
   auto loader = std::make_shared<CITCLoader>(32, 32);
+  auto &pre_engine = loader->getPreProcessEngine();
+  pre_engine.addTransformation(std::make_shared<image::transform::Inversion>());
   auto &engine = loader->getPostProcessEngine();
   // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
-  // engine.addTransformation(std::make_shared<image::transform::Inversion>());
+  //  engine.addTransformation(std::make_shared<image::transform::Inversion>());
 
   std::shared_ptr<nnet::ModelOptimizer<float>> optimizer =
           nnet::OptimizerFactory<float>::makeMLPModelOptimizer(
@@ -335,7 +339,7 @@ bool test_image(std::vector<std::string> const &args) {
 
   CTParams parameters(RunPolicy::create, input_path, loader, optimizer, "runs/test");
 
-  nnet::MLPTopology topology = {32 * 32, 64, 32, 16, 8};
+  nnet::MLPTopology topology = {32 * 32, 64, 64, 64, 64};
   parameters.setTopology(topology);
   // parameters.setMaxEpoch(100);
 

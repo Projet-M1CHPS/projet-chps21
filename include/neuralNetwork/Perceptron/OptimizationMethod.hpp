@@ -148,7 +148,7 @@ namespace nnet {
       old_gradients.clear();
       weights_changes.clear();
 
-      auto &topology = perceptron->getTopology();
+      auto &topology = perceptron.getTopology();
       for (size_t i = 0; i < topology.size() - 1; i++) {
         weights_updates.push_back(math::Matrix<real>(topology[i + 1], topology[i]));
         weights_updates.back().fill(0.1);
@@ -170,7 +170,7 @@ namespace nnet {
       return -1;
     }
 
-    void compute(BackpropStorage<real> &storage) {
+    void compute(BackpropStorage<real> &storage) override {
       // Aliases to increase readability
       size_t index = storage.getIndex();
       auto &weights = storage.getWeights();

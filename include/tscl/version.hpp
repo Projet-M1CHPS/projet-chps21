@@ -48,7 +48,7 @@ namespace tscl {
 
     [[nodiscard]] std::string to_string() const {
       return std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch) +
-             tweak;
+             "." + tweak;
     }
 
   private:

@@ -55,16 +55,41 @@ namespace control::classifier {
      */
     [[nodiscard]] std::vector<ClassLabel> const &getClasses() const { return *class_labels; }
 
+    /** Set the classes used in this collection
+     *
+     * Be warned that the eval and training sets will be cleared as they both become invalid
+     *
+     * @tparam iterator
+     * @param begin
+     * @param end
+     */
     template<typename iterator>
     void setClasses(iterator begin, iterator end) {
       class_labels->clear();
+      training_set.unload();
+      eval_set.unload();
       class_labels->insert(class_labels->begin(), begin, end);
     }
 
+    /** Randomly shuffle the training set
+     *
+     * Training should be done on a shuffled set for a uniform learning that is not biased by the
+     * order of the data and will not only focus on the last class
+     *
+     * @param seed
+     */
     void shuffleTrainingSet(size_t seed) { training_set.shuffle(seed); }
 
+    /* Randomly shuffle the eval set
+     *
+     */
     void shuffleEvalSet(size_t seed) { eval_set.shuffle(seed); }
 
+    /** Randomly shuffles both sets with a seed
+     * The seed is used for both shuffling
+     *
+     * @param seed
+     */
     void shuffleSets(size_t seed) {
       shuffleTrainingSet(seed);
       shuffleEvalSet(seed);
