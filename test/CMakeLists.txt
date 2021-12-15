@@ -21,7 +21,7 @@ target_link_libraries(
         Math_test PUBLIC
         Utils
         gtest_main
-        ${BLAS_LIBRARIES}
+        BLAS::BLAS
 )
 
 target_code_coverage(Math_test ALL)
