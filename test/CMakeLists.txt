@@ -8,7 +8,6 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-set(BLA_VENDOR OpenBLAS)
 find_package(BLAS REQUIRED)
 
 add_executable(
