@@ -3,7 +3,7 @@
 set(CURRENT_INCLUDE_DIR ${INCLUDE_DIR}/controlSystem)
 set(CLASSIFIER_INCLUDE_DIR ${CURRENT_INCLUDE_DIR}/classifier)
 
-add_library(ControlSystem
+add_library(ControlSystem STATIC
         controllerParameters.cpp ${CURRENT_INCLUDE_DIR}/controllerParameters.hpp
         inputSetLoader.cpp ${CURRENT_INCLUDE_DIR}/inputSetLoader.hpp
         inputSet.cpp ${CURRENT_INCLUDE_DIR}/inputSet.hpp
@@ -16,4 +16,5 @@ add_library(ControlSystem
         )
 
 target_include_directories(ControlSystem PUBLIC "${INCLUDE_DIR}" "${CURRENT_INCLUDE_DIR}" "${CLASSIFIER_INCLUDE_DIR}")
+target_link_libraries(ControlSystem PUBLIC Math)
 target_code_coverage(ControlSystem)

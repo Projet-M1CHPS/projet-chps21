@@ -8,8 +8,6 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-find_package(BLAS REQUIRED)
-
 add_executable(
         Math_test
         Math_test.cpp

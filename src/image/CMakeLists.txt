@@ -8,6 +8,7 @@ add_library(Image STATIC
         ${CMAKE_SOURCE_DIR}/dependency/stb_image_write.h
         )
 set_target_properties(Image PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+
 # Uses the stb library located in dependency
 target_include_directories(Image PUBLIC "${CURRENT_INCLUDE_DIR}" "${INCLUDE_DIR}" "${CMAKE_SOURCE_DIR}/dependency")
 target_code_coverage(Image)

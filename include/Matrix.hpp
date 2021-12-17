@@ -1,6 +1,6 @@
 #pragma once
 extern "C" {
-#include <cblas.h>
+#include <mkl.h>
 }
 
 #include "Utils.hpp"

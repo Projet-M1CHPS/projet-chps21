@@ -1,6 +1,6 @@
 
 set(CURRENT_INCLUDE_DIR ${INCLUDE_DIR}/neuralNetwork/Perceptron)
-add_library(Perceptron
+add_library(Perceptron STATIC
         MLPerceptron.cpp ${CURRENT_INCLUDE_DIR}/MLPerceptron.hpp
         MLPOptimizer.cpp ${CURRENT_INCLUDE_DIR}/MLPOptimizer.hpp
         MLPSerializer.cpp ${CURRENT_INCLUDE_DIR}/MLPSerializer.hpp
