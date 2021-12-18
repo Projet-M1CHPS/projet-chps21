@@ -1,5 +1,6 @@
 #pragma once
 
+#include "tscl.hpp"
 #include <controlSystem/controllerParameters.hpp>
 
 namespace control {
@@ -45,31 +46,52 @@ namespace control {
   /** Base class for all controllers
    *
    */
-  template<typename real, typename = std::enable_if<std::is_floating_point<real>::value>>
   class Controller {
   public:
-    virtual ~Controller() = default;
+    /** Starts a run using the stored @Model.
+     *
+     * On error, a @ControllerResult is returned.
+     * This is done to prevent exceptions from reaching the python layer.
+     * This also means that every exception is caught, handled or not
+     *
+     * @return
+     */
     virtual ControllerResult run() noexcept = 0;
 
-    /** Return the controller's network
+    /** Starts a run using the stored model, an register a callback in the exit handler
+     * in case of an unexpected exit.
      *
-     * May return nullptr if no network is loaded
+     * If the callback is called, the controller will attempt to dump the @Model to disk.
+     * On error, a @ControllerResult is returned.
+     * This is done to prevent exceptions from reaching the python layer.
+     * This also means that every exception is caught, handled or not
      *
+     * @param e_handler Exception handler to be called on unexpected exit
      * @return
      */
-    [[nodiscard]] nnet::MLPerceptron<real> *getNetwork() { return model.get(); }
-    [[nodiscard]] nnet::MLPerceptron<real> const *getNetwork() const { return model.get(); }
+    virtual ControllerResult run(tscl::ExitHandler &e_handler) noexcept = 0;
+    virtual ~Controller() = default;
 
-    /** Returns a shared_ptr pointing to the controller's network
+    Controller(Controller const &other) = delete;
+    Controller(Controller &&other) = delete;
+
+    /** Return the controller's @Model
+     *
+     * Returns nullptr if no network is set
      *
      * @return
      */
-    [[nodiscard]] std::shared_ptr<nnet::MLPerceptron<real>> getModelPtr() { return model; }
-    [[nodiscard]] std::shared_ptr<nnet::MLPerceptron<real> const> getModelPtr() const {
-      return model;
-    }
+    [[nodiscard]] nnet::Model<float> *getModel() { return model.get(); }
+    [[nodiscard]] nnet::Model<float> const *getModel() const { return model.get(); }
+
+    /** Returns a shared_ptr of the controller's @Model
+     *
+     * @return
+     */
+    [[nodiscard]] std::shared_ptr<nnet::Model<float>> yieldModel() { return model; }
+    [[nodiscard]] std::shared_ptr<nnet::Model<float> const> yieldModel() const { return model; }
 
   protected:
-    std::shared_ptr<nnet::MLPModel<real>> model;
+    std::shared_ptr<nnet::Model<float>> model;
   };
 }   // namespace control

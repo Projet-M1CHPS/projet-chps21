@@ -124,7 +124,7 @@ namespace control::classifier {
   /** Abstract base for classifier training collections loader
    *
    */
-  class CTCLoader : public TSLoader<ClassifierTrainingCollection> {
+  class CTCLoader : public TrainingSetLoader<ClassifierTrainingCollection> {
   public:
     virtual ~CTCLoader() = default;
     template<typename iterator>

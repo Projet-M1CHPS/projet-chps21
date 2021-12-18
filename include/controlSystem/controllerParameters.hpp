@@ -8,201 +8,36 @@
 
 namespace control {
 
-  enum class RunPolicy {
-    /** Create a new network and overwrite any previous data
-     *
-     */
-    create = 0,
-    /** Try to load an existing network, or create a new one in the failing case. Fails if there's
-     * an existing network that doesn't fit the topology or transformations list
-     *
-     */
-    tryLoad,
-    /** Load a network, and stop on failure
-     *
-     */
-    load,
-    /** Try to load an existing network, creates a new one in the failing case. Overwrite existing
-     * network if it doesn't fit the topology or transformations list
-     *
-     */
-    loadOrOverwrite
-  };
+  class ControllerParameters {
+    friend std::ostream &operator<<(std::ostream &os, const ControllerParameters &cp);
 
-  /** Abstract generic parameters for a run controller
-   *
-   */
-  class controllerParameters {
   public:
-    /** Setup a working environnement and default policies
-     *
-     * @param input_path
-     * @param working_dir_path
-     * @param output_path
-     */
-    explicit controllerParameters(std::filesystem::path input_path)
-        : policy(RunPolicy::load), input_path(std::move(input_path)) {}
+    ControllerParameters(const std::filesystem::path &input_path,
+                         const std::filesystem::path &output_path, bool verbose = false);
 
-    // Used to make the class abstract
-    virtual ~controllerParameters() = 0;
-
-    /** Returns the path used by the input loader
-     *
-     * @return
-     */
-    [[nodiscard]] std::filesystem::path const &getInputPath() const { return input_path; }
-
-    /** Refer to @getInputPath
-     *
-     * @param path
-     */
-    void setInputPath(std::filesystem::path path) { input_path = std::move(path); }
-
-    /** Returns the current policy on how previous runs outputs should be handled
-     *
-     * @return
-     */
-    [[nodiscard]] RunPolicy getRunPolicy() const { return policy; }
-
-  protected:
-    RunPolicy policy;
-    std::filesystem::path input_path;
-  };
-
-  /** Regroups parameters required for launching a training run
-   *
-   */
-  template<class SetLoader>
-  class TrainingParameters : public controllerParameters {
-  public:
-    /** Setup a working environnement for training a network, along the run policy and the set
-     * loader
-     *
-     * The policy parameter is especially important, as it defines how we should handle previous
-     * work encountered
-     *
-     * @param policy
-     * @param input_path
-     * @param loader Loader used for loading the training set
-     * @param working_path Parent directory of the output_path
-     * @param output_path Where the neural network will be save / retrieved, along other data
-     */
-    TrainingParameters(RunPolicy policy, std::filesystem::path const &input_path,
-                       std::shared_ptr<SetLoader> loader,
-                       std::shared_ptr<nnet::ModelOptimizer<float>> optim,
-                       std::filesystem::path working_path,
-                       const std::filesystem::path &output_path = "")
-        : controllerParameters(input_path), ts_loader(std::move(loader)),
-          optimizer(std::move(optim)), working_path(std::move(working_path)) {
-      this->policy = policy;
-      if (output_path != "") this->output_path = output_path;
-      else
-        this->output_path = working_path / "output";
-    }
-
-    ~TrainingParameters() override = default;
-
-    [[nodiscard]] std::filesystem::path const &getWorkingPath() const { return working_path; }
-    void setWorkingPath(std::filesystem::path path) { working_path = std::move(path); }
-
-    [[nodiscard]] SetLoader &getSetLoader() {
-      if (not ts_loader)
-        throw std::runtime_error("TrainingParameters: Training set loader undefined");
-      return *ts_loader;
-    }
-
-    [[nodiscard]] SetLoader const &getSetLoader() const {
-      if (not ts_loader)
-        throw std::runtime_error("TrainingParameters: Training set loader undefined");
-      return *ts_loader;
-    }
-
-    void setTrainingSetLoader(std::shared_ptr<SetLoader> loader) { ts_loader = std::move(loader); }
-
-    template<class loader, typename... Types>
-    void setTrainingSetLoader(Types &&...args) {
-      ts_loader = std::make_shared<loader>(std::forward<Types>(args)...);
-    }
-
-    [[nodiscard]] nnet::ModelOptimizer<float> &getOptimizer() { return *optimizer; }
-    [[nodiscard]] nnet::ModelOptimizer<float> const &getOptimizer() const { return *optimizer; }
-
-
-    /** Returns the topology of the network. First element is the input size, and last element is
-     * the output. Any element in-between are considered hidden layers.
-     *
-     * If RunPolicy is set to tryLoad, or loadOrOverwrite, the existing network topology will be
-     * checked against this one for equality
-     *
-     * @return The required topology of the network
-     */
-    [[nodiscard]] nnet::MLPTopology const &getTopology() const { return topology; }
-
-    /** Refer to @getTopology
-     *
-     * @param begin
-     * @param end
-     */
-    void setTopology(nnet::MLPTopology topo) { topology = std::move(topo); }
-
-    /** The how the controller will behave when an existing network is found inside the output_path
-     *
-     * @param policy
-     */
-    void setRunPolicy(RunPolicy policy) { this->policy = policy; }
-
-
-  private:
-    std::shared_ptr<nnet::ModelOptimizer<float>> optimizer;
-    nnet::MLPTopology topology;
-
-    std::shared_ptr<SetLoader> ts_loader;
-    std::filesystem::path working_path;
-    std::filesystem::path output_path;
-    size_t max_training_epoch;
-  };
-
-
-  template<class Loader>
-  class RunParameters : public controllerParameters {
-  public:
-    RunParameters(std::filesystem::path const &input_path, std::shared_ptr<Loader> loader,
-                  std::filesystem::path network_path, std::filesystem::path output_path = "")
-        : controllerParameters(input_path), loader(std::move(loader)),
-          network_path(std::move(network_path)), output_path(std::move(output_path)) {}
-
-    [[nodiscard]] std::filesystem::path const &getNetworkPath() const { return network_path; }
-
-    void setNetworkPath(std::filesystem::path path) { network_path = std::move(path); }
-
-    [[nodiscard]] std::filesystem::path const &getOutputPath() const {
-      if (output_path == "") return network_path;
-      return output_path;
-    }
-
+    std::filesystem::path getOutputPath() { return output_path; }
     void setOutputPath(std::filesystem::path path) { output_path = std::move(path); }
 
-    Loader &getSetLoader() {
-      if (not loader) throw std::runtime_error("RunParameters: Training set loader undefined");
-      return *loader;
-    }
+    bool isVerbose() const { return verbose; }
+    void setVerbose(bool v) { verbose = v; }
 
-    [[nodiscard]] Loader const &getSetLoader() const {
-      if (not loader) throw std::runtime_error("RunParameters: Training set loader undefined");
-      return *loader;
-    }
+  protected:
+    virtual void print(std::ostream &os);
 
-    void setSetLoader(std::shared_ptr<Loader> new_loader) { loader = std::move(new_loader); }
+    std::filesystem::path output_path;
+    std::filesystem::path input_path;
+    bool verbose;
+  };
 
-    template<class sloader, typename... Types>
-    void setSetloader(Types &&...args) {
-      loader = std::make_shared<sloader>(std::forward<Types>(args)...);
-    }
-
+  class TrainingControllerParameters : public ControllerParameters {
+  public:
+    size_t getMaxEpoch() const { return max_epoch; }
+    void setMaxEpoch(size_t e) { max_epoch = e; }
 
   private:
-    std::filesystem::path network_path;
-    std::filesystem::path output_path;
-    std::shared_ptr<Loader> loader;
+    virtual void print(std::ostream &os);
+
+    size_t max_epoch;
   };
+
 }   // namespace control

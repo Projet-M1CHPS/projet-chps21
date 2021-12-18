@@ -329,6 +329,7 @@ bool test_image(std::vector<std::string> const &args) {
   auto &pre_engine = loader->getPreProcessEngine();
   pre_engine.addTransformation(std::make_shared<image::transform::Inversion>());
   auto &engine = loader->getPostProcessEngine();
+
   // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
   //  engine.addTransformation(std::make_shared<image::transform::Inversion>());
 
@@ -352,6 +353,32 @@ bool test_image(std::vector<std::string> const &args) {
   return (bool) res;
 }
 
+bool loadAndTrain(std::filesystem::path const &input_path,
+                  std::filesystem::path const &output_path) {
+  auto loader = std::make_shared<ImageTrainingCollectionLoader>(32, 32);
+  auto mdata = ModelSerializer::fetch(input_path);
+
+  if (not mdata.valid() or mdata != input_metadata) {
+    tscl::logger("Invalid metadata", tscl::Log::Error);
+    return false;
+  }
+
+  auto model = MLPModelSerializer::read(mdata);
+  auto tm = std::make_shared<nnet::SGDOptimization<float>>(0.1f);
+  auto optimizer = std::make_shared<MLPStochOptimizer>(model, method);
+
+  ClassifierTrainingController controller(model, optimizer, output_path);
+  ControllerResult res = controller.run();
+
+  if (not res) {
+    tscl::logger("Controller failed with exception");
+    return false;
+  }
+  MLPModelSerializer::write(model, mdata);
+  return true;
+}
+
+
 int main(int argc, char **argv) {
   // func_xor<float>(100, 1.0, 0.01);
   //   func_xor_batch<float>(1, 0.4, 0.00000000001);
@@ -368,9 +395,11 @@ int main(int argc, char **argv) {
   // std::cout << "average : " << sum / 1000 << std::endl;*/
 
   Version::setCurrent(Version(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TWEAK));
+  setupLogger();
+
   std::vector<std::string> args;
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);
 
-  return test_image(args);
+  return loadAndTrain(args);
   return 0;
 }

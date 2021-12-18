@@ -6,45 +6,43 @@
 
 namespace control::classifier {
 
-  /** Typedef for the classifier controller parameters
-   * with the collection loader
-   */
-  using CTParams = TrainingParameters<CTCLoader>;
-
   /** Classifier Training Controller, used for training a classifier model
    *
    */
-  class CTController : public Controller<float> {
+  class CTController : public Controller {
   public:
-    template<class Params, typename = std::enable_if<std::is_base_of<CTParams, Params>::value>>
-    explicit CTController(Params const &params) {
-      this->params = std::make_unique<Params>(params);
-    }
+    explicit CTController(TrainingControllerParameters params) : params(std::move(params)) {}
 
-    explicit CTController(std::shared_ptr<CTParams> params) : params(std::move(params)) {}
-
-    /** Runs the training process as defined by the parameters
+    /** Starts a run using the stored model and parameters
      *
-     * No exception will be thrown if the training process fails
-     * Instead, a ControllerResult containing the error message will be returned
+     * On error, returns a ControllerResults object with the error set.
+     * Guaranteed not to throw, even if it means catching unhandled exceptions.
      *
-     * @param is_verbose
-     * @param os
+     * This behaviour is required to prevent an exception reaching the python layer
+     *
      * @return
      */
     ControllerResult run() noexcept override;
 
-  private:
-    ControllerResult load();
-    ControllerResult create();
-    ControllerResult checkModel();
-    void loadCollection();
+    /** Starts a run using the stored model and parameters
+     *
+     * On error, returns a ControllerResults object with the error set.
+     * Guaranteed not to throw, even if it means catching unhandled exceptions.
+     *
+     * This behaviour is required to prevent an exception reaching the python layer
+     * Furthermore, appends a callback to the exit_handler to dump the model to disk if the program
+     * unexpectedly terminates
+     * @params e_handler ExitHandler for storing the model dump callback
+     * @return
+     */
+    ControllerResult run(tscl::ExitHandler &e_handler) noexcept override;
 
+  private:
     ControllerResult train();
     void trainingLoop(CTracker &stracker);
     void printPostTrainingStats(CTracker &stracker);
 
-    std::shared_ptr<CTParams> params;
+    TrainingControllerParameters params;
     std::shared_ptr<ClassifierTrainingCollection> training_collection;
   };
 }   // namespace control::classifier

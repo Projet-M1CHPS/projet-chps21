@@ -8,58 +8,61 @@
 
 namespace control {
 
-  /** Store a set of input as matrices, and their associated input file
+  /** @brief Stores a set of matrices to be fed to a model
    *
-   * @tparam real precision used for the matrices
+   * This base class only stores matrices, and has no additional information about the input paths
+   * and is agnostic to the model used.
+   *
+   * Specialization may store additional information such as the input paths, or the inputs class
+   * for classifiers
+   *
    */
-  template<typename real, typename = std::enable_if<std::is_floating_point_v<real>>>
   class InputSet {
-    template<typename r>
-    friend std::ostream &operator<<(std::ostream &os, InputSet<r> const &set);
+    friend std::ostream &operator<<(std::ostream &os, InputSet const &set);
 
   public:
     InputSet() = default;
+
+    /** Sets can get really huge, so we destroy the copy constructor by precaution
+     * FIXME: Add a copy() method
+     *
+     * @param other
+     */
     InputSet(InputSet const &other) = delete;
 
     InputSet(InputSet &&other) noexcept = default;
     InputSet &operator=(InputSet &&other) noexcept = default;
 
-    /** Returns the path of an input file
-     *
-     * @param index
-     * @return
-     */
-    [[nodiscard]] std::filesystem::path const &getPath(size_t index) const {
-      if (index >= inputs_path.size()) {
-        throw std::out_of_range("InputSet::getPath Index out of range");
-      }
-      return inputs_path[index];
-    }
-
     /** Returns an input matrix
      *
+     * Defined here to allow inlining
+     *
      * @param index
      * @return
      */
-    math::Matrix<real> const &operator[](size_t index) const {
+    math::Matrix<float> const &operator[](size_t index) const {
       if (index >= inputs.size()) {
         throw std::out_of_range("InputSet::operator[] Index out of range");
       }
       return inputs[index];
     }
 
-    /** Append an input to the set
+    /** Move an input matrix to the end of the set
      *
      * @param path
      * @param mat
      */
-    virtual void append(std::filesystem::path path, math::Matrix<real> &&mat) {
-      inputs_path.push_back(std::move(path));
-      inputs.push_back(std::move(mat));
-    }
+    virtual void append(math::Matrix<float> &&mat) { inputs.push_back(std::move(mat)); }
 
-    using Iterator = typename std::vector<math::Matrix<real>>::iterator;
-    using ConstIterator = typename std::vector<math::Matrix<real>>::const_iterator;
+    /** Copies an input and appends it to the end of the set
+     *
+     * @param mat
+     */
+    virtual void append(math::Matrix<float> const &mat) { inputs.push_back(mat); }
+
+
+    using Iterator = typename std::vector<math::Matrix<float>>::iterator;
+    using ConstIterator = typename std::vector<math::Matrix<float>>::const_iterator;
 
     /** Returns an iterator to the first input matrix
      *
@@ -73,8 +76,16 @@ namespace control {
      */
     [[nodiscard]] Iterator end() { return inputs.end(); }
 
+    /** Used for const for-range loops
+     *
+     * @return
+     */
     [[nodiscard]] ConstIterator begin() const { return inputs.begin(); }
+    [[nodiscard]] ConstIterator cbegin() const { return inputs.cbegin(); }
+
     [[nodiscard]] ConstIterator end() const { return inputs.end(); }
+    [[nodiscard]] ConstIterator cend() const { return inputs.cend(); }
+
 
     /** Returns true if the set is empty
      *
@@ -82,37 +93,21 @@ namespace control {
      */
     [[nodiscard]] bool empty() const { return inputs.empty(); }
 
-    /** Returns the number of element s in the set
+    /** Returns the number of element stored
      *
      * @return
      */
     [[nodiscard]] size_t size() const { return inputs.size(); }
-
-    /** Returns a vector containing every matrices stored in the set
-     *
-     * Unfortunately, this breaks the genericity of the class, but it is easier than implementing an
-     * any_iterator
-     *
-     * @return
-     */
-    [[nodiscard]] std::vector<math::Matrix<real>> const &getVector() { return inputs; }
 
     /** Detroy every element in the set
      *
      */
     virtual void unload() { *this = std::move(InputSet()); }
 
-
   protected:
-    std::vector<std::filesystem::path> inputs_path;
-    std::vector<math::Matrix<real>> inputs;
+    std::vector<math::Matrix<float>> inputs;
   };
 
-
-  template<typename real>
-  std::ostream &operator<<(std::ostream &os, InputSet<real> const &set) {
-    for (auto const &input : set.inputs_path) { os << "\t" << input << std::endl; }
-    return os;
-  }
+  std::ostream &operator<<(std::ostream &os, InputSet const &set);
 
 }   // namespace control

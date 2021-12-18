@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(projet-chps21 VERSION 0.3.0.2 DESCRIPTION "Cancer detection using deep learning" LANGUAGES CXX C)
+project(projet-chps21 VERSION 0.3.0.3 DESCRIPTION "Cancer detection using deep learning" LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -23,7 +23,7 @@ endif ()
 
 # Code coverage flags
 # Added as an external plugin
-include(dependency/cmake_coverage.cmake)
+include(extern/cmake_coverage.cmake)
 
 # Defines version specific Macro
 configure_file(include/tscl/ProjectConstant.hpp.in include/ProjectVersion.hpp)
@@ -39,6 +39,7 @@ add_code_coverage_all_targets(EXCLUDE ${CMAKE_SOURCE_DIR}/test/* */googletest/* 
 
 
 set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
+add_subdirectory(extern)
 add_subdirectory(src)
 enable_testing()
 add_subdirectory(test)
