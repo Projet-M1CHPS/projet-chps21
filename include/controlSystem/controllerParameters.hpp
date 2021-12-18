@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Network.hpp"
-#include "inputSetLoader.hpp"
 #include <filesystem>
 #include <memory>
 #include <utility>

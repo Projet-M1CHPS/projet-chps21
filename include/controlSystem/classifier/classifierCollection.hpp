@@ -1,75 +1,64 @@
 #pragma once
+#include "Image.hpp"
+#include "Transform.hpp"
 #include "classifierInputSet.hpp"
-#include "controlSystem/inputSetLoader.hpp"
 
 namespace control::classifier {
 
-  /** A collection of a training set and an eval set used for training a classifier
+  /** A collection used for training classifier model
    *
-   * Store both set along a list of labels for each class
+   * Stores two set of inputs, one for training and one for evaluation
+   * Every input (in both sets) is uniquely identified by its id, which can be used for metadata
+   * retrieving
    *
    */
-  class ClassifierTrainingCollection {
-    friend std::ostream &operator<<(std::ostream &os, ClassifierTrainingCollection const &set);
+  class CTCollection {
+    friend std::ostream &operator<<(std::ostream &os, CTCollection const &set);
 
   public:
-    /** Create a collection with an empty label list
-     *
-     */
-    ClassifierTrainingCollection();
-
     /** Create a collection with a given label list
+     *
+     * This is used for
      *
      * @param classes
      */
-    explicit ClassifierTrainingCollection(std::shared_ptr<std::vector<ClassLabel>> classes);
+    explicit CTCollection(std::shared_ptr<ClassifierClassLabelList> classes);
 
-    ClassifierTrainingCollection(ClassifierTrainingCollection const &other) = delete;
+    /** Collection can be really huge, so we delete the copy operators for safety
+     * FIXME: add a copy method
+     *
+     * @param other
+     */
+    CTCollection(CTCollection const &other) = delete;
 
-    ClassifierTrainingCollection(ClassifierTrainingCollection &&other) = default;
-    ClassifierTrainingCollection &operator=(ClassifierTrainingCollection &&other) = default;
+    CTCollection(CTCollection &&other) = default;
+    CTCollection &operator=(CTCollection &&other) = default;
 
     /** Return the training set
      *
      * @param set
      */
-    [[nodiscard]] ClassifierInputSet &getTrainingSet() { return training_set; }
-    [[nodiscard]] ClassifierInputSet const &getTrainingSet() const { return training_set; }
+    [[nodiscard]] ClassifierTrainingSet &getTrainingSet() { return training_set; }
+    [[nodiscard]] ClassifierTrainingSet const &getTrainingSet() const { return training_set; }
 
-    /** Returns the eval set
+    /** Returns the evaluation set
      *
      * @return
      */
-    [[nodiscard]] ClassifierInputSet &getEvalSet() { return eval_set; };
-    [[nodiscard]] ClassifierInputSet const &getEvalSet() const { return eval_set; };
+    [[nodiscard]] ClassifierTrainingSet &getEvalSet() { return eval_set; };
+    [[nodiscard]] ClassifierTrainingSet const &getEvalSet() const { return eval_set; };
 
     /** Returns the number of classes in this collection
      *
      * @return
      */
-    [[nodiscard]] size_t classCount() const { return class_labels->size(); }
+    [[nodiscard]] size_t getClassCount() const { return class_list->size(); }
 
     /** Return the classes used in this collection
      *
      * @return
      */
-    [[nodiscard]] std::vector<ClassLabel> const &getClasses() const { return *class_labels; }
-
-    /** Set the classes used in this collection
-     *
-     * Be warned that the eval and training sets will be cleared as they both become invalid
-     *
-     * @tparam iterator
-     * @param begin
-     * @param end
-     */
-    template<typename iterator>
-    void setClasses(iterator begin, iterator end) {
-      class_labels->clear();
-      training_set.unload();
-      eval_set.unload();
-      class_labels->insert(class_labels->begin(), begin, end);
-    }
+    [[nodiscard]] ClassifierClassLabelList const &getClasses() const { return *class_list; }
 
     /** Randomly shuffle the training set
      *
@@ -107,24 +96,25 @@ namespace control::classifier {
      */
     [[nodiscard]] size_t size() const { return training_set.size() + eval_set.size(); }
 
-    /** Unload both sets
+    /** Unload both sets, freeing any used memory
      *
      */
     void unload() {
       training_set.unload();
       eval_set.unload();
+      class_list = nullptr;
     }
 
   private:
-    ClassifierInputSet training_set, eval_set;
-    std::shared_ptr<std::vector<ClassLabel>> class_labels;
+    ClassifierTrainingSet training_set, eval_set;
+    std::shared_ptr<ClassifierClassLabelList> class_list;
   };
 
 
-  /** Abstract base for classifier training collections loader
+  /** Interface for a classifier training collection loader
    *
    */
-  class CTCLoader : public TrainingSetLoader<ClassifierTrainingCollection> {
+  class CTCLoader {
   public:
     virtual ~CTCLoader() = default;
     template<typename iterator>
@@ -165,8 +155,7 @@ namespace control::classifier {
      * @param out
      * @return
      */
-    [[nodiscard]] std::shared_ptr<ClassifierTrainingCollection>
-    load(std::filesystem::path const &input_path) override;
+    [[nodiscard]] std::shared_ptr<CTCollection> load(std::filesystem::path const &input_path);
 
     /** Returns the transformation engine that gets applied before the rescaling
      *
@@ -191,11 +180,10 @@ namespace control::classifier {
 
   private:
     void loadClasses(std::filesystem::path const &input_path);
-    void loadEvalSet(ClassifierTrainingCollection &res, const std::filesystem::path &input_path);
-    void loadTrainingSet(ClassifierTrainingCollection &res,
-                         std::filesystem::path const &input_path);
+    void loadEvalSet(CTCollection &res, const std::filesystem::path &input_path);
+    void loadTrainingSet(CTCollection &res, std::filesystem::path const &input_path);
 
-    void loadSet(ClassifierInputSet &res, std::filesystem::path const &input_path);
+    void loadSet(ClassifierTrainingSet &res, std::filesystem::path const &input_path);
 
     image::transform::TransformEngine pre_process;
     image::transform::TransformEngine post_process;

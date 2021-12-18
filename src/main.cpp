@@ -310,6 +310,7 @@ void setupLogger() {
   thandler.minLvl(Log::Information);
 }
 
+/*
 bool test_image(std::vector<std::string> const &args) {
   // FIXME: placeholder path
   setupLogger();
@@ -351,27 +352,40 @@ bool test_image(std::vector<std::string> const &args) {
   if (not res) { std::cout << "ERROR: " << res << std::endl; }
 
   return (bool) res;
-}
+} */
 
 bool loadAndTrain(std::filesystem::path const &input_path,
                   std::filesystem::path const &output_path) {
-  auto loader = std::make_shared<ImageTrainingCollectionLoader>(32, 32);
+  tscl::logger("Current version: " + tscl::Version::current.to_string(), tscl::Log::Debug);
+  tscl::logger("Fetching model from  " + input_path.string(), tscl::Log::Debug);
   auto mdata = ModelSerializer::fetch(input_path);
 
   if (not mdata.valid() or mdata != input_metadata) {
-    tscl::logger("Invalid metadata", tscl::Log::Error);
+    tscl::logger("Invalid model metadata", tscl::Log::Error);
     return false;
   }
 
-  auto model = MLPModelSerializer::read(mdata);
+  auto model = ModelSerializer::read(mdata);
   auto tm = std::make_shared<nnet::SGDOptimization<float>>(0.1f);
   auto optimizer = std::make_shared<MLPStochOptimizer>(model, method);
 
-  ClassifierTrainingController controller(model, optimizer, output_path);
+  tscl::logger("Creating collection loader", tscl::Log::Debug);
+  CITCLoader loader(32, 32);
+  auto &pre_engine = loader.getPreProcessEngine();
+  // Add preprocessing transformations here
+  auto &engine = loader.getPostProcessEngine();
+  // Add postprocessing transformations here
+
+  tscl::logger("Loading collection", tscl::Log::Information);
+  CTCollection training_collection = loader.load(input_path);
+
+  tscl::logger("Creating controller", tscl::Log::Debug);
+  CTController controller(model, optimizer, training_collection, output_path);
   ControllerResult res = controller.run();
 
   if (not res) {
-    tscl::logger("Controller failed with exception");
+    tscl::logger("Controller failed with an exception", tscl::Log::Error);
+    tscl::logger(res.what(), tscl::Log::Error);
     return false;
   }
   MLPModelSerializer::write(model, mdata);

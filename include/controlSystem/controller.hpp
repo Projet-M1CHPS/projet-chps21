@@ -69,7 +69,7 @@ namespace control {
      * @param e_handler Exception handler to be called on unexpected exit
      * @return
      */
-    virtual ControllerResult run(tscl::ExitHandler &e_handler) noexcept = 0;
+    // virtual ControllerResult run(tscl::ExitHandler &e_handler) noexcept = 0;
     virtual ~Controller() = default;
 
     Controller(Controller const &other) = delete;

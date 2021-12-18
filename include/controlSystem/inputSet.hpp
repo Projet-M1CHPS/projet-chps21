@@ -47,20 +47,6 @@ namespace control {
       return inputs[index];
     }
 
-    /** Move an input matrix to the end of the set
-     *
-     * @param path
-     * @param mat
-     */
-    virtual void append(math::Matrix<float> &&mat) { inputs.push_back(std::move(mat)); }
-
-    /** Copies an input and appends it to the end of the set
-     *
-     * @param mat
-     */
-    virtual void append(math::Matrix<float> const &mat) { inputs.push_back(mat); }
-
-
     using Iterator = typename std::vector<math::Matrix<float>>::iterator;
     using ConstIterator = typename std::vector<math::Matrix<float>>::const_iterator;
 
@@ -105,9 +91,14 @@ namespace control {
     virtual void unload() { *this = std::move(InputSet()); }
 
   protected:
+    virtual void print(std::ostream &os) const;
+
     std::vector<math::Matrix<float>> inputs;
   };
 
-  std::ostream &operator<<(std::ostream &os, InputSet const &set);
+  std::ostream &operator<<(std::ostream &os, InputSet const &set) {
+    set.print(os);
+    return os;
+  }
 
 }   // namespace control

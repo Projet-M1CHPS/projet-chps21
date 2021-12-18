@@ -7,7 +7,7 @@
 using namespace control::classifier;
 
 TEST(ClassifierInputSet, CanBuildEmptySet) {
-  ClassifierInputSet input_set;
+  ClassifierTrainingSet input_set;
   EXPECT_EQ(0, input_set.size());
 }
 
@@ -15,7 +15,7 @@ TEST(ClassifierInputSet, CanAppend) {
   auto map = std::make_shared<std::vector<ClassLabel>>();
   map->emplace_back(1, "Test");
 
-  ClassifierInputSet input_set(map);
+  ClassifierTrainingSet input_set(map);
   input_set.append("test", math::Matrix<float>({1, 2, 3}));
 
   EXPECT_EQ(1, input_set.size());
@@ -51,7 +51,7 @@ TEST(ClassifierInputSet, CanAppend) {
 }
 
 TEST(ClassifierInputSet, ThrowOnInvalidIndex) {
-  ClassifierInputSet training_set;
+  ClassifierTrainingSet training_set;
 
   EXPECT_ANY_THROW(training_set.getLabel(0));
 }
@@ -61,7 +61,7 @@ TEST(ClassifierInputSet, CanShuffle) {
   for (size_t i = 0; i < 10; i++) map->emplace_back(i, "Test");
 
 
-  ClassifierInputSet training_set(map);
+  ClassifierTrainingSet training_set(map);
 
   std::vector<ClassLabel *> indexes(10);
 
@@ -81,7 +81,7 @@ TEST(ClassifierInputSet, CanShuffle) {
 }
 
 TEST(ClassifierInputSet, CanUnload) {
-  ClassifierInputSet training_set;
+  ClassifierTrainingSet training_set;
 
   EXPECT_NO_THROW(training_set.unload());
   training_set.append("test", math::Matrix<float>());

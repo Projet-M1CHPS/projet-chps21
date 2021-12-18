@@ -85,7 +85,7 @@ namespace control::classifier {
   ControllerResult CTController::create() {
     loadCollection();
     auto topology = params->getTopology();
-    topology.push_back(training_collection->classCount());
+    topology.push_back(training_collection->getClassCount());
 
     model = nnet::MLPModelFactory<float>::randomSigReluAlt(topology);
     auto &optimizer = params->getOptimizer();
@@ -116,7 +116,7 @@ namespace control::classifier {
     }
 
     auto &classes = training_collection->getClasses();
-    size_t nclass = training_collection->classCount();
+    size_t nclass = training_collection->getClassCount();
     CTracker stracker(params->getWorkingPath() / "output", classes.begin(), classes.end());
 
 

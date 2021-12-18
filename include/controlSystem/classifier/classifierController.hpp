@@ -35,7 +35,7 @@ namespace control::classifier {
      * @params e_handler ExitHandler for storing the model dump callback
      * @return
      */
-    ControllerResult run(tscl::ExitHandler &e_handler) noexcept override;
+    // ControllerResult run(tscl::ExitHandler &e_handler) noexcept override;
 
   private:
     ControllerResult train();
@@ -43,6 +43,6 @@ namespace control::classifier {
     void printPostTrainingStats(CTracker &stracker);
 
     TrainingControllerParameters params;
-    std::shared_ptr<ClassifierTrainingCollection> training_collection;
+    std::shared_ptr<CTCollection> training_collection;
   };
 }   // namespace control::classifier
