@@ -6,7 +6,6 @@ set(CURRENT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include/neuralNetwork)
 add_library(NeuralNetwork STATIC
         ActivationFunction.cpp ${CURRENT_INCLUDE_DIR}/ActivationFunction.hpp
         ModelOptimizer.cpp ${CURRENT_INCLUDE_DIR}/ModelOptimizer.hpp
-        OptimizerFactory.cpp ${CURRENT_INCLUDE_DIR}/OptimizerFactory.hpp
         ${INCLUDE_DIR}/Matrix.hpp
         ${INCLUDE_DIR}/Network.hpp
         )

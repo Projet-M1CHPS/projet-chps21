@@ -29,7 +29,7 @@ namespace control::classifier {
     auto &classes = training_collection->getClasses();
     size_t nclass = classes.size();
     CTracker stracker(params.getOutputPath(), classes.begin(), classes.end());
-    
+
     trainingLoop(stracker);
     printPostTrainingStats(stracker);
     tscl::logger("Training finished", tscl::Log::Information);
@@ -62,7 +62,9 @@ namespace control::classifier {
 
     tscl::logger("Training started with", tscl::Log::Information);
     while (stracker.getEpoch() < max_epoch) {
-      for (int i = 0; i < batch_size; i++) { optimizer->optimize(training_set, training_targets); }
+      for (int i = 0; i < batch_size; i++) {
+        optimizer->optimize(training_set.getVector(), training_targets);
+      }
       // training_set.shuffle(std::random_device{}());
 
       confusion.fill(0);

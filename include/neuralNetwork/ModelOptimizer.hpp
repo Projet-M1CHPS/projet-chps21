@@ -6,8 +6,6 @@
 
 namespace nnet {
 
-  enum class ModelOptimizerType { stochastic, batch, minibatch };
-
   template<typename real = float>
   class ModelOptimizer {
   public:
@@ -19,9 +17,6 @@ namespace nnet {
     virtual void update() = 0;
 
     virtual void setModel(Model<real> &model) = 0;
-
-
-  private:
   };
 
 }   // namespace nnet

@@ -377,7 +377,7 @@ bool loadAndTrain(std::filesystem::path const &input_path,
   // Add postprocessing transformations here
 
   tscl::logger("Loading collection", tscl::Log::Information);
-  CTCollection training_collection = loader.load(input_path);
+  auto training_collection = loader.load(input_path);
 
   tscl::logger("Creating controller", tscl::Log::Debug);
   CTController controller(model, optimizer, training_collection, output_path);
@@ -385,7 +385,7 @@ bool loadAndTrain(std::filesystem::path const &input_path,
 
   if (not res) {
     tscl::logger("Controller failed with an exception", tscl::Log::Error);
-    tscl::logger(res.what(), tscl::Log::Error);
+    tscl::logger(res.getMessage(), tscl::Log::Error);
     return false;
   }
   MLPModelSerializer::write(model, mdata);

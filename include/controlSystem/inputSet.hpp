@@ -47,6 +47,13 @@ namespace control {
       return inputs[index];
     }
 
+    /** FIXME: This totally breaks encapsulation, must be fixed in future versions
+     *
+     * @return
+     */
+    std::vector<math::Matrix<float>> &getVector() { return inputs; }
+    [[nodiscard]] const std::vector<math::Matrix<float>> &getVector() const { return inputs; }
+
     using Iterator = typename std::vector<math::Matrix<float>>::iterator;
     using ConstIterator = typename std::vector<math::Matrix<float>>::const_iterator;
 

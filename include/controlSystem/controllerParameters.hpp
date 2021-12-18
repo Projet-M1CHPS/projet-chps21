@@ -30,13 +30,24 @@ namespace control {
 
   class TrainingControllerParameters : public ControllerParameters {
   public:
+    TrainingControllerParameters(const std::filesystem::path &input_path,
+                                 const std::filesystem::path &output_path, size_t max_epoch,
+                                 size_t batch_size, bool verbose = false);
+
     size_t getMaxEpoch() const { return max_epoch; }
     void setMaxEpoch(size_t e) { max_epoch = e; }
+
+    size_t getBatchSize() const { return max_epoch; }
+    void setBatchSize(size_t e) { max_epoch = e; }
 
   private:
     virtual void print(std::ostream &os);
 
     size_t max_epoch;
+
+    /*Size of the training batch, not to be confused with the size of the batch
+                         used during gradient descent*/
+    size_t batch_size;
   };
 
 }   // namespace control
