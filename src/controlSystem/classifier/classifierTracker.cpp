@@ -70,17 +70,4 @@ namespace control::classifier {
     s.getAvgF1Output() << epoch << " " << avg_f1score << std::endl;
   }
 
-  void CStats::classification_report(std::ostream &os,
-                                     std::vector<ClassLabel> const &labels) const {
-    size_t nclass = stats.getRows();
-
-    for (size_t i = 0; i < nclass; i++) {
-      os << "[" << labels[i] << "] precision: " << stats(i, 0) << ", recall: " << stats(i, 1)
-         << ", f1-score: " << stats(i, 2) << std::endl;
-    }
-    os << "average accuracy: " << avg_precision << std::endl;
-    os << "average recall: " << avg_recall << std::endl;
-    os << "average f1-score: " << avg_f1score << std::endl;
-  }
-
 }   // namespace control::classifier

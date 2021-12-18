@@ -16,7 +16,7 @@ namespace control::classifier {
     os << "\tEvaluation set contains " << set.eval_set.size() << " elements" << std::endl;
 
     os << "Classes: " << std::endl;
-    os << set.class_list << std::endl;
+    os << *set.class_list << std::endl;
 
     return os;
   }
@@ -27,11 +27,11 @@ namespace control::classifier {
     std::vector<std::filesystem::path> training_classes, eval_classes;
 
     for (auto const &p : fs::directory_iterator(input_path / "eval")) {
-      if (p.is_directory()) training_classes.push_back(p.path());
+      if (p.is_directory()) training_classes.push_back(p.path().filename());
     }
 
     for (auto const &p : fs::directory_iterator(input_path / "train")) {
-      if (p.is_directory()) eval_classes.push_back(p.path());
+      if (p.is_directory()) eval_classes.push_back(p.path().filename());
     }
 
     std::sort(training_classes.begin(), training_classes.end());
@@ -39,35 +39,9 @@ namespace control::classifier {
 
     /** We expect both sets to have the same classes
      * So we throw an exception if they don't match
-     *
      */
     if (not std::equal(training_classes.begin(), training_classes.end(), eval_classes.begin())) {
       tscl::logger("Training and evaluation classes are not the same", tscl::Log::Error);
-
-      /** Before throwing an exception, we print the missing classes to help the user solve the
-       * issue
-       *
-       * This just some bloat code for printing
-       */
-      size_t i = 0, j = 0;
-      while (i < training_classes.size() and j < eval_classes.size()) {
-        while (training_classes[i] != eval_classes[j] and i < eval_classes.size()) {
-          tscl::logger("Training class " + training_classes[i].string() + " not found in eval",
-                       tscl::Log::Error);
-          i++;
-        }
-        i++;
-        j++;
-      }
-
-      for (; i < training_classes.size(); i++) {
-        tscl::logger("Training class " + eval_classes[i].string() + " not found in eval",
-                     tscl::Log::Error);
-      }
-      for (; j < eval_classes.size(); j++) {
-        tscl::logger("Eval class " + eval_classes[j].string() + " not found in training",
-                     tscl::Log::Error);
-      }
       throw std::runtime_error("CITSLoader: train and eval classes are not the same");
     }
 
@@ -96,15 +70,17 @@ namespace control::classifier {
     // Each class is a directory
     // inside the input path
     for (auto &c : *classes) {
-      fs::path target_path = input_path / c.getName();
+      auto c_name = c.second.getName();
+      fs::path target_path = input_path / c_name;
+
       // If for any reason the class directory doesn't exist, throw an error
       if (not fs::exists(target_path)) {
-        tscl::logger("Class " + c.getName() + " not found in " + input_path.string(),
-                     tscl::Log::Error);
+        tscl::logger("Class " + c_name + " not found in " + input_path.string(), tscl::Log::Error);
         throw std::runtime_error("CITSLoader: " + input_path.string() + " is missing class id: " +
-                                 std::to_string(c.getId()) + " (\"" + c.getName() + "\")");
+                                 std::to_string(c.first) + " (\"" + c_name + "\")");
       }
 
+      fs::create_directories("tmp_cache/" + c_name);
       // We iterate over the content of the current class dir, applying the transformations
       // sequentially to each image
       for (auto &entry : fs::directory_iterator(target_path)) {
@@ -122,7 +98,7 @@ namespace control::classifier {
           auto mat = image::imageToMatrix<float>(img, 255);
 
           // Move the matrix to the input set to avoid unnecessary copies
-          res.append(0, &c, std::move(mat));
+          res.append(0, &c.second, std::move(mat));
         }
       }
     }

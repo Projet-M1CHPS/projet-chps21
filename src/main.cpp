@@ -358,29 +358,44 @@ bool loadAndTrain(std::filesystem::path const &input_path,
                   std::filesystem::path const &output_path) {
   tscl::logger("Current version: " + tscl::Version::current.to_string(), tscl::Log::Debug);
   tscl::logger("Fetching model from  " + input_path.string(), tscl::Log::Debug);
-  auto mdata = ModelSerializer::fetch(input_path);
+
+  // FIXME: This is what the code should look like
+  // When the serializer is implemented
+  /*auto mdata = ModelSerializer::fetch(input_path);
 
   if (not mdata.valid() or mdata != input_metadata) {
     tscl::logger("Invalid model metadata", tscl::Log::Error);
     return false;
   }
 
-  auto model = ModelSerializer::read(mdata);
-  auto tm = std::make_shared<nnet::SGDOptimization<float>>(0.1f);
-  auto optimizer = std::make_shared<MLPStochOptimizer>(model, method);
+  auto model = ModelSerializer::read(mdata);*/
 
   tscl::logger("Creating collection loader", tscl::Log::Debug);
   CITCLoader loader(32, 32);
   auto &pre_engine = loader.getPreProcessEngine();
+  pre_engine.addTransformation(std::make_shared<image::transform::Inversion>());
   // Add preprocessing transformations here
   auto &engine = loader.getPostProcessEngine();
+  engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
   // Add postprocessing transformations here
 
   tscl::logger("Loading collection", tscl::Log::Information);
   auto training_collection = loader.load(input_path);
 
+  // Create a correctly-sized topology
+  nnet::MLPTopology topology = {32 * 32, 64, 64, 32, 32};
+  topology.push_back(training_collection->getClassCount());
+
+  auto model = nnet::MLPModelFactory<float>::randomSigReluAlt(topology);
+  auto tm = std::make_shared<nnet::DecayMomentumOptimization<float>>(model->getPerceptron(), 0.1,
+                                                                     0.1, 0.7);
+  auto optimizer = std::make_unique<nnet::MLPModelStochOptimizer<float>>(*model, tm);
+
   tscl::logger("Creating controller", tscl::Log::Debug);
-  CTController controller(model, optimizer, training_collection, output_path);
+  std::cout << *training_collection;
+
+  TrainingControllerParameters parameters(input_path, "runs/test/", 100, 5, false);
+  CTController controller(parameters, *model, *optimizer, *training_collection);
   ControllerResult res = controller.run();
 
   if (not res) {
@@ -388,7 +403,7 @@ bool loadAndTrain(std::filesystem::path const &input_path,
     tscl::logger(res.getMessage(), tscl::Log::Error);
     return false;
   }
-  MLPModelSerializer::write(model, mdata);
+  // MLPModelSerializer::write(model, mdata);
   return true;
 }
 
@@ -414,6 +429,6 @@ int main(int argc, char **argv) {
   std::vector<std::string> args;
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);
 
-  return loadAndTrain(args);
+  return loadAndTrain(args[1], args.size() == 3 ? args[2] : "runs/test");
   return 0;
 }

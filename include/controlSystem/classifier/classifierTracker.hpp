@@ -13,11 +13,8 @@ namespace control::classifier {
 
   class CTrackerState {
   public:
-    template<typename iterator>
-    CTrackerState(std::filesystem::path const &output_path, iterator const class_begin,
-                  iterator const class_end) {
-      size_t size = std::distance(class_begin, class_end);
-
+    CTrackerState(std::filesystem::path const &output_path,
+                  const ClassifierClassLabelList &class_labels) {
       auto output_dir = output_path / "class_data";
       std::filesystem::create_directories(output_dir);
 
@@ -29,10 +26,11 @@ namespace control::classifier {
       recall_outputs = std::make_shared<std::vector<std::ofstream>>();
       f1_outputs = std::make_shared<std::vector<std::ofstream>>();
 
-      for (auto it = class_begin; it != class_end; it++) {
-        prec_outputs->emplace_back(output_dir / (it->getName() + "_prec.dat"));
-        recall_outputs->emplace_back(output_dir / (it->getName() + "_recall.dat"));
-        f1_outputs->emplace_back(output_dir / (it->getName() + "_f1.dat"));
+      for (auto &c : class_labels) {
+        auto c_name = c.second.getName();
+        prec_outputs->emplace_back(output_dir / (c_name + "_prec.dat"));
+        recall_outputs->emplace_back(output_dir / (c_name + "_recall.dat"));
+        f1_outputs->emplace_back(output_dir / (c_name + "_f1.dat"));
       }
     }
 
@@ -76,7 +74,6 @@ namespace control::classifier {
 
   public:
     CStats() = delete;
-    void classification_report(std::ostream &os, std::vector<ClassLabel> const &labels) const;
     void dumpToFiles();
 
     [[nodiscard]] double getAvgPrec() const { return avg_precision; }
@@ -97,10 +94,8 @@ namespace control::classifier {
 
   class CTracker {
   public:
-    template<typename iterator>
-    CTracker(std::filesystem::path const &output_path, iterator const class_begin,
-             iterator const class_end)
-        : epoch(0), state(std::make_shared<CTrackerState>(output_path, class_begin, class_end)) {}
+    CTracker(std::filesystem::path const &output_path, const ClassifierClassLabelList &class_labels)
+        : epoch(0), state(std::make_shared<CTrackerState>(output_path, class_labels)) {}
 
     [[nodiscard]] CStats computeStats(math::Matrix<size_t> const &confusion) {
       return {epoch, confusion, state};

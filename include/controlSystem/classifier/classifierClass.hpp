@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <map>
 #include <vector>
 
 /** Represents a of objects, to be used in a classifier.
@@ -50,23 +51,25 @@ private:
  *
  */
 class ClassifierClassLabelList {
-public:
-  size_t size() const { return labels.size(); }
+  friend std::ostream &operator<<(std::ostream &os, const ClassifierClassLabelList &label);
 
-  bool empty() const { return labels.empty(); }
+public:
+  [[nodiscard]] size_t size() const { return labels.size(); }
+
+  [[nodiscard]] bool empty() const { return labels.empty(); }
 
   void append(ClassLabel label);
 
-  using iterator = std::vector<ClassLabel>::iterator;
-  using const_iterator = std::vector<ClassLabel>::const_iterator;
+  using iterator = std::map<size_t, ClassLabel>::iterator;
+  using const_iterator = std::map<size_t, ClassLabel>::const_iterator;
 
   iterator begin() { return labels.begin(); }
   iterator end() { return labels.end(); }
 
-  const_iterator begin() const { return labels.begin(); }
-  const_iterator end() const { return labels.end(); }
+  [[nodiscard]] const_iterator begin() const { return labels.begin(); }
+  [[nodiscard]] const_iterator end() const { return labels.end(); }
 
 
 private:
-  std::vector<ClassLabel> labels;
+  std::map<size_t, ClassLabel> labels;
 };

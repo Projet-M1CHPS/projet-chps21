@@ -21,7 +21,6 @@ namespace nnet {
     OptimizationMethod() = default;
     virtual ~OptimizationMethod() = default;
 
-    virtual void setPerceptron(MLPerceptron<real> &perceptron) {}
     virtual void compute(BackpropStorage<real> &storage) = 0;
     virtual void update(){};
   };
@@ -67,10 +66,13 @@ namespace nnet {
   template<typename real = float>
   class MomentumOptimization : public OptimizationMethod<real> {
   public:
-    MomentumOptimization(const real learning_rate, const real momentum)
-        : lr(learning_rate), momentum(momentum) {}
+    MomentumOptimization(MLPerceptron<real> &perceptron, const real learning_rate,
+                         const real momentum)
+        : lr(learning_rate), momentum(momentum) {
+      setPerceptron(perceptron);
+    }
 
-    void setPerceptron(MLPerceptron<real> &perceptron) override {
+    void setPerceptron(MLPerceptron<real> &perceptron) {
       old_weight_change.clear();
 
       auto &topology = perceptron.getTopology();
@@ -98,10 +100,13 @@ namespace nnet {
   template<typename real = float>
   class DecayMomentumOptimization : public OptimizationMethod<real> {
   public:
-    DecayMomentumOptimization(const real lr_0, const real dr, const real mom)
-        : initial_lr(lr_0), learning_r(lr_0), momentum(mom), decay_r(dr) {}
+    DecayMomentumOptimization(MLPerceptron<real> &perceptron, const real lr_0, const real dr,
+                              const real mom)
+        : initial_lr(lr_0), learning_r(lr_0), momentum(mom), decay_r(dr) {
+      setPerceptron(perceptron);
+    }
 
-    void setPerceptron(MLPerceptron<real> &perceptron) override {
+    void setPerceptron(MLPerceptron<real> &perceptron) {
       old_weight_change.clear();
 
       auto &topology = perceptron.getTopology();
@@ -139,11 +144,14 @@ namespace nnet {
   template<typename real = float>
   class RPropPOptimization : public OptimizationMethod<real> {
   public:
-    RPropPOptimization(const real eta_p = 1.2, const real eta_m = 0.5, const real lr_max = 50.0,
-                       const real lr_min = 1e-6)
-        : eta_plus(eta_p), eta_minus(eta_m), update_max(lr_max), update_min(lr_min) {}
+    explicit RPropPOptimization(MLPerceptron<real> &perceptron, const real eta_p = 1.2,
+                                const real eta_m = 0.5, const real lr_max = 50.0,
+                                const real lr_min = 1e-6)
+        : eta_plus(eta_p), eta_minus(eta_m), update_max(lr_max), update_min(lr_min) {
+      setPerceptron(perceptron);
+    }
 
-    void setPerceptron(MLPerceptron<real> &perceptron) override {
+    void setPerceptron(MLPerceptron<real> &perceptron) {
       weights_updates.clear();
       old_gradients.clear();
       weights_changes.clear();

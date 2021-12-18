@@ -11,7 +11,8 @@ namespace nnet {
   template<typename real = float>
   class MLPModelOptimizer : public ModelOptimizer<real> {
   public:
-    MLPModelOptimizer(std::shared_ptr<OptimizationMethod<real>> tm) : opti_meth(tm) {}
+    MLPModelOptimizer(MLPModel<real> &model, std::shared_ptr<OptimizationMethod<real>> tm)
+        : neural_network(&model.getPerceptron()), opti_meth(tm) {}
     virtual ~MLPModelOptimizer() = default;
 
     MLPModelOptimizer(const MLPModelOptimizer<real> &other) = delete;
@@ -22,13 +23,6 @@ namespace nnet {
 
     MLPerceptron<real> *gePerceptron() const { return neural_network; }
     OptimizationMethod<real> *getOptimizationMethod() const { return opti_meth; }
-
-
-    void setModel(Model<real> &model) override {
-      auto &mlp_model = dynamic_cast<MLPModel<real> &>(model);
-      neural_network = &mlp_model.getPerceptron();
-      opti_meth->setPerceptron(*neural_network);
-    }
 
     void update() override { opti_meth->update(); }
 
@@ -41,9 +35,10 @@ namespace nnet {
   template<typename real = float>
   class MLPModelStochOptimizer final : public MLPModelOptimizer<real> {
   public:
-    MLPModelStochOptimizer(std::shared_ptr<OptimizationMethod<real>> tm)
-        : MLPModelOptimizer<real>(tm){};
-
+    MLPModelStochOptimizer(MLPModel<real> &model, std::shared_ptr<OptimizationMethod<real>> tm)
+        : MLPModelOptimizer<real>(model, tm) {
+      setModel(model);
+    }
 
     void train(const math::Matrix<real> &input, const math::Matrix<real> &target) {
       const size_t nbInput = input.getRows();
@@ -52,9 +47,12 @@ namespace nnet {
       auto &weights = this->neural_network->getWeights();
       auto &topology = this->neural_network->getTopology();
 
-      if (nbInput != topology.getInputSize() || nbTarget != topology.getOutputSize()) {
+      if (nbInput != topology.getInputSize()) {
         throw std::runtime_error("Invalid number of inputs");
       }
+
+      if (nbTarget != topology.getOutputSize())
+        throw std::runtime_error("Invalid number of targets");
 
       forward(input);
       storage.getError() = layers_af[layers_af.size() - 1] - target;
@@ -62,9 +60,7 @@ namespace nnet {
     }
 
     void setModel(Model<real> &model) override {
-      MLPModelOptimizer<real>::setModel(model);
       auto &mlp_model = dynamic_cast<MLPModel<real> &>(model);
-
       auto &perceptron = mlp_model.getPerceptron();
 
       storage = BackpropStorage<real>(perceptron.getWeights());
@@ -145,8 +141,8 @@ namespace nnet {
   template<typename real = float>
   class MLPBatchOptimizer final : public MLPModelOptimizer<real> {
   public:
-    explicit MLPBatchOptimizer(std::shared_ptr<OptimizationMethod<real>> tm)
-        : MLPModelOptimizer<real>(tm) {}
+    explicit MLPBatchOptimizer(MLPModel<real> &model, std::shared_ptr<OptimizationMethod<real>> tm)
+        : MLPModelOptimizer<real>(model, tm) {}
 
     void setModel(Model<real> &model) override {
       MLPModelOptimizer<real>::setModel(model);

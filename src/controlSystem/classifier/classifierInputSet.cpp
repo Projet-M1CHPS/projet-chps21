@@ -9,6 +9,14 @@ namespace control::classifier {
     set_labels.push_back(label);
   }
 
+  void ClassifierTrainingSet::append(size_t input_id, const ClassLabel *label,
+                                     const math::Matrix<float> &mat) {
+    inputs.push_back(mat);
+    inputs_id.push_back(input_id);
+    set_labels.push_back(label);
+  }
+
+
   void ClassifierTrainingSet::shuffle(size_t seed) {
     std::mt19937_64 rng(seed);
     std::shuffle(inputs_id.begin(), inputs_id.end(), rng);
@@ -25,6 +33,9 @@ namespace control::classifier {
       os << "\tinput_id: " << inputs_id[i] << ", label: " << *set_labels[i] << std::endl;
     }
   }
-
-
+  void ClassifierTrainingSet::unload() {
+    InputSet::unload();
+    inputs_id.clear();
+    set_labels.clear();
+  }
 }   // namespace control::classifier

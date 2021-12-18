@@ -11,6 +11,7 @@ add_library(ControlSystem STATIC
         classifier/classifierController.cpp ${CLASSIFIER_INCLUDE_DIR}/classifierController.hpp
         classifier/classifierInputSet.cpp ${CLASSIFIER_INCLUDE_DIR}/classifierInputSet.hpp
         classifier/classifierTracker.cpp ${CLASSIFIER_INCLUDE_DIR}/classifierTracker.hpp
+        classifier/classifierClass.cpp ${CLASSIFIER_INCLUDE_DIR}/classifierClass.hpp
         ${INCLUDE_DIR}/Control.hpp
         )
 

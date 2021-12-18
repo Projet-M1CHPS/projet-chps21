@@ -103,9 +103,4 @@ namespace control {
     std::vector<math::Matrix<float>> inputs;
   };
 
-  std::ostream &operator<<(std::ostream &os, InputSet const &set) {
-    set.print(os);
-    return os;
-  }
-
 }   // namespace control

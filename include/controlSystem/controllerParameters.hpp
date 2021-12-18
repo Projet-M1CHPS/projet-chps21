@@ -11,20 +11,20 @@ namespace control {
     friend std::ostream &operator<<(std::ostream &os, const ControllerParameters &cp);
 
   public:
-    ControllerParameters(const std::filesystem::path &input_path,
-                         const std::filesystem::path &output_path, bool verbose = false);
+    ControllerParameters(std::filesystem::path input_path, std::filesystem::path output_path,
+                         bool verbose = false);
 
     std::filesystem::path getOutputPath() { return output_path; }
     void setOutputPath(std::filesystem::path path) { output_path = std::move(path); }
 
-    bool isVerbose() const { return verbose; }
+    [[nodiscard]] bool isVerbose() const { return verbose; }
     void setVerbose(bool v) { verbose = v; }
 
   protected:
-    virtual void print(std::ostream &os);
+    virtual void print(std::ostream &os) const;
 
-    std::filesystem::path output_path;
     std::filesystem::path input_path;
+    std::filesystem::path output_path;
     bool verbose;
   };
 
@@ -34,14 +34,14 @@ namespace control {
                                  const std::filesystem::path &output_path, size_t max_epoch,
                                  size_t batch_size, bool verbose = false);
 
-    size_t getMaxEpoch() const { return max_epoch; }
+    [[nodiscard]] size_t getMaxEpoch() const { return max_epoch; }
     void setMaxEpoch(size_t e) { max_epoch = e; }
 
-    size_t getBatchSize() const { return max_epoch; }
-    void setBatchSize(size_t e) { max_epoch = e; }
+    [[nodiscard]] size_t getBatchSize() const { return batch_size; }
+    void setBatchSize(size_t e) { batch_size = e; }
 
   private:
-    virtual void print(std::ostream &os);
+    void print(std::ostream &os) const override;
 
     size_t max_epoch;
 

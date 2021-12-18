@@ -91,9 +91,10 @@ namespace image {
 
     for (size_t y = 0; y < min_height; y++) {
       size_t x = 0;
-      diff += std::accumulate(begin() + getWidth() * y, begin() + getWidth() * y + min_width, 0.0, [&x, y, other](auto a, auto b) {
-        return (double) std::fabs(b - other(x++, y)) / max_brightness;
-      });
+      diff += std::accumulate(begin() + getWidth() * y, begin() + getWidth() * y + min_width, 0.0,
+                              [&x, y, other](auto a, auto b) {
+                                return (double) std::fabs(b - other(x++, y)) / max_brightness;
+                              });
     }
     return diff;
   }
@@ -110,7 +111,8 @@ namespace image {
   const std::vector<double> GrayscaleImage::createRatioHistogram() const {
     double increment_value = 1.0 / ((double) getSize());
     std::vector<double> histogram(nb_colors);
-    std::for_each(begin(), end(), [&histogram, increment_value](auto e) { histogram[e] += increment_value; });
+    std::for_each(begin(), end(),
+                  [&histogram, increment_value](auto e) { histogram[e] += increment_value; });
     return histogram;
   }
 
@@ -152,19 +154,18 @@ namespace image {
 
   GrayscaleImage ImageSerializer::createRandomNoiseImage() {
     srand(time(nullptr));
-    return ImageSerializer::createRandomNoiseImage((size_t) (rand() % 389) + 124, (size_t) (rand() % 389) + 124);
+    return ImageSerializer::createRandomNoiseImage((size_t) (rand() % 389) + 124,
+                                                   (size_t) (rand() % 389) + 124);
   }
 
   /**
    * @param filename any image file supported by stb.
    */
   GrayscaleImage ImageSerializer::load(fs::path const &filename) {
-
     int width, height, channels;
     unsigned char *img_data = stbi_load(filename.c_str(), &width, &height, &channels, 1);
 
-    if (img_data == nullptr)
-      throw std::runtime_error("ImageSerializer::load: stbi_load failed");
+    if (img_data == nullptr) throw std::runtime_error("ImageSerializer::load: stbi_load failed");
 
     std::unique_ptr<grayscale_t[]> ptr(reinterpret_cast<grayscale_t *>(img_data));
     GrayscaleImage res(width, height, std::move(ptr));
@@ -179,11 +180,11 @@ namespace image {
    * @param image
    */
   void ImageSerializer::save(std::string const &filename, GrayscaleImage const &image) {
-    stbi_write_png(filename.c_str(), image.getWidth(), image.getHeight(), 1,
-                   image.getData(), image.getWidth());
+    stbi_write_png(filename.c_str(), image.getWidth(), image.getHeight(), 1, image.getData(),
+                   image.getWidth());
   }
-  std::tuple<int, int, int> ImageSerializer::loadInfo(fs::path const& path) {
 
+  std::tuple<int, int, int> ImageSerializer::loadInfo(fs::path const &path) {
     int width, height, canals;
     stbi_info(path.c_str(), &width, &height, &canals);
     return {width, height, canals};

@@ -28,7 +28,7 @@ namespace control::classifier {
 
     auto &classes = training_collection->getClasses();
     size_t nclass = classes.size();
-    CTracker stracker(params.getOutputPath(), classes.begin(), classes.end());
+    CTracker stracker(params.getOutputPath(), classes);
 
     trainingLoop(stracker);
     printPostTrainingStats(stracker);
@@ -49,6 +49,8 @@ namespace control::classifier {
     math::Matrix<size_t> confusion(nclass, nclass);
     math::FloatMatrix target(nclass, 1);
 
+    // BE CAREFUL to shuffle the training sets BEFORE building the target matrices
+    training_collection->shuffleSets(std::random_device{}());
 
     // We build the target matrices
     std::vector<math::FloatMatrix> training_targets;
@@ -60,11 +62,12 @@ namespace control::classifier {
       i++;
     }
 
-    tscl::logger("Training started with", tscl::Log::Information);
+    tscl::logger("Training started", tscl::Log::Information);
     while (stracker.getEpoch() < max_epoch) {
       for (int i = 0; i < batch_size; i++) {
         optimizer->optimize(training_set.getVector(), training_targets);
       }
+      // Re-shuffle after each training batch
       // training_set.shuffle(std::random_device{}());
 
       confusion.fill(0);
