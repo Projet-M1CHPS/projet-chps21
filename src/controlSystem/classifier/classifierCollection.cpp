@@ -7,7 +7,7 @@ namespace fs = std::filesystem;
 
 namespace control::classifier {
 
-  CTCollection::CTCollection(std::shared_ptr<ClassifierClassLabelList> classes)
+  CTCollection::CTCollection(std::shared_ptr<CClassLabelSet> classes)
       : class_list(std::move(classes)) {}
 
   std::ostream &operator<<(std::ostream &os, CTCollection const &set) {
@@ -45,7 +45,7 @@ namespace control::classifier {
       throw std::runtime_error("CITSLoader: train and eval classes are not the same");
     }
 
-    classes = std::make_shared<ClassifierClassLabelList>();
+    classes = std::make_shared<CClassLabelSet>();
     for (auto const &p : training_classes) {
       ClassLabel tmp(classes->size(), p.filename().string());
       classes->append(tmp);

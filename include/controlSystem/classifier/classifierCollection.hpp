@@ -22,7 +22,7 @@ namespace control::classifier {
      *
      * @param classes
      */
-    explicit CTCollection(std::shared_ptr<ClassifierClassLabelList> classes);
+    explicit CTCollection(std::shared_ptr<CClassLabelSet> classes);
 
     /** Collection can be really huge, so we delete the copy operators for safety
      * FIXME: add a copy method
@@ -58,12 +58,12 @@ namespace control::classifier {
      *
      * @return
      */
-    [[nodiscard]] ClassifierClassLabelList const &getClasses() const { return *class_list; }
+    [[nodiscard]] CClassLabelSet const &getClasses() const { return *class_list; }
 
     /** Randomly shuffle the training set
      *
      * Training should be done on a shuffled set for a uniform learning that is not biased by the
-     * order of the data and will not only focus on the last class
+     * inputs order
      *
      * @param seed
      */
@@ -75,7 +75,7 @@ namespace control::classifier {
     void shuffleEvalSet(size_t seed) { eval_set.shuffle(seed); }
 
     /** Randomly shuffles both sets with a seed
-     * The seed is used for both shuffling
+     * The same seed is used for both shuffling
      *
      * @param seed
      */
@@ -107,7 +107,7 @@ namespace control::classifier {
 
   private:
     ClassifierTrainingSet training_set, eval_set;
-    std::shared_ptr<ClassifierClassLabelList> class_list;
+    std::shared_ptr<CClassLabelSet> class_list;
   };
 
 
@@ -118,13 +118,19 @@ namespace control::classifier {
   public:
     virtual ~CTCLoader() = default;
 
-    void setClasses(std::shared_ptr<ClassifierClassLabelList> list) { classes = std::move(list); }
+    /** Set the classes that will be used by the loader
+     * This function takes a shared ptr to the class list
+     * since the loader has to build one himself if none is provided
+     *
+     * @param list
+     */
+    void setClasses(std::shared_ptr<CClassLabelSet> list) { classes = std::move(list); }
 
-    [[nodiscard]] ClassifierClassLabelList getClasses() { return *classes; }
-    [[nodiscard]] ClassifierClassLabelList getClasses() const { return *classes; }
+    [[nodiscard]] CClassLabelSet &getClasses() { return *classes; }
+    [[nodiscard]] CClassLabelSet &getClasses() const { return *classes; }
 
   protected:
-    std::shared_ptr<ClassifierClassLabelList> classes;
+    std::shared_ptr<CClassLabelSet> classes;
   };
 
   /** Classifier collection loader for image inputs
@@ -138,13 +144,12 @@ namespace control::classifier {
      * @param width
      * @param height
      */
-    CITCLoader(size_t width, size_t height) : target_width(width), target_height(height) {}
+    CITCLoader(const size_t width, const size_t height)
+        : target_width(width), target_height(height) {}
 
-    /** Loads the collection pointed to by the input path
+    /** Loads a collection from a directory
      *
-     * @param input_path
-     * @param verbose
-     * @param out
+     * @param input_path a path to a directory containing the evaluation and training set
      * @return
      */
     [[nodiscard]] std::unique_ptr<CTCollection> load(const std::filesystem::path &input_path);
@@ -171,6 +176,10 @@ namespace control::classifier {
     }
 
   private:
+    /** Only called if no classes are provided by the user
+     * Automatically fetch the class from the sub-directories name
+     * @param input_path
+     */
     void loadClasses(std::filesystem::path const &input_path);
     void loadEvalSet(CTCollection &res, const std::filesystem::path &input_path);
     void loadTrainingSet(CTCollection &res, std::filesystem::path const &input_path);

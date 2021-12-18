@@ -17,6 +17,10 @@ namespace control {
     ControllerResult(size_t status, std::string msg) : status(status), message(std::move(msg)) {}
     virtual ~ControllerResult() = default;
 
+    /** Returns true if the status is != 0
+     *
+     * @return
+     */
     explicit operator bool() const { return status; }
 
     /* Returns the message associated with the result
@@ -31,7 +35,7 @@ namespace control {
     [[nodiscard]] size_t getStatus() const { return status; }
 
   private:
-    /** Placeholder method for printing the content of the result
+    /** Prints the content of the result as "<Status>: <Message>"
      *
      * @param os
      */
@@ -43,15 +47,22 @@ namespace control {
     std::string message;
   };
 
-  /** Base class for all controllers
+  /** Interface for controllers
    *
    */
-  class Controller {
+  class RunController {
   public:
-    explicit Controller(nnet::Model<float> &model) : model(&model) {}
+    explicit RunController(nnet::Model<float> &model) : model(&model) {}
 
-    Controller(Controller const &other) = delete;
-    Controller(Controller &&other) = delete;
+    /** Controllers should not be copied
+     * This may change in the future if a case where this is needed is found
+     *
+     * @param other
+     */
+    RunController(RunController const &other) = delete;
+    RunController(RunController &&other) = delete;
+
+    virtual ~RunController() = default;
 
     /** Starts a run using the stored model, an register a callback in the exit handler
      * in case of an unexpected exit.
@@ -60,12 +71,12 @@ namespace control {
      * On error, a @ControllerResult is returned.
      * This is done to prevent exceptions from reaching the python layer.
      * This also means that every exception is caught, handled or not
+     * FIXME: implement me
      *
      * @param e_handler Exception handler to be called on unexpected exit
      * @return
      */
     // virtual ControllerResult run(tscl::ExitHandler &e_handler) noexcept = 0;
-    virtual ~Controller() = default;
 
     /** Starts a run using the stored @Model.
      *

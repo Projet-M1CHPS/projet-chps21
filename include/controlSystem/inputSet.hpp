@@ -47,7 +47,10 @@ namespace control {
       return inputs[index];
     }
 
-    /** FIXME: This totally breaks encapsulation, must be fixed in future versions
+    // This totally breaks encapsulation, but is the simplest way I found to pass the matrices to
+    // the optimizer
+    /** Return the internal storage used by the set
+     *
      *
      * @return
      */
@@ -92,7 +95,7 @@ namespace control {
      */
     [[nodiscard]] size_t size() const { return inputs.size(); }
 
-    /** Detroy every element in the set
+    /** Free every element in the set
      *
      */
     virtual void unload() { *this = std::move(InputSet()); }

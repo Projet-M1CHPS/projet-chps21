@@ -13,8 +13,7 @@ namespace control::classifier {
 
   class CTrackerState {
   public:
-    CTrackerState(std::filesystem::path const &output_path,
-                  const ClassifierClassLabelList &class_labels) {
+    CTrackerState(std::filesystem::path const &output_path, const CClassLabelSet &class_labels) {
       auto output_dir = output_path / "class_data";
       std::filesystem::create_directories(output_dir);
 
@@ -94,7 +93,7 @@ namespace control::classifier {
 
   class CTracker {
   public:
-    CTracker(std::filesystem::path const &output_path, const ClassifierClassLabelList &class_labels)
+    CTracker(std::filesystem::path const &output_path, const CClassLabelSet &class_labels)
         : epoch(0), state(std::make_shared<CTrackerState>(output_path, class_labels)) {}
 
     [[nodiscard]] CStats computeStats(math::Matrix<size_t> const &confusion) {

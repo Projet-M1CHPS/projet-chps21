@@ -9,7 +9,7 @@ namespace control::classifier {
   /** Classifier Training Controller, used for training a classifier model
    *
    */
-  class CTController : public Controller {
+  class CTController : public RunController {
   public:
     /** Constructs a controller to train a classifier model
      * The controller doesn't assume ownership of any of anything besides its own parameters
@@ -23,7 +23,7 @@ namespace control::classifier {
      */
     explicit CTController(const TrainingControllerParameters &params, nnet::Model<float> &model,
                           nnet::ModelOptimizer<float> &optimizer, CTCollection &collection)
-        : Controller(model), params(params), optimizer(&optimizer),
+        : RunController(model), params(params), optimizer(&optimizer),
           training_collection(&collection) {}
 
     /** Starts a run using the stored model, optimizer, training collection and parameters
@@ -41,6 +41,8 @@ namespace control::classifier {
      *
      * On error, returns a ControllerResults object with the error set.
      * Guaranteed not to throw, even if it means catching unhandled exceptions.
+     *
+     * FIXME: implement me
      *
      * This behaviour is required to prevent an exception reaching the python layer
      * Furthermore, appends a callback to the exit_handler to dump the model to disk if the program

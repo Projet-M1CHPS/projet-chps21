@@ -3,7 +3,7 @@
 #include <map>
 #include <vector>
 
-/** Represents a of objects, to be used in a classifier.
+/** Represents the class of an input, to be used in a classifier.
  * A class is uniquely identified by an id, and contains a name (that may not be unique)
  */
 class ClassLabel {
@@ -14,6 +14,10 @@ public:
   [[nodiscard]] size_t getId() const { return id; }
   [[nodiscard]] std::string const &getName() const { return name; }
 
+  /** The id should be unique for a given class set
+   *
+   * @param id
+   */
   void setId(size_t id) { this->id = id; }
   void setName(std::string name) { this->name = std::move(name); }
 
@@ -47,17 +51,28 @@ private:
   std::string name;
 };
 
-/** Represents a list of classes that can be outputted by a classifier
+/** Represents a set of classes that can be outputted by a classifier
  *
  */
-class ClassifierClassLabelList {
-  friend std::ostream &operator<<(std::ostream &os, const ClassifierClassLabelList &label);
+class CClassLabelSet {
+  friend std::ostream &operator<<(std::ostream &os, const CClassLabelSet &label);
 
 public:
+  /**
+   * @return the size of the set
+   */
   [[nodiscard]] size_t size() const { return labels.size(); }
 
+  /**
+   *
+   * @return true if the set is empty, false otherwise
+   */
   [[nodiscard]] bool empty() const { return labels.empty(); }
 
+  /** Append a label to the set, and checks for id uniqueness
+   *
+   * @param label
+   */
   void append(ClassLabel label);
 
   using iterator = std::map<size_t, ClassLabel>::iterator;
