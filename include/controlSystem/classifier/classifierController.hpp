@@ -11,9 +11,22 @@ namespace control::classifier {
    */
   class CTController : public Controller {
   public:
-    explicit CTController(TrainingControllerParameters params) : params(std::move(params)) {}
+    /** Constructs a controller to train a classifier model
+     * The controller doesn't assume ownership of any of anything besides its own parameters
+     * Meaning the model, optimizer, and training collection must be kept alive for the lifetime of
+     * the controller
+     *
+     * @param params The controller parameters
+     * @param model The model to train
+     * @param optimizer The optimizer used for training the model
+     * @param collection The collection of input used for training
+     */
+    explicit CTController(const TrainingControllerParameters &params, nnet::Model<float> &model,
+                          nnet::ModelOptimizer<float> &optimizer, CTCollection &collection)
+        : Controller(model), params(params), optimizer(&optimizer),
+          training_collection(&collection) {}
 
-    /** Starts a run using the stored model and parameters
+    /** Starts a run using the stored model, optimizer, training collection and parameters
      *
      * On error, returns a ControllerResults object with the error set.
      * Guaranteed not to throw, even if it means catching unhandled exceptions.
@@ -42,7 +55,8 @@ namespace control::classifier {
     void trainingLoop(CTracker &stracker);
     void printPostTrainingStats(CTracker &stracker);
 
+    nnet::ModelOptimizer<float> *optimizer;
     TrainingControllerParameters params;
-    std::shared_ptr<CTCollection> training_collection;
+    CTCollection *training_collection;
   };
 }   // namespace control::classifier

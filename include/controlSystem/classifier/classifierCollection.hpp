@@ -117,22 +117,14 @@ namespace control::classifier {
   class CTCLoader {
   public:
     virtual ~CTCLoader() = default;
-    template<typename iterator>
-    void setClasses(iterator begin, iterator end) {
-      if (not classes) classes = std::make_shared<std::vector<ClassLabel>>();
-      classes->clear();
-      classes->insert(classes->begin(), begin, end);
 
-      std::sort(classes->begin(), classes->end());
-    }
+    void setClasses(std::shared_ptr<ClassifierClassLabelList> list) { classes = std::move(list); }
 
-    [[nodiscard]] std::shared_ptr<std::vector<ClassLabel>> getClasses() { return classes; }
-    [[nodiscard]] std::shared_ptr<std::vector<ClassLabel> const> getClasses() const {
-      return classes;
-    }
+    [[nodiscard]] ClassifierClassLabelList getClasses() { return *classes; }
+    [[nodiscard]] ClassifierClassLabelList getClasses() const { return *classes; }
 
   protected:
-    std::shared_ptr<std::vector<ClassLabel>> classes;
+    std::shared_ptr<ClassifierClassLabelList> classes;
   };
 
   /** Classifier collection loader for image inputs
@@ -155,7 +147,7 @@ namespace control::classifier {
      * @param out
      * @return
      */
-    [[nodiscard]] std::shared_ptr<CTCollection> load(std::filesystem::path const &input_path);
+    [[nodiscard]] std::unique_ptr<CTCollection> load(const std::filesystem::path &input_path);
 
     /** Returns the transformation engine that gets applied before the rescaling
      *
@@ -185,8 +177,11 @@ namespace control::classifier {
 
     void loadSet(ClassifierTrainingSet &res, std::filesystem::path const &input_path);
 
-    image::transform::TransformEngine pre_process;
-    image::transform::TransformEngine post_process;
+    image::transform::TransformEngine pre_process, post_process;
+
+    /** Rescaling size
+     *
+     */
     size_t target_width, target_height;
   };
 }   // namespace control::classifier

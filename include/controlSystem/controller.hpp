@@ -48,15 +48,10 @@ namespace control {
    */
   class Controller {
   public:
-    /** Starts a run using the stored @Model.
-     *
-     * On error, a @ControllerResult is returned.
-     * This is done to prevent exceptions from reaching the python layer.
-     * This also means that every exception is caught, handled or not
-     *
-     * @return
-     */
-    virtual ControllerResult run() noexcept = 0;
+    explicit Controller(nnet::Model<float> &model) : model(&model) {}
+
+    Controller(Controller const &other) = delete;
+    Controller(Controller &&other) = delete;
 
     /** Starts a run using the stored model, an register a callback in the exit handler
      * in case of an unexpected exit.
@@ -72,8 +67,15 @@ namespace control {
     // virtual ControllerResult run(tscl::ExitHandler &e_handler) noexcept = 0;
     virtual ~Controller() = default;
 
-    Controller(Controller const &other) = delete;
-    Controller(Controller &&other) = delete;
+    /** Starts a run using the stored @Model.
+     *
+     * On error, a @ControllerResult is returned.
+     * This is done to prevent exceptions from reaching the python layer.
+     * This also means that every exception is caught, handled or not
+     *
+     * @return
+     */
+    virtual ControllerResult run() noexcept = 0;
 
     /** Return the controller's @Model
      *
@@ -81,17 +83,10 @@ namespace control {
      *
      * @return
      */
-    [[nodiscard]] nnet::Model<float> *getModel() { return model.get(); }
-    [[nodiscard]] nnet::Model<float> const *getModel() const { return model.get(); }
-
-    /** Returns a shared_ptr of the controller's @Model
-     *
-     * @return
-     */
-    [[nodiscard]] std::shared_ptr<nnet::Model<float>> yieldModel() { return model; }
-    [[nodiscard]] std::shared_ptr<nnet::Model<float> const> yieldModel() const { return model; }
+    [[nodiscard]] nnet::Model<float> *getModel() { return model; }
+    [[nodiscard]] nnet::Model<float> const *getModel() const { return model; }
 
   protected:
-    std::shared_ptr<nnet::Model<float>> model;
+    nnet::Model<float> *model;
   };
 }   // namespace control

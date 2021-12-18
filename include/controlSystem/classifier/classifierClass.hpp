@@ -51,19 +51,22 @@ private:
  */
 class ClassifierClassLabelList {
 public:
-  size_t size() const;
+  size_t size() const { return labels.size(); }
+
+  bool empty() const { return labels.empty(); }
 
   void append(ClassLabel label);
 
   using iterator = std::vector<ClassLabel>::iterator;
   using const_iterator = std::vector<ClassLabel>::const_iterator;
 
-  iterator begin() { return classes.begin(); }
-  iterator end() { return classes.end(); }
+  iterator begin() { return labels.begin(); }
+  iterator end() { return labels.end(); }
 
-  const_iterator begin() const { return classes.begin(); }
-  const_iterator end() const { return classes.end(); }
+  const_iterator begin() const { return labels.begin(); }
+  const_iterator end() const { return labels.end(); }
+
 
 private:
-  std::vector<ClassLabel> classes;
+  std::vector<ClassLabel> labels;
 };
