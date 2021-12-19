@@ -266,14 +266,13 @@ TEST(MatrixTest, CanMultiplyMatrixWithMatrix) {
   m(1, 1) = 2;
 
   n = m;
-  n(1, 1) = 3;
 
   auto c = m * n;
   Matrix<float> d(2, 2);
 
   for (size_t i = 0; i < 2; i++) {
-    for (size_t k = 0; k < 2; k++) {
-      for (size_t j = 0; j < 2; j++) { d(i, j) += m(i, k) * n(k, j); }
+    for (size_t j = 0; j < 2; j++) {
+      for (size_t k = 0; k < 2; k++) { d(i, j) += m(i, k) * n(k, j); }
     }
   }
 
