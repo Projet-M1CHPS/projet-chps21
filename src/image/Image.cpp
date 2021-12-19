@@ -5,6 +5,7 @@
 #include <functional>
 #include <numeric>
 #include <unistd.h>
+#include <filesystem>
 
 #include <cassert>
 #include <cstring>
@@ -201,8 +202,6 @@ namespace image {
     }
     return img_list;
   }
-
-  std::tuple<int, int, int> ImageSerializer::loadInfo(fs::path const& path) {
 
   std::tuple<int, int, int> ImageSerializer::loadInfo(fs::path const &path) {
     int width, height, canals;
