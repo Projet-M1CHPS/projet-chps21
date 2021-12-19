@@ -114,14 +114,7 @@ namespace nnet {
     MLPerceptron(MLPerceptron &&other) noexcept : MLPBase() { *this = std::move(other); }
 
     MLPerceptron &operator=(const MLPerceptron &) = default;
-
-    MLPerceptron &operator=(MLPerceptron &&other) noexcept {
-      weights = std::move(other.weights);
-      biases = std::move(other.biases);
-      activation_functions = std::move(other.activation_functions);
-
-      return *this;
-    }
+    MLPerceptron &operator=(MLPerceptron &&other) noexcept = default;
 
     /** @brief Runs the neural network on the inputs
      * The outputs are returned as a matrix of reals

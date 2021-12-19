@@ -358,6 +358,7 @@ bool loadAndTrain(std::filesystem::path const &input_path,
                   std::filesystem::path const &output_path) {
   tscl::logger("Current version: " + tscl::Version::current.to_string(), tscl::Log::Debug);
   tscl::logger("Fetching model from  " + input_path.string(), tscl::Log::Debug);
+  tscl::logger("OutputPath is " + output_path.string(), tscl::Log::Debug);
 
   // FIXME: This is what the code should look like
   // When the serializer is implemented
@@ -389,6 +390,12 @@ bool loadAndTrain(std::filesystem::path const &input_path,
   auto model = nnet::MLPModelFactory<float>::randomSigReluAlt(topology);
   auto tm = std::make_shared<nnet::DecayMomentumOptimization<float>>(model->getPerceptron(), 0.1,
                                                                      0.1, 0.7);
+  // For testing purposes
+  nnet::MLPModelSerializer::writeToFile(output_path / "test.nnet", *model);
+  auto read = nnet::MLPModelSerializer::readFromFile(output_path / "test.nnet");
+  nnet::MLPModelSerializer::writeToFile(output_path / "test2.nnet", *read);
+  return true;
+
   auto optimizer = std::make_unique<nnet::MLPModelStochOptimizer<float>>(*model, tm);
 
   tscl::logger("Creating controller", tscl::Log::Debug);
