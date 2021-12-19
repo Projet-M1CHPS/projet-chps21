@@ -1,71 +1,72 @@
 #pragma once
+#include "classifierClass.hpp"
 #include "controlSystem/inputSet.hpp"
 
 namespace control::classifier {
 
-  class ClassLabel {
-    friend std::ostream &operator<<(std::ostream &os, ClassLabel const &label);
-
+  /** A special input set for classifiers
+   * Stores an input path along with the class label, and the input matrices.
+   *
+   *
+   */
+  class ClassifierTrainingSet : public InputSet {
   public:
-    ClassLabel(size_t id, std::string name) : id(id), name(std::move(name)) {}
-    [[nodiscard]] size_t getId() const { return id; }
-    [[nodiscard]] std::string const &getName() const { return name; }
+    ClassifierTrainingSet() = default;
 
-    void setId(size_t id) { this->id = id; }
-    void setName(std::string name) { this->name = std::move(name); }
-
-    static ClassLabel const &getUnknown() {
-      static ClassLabel unknown(0, "Unknown");
-      return unknown;
-    }
-
-    inline static ClassLabel const &unknown = getUnknown();
-
-    bool operator==(ClassLabel const &other) const { return id == other.id && name == other.name; }
-    bool operator!=(ClassLabel const &other) const { return !(*this == other); }
-
-    bool operator>(ClassLabel const &other) const { return id > other.id; }
-    bool operator<(ClassLabel const &other) const { return id < other.id; }
-
-
-  private:
-    size_t id;
-    std::string name;
-  };
-
-  class ClassifierInputSet : public InputSet<float> {
-    friend std::ostream &operator<<(std::ostream &os, ClassifierInputSet const &set);
-
-  public:
-    ClassifierInputSet() = default;
-
-    explicit ClassifierInputSet(std::shared_ptr<std::vector<ClassLabel>> labels)
-        : class_labels(std::move(labels)) {}
-
+    /** Returns the nth input matrix
+     *
+     * Defined here for inlining purposes
+     *
+     * @param index Index of the matrix to retrieve
+     * @return
+     */
     [[nodiscard]] ClassLabel const &getLabel(size_t index) const {
       if (index >= set_labels.size()) {
-        throw std::out_of_range("ClassifierInputSet::getSetLabel Index out of range");
+        throw std::out_of_range("ClassifierInputSet::getLabel: Index out of range");
       }
       return *set_labels[index];
     }
 
-    [[nodiscard]] std::vector<ClassLabel const *> const &getLabels() const { return set_labels; }
-    [[nodiscard]] std::vector<ClassLabel> const &getClassLabels() const { return *class_labels; }
+    /** Appends a new input matrix to the set
+     *
+     * @param input_id The unique id of the input matrix
+     * @param label Class label of the matrix
+     * @param mat Input matrix
+     */
+    void append(size_t input_id, ClassLabel const *label, math::Matrix<float> &&mat);
 
+    /** Appends a new input matrix to the set
+     *
+     * @param input_id The unique id of the input matrix
+     * @param label Class label of the matrix
+     * @param mat Input matrix
+     */
+    void append(size_t input_id, ClassLabel const *label, const math::Matrix<float> &mat);
 
-    void append(std::filesystem::path path, math::Matrix<float> &&mat) override;
-    void append(std::filesystem::path path, ClassLabel const *label, math::Matrix<float> &&mat);
-
+    /** Shuffles the set with the given seed
+     *
+     * @param seed
+     */
     void shuffle(size_t seed);
 
-    void unload() override {
-      InputSet::unload();
-      set_labels.clear();
-    }
+    /** Unloads the set, freeing all the memory
+     *
+     */
+    void unload() override;
 
   protected:
+    void print(std::ostream &os) const override;
+
+    /* The set of the matrices ids
+     *
+     * This is used for retrieving metadata about the inputs, such as the origin file
+     */
+    std::vector<size_t> inputs_id;
+
+    /** Every matrix is associated with a class label
+     *
+     */
     std::vector<ClassLabel const *> set_labels;
-    std::shared_ptr<std::vector<ClassLabel>> class_labels;
   };
 
 }   // namespace control::classifier

@@ -10,7 +10,7 @@ target_link_libraries(
         NeuralNetwork
         Utils
         gtest_main
-        ${BLAS_LIBRARIES}
+        BLAS::BLAS
 )
 
 target_code_coverage(NeuralNetwork_test ALL)

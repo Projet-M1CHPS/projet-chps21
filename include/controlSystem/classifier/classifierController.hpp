@@ -6,45 +6,59 @@
 
 namespace control::classifier {
 
-  /** Typedef for the classifier controller parameters
-   * with the collection loader
-   */
-  using CTParams = TrainingParameters<CTCLoader>;
-
   /** Classifier Training Controller, used for training a classifier model
    *
    */
-  class CTController : public Controller<float> {
+  class CTController : public RunController {
   public:
-    template<class Params, typename = std::enable_if<std::is_base_of<CTParams, Params>::value>>
-    explicit CTController(Params const &params) {
-      this->params = std::make_unique<Params>(params);
-    }
-
-    explicit CTController(std::shared_ptr<CTParams> params) : params(std::move(params)) {}
-
-    /** Runs the training process as defined by the parameters
+    /** Constructs a controller to train a classifier model
+     * The controller doesn't assume ownership of any of anything besides its own parameters
+     * Meaning the model, optimizer, and training collection must be kept alive for the lifetime of
+     * the controller
      *
-     * No exception will be thrown if the training process fails
-     * Instead, a ControllerResult containing the error message will be returned
+     * @param params The controller parameters
+     * @param model The model to train
+     * @param optimizer The optimizer used for training the model
+     * @param collection The collection of input used for training
+     */
+    explicit CTController(const TrainingControllerParameters &params, nnet::Model<float> &model,
+                          nnet::ModelOptimizer<float> &optimizer, CTCollection &collection)
+        : RunController(model), params(params), optimizer(&optimizer),
+          training_collection(&collection) {}
+
+    /** Starts a run using the stored model, optimizer, training collection and parameters
      *
-     * @param is_verbose
-     * @param os
+     * On error, returns a ControllerResults object with the error set.
+     * Guaranteed not to throw, even if it means catching unhandled exceptions.
+     *
+     * This behaviour is required to prevent an exception reaching the python layer
+     *
      * @return
      */
-    ControllerResult run(bool is_verbose, std::ostream *os) noexcept override;
+    ControllerResult run() noexcept override;
+
+    /** Starts a run using the stored model and parameters
+     *
+     * On error, returns a ControllerResults object with the error set.
+     * Guaranteed not to throw, even if it means catching unhandled exceptions.
+     *
+     * FIXME: implement me
+     *
+     * This behaviour is required to prevent an exception reaching the python layer
+     * Furthermore, appends a callback to the exit_handler to dump the model to disk if the program
+     * unexpectedly terminates
+     * @params e_handler ExitHandler for storing the model dump callback
+     * @return
+     */
+    // ControllerResult run(tscl::ExitHandler &e_handler) noexcept override;
 
   private:
-    ControllerResult load(bool is_verbose, std::ostream *os);
-    ControllerResult create(bool is_verbose, std::ostream *os);
-    ControllerResult checkModel(bool is_verbose, std::ostream *os);
-    void loadTrainingSet(bool is_verbose, std::ostream *os);
+    ControllerResult train();
+    void trainingLoop(CTracker &stracker);
+    void printPostTrainingStats(CTracker &stracker);
 
-    ControllerResult train(bool is_verbose, std::ostream *os);
-    void trainingLoop(bool is_verbose, std::ostream *os, CTracker &stracker);
-    void printPostTrainingStats(std::ostream &os, CTracker &stracker);
-
-    std::shared_ptr<CTParams> params;
-    std::shared_ptr<ClassifierTrainingCollection> training_collection;
+    nnet::ModelOptimizer<float> *optimizer;
+    TrainingControllerParameters params;
+    CTCollection *training_collection;
   };
 }   // namespace control::classifier

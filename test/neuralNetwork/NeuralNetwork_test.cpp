@@ -1,19 +1,19 @@
-#include "NeuralNetwork.hpp"
+#include "MLPerceptron.hpp"
+#include "ModelOptimizer.hpp"
 #include "OptimizationMethod.hpp"
-#include "Optimizer.hpp"
 #include <gtest/gtest.h>
 
 #include <vector>
 
 
 TEST(NeuralNetworkTest, CanCreateNeuralNetwork) {
-  nnet::NeuralNetwork<float> nn;
+  nnet::MLPerceptron<float> nn;
 
   ASSERT_EQ(0, nn.getOutputSize());
   ASSERT_EQ(0, nn.getInputSize());
   ASSERT_EQ(nnet::FloatingPrecision::float32, nn.getPrecision());
 
-  nnet::NeuralNetwork<double> nn2;
+  nnet::MLPerceptron<double> nn2;
 
   ASSERT_EQ(0, nn2.getOutputSize());
   ASSERT_EQ(0, nn2.getInputSize());
@@ -22,30 +22,30 @@ TEST(NeuralNetworkTest, CanCreateNeuralNetwork) {
 
 
 TEST(NeuralNetworkTest, CanSetLayerSize) {
-  nnet::NeuralNetwork<float> nn;
+  nnet::MLPerceptron<float> nn;
   std::vector<size_t> layer_size = {2, 1};
-  nn.setLayersSize(layer_size);
+  nn.setTopology(layer_size);
 
   ASSERT_EQ(2, nn.getInputSize());
   ASSERT_EQ(1, nn.getOutputSize());
 }
 
 TEST(NeuralNetworkTest, ThrowOnInvalidLayerSize) {
-  nnet::NeuralNetwork<float> nn;
+  nnet::MLPerceptron<float> nn;
   std::vector<size_t> layer_size = {1};
 
-  ASSERT_ANY_THROW(nn.setLayersSize(layer_size));
+  ASSERT_ANY_THROW(nn.setTopology(layer_size));
 }
 
 TEST(NeuralNetworkTest, CanCopyNeuralNetwork) {
-  nnet::NeuralNetwork<float> nn;
+  nnet::MLPerceptron<float> nn;
   std::vector<size_t> layer_size = {1, 2};
-  nn.setLayersSize(layer_size);
+  nn.setTopology(layer_size);
 
-  nn.randomizeSynapses();
+  nn.randomizeWeight();
 
   // copy the network with constructor
-  nnet::NeuralNetwork<float> nn2(nn);
+  nnet::MLPerceptron<float> nn2(nn);
 
   ASSERT_EQ(2, nn2.getOutputSize());
   ASSERT_EQ(1, nn2.getInputSize());
@@ -80,7 +80,7 @@ TEST(NeuralNetworkTest, CanCopyNeuralNetwork) {
   }
 
   // copy the network with operator
-  nnet::NeuralNetwork<float> nn3 = nn;
+  nnet::MLPerceptron<float> nn3 = nn;
 
   ASSERT_EQ(2, nn3.getOutputSize());
   ASSERT_EQ(1, nn3.getInputSize());
@@ -120,40 +120,40 @@ TEST(NeuralNetworkPrecisionTest, CanConvertStrToPrecision) {
 }
 
 TEST(NeuralNetworkTest, ThrowOnInvalidInput) {
-  nnet::NeuralNetwork<float> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 2, 1});
+  nnet::MLPerceptron<float> nn;
+  nn.setTopology(std::vector<size_t>{2, 2, 1});
   math::Matrix<float> input = {1, 2, 3, 4};
 
   ASSERT_ANY_THROW(nn.predict(input));
 }
 
 TEST(NeuralNetworkTest, ThrowOnInvalidInputOrTarget) {
-  nnet::NeuralNetwork<float> nn1;
-  nn1.setLayersSize(std::vector<size_t>{2, 2, 1});
+  nnet::MLPerceptron<float> nn1;
+  nn1.setTopology(std::vector<size_t>{2, 2, 1});
 
   nnet::SGDOptimization<float> stdTrain1(0.1);
-  nnet::MLPStochOptimizer<float> opti1(&nn1, &stdTrain1);
+  nnet::MLPModelStochOptimizer<float> opti1(&nn1, &stdTrain1);
 
   math::Matrix<float> input1 = {1, 2, 3, 4};
   math::Matrix<float> target1 = {1};
 
   ASSERT_ANY_THROW(opti1.train(input1, target1));
 
-  nnet::NeuralNetwork<float> nn2;
-  nn2.setLayersSize(std::vector<size_t>{2, 2, 1});
+  nnet::MLPerceptron<float> nn2;
+  nn2.setTopology(std::vector<size_t>{2, 2, 1});
   math::Matrix<float> input2 = {1, 2};
   math::Matrix<float> target2 = {1, 2, 3};
 
   nnet::SGDOptimization<float> stdTrain2(0.1);
-  nnet::MLPStochOptimizer<float> opti2(&nn2, &stdTrain2);
+  nnet::MLPModelStochOptimizer<float> opti2(&nn2, &stdTrain2);
 
   ASSERT_ANY_THROW(opti2.train(input2, target2));
 }
 
 
 TEST(NeuralNetworkTest, SimpleNeuralTest) {
-  nnet::NeuralNetwork<float> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 2, 1});
+  nnet::MLPerceptron<float> nn;
+  nn.setTopology(std::vector<size_t>{2, 2, 1});
   nn.setActivationFunction(af::ActivationFunctionType::square);
 
   auto &w = nn.getWeights();
@@ -174,8 +174,8 @@ TEST(NeuralNetworkTest, SimpleNeuralTest) {
 }
 
 TEST(NeuralNetworkTest, ComplexNeuralTest) {
-  nnet::NeuralNetwork<double> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 4, 2, 3, 2});
+  nnet::MLPerceptron<double> nn;
+  nn.setTopology(std::vector<size_t>{2, 4, 2, 3, 2});
   nn.setActivationFunction(af::ActivationFunctionType::relu);
 
   auto &w = nn.getWeights();
@@ -200,12 +200,12 @@ TEST(NeuralNetworkTest, ComplexNeuralTest) {
 }
 
 TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
-  nnet::NeuralNetwork<float> nn;
-  nn.setLayersSize(std::vector<size_t>{2, 2, 2});
+  nnet::MLPerceptron<float> nn;
+  nn.setTopology(std::vector<size_t>{2, 2, 2});
   nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
 
   nnet::SGDOptimization<float> stdTrain(0.5);
-  nnet::MLPStochOptimizer<float> opti(&nn, &stdTrain);
+  nnet::MLPModelStochOptimizer<float> opti(&nn, &stdTrain);
 
   math::Matrix<float> &w1 = nn.getWeights()[0];
   math::Matrix<float> &b1 = nn.getBiases()[0];

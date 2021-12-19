@@ -97,7 +97,7 @@ namespace math {
           cblas_dcopy(rows * cols, other.data.get(), 1, data.get(), 1);
         }
 #else
-        std::memcpy(data.get(), other.getData(), sizeof(T) * rows * cols);
+        std::memcpy(data.get(), other.getData(), sizeof(real) * rows * cols);
 #endif
       }
       return *this;
@@ -264,7 +264,7 @@ namespace math {
 #else
       for (int i = 0; i < rows; i++) {
         for (int k = 0; k < cols; k++) {
-          T a_ik = data[i * cols + k];
+          real a_ik = data[i * cols + k];
           for (int j = 0; j < other_cols; j++) {
             raw_res[i * other_cols + j] += a_ik * raw_other[k * other_cols + j];
           }

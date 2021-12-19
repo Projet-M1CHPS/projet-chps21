@@ -6,9 +6,10 @@
 
 namespace nnet {
 
-  template<typename T>
+  template<typename T = float>
   class BackpropStorage {
   public:
+    explicit BackpropStorage() = default;
     explicit BackpropStorage(std::vector<math::Matrix<T>> &w) : weights(&w){};
 
     BackpropStorage(BackpropStorage const &other) = delete;

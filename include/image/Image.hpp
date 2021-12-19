@@ -194,7 +194,7 @@ namespace image {
     auto data = res.getData();
     auto image_data = image.getData();
 
-    for (size_t i = 0; i < image.getSize(); i++) { data[i] = image_data[i] / normalize; }
+    for (size_t i = 0; i < image.getSize(); i++) { data[i] = (real) image_data[i] / normalize; }
 
     return res;
   }

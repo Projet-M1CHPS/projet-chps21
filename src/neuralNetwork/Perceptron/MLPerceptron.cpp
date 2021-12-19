@@ -1,4 +1,4 @@
-#include "NeuralNetwork.hpp"
+#include "MLPerceptron.hpp"
 
 namespace nnet {
 
@@ -23,12 +23,12 @@ namespace nnet {
     }
   }
 
-  std::unique_ptr<NeuralNetworkBase> makeNeuralNetwork(FloatingPrecision precision) {
+  std::unique_ptr<MLPBase> makeNeuralNetwork(FloatingPrecision precision) {
     switch (precision) {
       case FloatingPrecision::float32:
-        return std::make_unique<NeuralNetwork<float>>();
+        return std::make_unique<MLPerceptron<float>>();
       case FloatingPrecision::float64:
-        return std::make_unique<NeuralNetwork<double>>();
+        return std::make_unique<MLPerceptron<double>>();
       default:
         return nullptr;
     }

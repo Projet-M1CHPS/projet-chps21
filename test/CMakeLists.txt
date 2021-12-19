@@ -8,9 +8,6 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-set(BLA_VENDOR OpenBLAS)
-find_package(BLAS REQUIRED)
-
 add_executable(
         Math_test
         Math_test.cpp
@@ -21,7 +18,7 @@ target_link_libraries(
         Math_test PUBLIC
         Utils
         gtest_main
-        ${BLAS_LIBRARIES}
+        BLAS::BLAS
 )
 
 target_code_coverage(Math_test ALL)
