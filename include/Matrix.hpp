@@ -4,6 +4,7 @@ extern "C" {
 }
 
 #include "Utils.hpp"
+#include <cassert>
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -17,8 +18,6 @@ namespace math {
   template<typename T>
   class Matrix {
   public:
-    enum class MatrixTranspose { NOTRANSPOSE, TRANSPOSE };
-
     // Create an empty matrix, with cols/rows of size 0
     // and no allocation
     // Allowing a matrix to be empty allows for easier copying
@@ -86,7 +85,7 @@ namespace math {
       // NO need to copy an empty matrix
       if (other.data) {
         // If data is unallocated or different size, allocate new memory
-        if (not data or data and rows * cols != other.rows * other.cols) {
+        if (not data or (data and (rows * cols) != (other.rows * other.cols))) {
           data = utils::make_aligned_unique<T>(64, other.rows * other.cols);
         }
         rows = other.rows;
@@ -98,7 +97,7 @@ namespace math {
           cblas_dcopy(rows * cols, other.data.get(), 1, data.get(), 1);
         }
 #else
-        std::memcpy(data.get(), other.getData(), sizeof(T) * rows * cols);
+        std::memcpy(data.get(), other.getData(), sizeof(real) * rows * cols);
 #endif
       }
       return *this;
@@ -265,7 +264,7 @@ namespace math {
 #else
       for (int i = 0; i < rows; i++) {
         for (int k = 0; k < cols; k++) {
-          T a_ik = data[i * cols + k];
+          real a_ik = data[i * cols + k];
           for (int j = 0; j < other_cols; j++) {
             raw_res[i * other_cols + j] += a_ik * raw_other[k * other_cols + j];
           }
@@ -452,18 +451,13 @@ namespace math {
     return os;
   }
 
-  template<typename T>
-  void randomize(math::Matrix<T> & matrix, T min, T max) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-
-    static constexpr bool handled = std::is_floating_point_v<T> or std::is_integral_v<T>;
-    static_assert(handled, "Type not supported");
+  template<typename T, typename = std::enable_if<std::is_floating_point_v<T>>>
+  void randomize(math::Matrix<T> &matrix, T min, T max) {
+    std::mt19937 gen(std::random_device{}());
 
     if constexpr (std::is_floating_point_v<T>) {
       std::uniform_real_distribution<> dis(min, max);
-      for (size_t i = 0; i < matrix.getRows(); i++)
-        for (size_t j = 0; j < matrix.getCols(); j++) { matrix(i, j) = dis(gen); }
+      for (auto &elem : matrix) { elem = dis(gen); }
 
     } else if constexpr (std::is_integral_v<T>) {
       std::uniform_int_distribution<> dis(min, max);
