@@ -106,7 +106,7 @@ namespace control::classifier {
       auto res_type = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
 
 
-      ss << "[Image: " << i << "]: (" << type << ") output :\n" << res;
+      ss << "[Image: " << i << ", " << type << "] output :\n" << res;
       tscl::logger(ss.str(), tscl::Log::Information);
       ss.str("");
       confusion(res_type, type.getId())++;

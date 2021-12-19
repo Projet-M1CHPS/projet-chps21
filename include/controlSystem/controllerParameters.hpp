@@ -30,6 +30,12 @@ namespace control {
     void setOutputPath(std::filesystem::path path) { output_path = std::move(path); }
 
     /**
+     * @return Path where any output data will be saved
+     */
+    std::filesystem::path getInputPath() { return input_path; }
+    void setInputPath(std::filesystem::path path) { input_path = std::move(path); }
+
+    /**
      * @return True if the controller must be verbose about what it is doing, false otherwise
      */
     [[nodiscard]] bool isVerbose() const { return verbose; }

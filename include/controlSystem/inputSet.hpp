@@ -54,7 +54,6 @@ namespace control {
      *
      * @return
      */
-    std::vector<math::Matrix<float>> &getVector() { return inputs; }
     [[nodiscard]] const std::vector<math::Matrix<float>> &getVector() const { return inputs; }
 
     using Iterator = typename std::vector<math::Matrix<float>>::iterator;

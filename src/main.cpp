@@ -310,66 +310,11 @@ void setupLogger() {
   thandler.minLvl(Log::Information);
 }
 
-/*
-bool test_image(std::vector<std::string> const &args) {
-  // FIXME: placeholder path
-  setupLogger();
-
-  if (args.size() < 2) {
-    tscl::logger("Usage: " + args[0] + " <input_path> (<working_path>)", tscl::Log::Error);
-    return false;
-  }
-
-  tscl::logger("Current version: " + tscl::Version::current.to_string(), tscl::Log::Information);
-
-
-  std::filesystem::path input_path = args[1];
-  std::filesystem::path working_path = args.size() == 3 ? args[2] : "runs/test";
-
-  auto loader = std::make_shared<CITCLoader>(32, 32);
-  auto &pre_engine = loader->getPreProcessEngine();
-  pre_engine.addTransformation(std::make_shared<image::transform::Inversion>());
-  auto &engine = loader->getPostProcessEngine();
-
-  // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
-  //  engine.addTransformation(std::make_shared<image::transform::Inversion>());
-
-  std::shared_ptr<nnet::ModelOptimizer<float>> optimizer =
-          nnet::OptimizerFactory<float>::makeMLPModelOptimizer(
-                  nnet::ModelOptimizerType::stochastic,
-                  std::make_shared<nnet::DecayMomentumOptimization<float>>(0.01, 0.1, 0.9));
-
-  CTParams parameters(RunPolicy::create, input_path, loader, optimizer, "runs/test");
-
-  nnet::MLPTopology topology = {32 * 32, 64, 64, 64, 64};
-  parameters.setTopology(topology);
-  // parameters.setMaxEpoch(100);
-
-  CTController controller(parameters);
-  logger(tscl::StringLog("Launching run", Log::Information));
-  ControllerResult res = controller.run();
-
-  if (not res) { std::cout << "ERROR: " << res << std::endl; }
-
-  return (bool) res;
-} */
-
-bool loadAndTrain(std::filesystem::path const &input_path,
-                  std::filesystem::path const &output_path) {
+bool createAndTrain(std::filesystem::path const &input_path,
+                    std::filesystem::path const &output_path) {
   tscl::logger("Current version: " + tscl::Version::current.to_string(), tscl::Log::Debug);
   tscl::logger("Fetching model from  " + input_path.string(), tscl::Log::Debug);
   tscl::logger("OutputPath is " + output_path.string(), tscl::Log::Debug);
-
-  // FIXME: This is what the code should look like
-  // When the serializer is implemented
-  /*auto mdata = ModelSerializer::fetch(input_path);
-
-  if (not mdata.valid() or mdata != input_metadata) {
-    tscl::logger("Invalid model metadata", tscl::Log::Error);
-    return false;
-  }
-
-  auto model = ModelSerializer::read(mdata);*/
 
   tscl::logger("Creating collection loader", tscl::Log::Debug);
   CITCLoader loader(32, 32);
@@ -405,7 +350,6 @@ bool loadAndTrain(std::filesystem::path const &input_path,
     tscl::logger(res.getMessage(), tscl::Log::Error);
     return false;
   }
-  // MLPModelSerializer::write(model, mdata);
   return true;
 }
 
@@ -431,6 +375,6 @@ int main(int argc, char **argv) {
   std::vector<std::string> args;
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);
 
-  return loadAndTrain(args[1], args.size() == 3 ? args[2] : "runs/test");
+  return createAndTrain(args[1], args.size() == 3 ? args[2] : "runs/test");
   return 0;
 }
