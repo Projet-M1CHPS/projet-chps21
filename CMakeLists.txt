@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(projet-chps21 VERSION 0.4.0.0 DESCRIPTION "Cancer detection using deep learning" LANGUAGES CXX C)
+project(projet-chps21 VERSION 0.4.0.1 DESCRIPTION "Cancer detection using deep learning" LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
