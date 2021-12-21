@@ -42,10 +42,10 @@ namespace nnet {
       return layers[i];
     }
 
-    [[nodiscard]] size_t getInputSize() const { return layers.front(); }
+    [[nodiscard]] size_t getInputSize() const { return layers.empty() ? 0 : layers.front(); }
     void setInputSize(size_t i) { layers.front() = i; }
 
-    [[nodiscard]] size_t getOutputSize() const { return layers.back(); }
+    [[nodiscard]] size_t getOutputSize() const { return layers.empty() ? 0 : layers.back(); }
     void setOutputSize(size_t i) { layers.back() = i; }
     void push_back(size_t i) { layers.push_back(i); }
 
@@ -128,7 +128,7 @@ namespace nnet {
       const size_t nbInput = input.getRows();
 
       if (nbInput != weights.front().getCols()) {
-        throw std::runtime_error("Invalid number of input");
+        throw std::invalid_argument("Invalid number of input");
       }
 
       auto current_layer = math::Matrix<real>::matMatProdMatAdd(weights[0], input, biases[0]);
@@ -154,7 +154,7 @@ namespace nnet {
      */
     void setTopology(MLPTopology const &topology) override {
       if (topology.empty()) return;
-      if (topology.size() < 2) { throw std::runtime_error("Requires atleast 2 layers"); }
+      if (topology.size() < 2) { throw std::invalid_argument("Requires atleast 2 layers"); }
 
       weights.clear();
       biases.clear();
