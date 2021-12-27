@@ -16,5 +16,5 @@ add_library(ControlSystem STATIC
         )
 
 target_include_directories(ControlSystem PUBLIC "${INCLUDE_DIR}" "${CURRENT_INCLUDE_DIR}" "${CLASSIFIER_INCLUDE_DIR}")
-target_link_libraries(ControlSystem PUBLIC Math Image)
+target_link_libraries(ControlSystem PUBLIC Math Image tscl::tscl)
 target_code_coverage(ControlSystem)
