@@ -39,8 +39,8 @@ namespace control::classifier {
       os << "\tinput_id: " << inputs_id[i] << ", label: " << *set_labels[i] << std::endl;
     }
   }
-  void ClassifierTrainingSet::unload() {
-    InputSet::unload();
+  void ClassifierTrainingSet::clear() {
+    InputSet::clear();
     inputs_id.clear();
     set_labels.clear();
   }

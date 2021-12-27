@@ -21,9 +21,14 @@ else ()
   endif ()
 endif ()
 
-# Code coverage flags
-# Added as an external plugin
-include(extern/cmake_coverage.cmake)
+
+if (CMAKE_COMPILER_IS_GNUCXX)
+  # Code coverage flags
+  # Added as an external plugin
+  include(extern/CodeCoverage.cmake)
+  append_coverage_compiler_Flags()
+  set(COVERAGE_EXCLUDES "/extern" "/test")
+endif ()
 
 # Defines version specific Macro
 configure_file(include/ProjectConstant.hpp.in include/ProjectVersion.hpp)
@@ -31,12 +36,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 find_package(Threads REQUIRED)
 find_package(BLAS REQUIRED)
-
-# We remove googletest and the std from the coverage report
-# We also remove the test directory, since templated functions that are used
-# will appear in their respective headers
-add_code_coverage_all_targets(EXCLUDE ${CMAKE_SOURCE_DIR}/test/* */googletest/* /usr/* ${CMAKE_SOURCE_DIR}/extern/*)
-
 
 set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 add_subdirectory(extern)

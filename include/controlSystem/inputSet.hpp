@@ -51,7 +51,6 @@ namespace control {
     // the optimizer
     /** Return the internal storage used by the set
      *
-     *
      * @return
      */
     [[nodiscard]] const std::vector<math::Matrix<float>> &getVector() const { return inputs; }
@@ -97,7 +96,7 @@ namespace control {
     /** Free every element in the set
      *
      */
-    virtual void unload() { *this = std::move(InputSet()); }
+    virtual void clear() { inputs.clear(); }
 
   protected:
     virtual void print(std::ostream &os) const;

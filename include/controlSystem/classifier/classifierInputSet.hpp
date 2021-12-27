@@ -52,7 +52,7 @@ namespace control::classifier {
     /** Unloads the set, freeing all the memory
      *
      */
-    void unload() override;
+    void clear() override;
 
   protected:
     void print(std::ostream &os) const override;

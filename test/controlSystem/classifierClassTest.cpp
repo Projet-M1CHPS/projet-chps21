@@ -61,14 +61,6 @@ TEST(ClassLabelTest, CanCompare) {
   EXPECT_FALSE(label4 > label1);
 }
 
-// This is useful for serialization
-TEST(ClassLabelTest, CanStream) {
-  ClassLabel label(0, "label");
-  std::stringstream ss;
-  ss << label;
-  EXPECT_STREQ("Class 0: label", ss.str().c_str());
-}
-
 TEST(CClassLabelSetTest, CanBuild) {
   CClassLabelSet list;
   EXPECT_EQ(0, list.size());

@@ -100,8 +100,8 @@ namespace control::classifier {
      *
      */
     void unload() {
-      training_set.unload();
-      eval_set.unload();
+      training_set.clear();
+      eval_set.clear();
       class_list = nullptr;
     }
 

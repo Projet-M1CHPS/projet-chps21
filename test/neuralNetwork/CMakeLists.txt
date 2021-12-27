@@ -12,7 +12,4 @@ target_link_libraries(
         gtest_main
         BLAS::BLAS
 )
-
-target_code_coverage(NeuralNetwork_test ALL)
-
 gtest_discover_tests(NeuralNetwork_test)

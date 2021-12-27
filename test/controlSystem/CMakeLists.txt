@@ -18,7 +18,5 @@ target_link_libraries(
         ControlSystem
         gtest_main
 )
-
-target_code_coverage(ControlSystem_test ALL)
 gtest_discover_tests(ControlSystem_test)
 

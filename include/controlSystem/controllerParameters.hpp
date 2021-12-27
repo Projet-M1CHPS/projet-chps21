@@ -18,7 +18,7 @@ namespace control {
      *
      * @param input_path Path to the input directory. This can be a single file, or a directory
      * @param output_path Path where any output data will be saved
-     * @param verbose Wheter the controller is verbose or not
+     * @param verbose Whether the controller is verbose or not
      */
     ControllerParameters(std::filesystem::path input_path, std::filesystem::path output_path,
                          bool verbose = false);

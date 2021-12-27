@@ -11,6 +11,5 @@ set_target_properties(Image PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_
 
 # Uses the stb library located in dependency
 target_include_directories(Image PUBLIC "${CURRENT_INCLUDE_DIR}" "${INCLUDE_DIR}" "${CMAKE_SOURCE_DIR}/extern")
-target_code_coverage(Image)
 
 

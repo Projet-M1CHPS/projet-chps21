@@ -21,8 +21,6 @@ target_link_libraries(
         BLAS::BLAS
 )
 
-target_code_coverage(Math_test ALL)
-
 include(GoogleTest)
 add_subdirectory(image)
 add_subdirectory(controlSystem)
@@ -30,3 +28,9 @@ add_subdirectory(neuralNetwork)
 
 gtest_discover_tests(Math_test)
 
+if (CMAKE_COMPILER_IS_GNUCXX)
+  setup_target_for_coverage_gcovr_html(NAME coverage
+          EXECUTABLE ctest -j
+          EXCLUDE "${CMAKE_SOURCE_DIR}/extern/*" "/usr/*" "${CMAKE_BINARY_DIR}/_deps/*" "${CMAKE_SOURCE_DIR}/test/*"
+          )
+endif ()

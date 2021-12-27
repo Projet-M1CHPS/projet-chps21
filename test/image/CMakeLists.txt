@@ -8,6 +8,4 @@ target_link_libraries(
         gtest_main
 )
 
-target_code_coverage(Image_test ALL)
-
 gtest_discover_tests(Image_test)
