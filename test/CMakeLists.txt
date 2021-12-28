@@ -32,5 +32,6 @@ if (CMAKE_COMPILER_IS_GNUCXX)
   setup_target_for_coverage_gcovr_html(NAME coverage
           EXECUTABLE ctest -j
           EXCLUDE "${CMAKE_SOURCE_DIR}/extern/*" "/usr/*" "${CMAKE_BINARY_DIR}/_deps/*" "${CMAKE_SOURCE_DIR}/test/*"
+          "${CMAKE_SOURCE_DIR}/apps/*"
           )
 endif ()
