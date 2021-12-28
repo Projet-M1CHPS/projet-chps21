@@ -1,9 +1,9 @@
 #pragma once
 
 #include "MLPModel.hpp"
-#include "MLPerceptron.hpp"
-#include "OptimizationMethod.hpp"
-#include "neuralNetwork/ModelOptimizer.hpp"
+#include "ModelOptimizer.hpp"
+#include "neuralNetwork/Perceptron/MLPerceptron.hpp"
+#include "neuralNetwork/Perceptron/OptimizationMethod.hpp"
 #include <iostream>
 
 namespace nnet {

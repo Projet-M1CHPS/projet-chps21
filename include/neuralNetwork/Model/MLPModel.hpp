@@ -1,7 +1,7 @@
 #pragma once
 
-#include "MLPerceptron.hpp"
-#include "neuralNetwork/Model.hpp"
+#include "Model.hpp"
+#include "neuralNetwork/Perceptron/MLPerceptron.hpp"
 
 namespace nnet {
   template<typename real = float, typename = std::enable_if<std::is_floating_point_v<real>>>
