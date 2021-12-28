@@ -1,22 +1,24 @@
-#include "MLPModelSerializer.hpp"
+#include "Utf8MLPModelSerializer.hpp"
+#include "Utf8MLPSerializer.hpp"
+#include <fstream>
 
 namespace nnet {
 
   MLPModel<float> Utf8MLPModelSerializer::readFromFile(const std::filesystem::path &path) {
     std::ifstream file(path);
-    if (!file.is_open()) { return nullptr; }
+    if (!file.is_open()) { throw std::runtime_error("Could not open file: " + path.string()); }
     return readFromStream(file);
   }
 
   MLPModel<float> Utf8MLPModelSerializer::readFromStream(std::istream &stream) {
-    auto res = std::make_unique<MLPModel<float>>();
+    MLPModel<float> res;
     std::string line;
     std::getline(stream, line);
 
     // Check for header
     if (line != "#MLPModel") {
-      tscl::logger("MLPModelSerializer: Invalid file format", tscl::Log::Error);
-      return nullptr;
+      throw std::runtime_error(
+              "Utf8MLPModelSerializer::readFromStream: File is not a valid MLPModel file");
     }
 
     // Check for version
@@ -43,8 +45,9 @@ namespace nnet {
       }
     }
 
-    auto perceptron = MLPerceptronSerializer::readFromStream(stream);
-    res->getPerceptron() = std::move(*perceptron);
+    Utf8MLPSerializer serializer;
+    auto perceptron = serializer.readFromStream(stream);
+    res.getPerceptron() = std::move(perceptron);
 
     return res;
   }
@@ -65,6 +68,8 @@ namespace nnet {
     stream << "#MLPModel" << std::endl;
     stream << "#Version " << tscl::Version::current.to_string() << std::endl;
 
-    return MLPerceptronSerializer::writeToStream(stream, model.getPerceptron());
+    Utf8MLPSerializer serializer;
+
+    return serializer.writeToStream(stream, model.getPerceptron());
   }
 }   // namespace nnet

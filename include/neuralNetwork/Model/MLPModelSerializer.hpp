@@ -8,7 +8,7 @@ namespace nnet {
    *
    *
    */
-  class Utf8MLPModelSerializer {
+  class MLPModelSerializer {
   public:
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure

@@ -5,9 +5,16 @@ namespace nnet {
   std::string getNextNonEmptyLine(std::istream &stream) {
     std::string res;
     while (std::getline(stream, res)) {
-      if (not res.empty()) { return res; }
+      if (not res.empty() and res.find_first_not_of(" \t\n\r\f\v") != std::string::npos) {
+        return res;
+      }
     }
     return "";
+  }
+
+  void trimWhitespaces(std::string &str) {
+    str.erase(0, str.find_first_not_of(" \t\n\r\f\v"));
+    str.erase(str.find_last_not_of(" \t\n\r\f\v") + 1);
   }
 
   MLPTopology Utf8MLPSerializer::readTopology(std::istream &stream) {
@@ -18,6 +25,7 @@ namespace nnet {
 
     // Read topology
     std::getline(stream, line);
+    trimWhitespaces(line);
     MLPTopology topology;
     std::stringstream ss(line);
     while (ss.good()) {
@@ -42,6 +50,7 @@ namespace nnet {
 
     // Read activation functions
     std::getline(stream, line);
+    trimWhitespaces(line);
     std::stringstream ss2(line);
     std::vector<af::ActivationFunctionType> res;
     while (ss2.good()) {
@@ -64,8 +73,10 @@ namespace nnet {
     }
 
     std::vector<math::FloatMatrix> res;
-    res.reserve(topology.size());
-    for (size_t i = 0; i < topology.size(); i++) { res.emplace_back(topology[i], topology[i + 1]); }
+    res.reserve(topology.size() - 1);
+    for (size_t i = 0; i < topology.size() - 1; i++) {
+      res.emplace_back(topology[i], topology[i + 1]);
+    }
 
     for (int i = 0; i < topology.size() - 1; i++) {
       float *data = res[i].getData();
@@ -103,9 +114,9 @@ namespace nnet {
     for (size_t i = 0; i < afs.size(); i++) { res.setActivationFunction(afs[i], i); }
 
     auto weights = readMatrices(stream, topology, "Weights");
-    auto biases = readMatrices(stream, topology, "Biases");
-
     res.getWeights() = std::move(weights);
+
+    auto biases = readMatrices(stream, topology, "Biases");
     res.getBiases() = std::move(biases);
 
     return res;
@@ -123,6 +134,7 @@ namespace nnet {
           std::ostream &stream, const std::vector<af::ActivationFunctionType> &functions) {
     stream << "#ActivationFunctions" << std::endl;
     for (const auto &af : functions) { stream << af::AFTypeToStr(af) << " "; }
+    stream << std::endl;
   }
 
   void Utf8MLPSerializer::writeMatrices(std::ostream &stream,

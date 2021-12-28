@@ -316,6 +316,8 @@ bool createAndTrain(std::filesystem::path const &input_path,
   tscl::logger("Fetching model from  " + input_path.string(), tscl::Log::Debug);
   tscl::logger("OutputPath is " + output_path.string(), tscl::Log::Debug);
 
+  if (not std::filesystem::exists(output_path)) std::filesystem::create_directories(output_path);
+
   tscl::logger("Creating collection loader", tscl::Log::Debug);
   CITCLoader loader(32, 32);
   auto &pre_engine = loader.getPreProcessEngine();
@@ -333,6 +335,13 @@ bool createAndTrain(std::filesystem::path const &input_path,
   topology.push_back(training_collection->getClassCount());
 
   auto model = nnet::MLPModelFactory<float>::randomSigReluAlt(topology);
+
+  nnet::Utf8MLPModelSerializer serializer;
+  serializer.writeToFile(output_path / "test.nnet", *model);
+  auto loaded_model = serializer.readFromFile(output_path / "test.nnet");
+  serializer.writeToFile(output_path / "test2.nnet", loaded_model);
+
+  return true;
   auto tm = std::make_shared<nnet::DecayMomentumOptimization<float>>(model->getPerceptron(), 0.1,
                                                                      0.1, 0.7);
 
@@ -352,7 +361,6 @@ bool createAndTrain(std::filesystem::path const &input_path,
   }
   return true;
 }
-
 
 int main(int argc, char **argv) {
   // func_xor<float>(100, 1.0, 0.01);

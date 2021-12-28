@@ -442,11 +442,10 @@ namespace math {
   template<typename T>
   std::ostream &operator<<(std::ostream &os, const Matrix<T> &m) {
     size_t j = 0;
-    const size_t cols = m.getCols();
 
-    for (T const &i : m) {
-      os << i << " ";
-      if (++j % cols == 0) { os << "\n"; }
+    for (size_t i = 0; i < m.getRows(); i++) {
+      for (j = 0; j < m.getCols() - 1; j++) { os << m(i, j) << " "; }
+      os << m(i, j) << "\n";
     }
     return os;
   }

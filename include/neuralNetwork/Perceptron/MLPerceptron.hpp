@@ -109,9 +109,9 @@ namespace nnet {
      */
     MLPerceptron() = default;
 
-    MLPerceptron(const MLPerceptron &other) : MLPBase() { *this = other; }
+    MLPerceptron(const MLPerceptron &other) = default;
 
-    MLPerceptron(MLPerceptron &&other) noexcept : MLPBase() { *this = std::move(other); }
+    MLPerceptron(MLPerceptron &&other) noexcept = default;
 
     MLPerceptron &operator=(const MLPerceptron &) = default;
     MLPerceptron &operator=(MLPerceptron &&other) noexcept = default;

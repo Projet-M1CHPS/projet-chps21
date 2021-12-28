@@ -10,6 +10,9 @@ namespace nnet {
     MLPModel() { perceptron = std::make_unique<MLPerceptron<real>>(); }
     ~MLPModel() = default;
 
+    MLPModel(const MLPModel &) = delete;
+    MLPModel(MLPModel &&) noexcept = default;
+
     math::Matrix<real> predict(math::Matrix<real> const &input) override {
       return perceptron->predict(input);
     }
