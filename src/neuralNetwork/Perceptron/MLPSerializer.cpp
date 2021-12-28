@@ -107,6 +107,25 @@ namespace nnet {
     }
     res->setTopology(topology);
     std::getline(stream, line);
+
+    if (line != "#ActivationFunctions") {
+      tscl::logger("MLPerceptronSerializer: Invalid file format: Activation Functions section is "
+                   "missing",
+                   tscl::Log::Error);
+      return nullptr;
+    }
+
+    // Read activation functions
+    std::getline(stream, line);
+    std::stringstream ss2(line);
+    size_t counter = 0;
+    while (ss2.good()) {
+      std::string val;
+      ss2 >> val;
+      res->setActivationFunction(af::strToAFType(val), counter);
+      counter++;
+    }
+    
     if (line != "#Weights") {
       tscl::logger("MLPerceptronSerializer: Invalid file format: Weights section is missing",
                    tscl::Log::Error);
@@ -171,6 +190,11 @@ namespace nnet {
       if (i != perceptron.getTopology().size() - 1) { stream << " "; }
     }
     stream << std::endl;
+
+    stream << "#ActivationFunctions" << std::endl;
+
+    auto afs = perceptron.getActivationFunctions();
+    for (const auto &af : afs) { stream << af::AFTypeToStr(af) << " "; }
 
     stream << "#Weights" << std::endl;
     for (auto const &weight : perceptron.getWeights()) { stream << weight << std::endl; }
