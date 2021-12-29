@@ -24,8 +24,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: install lcov
-      run: sudo apt-get install -y lcov
+    - name: install gcovr
+      run: sudo apt-get install -y gcovr
       
     - name: install blas
       run: sudo apt-get install -y libopenblas-dev
