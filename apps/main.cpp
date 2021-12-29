@@ -47,14 +47,13 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   auto model = nnet::MLPModelFactory<float>::randomSigReluAlt(topology);
 
-  auto tm = std::make_shared<nnet::DecayMomentumOptimization<float>>(model->getPerceptron(), 0.1,
-                                                                     0.1, 0.7);
+  auto tm = std::make_shared<nnet::RPropPOptimization<float>>(model->getPerceptron());
 
-  auto optimizer = std::make_unique<nnet::MLPMiniBatchOptimizer>(*model, tm);
+  auto optimizer = std::make_unique<nnet::MLPMiniBatchOptimizer>(*model, tm, 8);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
 
-  TrainingControllerParameters parameters(input_path, "runs/test/", 100, 5, false);
+  TrainingControllerParameters parameters(input_path, "runs/test/", 100, 1, false);
   CTController controller(parameters, *model, *optimizer, *training_collection);
   ControllerResult res = controller.run();
 
@@ -63,6 +62,8 @@ bool createAndTrain(std::filesystem::path const &input_path,
     tscl::logger(res.getMessage(), tscl::Log::Error);
     return false;
   }
+  nnet::PlainTextMLPModelSerializer serializer;
+  serializer.writeToFile(output_path / "model.nnet", *model);
   return true;
 }
 

@@ -28,7 +28,7 @@ add_subdirectory(neuralNetwork)
 
 gtest_discover_tests(Math_test)
 
-if (CMAKE_COMPILER_IS_GNUCXX)
+if (CMAKE_COMPILER_IS_GNUCXX AND CMAKE_BUILD_TYPE STREQUAL "Debug")
   setup_target_for_coverage_gcovr_html(NAME coverage
           EXECUTABLE ctest -j
           EXCLUDE "${CMAKE_SOURCE_DIR}/extern/*" "/usr/*" "${CMAKE_BINARY_DIR}/_deps/*" "${CMAKE_SOURCE_DIR}/test/*"
