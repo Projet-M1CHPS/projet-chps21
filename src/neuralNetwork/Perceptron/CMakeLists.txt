@@ -3,7 +3,7 @@ set(CURRENT_INCLUDE_DIR ${INCLUDE_DIR}/neuralNetwork/Perceptron)
 add_library(Perceptron STATIC
         MLPerceptron.cpp ${CURRENT_INCLUDE_DIR}/MLPerceptron.hpp
         ${CURRENT_INCLUDE_DIR}/MLPSerializer.hpp
-        Utf8MLPSerializer.cpp ${CURRENT_INCLUDE_DIR}/Utf8MLPSerializer.hpp
+        PlainTextMLPSerializer.cpp ${CURRENT_INCLUDE_DIR}/PlainTextMLPSerializer.hpp
         ActivationFunction.cpp ${INCLUDE_DIR}/neuralNetwork/ActivationFunction.hpp
         )
 

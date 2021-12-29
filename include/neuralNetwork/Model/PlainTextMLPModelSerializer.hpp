@@ -3,7 +3,7 @@
 
 namespace nnet {
 
-  class Utf8MLPModelSerializer final : public MLPModelSerializer {
+  class PlainTextMLPModelSerializer final : public MLPModelSerializer {
   public:
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure

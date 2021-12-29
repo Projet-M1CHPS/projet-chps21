@@ -6,5 +6,5 @@
 #include "neuralNetwork/Model/MLPModelSerializer.hpp"
 #include "neuralNetwork/Model/Model.hpp"
 #include "neuralNetwork/Model/ModelOptimizer.hpp"
-#include "neuralNetwork/Model/Utf8MLPModelSerializer.hpp"
+#include "neuralNetwork/Model/PlainTextMLPModelSerializer.hpp"
 #include "neuralNetwork/Perceptron/Perceptron.hpp"

@@ -331,12 +331,12 @@ bool createAndTrain(std::filesystem::path const &input_path,
   auto training_collection = loader.load(input_path);
 
   // Create a correctly-sized topology
-  nnet::MLPTopology topology = {32 * 32, 64, 64, 32, 32};
+  nnet::MLPTopology topology = {10, 10, 10};
   topology.push_back(training_collection->getClassCount());
 
   auto model = nnet::MLPModelFactory<float>::randomSigReluAlt(topology);
 
-  nnet::Utf8MLPModelSerializer serializer;
+  nnet::PlainTextMLPModelSerializer serializer;
   serializer.writeToFile(output_path / "test.nnet", *model);
   auto loaded_model = serializer.readFromFile(output_path / "test.nnet");
   serializer.writeToFile(output_path / "test2.nnet", loaded_model);

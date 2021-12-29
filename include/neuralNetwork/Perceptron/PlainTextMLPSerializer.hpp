@@ -5,7 +5,7 @@ namespace nnet {
   /** Utility class for serializing and deserializing MLPerceptrons
    *
    */
-  class Utf8MLPSerializer : public MLPSerializer {
+  class PlainTextMLPSerializer : public MLPSerializer {
   public:
     MLPerceptron<float> readFromFile(const std::filesystem::path &path) override;
 
@@ -24,8 +24,8 @@ namespace nnet {
     void writeActivationFunctions(std::ostream &stream,
                                   const std::vector<af::ActivationFunctionType> &functions);
 
-    std::vector<math::FloatMatrix> readMatrices(std::istream &stream, const MLPTopology &topology,
-                                                const std::string &section_name);
+    void readMatrices(std::istream &stream, std::vector<math::FloatMatrix> &matrices,
+                      const std::string &section_name);
 
     void writeMatrices(std::ostream &stream, const std::vector<math::FloatMatrix> &matrices,
                        const std::string &section_name);

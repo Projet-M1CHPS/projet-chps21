@@ -1,4 +1,4 @@
-#include "Utf8MLPSerializer.hpp"
+#include "PlainTextMLPSerializer.hpp"
 
 namespace nnet {
 
@@ -17,7 +17,7 @@ namespace nnet {
     str.erase(str.find_last_not_of(" \t\n\r\f\v") + 1);
   }
 
-  MLPTopology Utf8MLPSerializer::readTopology(std::istream &stream) {
+  MLPTopology PlainTextMLPSerializer::readTopology(std::istream &stream) {
     std::string line = getNextNonEmptyLine(stream);
     if (line != "#Topology") {
       throw std::runtime_error("Utf8MLPSerialiazer::readTopology: #Topology section is missing");
@@ -40,7 +40,7 @@ namespace nnet {
   }
 
   std::vector<af::ActivationFunctionType>
-  Utf8MLPSerializer::readActivationFunctions(std::istream &stream) {
+  PlainTextMLPSerializer::readActivationFunctions(std::istream &stream) {
     std::string line = getNextNonEmptyLine(stream);
 
     if (line != "#ActivationFunctions") {
@@ -61,9 +61,9 @@ namespace nnet {
     return res;
   }
 
-  std::vector<math::FloatMatrix> Utf8MLPSerializer::readMatrices(std::istream &stream,
-                                                                 const MLPTopology &topology,
-                                                                 const std::string &section_name) {
+  void PlainTextMLPSerializer::readMatrices(std::istream &stream,
+                                            std::vector<math::FloatMatrix> &matrices,
+                                            const std::string &section_name) {
     std::string line = getNextNonEmptyLine(stream);
 
     if (line != "#" + section_name) {
@@ -72,25 +72,18 @@ namespace nnet {
                                "missing");
     }
 
-    std::vector<math::FloatMatrix> res;
-    res.reserve(topology.size() - 1);
-    for (size_t i = 0; i < topology.size() - 1; i++) {
-      res.emplace_back(topology[i], topology[i + 1]);
-    }
-
-    for (int i = 0; i < topology.size() - 1; i++) {
-      float *data = res[i].getData();
-      for (int j = 0; j < res[i].getSize(); j++) {
+    for (auto &m : matrices) {
+      float *data = m.getData();
+      for (int j = 0; j < m.getSize(); j++) {
         float val;
         stream >> val;
         data[j] = val;
       }
     }
-    return res;
   }
 
 
-  MLPerceptron<float> Utf8MLPSerializer::readFromFile(const std::filesystem::path &path) {
+  MLPerceptron<float> PlainTextMLPSerializer::readFromFile(const std::filesystem::path &path) {
     std::ifstream file(path);
     if (!file.is_open()) {
       throw std::runtime_error("MLPerceptronSerializer: Could not open file " + path.string() +
@@ -99,7 +92,7 @@ namespace nnet {
     return readFromStream(file);
   }
 
-  MLPerceptron<float> Utf8MLPSerializer::readFromStream(std::istream &stream) {
+  MLPerceptron<float> PlainTextMLPSerializer::readFromStream(std::istream &stream) {
     MLPerceptron<float> res;
     std::string line;
     auto topology = readTopology(stream);
@@ -113,16 +106,13 @@ namespace nnet {
 
     for (size_t i = 0; i < afs.size(); i++) { res.setActivationFunction(afs[i], i); }
 
-    auto weights = readMatrices(stream, topology, "Weights");
-    res.getWeights() = std::move(weights);
-
-    auto biases = readMatrices(stream, topology, "Biases");
-    res.getBiases() = std::move(biases);
+    readMatrices(stream, res.getWeights(), "Weights");
+    readMatrices(stream, res.getBiases(), "Biases");
 
     return res;
   }
 
-  void Utf8MLPSerializer::writeTopology(std::ostream &stream, const MLPTopology &topology) {
+  void PlainTextMLPSerializer::writeTopology(std::ostream &stream, const MLPTopology &topology) {
     // We output the topology first, so we can allocate the right amount of memory
     // when reading
     stream << "#Topology" << std::endl;
@@ -130,23 +120,23 @@ namespace nnet {
     stream << std::endl;
   }
 
-  void Utf8MLPSerializer::writeActivationFunctions(
+  void PlainTextMLPSerializer::writeActivationFunctions(
           std::ostream &stream, const std::vector<af::ActivationFunctionType> &functions) {
     stream << "#ActivationFunctions" << std::endl;
     for (const auto &af : functions) { stream << af::AFTypeToStr(af) << " "; }
     stream << std::endl;
   }
 
-  void Utf8MLPSerializer::writeMatrices(std::ostream &stream,
-                                        const std::vector<math::FloatMatrix> &matrices,
-                                        const std::string &section_name) {
+  void PlainTextMLPSerializer::writeMatrices(std::ostream &stream,
+                                             const std::vector<math::FloatMatrix> &matrices,
+                                             const std::string &section_name) {
     stream << "#" << section_name << std::endl;
     for (auto const &m : matrices) { stream << m << std::endl; }
   }
 
 
-  bool Utf8MLPSerializer::writeToFile(const std::filesystem::path &path,
-                                      const MLPerceptron<float> &perceptron) {
+  bool PlainTextMLPSerializer::writeToFile(const std::filesystem::path &path,
+                                           const MLPerceptron<float> &perceptron) {
     std::ofstream file(path);
     if (!file.is_open()) {
       tscl::logger("MLPerceptronSerializer: Could not open file " + path.string() + "for writing",
@@ -156,8 +146,8 @@ namespace nnet {
     return writeToStream(file, perceptron);
   }
 
-  bool Utf8MLPSerializer::writeToStream(std::ostream &stream,
-                                        const MLPerceptron<float> &perceptron) {
+  bool PlainTextMLPSerializer::writeToStream(std::ostream &stream,
+                                             const MLPerceptron<float> &perceptron) {
     // We want the maximum precision for outputing in plain text
     // This wouldn't be necessary if we were using binary files
     std::streamsize old_precision = stream.precision();
