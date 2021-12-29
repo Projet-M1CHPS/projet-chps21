@@ -22,7 +22,7 @@ else ()
 endif ()
 
 
-if (CMAKE_COMPILER_IS_GNUCXX)
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE STREQUAL "Debug")
   # Code coverage flags
   # Added as an external plugin
   include(extern/CodeCoverage.cmake)
