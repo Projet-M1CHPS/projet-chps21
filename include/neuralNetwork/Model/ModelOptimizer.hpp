@@ -15,8 +15,6 @@ namespace nnet {
     virtual ~ModelOptimizer() = default;
 
     virtual void update() = 0;
-
-    virtual void setModel(Model<real> &model) = 0;
   };
 
 }   // namespace nnet

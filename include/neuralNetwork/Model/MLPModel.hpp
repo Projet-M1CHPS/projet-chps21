@@ -1,7 +1,7 @@
 #pragma once
 
-#include "MLPerceptron.hpp"
-#include "neuralNetwork/Model.hpp"
+#include "Model.hpp"
+#include "neuralNetwork/Perceptron/MLPerceptron.hpp"
 
 namespace nnet {
   template<typename real = float, typename = std::enable_if<std::is_floating_point_v<real>>>
@@ -9,6 +9,9 @@ namespace nnet {
   public:
     MLPModel() { perceptron = std::make_unique<MLPerceptron<real>>(); }
     ~MLPModel() = default;
+
+    MLPModel(const MLPModel &) = delete;
+    MLPModel(MLPModel &&) noexcept = default;
 
     math::Matrix<real> predict(math::Matrix<real> const &input) override {
       return perceptron->predict(input);

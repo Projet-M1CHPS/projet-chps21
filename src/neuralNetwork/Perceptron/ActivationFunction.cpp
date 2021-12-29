@@ -3,7 +3,7 @@
 namespace af {
 
   ActivationFunctionType strToAFType(const std::string &str) {
-    const std::unordered_map<const char *, ActivationFunctionType> map{
+    static const std::unordered_map<std::string, ActivationFunctionType> map{
             {"identity", ActivationFunctionType::identity},
             {"sigmoid", ActivationFunctionType::sigmoid},
             {"relu", ActivationFunctionType::relu},
@@ -19,7 +19,7 @@ namespace af {
   }
 
   std::string AFTypeToStr(ActivationFunctionType type) {
-    const std::unordered_map<ActivationFunctionType, const char *> map{
+    static const std::unordered_map<ActivationFunctionType, std::string> map{
             {ActivationFunctionType::identity, "identity"},
             {ActivationFunctionType::sigmoid, "sigmoid"},
             {ActivationFunctionType::relu, "relu"},

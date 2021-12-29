@@ -2,7 +2,7 @@
 #pragma once
 #include "tscl.hpp"
 
-#include "MLPModel.hpp"
+#include "MLPerceptron.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -12,53 +12,20 @@
 
 namespace nnet {
 
-  /** Utility class for serializing and deserializing MLPModels
-   *
-   *
-   */
-  class MLPModelSerializer {
-  public:
-    /**
-     * @returns a new MLPModelSerializer, or nullptr on failure
-     */
-    static std::unique_ptr<MLPModel<float>> readFromFile(const std::filesystem::path &path);
-
-    /**
-     * @returns a new MLPModelSerializer, or nullptr on failure
-     */
-    static std::unique_ptr<MLPModel<float>> readFromStream(std::istream &stream);
-
-    /**
-     *
-     * @param path Path to the file to write to
-     * @param model The model to write
-     * @return true on success, false on failure
-     */
-    static bool writeToFile(const std::filesystem::path &path, const MLPModel<float> &model);
-
-    /**
-     *
-     * @param stream The stream to write to
-     * @param model The model to write
-     * @return true on success, false on failure
-     */
-    static bool writeToStream(std::ostream &stream, const MLPModel<float> &model);
-  };
-
   /** Utility class for serializing and deserializing MLPerceptrons
    *
    */
-  class MLPerceptronSerializer {
+  class MLPSerializer {
   public:
     /**
      * @returns a new MLPerceptronSerializer, or nullptr on failure
      */
-    static std::unique_ptr<MLPerceptron<float>> readFromFile(const std::filesystem::path &path);
+    virtual MLPerceptron<float> readFromFile(const std::filesystem::path &path) = 0;
 
     /**
      * @returns a new MLPerceptronSerializer, or nullptr on failure
      */
-    static std::unique_ptr<MLPerceptron<float>> readFromStream(std::istream &stream);
+    virtual MLPerceptron<float> readFromStream(std::istream &stream) = 0;
 
     /**
      *
@@ -66,8 +33,8 @@ namespace nnet {
      * @param perceptron The perceptron to write
      * @return true on success, false on failure
      */
-    static bool writeToFile(const std::filesystem::path &path,
-                            const MLPerceptron<float> &perceptron);
+    virtual bool writeToFile(const std::filesystem::path &path,
+                             const MLPerceptron<float> &perceptron) = 0;
 
     /**
      *
@@ -75,7 +42,6 @@ namespace nnet {
      * @param perceptron The perceptron to write
      * @return true on success, false on failure
      */
-    static bool writeToStream(std::ostream &stream, const MLPerceptron<float> &perceptron);
+    virtual bool writeToStream(std::ostream &stream, const MLPerceptron<float> &perceptron) = 0;
   };
-
 }   // namespace nnet

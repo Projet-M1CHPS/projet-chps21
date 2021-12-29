@@ -1,10 +1,11 @@
 #pragma once
 
 #include "MLPModel.hpp"
-#include "MLPerceptron.hpp"
-#include "OptimizationMethod.hpp"
-#include "neuralNetwork/ModelOptimizer.hpp"
+#include "ModelOptimizer.hpp"
+#include "neuralNetwork/Perceptron/MLPerceptron.hpp"
+#include "neuralNetwork/Perceptron/OptimizationMethod.hpp"
 #include <iostream>
+#include <utility>
 
 namespace nnet {
 
@@ -13,10 +14,12 @@ namespace nnet {
   public:
     MLPModelOptimizer(MLPModel<real> &model, std::shared_ptr<OptimizationMethod<real>> tm)
         : neural_network(&model.getPerceptron()), opti_meth(tm) {}
-    virtual ~MLPModelOptimizer() = default;
+    ~MLPModelOptimizer() override = default;
 
     MLPModelOptimizer(const MLPModelOptimizer<real> &other) = delete;
     MLPModelOptimizer(MLPModelOptimizer<real> &&other) noexcept = default;
+
+    virtual void setModel(MLPModel<real> &model) = 0;
 
     MLPModelOptimizer<real> &operator=(const MLPModelOptimizer<real> &other) = delete;
     MLPModelOptimizer<real> &operator=(MLPModelOptimizer<real> &&other) noexcept = default;
@@ -59,7 +62,7 @@ namespace nnet {
       backward(target);
     }
 
-    void setModel(Model<real> &model) override {
+    void setModel(MLPModel<real> &model) override {
       auto &mlp_model = dynamic_cast<MLPModel<real> &>(model);
       auto &perceptron = mlp_model.getPerceptron();
 
@@ -139,13 +142,14 @@ namespace nnet {
 
 
   template<typename real = float>
-  class MLPBatchOptimizer final : public MLPModelOptimizer<real> {
+  class MLPBatchOptimizer : public MLPModelOptimizer<real> {
   public:
     explicit MLPBatchOptimizer(MLPModel<real> &model, std::shared_ptr<OptimizationMethod<real>> tm)
-        : MLPModelOptimizer<real>(model, tm) {}
+        : MLPModelOptimizer<real>(model, tm) {
+      setModel(model);
+    }
 
-    void setModel(Model<real> &model) override {
-      MLPModelOptimizer<real>::setModel(model);
+    void setModel(MLPModel<real> &model) override {
       auto &mlp_model = dynamic_cast<MLPModel<real> &>(model);
 
       auto &perceptron = mlp_model.getPerceptron();
@@ -189,7 +193,7 @@ namespace nnet {
       }
     }
 
-  private:
+  protected:
     void forward(math::Matrix<real> const &inputs) {
       auto &weights = this->neural_network->getWeights();
       auto &biases = this->neural_network->getBiases();
@@ -271,7 +275,6 @@ namespace nnet {
       }
     }
 
-  private:
     //
     std::vector<math::Matrix<real>> layers, layers_af;
 
@@ -280,6 +283,48 @@ namespace nnet {
 
     std::vector<math::Matrix<real>> avg_errors;
     std::vector<math::Matrix<real>> avg_gradients;
+  };
+
+  class MLPMiniBatchOptimizer : public MLPBatchOptimizer<float> {
+  public:
+    explicit MLPMiniBatchOptimizer(MLPModel<float> &model,
+                                   std::shared_ptr<OptimizationMethod<float>> tm,
+                                   size_t batch_size = 8)
+        : MLPBatchOptimizer<float>(model, std::move(tm)), batch_size(batch_size) {}
+
+    void optimize(const std::vector<math::Matrix<float>> &inputs,
+                  const std::vector<math::Matrix<float>> &targets) override {
+      size_t n = inputs.size();
+
+      for (size_t i = 0; i < n; i += batch_size) {
+        auto mat_reset = [](math::Matrix<float> &m) { m.fill(0); };
+        std::for_each(avg_gradients.begin(), avg_gradients.end(), mat_reset);
+        std::for_each(avg_errors.begin(), avg_errors.end(), mat_reset);
+
+        // If n is not a multiple of batch_size, the last batch will be smaller
+        size_t curr_batch_size = std::min(batch_size, n - i);
+
+        // Compute the average gradient and error for the current batch
+        for (size_t j = 0; j < curr_batch_size; j++) {
+          forward(inputs[i + j]);
+          storage.getError() = layers_af[layers_af.size() - 1] - targets[i + j];
+          computeGradient();
+        }
+
+        for (auto &it : avg_gradients) { it *= 1.0f / static_cast<float>(curr_batch_size); }
+
+        // Update the weights and biases using the average of the current batch
+        for (long j = this->neural_network->getWeights().size() - 1; j >= 0; j--) {
+          storage.setIndex(j);
+          storage.getGradient() = avg_gradients[j];
+          storage.getError() = avg_errors[j];
+          this->opti_meth->compute(storage);
+        }
+      }
+    }
+
+  private:
+    size_t batch_size;
   };
 
 }   // namespace nnet
