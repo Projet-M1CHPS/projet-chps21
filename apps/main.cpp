@@ -53,7 +53,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   tscl::logger("Creating controller", tscl::Log::Trace);
 
-  TrainingControllerParameters parameters(input_path, "runs/test/", 100, 1, false);
+  TrainingControllerParameters parameters(input_path, output_path, 100, 1, false);
   CTController controller(parameters, *model, *optimizer, *training_collection);
   ControllerResult res = controller.run();
 
