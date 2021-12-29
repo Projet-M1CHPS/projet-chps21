@@ -50,7 +50,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   auto tm = std::make_shared<nnet::DecayMomentumOptimization<float>>(model->getPerceptron(), 0.1,
                                                                      0.1, 0.7);
 
-  auto optimizer = std::make_unique<nnet::MLPModelStochOptimizer<float>>(*model, tm);
+  auto optimizer = std::make_unique<nnet::MLPMiniBatchOptimizer>(*model, tm);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
 
