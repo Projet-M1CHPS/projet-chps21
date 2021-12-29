@@ -88,6 +88,18 @@ namespace control::classifier {
           // Load an image as a grayscale image and apply the transformations
           try {
             image::GrayscaleImage img = image::ImageSerializer::load(entry);
+            pre_process.apply(img);
+            resize.transform(img);
+            post_process.apply(img);
+
+            // We then convert the image to a matrix, normalize it and add it to the training set
+            // We perform normalization in the range [0, 1] so that if the network is trained with
+            // a linear activation function, the gradient will not explode
+            // This also works for sigmoid which will output values in the range [0, 1] anyway
+            auto mat = image::imageToMatrix<float>(img, 255);
+
+            // Move the matrix to the input set to avoid unnecessary copies
+            res.append(0, &c.second, std::move(mat));
           } catch (std::runtime_error &e) {
             tscl::logger("CITCLoader::loadSet: Error loading image " + entry.path().string() +
                                  ": " + e.what(),
@@ -95,18 +107,6 @@ namespace control::classifier {
             tscl::logger("CITCLoader::loadSet: Skipping image", tscl::Log::Warning);
             continue;
           }
-          pre_process.apply(img);
-          resize.transform(img);
-          post_process.apply(img);
-
-          // We then convert the image to a matrix, normalize it and add it to the training set
-          // We perform normalization in the range [0, 1] so that if the network is trained with
-          // a linear activation function, the gradient will not explode
-          // This also works for sigmoid which will output values in the range [0, 1] anyway
-          auto mat = image::imageToMatrix<float>(img, 255);
-
-          // Move the matrix to the input set to avoid unnecessary copies
-          res.append(0, &c.second, std::move(mat));
         }
       }
     }

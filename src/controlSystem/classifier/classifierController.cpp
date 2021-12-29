@@ -28,7 +28,7 @@ namespace control::classifier {
 
     auto &classes = training_collection->getClasses();
     size_t nclass = classes.size();
-    CTracker stracker(params.getOutputPath(), classes);
+    CTracker stracker(params.getOutputPath() / "eval", classes);
 
     trainingLoop(stracker);
     printPostTrainingStats(stracker);
@@ -46,6 +46,7 @@ namespace control::classifier {
 
     // Used for computing stats
     size_t nclass = classes.size();
+    CTracker training_tracker(params.getOutputPath() / "train", classes);
     math::Matrix<size_t> confusion(nclass, nclass);
     math::FloatMatrix target(nclass, 1);
 
@@ -71,6 +72,23 @@ namespace control::classifier {
       // training_set.shuffle(std::random_device{}());
 
       confusion.fill(0);
+      for (int i = 0; i < training_set.size(); i++) {
+        auto type = training_set.getLabel(i).getId();
+        auto res = model->predict(training_set[i]);
+        auto res_type = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
+
+        confusion(res_type, type)++;
+      }
+      auto tstats = training_tracker.computeStats(confusion);
+      tscl::logger("[Epoch " + std::to_string(stracker.getEpoch()) +
+                           "] Training: avg_prec: " + std::to_string(tstats.getAvgPrec()) +
+                           ", avg_recall: " + std::to_string(tstats.getAvgRecall()) +
+                           ", avg_f1: " + std::to_string(tstats.getAvgF1()),
+                   tscl::Log::Information);
+      tstats.dumpToFiles();
+      training_tracker.nextEpoch();
+
+      confusion.fill(0);
       for (int i = 0; i < eval_set.size(); i++) {
         auto type = eval_set.getLabel(i).getId();
         auto res = model->predict(eval_set[i]);
@@ -81,7 +99,7 @@ namespace control::classifier {
 
       auto stats = stracker.computeStats(confusion);
       tscl::logger("[Epoch " + std::to_string(stracker.getEpoch()) +
-                           "]: avg_prec: " + std::to_string(stats.getAvgPrec()) +
+                           "] Eval : avg_prec: " + std::to_string(stats.getAvgPrec()) +
                            ", avg_recall: " + std::to_string(stats.getAvgRecall()) +
                            ", avg_f1: " + std::to_string(stats.getAvgF1()),
                    tscl::Log::Information);

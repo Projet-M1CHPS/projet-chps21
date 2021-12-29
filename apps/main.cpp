@@ -47,9 +47,10 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   auto model = nnet::MLPModelFactory<float>::randomSigReluAlt(topology);
 
-  auto tm = std::make_shared<nnet::RPropPOptimization<float>>(model->getPerceptron());
+  auto tm = std::make_shared<nnet::DecayMomentumOptimization<float>>(model->getPerceptron(), 0.2,
+                                                                     0.1, 0.9);
 
-  auto optimizer = std::make_unique<nnet::MLPMiniBatchOptimizer>(*model, tm, 8);
+  auto optimizer = std::make_unique<nnet::MLPMiniBatchOptimizer>(*model, tm, 16);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
 
