@@ -3,7 +3,7 @@
 #include "OptimizationMethod.hpp"
 #include <gtest/gtest.h>
 
-#include <MLPOptimizer.hpp>
+#include <MLPModelOptimizer.hpp>
 #include <vector>
 
 

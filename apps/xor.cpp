@@ -29,6 +29,8 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
     target[i] = math::FloatMatrix(1, 1);
   }
 
+  // Xor truth table
+  // Yes, this is ugly, but who cares ?
   input[0](0, 0) = 0.f;
   input[0](1, 0) = 0.f;
   input[1](0, 0) = 1.f;

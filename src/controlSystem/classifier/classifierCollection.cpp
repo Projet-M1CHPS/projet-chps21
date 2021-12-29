@@ -53,13 +53,13 @@ namespace control::classifier {
   }
 
   void CITCLoader::loadEvalSet(CTCollection &res, const std::filesystem::path &input_path) {
-    tscl::logger("Loading eval set (Hold on, this may take a while)", tscl::Log::Debug);
+    tscl::logger("Loading eval set (Hang tight, this may take a while)", tscl::Log::Debug);
     auto &eval_set = res.getEvalSet();
     loadSet(eval_set, input_path / "eval");
   }
 
   void CITCLoader::loadTrainingSet(CTCollection &res, fs::path const &input_path) {
-    tscl::logger("Loading training set (Hold on, this may take a while)", tscl::Log::Debug);
+    tscl::logger("Loading training set (Hang tight, this may take a while)", tscl::Log::Debug);
     auto &training_set = res.getTrainingSet();
     loadSet(training_set, input_path / "train");
   }
@@ -113,7 +113,7 @@ namespace control::classifier {
               "ImageTrainingSetLoader: The input path does not exist or is invalid");
     }
 
-    tscl::logger("Loading Classifier training collection at " + input_path.string(),
+    tscl::logger("Loading Classifier training collection from " + input_path.string(),
                  tscl::Log::Debug);
     if (not classes) {
       tscl::logger("Loading classes", tscl::Log::Debug);
@@ -123,7 +123,7 @@ namespace control::classifier {
         throw std::runtime_error("ImageTrainingSetLoader: No classes found !");
       }
 
-      tscl::logger("Found " + std::to_string(classes->size()) + " classes", tscl::Log::Debug);
+      tscl::logger("Found " + std::to_string(classes->size()) + " classes", tscl::Log::Trace);
 
     } else if (classes->empty()) {
       tscl::logger("CITCLoader: Need at-least one class, none were given", tscl::Log::Error);
@@ -136,7 +136,7 @@ namespace control::classifier {
     loadTrainingSet(*res, input_path);
 
     tscl::logger("Loaded " + std::to_string(res->getTrainingSet().size()) + " inputs",
-                 tscl::Log::Debug);
+                 tscl::Log::Trace);
 
     return res;
   }

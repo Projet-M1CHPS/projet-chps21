@@ -25,24 +25,24 @@ bool createAndTrain(std::filesystem::path const &input_path,
                     std::filesystem::path const &output_path) {
   tscl::logger("Current version: " + tscl::Version::current.to_string(), tscl::Log::Debug);
   tscl::logger("Fetching model from  " + input_path.string(), tscl::Log::Debug);
-  tscl::logger("OutputPath is " + output_path.string(), tscl::Log::Debug);
+  tscl::logger("Output path: " + output_path.string(), tscl::Log::Debug);
 
   if (not std::filesystem::exists(output_path)) std::filesystem::create_directories(output_path);
 
   tscl::logger("Creating collection loader", tscl::Log::Debug);
   CITCLoader loader(32, 32);
   auto &pre_engine = loader.getPreProcessEngine();
-  pre_engine.addTransformation(std::make_shared<image::transform::Inversion>());
   // Add preprocessing transformations here
+  pre_engine.addTransformation(std::make_shared<image::transform::Inversion>());
   auto &engine = loader.getPostProcessEngine();
-  engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
   // Add postprocessing transformations here
+  engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
 
   tscl::logger("Loading collection", tscl::Log::Information);
   auto training_collection = loader.load(input_path);
 
   // Create a correctly-sized topology
-  nnet::MLPTopology topology = {10, 10, 10};
+  nnet::MLPTopology topology = {32 * 32, 64, 64, 32, 32};
   topology.push_back(training_collection->getClassCount());
 
   auto model = nnet::MLPModelFactory<float>::randomSigReluAlt(topology);
@@ -52,10 +52,9 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   auto optimizer = std::make_unique<nnet::MLPModelStochOptimizer<float>>(*model, tm);
 
-  tscl::logger("Creating controller", tscl::Log::Debug);
-  std::cout << *training_collection;
+  tscl::logger("Creating controller", tscl::Log::Trace);
 
-  TrainingControllerParameters parameters(input_path, "runs/test/", 5, 5, false);
+  TrainingControllerParameters parameters(input_path, "runs/test/", 100, 5, false);
   CTController controller(parameters, *model, *optimizer, *training_collection);
   ControllerResult res = controller.run();
 
@@ -68,7 +67,6 @@ bool createAndTrain(std::filesystem::path const &input_path,
 }
 
 int main(int argc, char **argv) {
-
   Version::setCurrent(Version(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TWEAK));
   setupLogger();
 
