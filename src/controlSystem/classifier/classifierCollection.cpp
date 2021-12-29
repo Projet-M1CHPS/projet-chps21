@@ -86,7 +86,15 @@ namespace control::classifier {
       for (auto &entry : fs::directory_iterator(target_path)) {
         if (fs::is_regular_file(entry)) {
           // Load an image as a grayscale image and apply the transformations
-          image::GrayscaleImage img = image::ImageSerializer::load(entry);
+          try {
+            image::GrayscaleImage img = image::ImageSerializer::load(entry);
+          } catch (std::runtime_error &e) {
+            tscl::logger("CITCLoader::loadSet: Error loading image " + entry.path().string() +
+                                 ": " + e.what(),
+                         tscl::Log::Warning);
+            tscl::logger("CITCLoader::loadSet: Skipping image", tscl::Log::Warning);
+            continue;
+          }
           pre_process.apply(img);
           resize.transform(img);
           post_process.apply(img);
