@@ -39,9 +39,9 @@ find_package(Threads REQUIRED)
 if (CMAKE_COMPILER_IS_INTELCXX)
   # Comment one out to choose which mkl to use
   # Intel's mkl sequential implementation
-  set(BLA_VENDOR "Intel10_64ilp_seq")
+  # set(BLA_VENDOR "Intel10_64ilp_seq")
   # Intel's mkl parallel implementation
-  # set(BLA_VENDOR "Intel10_64ilp")
+  set(BLA_VENDOR "Intel10_64ilp")
 endif ()
 
 find_package(BLAS REQUIRED)

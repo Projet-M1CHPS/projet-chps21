@@ -264,7 +264,7 @@ TEST(MatrixTest, CanMultiplyMatrixWithMatrix) {
   m(0, 1) = 2;
   m(1, 0) = 1;
   m(1, 1) = 2;
-
+  
   n = m;
 
   auto c = m * n;
@@ -272,7 +272,9 @@ TEST(MatrixTest, CanMultiplyMatrixWithMatrix) {
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++) {
-      for (size_t k = 0; k < 2; k++) { d(i, j) += m(i, k) * n(k, j); }
+      float dij = 0;
+      for (size_t k = 0; k < 2; k++) { dij += m(i, k) * n(k, j); }
+      d(i, j) = dij;
     }
   }
 
