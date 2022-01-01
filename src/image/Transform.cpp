@@ -158,10 +158,22 @@ namespace image::transform {
     size_t half_d = std::floor(dimension / 2.0);
     std::vector<float> filter = filtering_subfunctions::gaussianFilter(dimension);
 
+
     for (size_t y = half_d; y < image.getHeight() - half_d; y++)
       for (size_t x = half_d; x < image.getWidth() - half_d; x++)
         image(x, y) =
                 (grayscale_t) filtering_subfunctions::applyFilterAt(image, x, y, filter, dimension);
+
+    for (size_t y = 0; y < image.getHeight(); y++) {
+      for (size_t x = 0; x < half_d; x++) image(x, y) = (grayscale_t) 0U;
+      for (size_t x = image.getWidth() - half_d; x < image.getWidth(); x++)
+        image(x, y) = (grayscale_t) 0U;
+    }
+    for (size_t x = half_d; x < image.getWidth() - half_d; x++) {
+      for (size_t y = 0; y < half_d; y++) image(x, y) = (grayscale_t) 0U;
+      for (size_t y = image.getHeight() - half_d; y < image.getHeight(); y++)
+        image(x, y) = (grayscale_t) 0U;
+    }
     return true;
   }
 
@@ -183,18 +195,14 @@ namespace image::transform {
           gy += sobel_y[i] * current[i];
         }
 
-        if (std::abs(gx) >= cap || std::abs(gy) >= cap) edges.push_back(y * image.getHeight() + x);
+        if (std::abs(gx) + std::abs(gy) >= cap) edges.push_back(y * image.getWidth() + x);
       }
     }
 
-    size_t cur_edge = 0;
-    for (size_t i = image.getWidth() + 1; i < image.getSize() - image.getWidth(); i++) {
-      if (edges[cur_edge] == i) {
-        image.getData()[i] = 255U;
-        cur_edge += 1;
-      } else
-        image.getData()[i] = 0U;
-    }
+    std::for_each(image.begin(), image.end(), [](auto &e) { e = (grayscale_t) 0U; });
+    std::for_each(edges.cbegin(), edges.cend(),
+                  [&image](auto const &i) { image.getData()[i] = (grayscale_t) 255U; });
+
     return true;
   }
 
