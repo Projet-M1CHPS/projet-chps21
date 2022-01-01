@@ -18,31 +18,34 @@ namespace image::transform {
 
   namespace filtering_subfunctions {
 
-    float gaussian2D(size_t x, size_t y) {
+    float gaussian2D(float x_distance, float y_distance) {
       float sigma = 1.84f;
-      return expf(-(x * x + y * y) / (2 * sigma * sigma)) * (1 / (2 * M_PI * sigma * sigma));
+      return expf(-(x_distance * x_distance + y_distance * y_distance) / (2 * sigma * sigma)) *
+             (1 / (2 * M_PI * sigma * sigma));
     }
 
-    void gaussianFilter(float *filter, size_t dimension) {
-      int half_d = std::floor(dimension / 2);
-      int origin = half_d * dimension + half_d;
-      // Indexes (y,x) represents the offset from the center of the matrix (necessary for the
-      // gaussian function)
-      for (int y = -half_d; y <= half_d; y++) {
-        for (int x = -half_d; x <= half_d; x++) {
-          float val = filter[origin + y * dimension + x] = gaussian2D(x, y);
+    std::vector<float> gaussianFilter(size_t dimension) {
+      std::vector<float> filter(dimension * dimension);
+      int half_d = std::floor(dimension / 2.0f);
+      for (int y = 0; y < dimension; y++) {
+        for (int x = 0; x <= dimension; x++) {
+          float x_dist_from_center = fabs(x - half_d);
+          float y_dist_from_center = fabs(y - half_d);
+          filter[y * dimension + x] = gaussian2D(x_dist_from_center, y_dist_from_center);
         }
       }
+      return filter;
     }
 
-    float applyFilterAt(const GrayscaleImage &img, size_t orig_x, size_t orig_y, float *filter,
-                        size_t dimension) {
+    float applyFilterAt(const GrayscaleImage &img, size_t orig_x, size_t orig_y,
+                        std::vector<float> const &filter, size_t dimension) {
       float sum = .0f;
+      size_t half_dimension = std::floor(dimension / 2.0);
       size_t filter_idx = 0;
-      for (int y = 0; y < dimension; y++)
-        for (int x = 0; x < dimension; x++) {
-          sum += img(orig_x + x, orig_y + y) * filter[filter_idx++];
-        }
+      for (size_t y = 0; y < dimension; y++)
+        for (size_t x = 0; x < dimension; x++)
+          sum += (float) img(orig_x + x - half_dimension, orig_y + y - half_dimension) *
+                 filter[filter_idx++];
       return sum;
     }
   }   // namespace filtering_subfunctions
@@ -152,17 +155,13 @@ namespace image::transform {
   // TODO: Improve performance, really slow.
   bool Filter::transform(GrayscaleImage &image) {
     size_t dimension = 11;   // Needs to be odd (2n+1)
-
-    float *filter = (float *) malloc(sizeof(float) * dimension * dimension);
-    size_t half_d = std::floor(dimension / 2);
-    filtering_subfunctions::gaussianFilter(filter, dimension);
+    size_t half_d = std::floor(dimension / 2.0);
+    std::vector<float> filter = filtering_subfunctions::gaussianFilter(dimension);
 
     for (size_t y = half_d; y < image.getHeight() - half_d; y++)
       for (size_t x = half_d; x < image.getWidth() - half_d; x++)
-        image(x, y) = filtering_subfunctions::applyFilterAt(image, x - half_d, y - half_d, filter,
-                                                            dimension);
-
-    free(filter);
+        image(x, y) =
+                (grayscale_t) filtering_subfunctions::applyFilterAt(image, x, y, filter, dimension);
     return true;
   }
 
