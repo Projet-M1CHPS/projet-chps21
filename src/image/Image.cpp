@@ -124,28 +124,6 @@ namespace image {
   grayscale_t *GrayscaleImage::end() { return getData() + getSize(); }
   const grayscale_t *GrayscaleImage::end() const { return getData() + getSize(); }
 
-  namespace {
-
-    // FIXME: Remove this atrocity
-    // For further Inquiry about the very nature of this function, please
-    // refer to BENJAMIN LOZES (testing purpose only)
-    void _listDirectories(char *path) {
-      DIR *dir;
-      struct dirent *diread;
-      std::vector<char *> files;
-
-      if ((dir = opendir(path)) != nullptr) {
-        while ((diread = readdir(dir)) != nullptr) files.push_back(diread->d_name);
-        closedir(dir);
-      } else {
-        perror("opendir");
-        return;
-      }
-      for (auto file : files) std::cout << file << "| ";
-      std::cout << std::endl;
-    }
-  }   // namespace
-
   GrayscaleImage ImageSerializer::createRandomNoiseImage(size_t width, size_t height) {
     GrayscaleImage res(width, height);
 
