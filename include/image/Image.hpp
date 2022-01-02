@@ -81,8 +81,6 @@ namespace image {
 
     /**
      * @brief Returns the underlying raw ptr
-     *
-     * @return grayscale_t*
      */
     grayscale_t *getData();
 
@@ -105,8 +103,6 @@ namespace image {
 
     /**
      * @brief Returns the underlying raw ptr
-     *
-     * @return const grayscale_t*
      */
     [[nodiscard]] const grayscale_t *getData() const;
 
@@ -124,10 +120,9 @@ namespace image {
     }
 
     /**
-     * @brief Returns the number of pixel in the image
-     * Equal to width * height
-     *
-     * @return size_t
+     * @brief Getter for the image area
+     * 
+     * @return Number of pixel in the image
      */
     [[nodiscard]] size_t getSize() const { return height * width; }
 
@@ -193,6 +188,12 @@ namespace image {
      */
     static std::vector<image::GrayscaleImage> loadDirectory(std::filesystem::path const &directory_path);
 
+    /**
+     * @brief Get basic informations about a file without loading it
+     * 
+     * @param path Image path
+     * @return (width, height, channels)
+     */
     static std::tuple<int, int, int> loadInfo(std::filesystem::path const &path);
 
   private:
