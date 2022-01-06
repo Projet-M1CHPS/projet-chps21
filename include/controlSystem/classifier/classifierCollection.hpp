@@ -18,17 +18,16 @@ namespace control::classifier {
   public:
     /** Create a collection with a given label list
      *
-     * This is used for
      *
      * @param classes
      */
     explicit CTCollection(std::shared_ptr<CClassLabelSet> classes);
 
     /** Collection can be really huge, so we delete the copy operators for safety
-     * FIXME: add a copy method
      *
      * @param other
      */
+    // FIXME Add a copy method
     CTCollection(CTCollection const &other) = delete;
 
     CTCollection(CTCollection &&other) = default;
