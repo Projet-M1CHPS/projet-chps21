@@ -5,8 +5,10 @@
 
 namespace control::classifier {
 
-  /** Represents the class of an input, to be used in a classifier.
-   * A class is uniquely identified by an id, and contains a name (that may not be unique)
+  /** @brief Class unique identifier
+   *
+   *  Classes are uniquely identified by an id, but their also associated a name for
+   *  printing purposes
    */
   class ClassLabel {
     friend std::ostream &operator<<(std::ostream &os, const ClassLabel &label);
@@ -15,23 +17,31 @@ namespace control::classifier {
     // This is needed for storing classes in a map
     ClassLabel() { *this = getUnknown(); }
     ClassLabel(size_t id, std::string name) : id(id), name(std::move(name)) {}
+
+    /**
+     * @return the uniaue id of the class
+     */
     [[nodiscard]] size_t getId() const { return id; }
     [[nodiscard]] std::string const &getName() const { return name; }
 
     /** The id should be unique for a given class set
      *
-     * @param id
+     * @param id The new id of the class
      */
     void setId(size_t id) { this->id = id; }
+
+    /**
+     *
+     * @param The class name. Not necessarily unique
+     */
     void setName(std::string name) { this->name = std::move(name); }
 
     /** Returns a label corresponding to the unknown class
      *
-     * This means that the id = 0 and the name = "unknown"
-     *
+     * This means that the id = 0 and name = "unknown"
      * Marked noexcept to allow the creation of the static object "unknown"
      *
-     * @return
+     * @return a special label used to identify the unknown class
      */
     static ClassLabel const &getUnknown() noexcept {
       static ClassLabel unknown(0, "Unknown");
@@ -43,9 +53,19 @@ namespace control::classifier {
      */
     inline static ClassLabel const &unknown = getUnknown();
 
+    /**
+     *
+     * @param other
+     * @return True if both the id and the name are the same, false otherwise
+     */
     bool operator==(ClassLabel const &other) const { return id == other.id && name == other.name; }
     bool operator!=(ClassLabel const &other) const { return !(*this == other); }
 
+    /**
+     *
+     * @param other
+     * @return True if the id  is superior to the other id, false otherwise
+     */
     bool operator>(ClassLabel const &other) const { return id > other.id; }
     bool operator<(ClassLabel const &other) const { return id < other.id; }
 
@@ -55,7 +75,7 @@ namespace control::classifier {
     std::string name;
   };
 
-  /** Represents a set of classes that can be outputted by a classifier
+  /** @brief Set of ClassLabel to be used in a classifier algorithm
    *
    */
   class CClassLabelSet {

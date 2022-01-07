@@ -15,6 +15,10 @@ namespace nnet {
    */
   enum class OptimizationAlgorithm { standard, decay, momentum, rpropPlus };
 
+  /** @brief Base interface for MLPerceptron optimization methods
+   *
+   * @tparam real
+   */
   template<typename real = float>
   class OptimizationMethod {
   public:
@@ -25,6 +29,10 @@ namespace nnet {
     virtual void update(){};
   };
 
+  /** @brief Classig SGD MLPerceptron optimization
+   *
+   * @tparam real
+   */
   template<typename real = float>
   class SGDOptimization : public OptimizationMethod<real> {
   public:
@@ -39,6 +47,10 @@ namespace nnet {
   };
 
 
+  /** @brief Decay MLPerceptron optimization
+   *
+   * @tparam real
+   */
   template<typename real = float>
   class DecayOptimization : public OptimizationMethod<real> {
   public:
@@ -63,6 +75,10 @@ namespace nnet {
   };
 
 
+  /** @brief Momentum MLPerceptron optimization
+   *
+   * @tparam real
+   */
   template<typename real = float>
   class MomentumOptimization : public OptimizationMethod<real> {
   public:
@@ -97,6 +113,10 @@ namespace nnet {
   };
 
 
+  /** @brief Combination of DecayOptimization and MomentumOptimization
+   *
+   * @tparam real
+   */
   template<typename real = float>
   class DecayMomentumOptimization : public OptimizationMethod<real> {
   public:
@@ -141,6 +161,10 @@ namespace nnet {
   };
 
 
+  /** @brief RProp+ MLPerceptron optimization
+   *
+   * @tparam real
+   */
   template<typename real = float>
   class RPropPOptimization : public OptimizationMethod<real> {
   public:
@@ -229,24 +253,4 @@ namespace nnet {
     const real update_max;
     const real update_min;
   };
-
-  template<typename real, typename... Args,
-           typename = std::enable_if<std::is_floating_point_v<real>>>
-  std::unique_ptr<OptimizationMethod<real>> makeOptimizationFromAlgo(OptimizationAlgorithm algo,
-                                                                     Args &&...args) {
-    switch (algo) {
-      case OptimizationAlgorithm::standard:
-        return std::make_unique<SGDOptimization<real>>(std::forward<Args>(args)...);
-      case OptimizationAlgorithm::momentum:
-        return std::make_unique<MomentumOptimization<real>>(std::forward<Args>(args)...);
-      case OptimizationAlgorithm::decay:
-        return std::make_unique<DecayOptimization<real>>(std::forward<Args>(args)...);
-      case OptimizationAlgorithm::rpropPlus:
-        return std::make_unique<RPropPOptimization<real>>(std::forward<Args>(args)...);
-      default:
-        throw std::runtime_error("Unknown optimization algorithm");
-    }
-    return nullptr;
-  }
-
 }   // namespace nnet

@@ -4,6 +4,11 @@
 #include "neuralNetwork/Perceptron/MLPerceptron.hpp"
 
 namespace nnet {
+
+  /** @brief Model specialization for an MLPerceptron
+   *
+   * @tparam real fp type to be used in the model
+   */
   template<typename real = float, typename = std::enable_if<std::is_floating_point_v<real>>>
   class MLPModel : public Model<real> {
   public:
@@ -24,6 +29,10 @@ namespace nnet {
     std::unique_ptr<MLPerceptron<real>> perceptron;
   };
 
+  /** @brief Helper class for building common MLPModel
+   *
+   * @tparam real
+   */
   template<typename real = float, typename = std::enable_if<std::is_floating_point_v<real>>>
   class MLPModelFactory {
     using RModel = MLPModel<real>;

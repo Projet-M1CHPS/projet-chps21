@@ -4,7 +4,7 @@
 
 namespace nnet {
 
-  /** Utility class for serializing and deserializing MLPModels
+  /** @brief Utility class for serializing and deserializing MLPModel
    *
    *
    */

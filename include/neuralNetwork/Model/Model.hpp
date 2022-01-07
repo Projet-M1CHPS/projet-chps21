@@ -7,6 +7,10 @@
 
 namespace nnet {
 
+  /** @brief Base interface for neural network Models
+   *
+   * @tparam real
+   */
   template<typename real = float, typename = std::enable_if<std::is_floating_point_v<real>>>
   class Model {
   public:

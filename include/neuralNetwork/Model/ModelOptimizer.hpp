@@ -6,6 +6,10 @@
 
 namespace nnet {
 
+  /** @brief Base interface for Model optimizers
+   *
+   * @tparam real
+   */
   template<typename real = float>
   class ModelOptimizer {
   public:

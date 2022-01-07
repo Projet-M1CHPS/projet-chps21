@@ -9,6 +9,10 @@
 
 namespace nnet {
 
+  /** @brief Interface for MLPModel optimizer
+   *
+   * @tparam real
+   */
   template<typename real = float>
   class MLPModelOptimizer : public ModelOptimizer<real> {
   public:
@@ -35,6 +39,10 @@ namespace nnet {
   };
 
 
+  /** @brief Stochastic MLPModel optimizer
+   *
+   * @tparam real
+   */
   template<typename real = float>
   class MLPModelStochOptimizer final : public MLPModelOptimizer<real> {
   public:
@@ -141,6 +149,10 @@ namespace nnet {
   };
 
 
+  /** @brief Batch MLPModel Optimizer
+   *
+   * @tparam real
+   */
   template<typename real = float>
   class MLPBatchOptimizer : public MLPModelOptimizer<real> {
   public:
@@ -285,6 +297,9 @@ namespace nnet {
     std::vector<math::Matrix<real>> avg_gradients;
   };
 
+  /** @brief mini-batch MLPModel optimizer
+   *
+   */
   class MLPMiniBatchOptimizer : public MLPBatchOptimizer<float> {
   public:
     explicit MLPMiniBatchOptimizer(MLPModel<float> &model,

@@ -6,6 +6,10 @@
 
 namespace nnet {
 
+  /** @brief Placeholder helper class for gradient descent storage
+   *
+   * @tparam T
+   */
   template<typename T = float>
   class BackpropStorage {
   public:

@@ -8,7 +8,7 @@
 
 namespace control {
 
-  /** @brief Stores a set of matrices to be fed to a model
+  /** @brief Stores a set of Matrix<float> to be fed to a model
    *
    * This base class only stores matrices, and has no additional information about the input paths
    * and is agnostic to the model used.

@@ -12,17 +12,9 @@
 
 namespace nnet {
 
-  /**
-   * @brief Enum of the supported floating precision
-   *
-   * Used for serialization
+  /** @brief Array of unsigned integer that represents a MLPerceptron topology
    *
    */
-  enum class FloatingPrecision {
-    float32,
-    float64,
-  };
-
   class MLPTopology {
     friend std::ostream &operator<<(std::ostream &os, const MLPTopology &topology);
 
@@ -74,7 +66,7 @@ namespace nnet {
   };
 
   /**
-   * @brief Interface for a neural network
+   * @brief Base interface for MLPerceptron
    *
    */
   class MLPBase {
@@ -231,7 +223,5 @@ namespace nnet {
     os << "-------output------\n";
     return os;
   }
-
-  std::unique_ptr<MLPBase> makeNeuralNetwork(FloatingPrecision precision);
 
 }   // namespace nnet
