@@ -27,7 +27,7 @@ namespace nnet {
   public:
     MLPModelFactory() = delete;
 
-    static std::unique_ptr<Model> random(MLPTopology const &topology) {
+    static std::unique_ptr<MLPModel> random(MLPTopology const &topology) {
       auto res = std::make_unique<MLPModel>();
       auto &mlp = res->getPerceptron();
       mlp.setTopology(topology);
@@ -36,7 +36,7 @@ namespace nnet {
       return res;
     }
 
-    static std::unique_ptr<Model> randomSigReluAlt(MLPTopology const &topology) {
+    static std::unique_ptr<MLPModel> randomSigReluAlt(MLPTopology const &topology) {
       auto res = std::make_unique<MLPModel>();
       auto &mlp = res->getPerceptron();
       mlp.setTopology(topology);
