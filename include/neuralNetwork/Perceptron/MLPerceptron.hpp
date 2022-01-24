@@ -12,17 +12,6 @@
 
 namespace nnet {
 
-  /**
-   * @brief Enum of the supported floating precision
-   *
-   * Used for serialization
-   *
-   */
-  enum class FloatingPrecision {
-    float32,
-    float64,
-  };
-
   class MLPTopology {
     friend std::ostream &operator<<(std::ostream &os, const MLPTopology &topology);
 
@@ -98,10 +87,8 @@ namespace nnet {
    *
    * @tparam real
    */
-  template<typename real = float, typename = std::enable_if<std::is_floating_point_v<real>>>
   class MLPerceptron final : public MLPBase {
   public:
-    using value_type = real;
 
     /**
      * @brief Construct a new Neural Network object with no layer
@@ -124,22 +111,22 @@ namespace nnet {
      * @param end
      * @return
      */
-    math::Matrix<real> predict(math::Matrix<real> const &input) const {
+    math::FloatMatrix predict(math::FloatMatrix const &input) const {
       const size_t nbInput = input.getRows();
 
       if (nbInput != weights.front().getCols()) {
         throw std::invalid_argument("Invalid number of input");
       }
 
-      auto current_layer = math::Matrix<real>::matMatProdMatAdd(weights[0], input, biases[0]);
-      auto afunc = af::getAFFromType<real>(activation_functions[0]).first;
+      auto current_layer = math::FloatMatrix::matMatProdMatAdd(weights[0], input, biases[0]);
+      auto afunc = af::getAFFromType(activation_functions[0]).first;
       std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
 
       for (size_t i = 1; i < weights.size(); i++) {
-        current_layer = math::Matrix<real>::matMatProdMatAdd(weights[i], current_layer, biases[i]);
+        current_layer = math::FloatMatrix::matMatProdMatAdd(weights[i], current_layer, biases[i]);
 
         // Apply activation function on every element of the matrix
-        afunc = af::getAFFromType<real>(activation_functions[i]).first;
+        afunc = af::getAFFromType(activation_functions[i]).first;
         std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
       }
       return current_layer;
@@ -161,8 +148,8 @@ namespace nnet {
       for (size_t i = 0; i < topology.size() - 1; i++) {
         // Create a matrix of size (layers[i + 1] x layers[i])
         // So that each weight matrix can be multiplied by the previous layer
-        weights.push_back(math::Matrix<real>(topology[i + 1], topology[i]));
-        biases.push_back(math::Matrix<real>(topology[i + 1], 1));
+        weights.push_back(math::FloatMatrix (topology[i + 1], topology[i]));
+        biases.push_back(math::FloatMatrix (topology[i + 1], 1));
         activation_functions.push_back(af::ActivationFunctionType::sigmoid);
       }
       this->topology = topology;
@@ -190,27 +177,27 @@ namespace nnet {
     void randomizeWeight() override {
       for (auto &layer : weights) {
         double x = std::sqrt(2.0 / (double) layer.getRows());
-        math::randomize<real>(layer, -x, x);
+        math::randomize<float>(layer, -x, x);
       }
 
       for (auto &layer : biases) {
         double x = std::sqrt(2.0 / (double) layer.getRows());
-        math::randomize<real>(layer, -x, x);
+        math::randomize<float>(layer, -x, x);
       }
     }
 
-    [[nodiscard]] std::vector<math::Matrix<real>> &getWeights() { return weights; }
+    [[nodiscard]] std::vector<math::FloatMatrix> &getWeights() { return weights; }
 
-    [[nodiscard]] const std::vector<math::Matrix<real>> &getWeights() const { return weights; }
+    [[nodiscard]] const std::vector<math::FloatMatrix> &getWeights() const { return weights; }
 
-    [[nodiscard]] std::vector<math::Matrix<real>> &getBiases() { return biases; }
+    [[nodiscard]] std::vector<math::FloatMatrix> &getBiases() { return biases; }
 
-    [[nodiscard]] const std::vector<math::Matrix<real>> &getBiases() const { return biases; }
+    [[nodiscard]] const std::vector<math::FloatMatrix> &getBiases() const { return biases; }
 
 
   private:
-    std::vector<math::Matrix<real>> weights;
-    std::vector<math::Matrix<real>> biases;
+    std::vector<math::FloatMatrix> weights;
+    std::vector<math::FloatMatrix> biases;
 
     // We want every layer to have its own activation function
     std::vector<af::ActivationFunctionType> activation_functions;
@@ -218,7 +205,7 @@ namespace nnet {
 
   // std::ostream& operator<<(std::ostream& os, const Pair<T, U>& p)
   template<typename T>
-  std::ostream &operator<<(std::ostream &os, const MLPerceptron<T> &nn) {
+  std::ostream &operator<<(std::ostream &os, const MLPerceptron &nn) {
     const size_t size = nn.getWeights().size();
     os << "-------input-------\n";
     for (size_t i = 0; i < size; i++) {
@@ -231,7 +218,5 @@ namespace nnet {
     os << "-------output------\n";
     return os;
   }
-
-  std::unique_ptr<MLPBase> makeNeuralNetwork(FloatingPrecision precision);
 
 }   // namespace nnet

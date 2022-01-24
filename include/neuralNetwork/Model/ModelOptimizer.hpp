@@ -6,11 +6,10 @@
 
 namespace nnet {
 
-  template<typename real = float>
   class ModelOptimizer {
   public:
-    virtual void optimize(const std::vector<math::Matrix<real>> &inputs,
-                          const std::vector<math::Matrix<real>> &targets) = 0;
+    virtual void optimize(const std::vector<math::FloatMatrix> &inputs,
+                          const std::vector<math::FloatMatrix> &targets) = 0;
 
     virtual ~ModelOptimizer() = default;
 

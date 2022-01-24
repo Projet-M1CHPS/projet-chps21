@@ -8,12 +8,12 @@ namespace nnet {
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure
      */
-    MLPModel<float> readFromFile(const std::filesystem::path &path) override;
+    MLPModel readFromFile(const std::filesystem::path &path) override;
 
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure
      */
-    MLPModel<float> readFromStream(std::istream &stream) override;
+    MLPModel readFromStream(std::istream &stream) override;
 
     /**
      *
@@ -21,7 +21,7 @@ namespace nnet {
      * @param model The model to write
      * @return true on success, false on failure
      */
-    bool writeToFile(const std::filesystem::path &path, const MLPModel<float> &model) override;
+    bool writeToFile(const std::filesystem::path &path, const MLPModel &model) override;
 
     /**
      *
@@ -29,6 +29,6 @@ namespace nnet {
      * @param model The model to write
      * @return true on success, false on failure
      */
-    bool writeToStream(std::ostream &stream, const MLPModel<float> &model) override;
+    bool writeToStream(std::ostream &stream, const MLPModel &model) override;
   };
 }   // namespace nnet

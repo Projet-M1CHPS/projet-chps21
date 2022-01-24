@@ -35,75 +35,45 @@ namespace af {
    *
    * Furthermore, every activation function should be linked to its derivative counterpart
    */
-
-  template<typename real>
-  real identity(real x) {
-    static_assert(std::is_floating_point_v<real>, "Invalid type, expected a floating point type");
-
+  float identity(float x) {
     return x;
   }
 
-  template<typename real>
-  real didentity(real x) {
-    static_assert(std::is_floating_point_v<real>, "Invalid type, expected a floating point type");
-
+  float didentity(float x) {
     return 1;
   }
 
-  template<typename real>
-  real sigmoid(real x) {
-    static_assert(std::is_floating_point_v<real>, "Invalid type, expected a floating point type");
-
+  float sigmoid(float x) {
     return 1.0 / (1.0 + std::exp(-x));
   }
 
-  template<typename real>
-  real dsigmoid(real x) {
-    static_assert(std::is_floating_point_v<real>, "Invalid type, expected a floating point type");
-
+  float dsigmoid(float x) {
     return sigmoid(x) * (1 - sigmoid(x));
   }
 
-  template<typename real>
-  real relu(real x) {
-    static_assert(std::is_floating_point_v<real>, "Invalid type, expected a floating point type");
-
+  float relu(float x) {
     return (x <= 0) ? 0.0 : x;
   }
 
-  template<typename real>
-  real drelu(real x) {
-    static_assert(std::is_floating_point_v<real>, "Invalid type, expected a floating point type");
-
+  float drelu(float x) {
     if (x == 0.0) { throw std::invalid_argument("Relu undefined on x = 0.0"); }
 
     return (x < 0) ? 0.0 : 1;
   }
 
-  template<typename real>
-  real leakyRelu(real x) {
-    static_assert(std::is_floating_point_v<real>, "Invalid type, expected a floating point type");
-
+  float leakyRelu(float x) {
     return (x < 0) ? (0.01 * x) : x;
   }
 
-  template<typename real>
-  real dleakyRelu(real x) {
-    static_assert(std::is_floating_point_v<real>, "Invalid type, expected a floating point type");
-
+  float dleakyRelu(float x) {
     return (x < 0) ? 0.01 : 1;
   }
 
-  template<typename real>
-  real square(real x) {
-    static_assert(std::is_floating_point_v<real>, "Invalid type, expected a floating point type");
+  float square(float x) {
     return x * x;
   }
 
-  template<typename real>
-  real dsquare(real x) {
-    static_assert(std::is_floating_point_v<real>, "Invalid type, expected a floating point type");
-
+  float dsquare(float x) {
     return 2 * x;
   }
 
@@ -111,23 +81,20 @@ namespace af {
    * @brief Return the function pair associated with an ActivationFunctionType
    * in the form (func, dfunc)
    *
-   * @tparam real
+   * @tparam float
    * @param type
-   * @return std::function<real(real)>
+   * @return std::function<float(float)>
    */
-  template<typename real>
-  std::pair<std::function<real(real)>, std::function<real(real)>>
+  std::pair<std::function<float(float)>, std::function<float(float)>>
   getAFFromType(ActivationFunctionType type) {
-    static_assert(std::is_floating_point_v<real>, "Invalid type, expected a floating point type");
-
     const std::unordered_map<ActivationFunctionType,
-                             std::pair<std::function<real(real)>, std::function<real(real)>>>
+                             std::pair<std::function<float(float)>, std::function<float(float)>>>
             map{
-                    {ActivationFunctionType::identity, {identity<real>, didentity<real>}},
-                    {ActivationFunctionType::sigmoid, {sigmoid<real>, dsigmoid<real>}},
-                    {ActivationFunctionType::relu, {relu<real>, drelu<real>}},
-                    {ActivationFunctionType::leakyRelu, {leakyRelu<real>, dleakyRelu<real>}},
-                    {ActivationFunctionType::square, {square<real>, dsquare<real>}},
+                    {ActivationFunctionType::identity, {identity, didentity}},
+                    {ActivationFunctionType::sigmoid, {sigmoid, dsigmoid}},
+                    {ActivationFunctionType::relu, {relu, drelu}},
+                    {ActivationFunctionType::leakyRelu, {leakyRelu, dleakyRelu}},
+                    {ActivationFunctionType::square, {square, dsquare}},
             };
     auto pair = map.find(type);
     if (pair == map.end()) {
