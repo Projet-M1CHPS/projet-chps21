@@ -28,16 +28,16 @@ namespace nnet {
     MLPModelFactory() = delete;
 
     static std::unique_ptr<Model> random(MLPTopology const &topology) {
-      auto res = std::make_unique<Model>();
+      auto res = std::make_unique<MLPModel>();
       auto &mlp = res->getPerceptron();
       mlp.setTopology(topology);
       mlp.setActivationFunction(af::ActivationFunctionType::sigmoid);
-      mlp.randomizeSynapses();
+      mlp.randomizeWeight();
       return res;
     }
 
     static std::unique_ptr<Model> randomSigReluAlt(MLPTopology const &topology) {
-      auto res = std::make_unique<Model>();
+      auto res = std::make_unique<MLPModel>();
       auto &mlp = res->getPerceptron();
       mlp.setTopology(topology);
       mlp.randomizeWeight();

@@ -26,19 +26,19 @@ namespace nnet {
 
   class SGDOptimization : public OptimizationMethod {
   public:
-    SGDOptimization(const real learningRate) : learning_r(learningRate) {}
+    SGDOptimization(const float learningRate) : learning_r(learningRate) {}
 
     void compute(BackpropStorage &storage) override {
       storage.getWeights() -= (storage.getGradient() * learning_r);
     }
 
   private:
-    const real learning_r;
+    const float learning_r;
   };
 
   class DecayOptimization : public OptimizationMethod {
   public:
-    DecayOptimization(const real lr_0, const real dr)
+    DecayOptimization(const float lr_0, const float dr)
         : initial_lr(lr_0), decay_r(dr), curr_lr(lr_0), epoch(0) {}
 
     void compute(BackpropStorage &storage) override {
@@ -51,9 +51,9 @@ namespace nnet {
     }
 
   private:
-    const real initial_lr;
-    const real decay_r;
-    real curr_lr;
+    const float initial_lr;
+    const float decay_r;
+    float curr_lr;
 
     size_t epoch = 0;
   };
@@ -61,8 +61,8 @@ namespace nnet {
 
   class MomentumOptimization : public OptimizationMethod {
   public:
-    MomentumOptimization(MLPerceptron &perceptron, const real learning_rate,
-                         const real momentum)
+    MomentumOptimization(MLPerceptron &perceptron, const float learning_rate,
+                         const float momentum)
         : lr(learning_rate), momentum(momentum) {
       setPerceptron(perceptron);
     }
@@ -188,7 +188,7 @@ namespace nnet {
           // Increase the delta to converge faster
           if (change > 0.0) {
             float delta = std::min(weights_update(i, j) * eta_plus, update_max);
-            weight_change = float * sign(gradient(i, j));
+            weight_change = delta * sign(gradient(i, j));
             weights_update(i, j) = delta;
             old_gradient(i, j) = gradient(i, j);
           }
@@ -196,7 +196,7 @@ namespace nnet {
           // Rollback and reduce the delta to converge slower
           else if (change < 0) {
             float delta = std::max(weights_update(i, j) * eta_minus, update_min);
-            weights_update(i, j) = float;
+            weights_update(i, j) = delta;
             weight_change = -last_weights_change(i, j);
             old_gradient(i, j) = 0.0;
           }
@@ -221,22 +221,4 @@ namespace nnet {
     const float update_max;
     const float update_min;
   };
-
-  std::unique_ptr<OptimizationMethod> makeOptimizationFromAlgo(OptimizationAlgorithm algo,
-                                                                     Args &&...args) {
-    switch (algo) {
-      case OptimizationAlgorithm::standard:
-        return std::make_unique<SGDOptimization>(std::forward<Args>(args)...);
-      case OptimizationAlgorithm::momentum:
-        return std::make_unique<MomentumOptimization>(std::forward<Args>(args)...);
-      case OptimizationAlgorithm::decay:
-        return std::make_unique<DecayOptimization>(std::forward<Args>(args)...);
-      case OptimizationAlgorithm::rpropPlus:
-        return std::make_unique<RPropPOptimization>(std::forward<Args>(args)...);
-      default:
-        throw std::runtime_error("Unknown optimization algorithm");
-    }
-    return nullptr;
-  }
-
 }   // namespace nnet
