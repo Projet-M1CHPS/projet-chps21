@@ -83,7 +83,7 @@ namespace nnet {
   }
 
 
-  MLPerceptron<float> PlainTextMLPSerializer::readFromFile(const std::filesystem::path &path) {
+  MLPerceptron PlainTextMLPSerializer::readFromFile(const std::filesystem::path &path) {
     std::ifstream file(path);
     if (!file.is_open()) {
       throw std::runtime_error("MLPerceptronSerializer: Could not open file " + path.string() +
@@ -92,8 +92,8 @@ namespace nnet {
     return readFromStream(file);
   }
 
-  MLPerceptron<float> PlainTextMLPSerializer::readFromStream(std::istream &stream) {
-    MLPerceptron<float> res;
+  MLPerceptron PlainTextMLPSerializer::readFromStream(std::istream &stream) {
+    MLPerceptron res;
     std::string line;
     auto topology = readTopology(stream);
     res.setTopology(topology);
@@ -136,7 +136,7 @@ namespace nnet {
 
 
   bool PlainTextMLPSerializer::writeToFile(const std::filesystem::path &path,
-                                           const MLPerceptron<float> &perceptron) {
+                                           const MLPerceptron &perceptron) {
     std::ofstream file(path);
     if (!file.is_open()) {
       tscl::logger("MLPerceptronSerializer: Could not open file " + path.string() + "for writing",
@@ -147,7 +147,7 @@ namespace nnet {
   }
 
   bool PlainTextMLPSerializer::writeToStream(std::ostream &stream,
-                                             const MLPerceptron<float> &perceptron) {
+                                             const MLPerceptron &perceptron) {
     // We want the maximum precision for outputing in plain text
     // This wouldn't be necessary if we were using binary files
     std::streamsize old_precision = stream.precision();
