@@ -117,7 +117,7 @@ namespace nnet {
         storage.setIndex(i);
 
         math::FloatMatrix derivative(layers[i + 1]);
-        auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
+        auto dafunc = af::getAFFromType(activation_functions[i]).second;
         std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
 
         derivative.hadamardProd(storage.getError());
@@ -180,7 +180,7 @@ namespace nnet {
         computeGradient();
       }
 
-      for (auto &it : avg_gradients) { it *= ((real) 1.0 / n); }
+      for (auto &it : avg_gradients) { it *= ((float) 1.0 / n); }
 
       for (long i = this->neural_network->getWeights().size() - 1; i >= 0; i--) {
         storage.setIndex(i);
@@ -256,17 +256,17 @@ namespace nnet {
 
       for (long i = weights.size() - 1; i >= 0; i--) {
         storage.setIndex(i);
-        math::FloatMatrix derivative(layers[storage.index + 1]);
-        auto dafunc = af::getAFFromType(activation_functions[storage.index]).second;
+        math::FloatMatrix derivative(layers[storage.getIndex() + 1]);
+        auto dafunc = af::getAFFromType(activation_functions[storage.getIndex()]).second;
         std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
 
-        derivative.hadamardProd(storage.current_error);
+        derivative.hadamardProd(storage.getError());
 
         storage.getError() =
-                math::FloatMatrix::mul(true, weights[storage.index], false, derivative);
+                math::FloatMatrix::mul(true, weights[storage.getIndex()], false, derivative);
 
         storage.getGradient() =
-                math::FloatMatrix::mul(false, derivative, true, layers_af[storage.index], 1.0);
+                math::FloatMatrix::mul(false, derivative, true, layers_af[storage.getIndex()], 1.0);
 
         this->opti_meth->compute(storage);
       }
@@ -282,9 +282,9 @@ namespace nnet {
     std::vector<math::FloatMatrix> avg_gradients;
   };
 
-  class MLPMiniBatchOptimizer : public MLPBatchOptimizer<float> {
+  class MLPMiniBatchOptimizer : public MLPBatchOptimizer {
   public:
-    explicit MLPMiniBatchOptimizer(MLPModel> &model,
+    explicit MLPMiniBatchOptimizer(MLPModel &model,
                                    std::shared_ptr<OptimizationMethod> tm,
                                    size_t batch_size = 8)
         : MLPBatchOptimizer(model, std::move(tm)), batch_size(batch_size) {}
