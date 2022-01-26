@@ -4,6 +4,7 @@
 #include "neuralNetwork/Perceptron/MLPerceptron.hpp"
 
 namespace nnet {
+
   class MLPModel : public Model {
   public:
     MLPModel();

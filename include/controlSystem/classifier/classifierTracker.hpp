@@ -11,6 +11,9 @@
 
 namespace control::classifier {
 
+  /** @brief Shared state that is used for dumping metrics to file
+   *
+   */
   class CTrackerState {
   public:
     CTrackerState(std::filesystem::path const &output_path, const CClassLabelSet &class_labels) {
@@ -67,6 +70,9 @@ namespace control::classifier {
 
   class CTracker;
 
+  /** @brief Containers for classifier metrics and serialization
+   *
+   */
   class CStats {
     friend CTracker;
     friend std::ostream &operator<<(std::ostream &os, CStats const &stat);
@@ -91,6 +97,10 @@ namespace control::classifier {
 
   std::ostream &operator<<(std::ostream &os, CStats const &stat);
 
+
+  /** @brief Helper class to compute classifier metrics, including the f1_score
+   *
+   */
   class CTracker {
   public:
     CTracker(std::filesystem::path const &output_path, const CClassLabelSet &class_labels)

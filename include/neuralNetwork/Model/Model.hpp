@@ -6,7 +6,6 @@
 #include <iostream>
 
 namespace nnet {
-
   class Model {
   public:
     Model() = default;

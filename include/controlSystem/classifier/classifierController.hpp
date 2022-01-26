@@ -6,7 +6,7 @@
 
 namespace control::classifier {
 
-  /** Classifier Training Controller, used for training a classifier model
+  /** @brief Classifier training RunController, used for training a classifier Model
    *
    */
   class CTController : public RunController {

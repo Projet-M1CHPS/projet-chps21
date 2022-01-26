@@ -14,7 +14,7 @@ namespace nnet {
    *
    */
   enum class OptimizationAlgorithm { standard, decay, momentum, rpropPlus };
-
+  
   class OptimizationMethod {
   public:
     OptimizationMethod() = default;

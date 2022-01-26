@@ -12,7 +12,7 @@
 
 namespace nnet {
 
-  /** Utility class for serializing and deserializing MLPerceptrons
+  /** @brief Utility class for serializing and deserializing MLPerceptrons
    *
    */
   class MLPSerializer {

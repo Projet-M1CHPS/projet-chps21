@@ -8,7 +8,6 @@
 #include <utility>
 
 namespace nnet {
-
   class MLPModelOptimizer : public ModelOptimizer {
   public:
     MLPModelOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
@@ -31,7 +30,6 @@ namespace nnet {
     MLPerceptron *neural_network;
     std::shared_ptr<OptimizationMethod> opti_meth;
   };
-
 
   class MLPModelStochOptimizer final : public MLPModelOptimizer {
   public:

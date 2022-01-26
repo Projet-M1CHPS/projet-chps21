@@ -5,9 +5,9 @@
 
 namespace control::classifier {
 
-  /** A collection used for training classifier model
+  /** @brief A collection used for training a classifier Model
    *
-   * Stores two set of inputs, one for training and one for evaluation
+   * Pairs a set of inputs, one for training and one for evaluation
    * Every input (in both sets) is uniquely identified by its id, which can be used for metadata
    * retrieving
    *
@@ -18,17 +18,16 @@ namespace control::classifier {
   public:
     /** Create a collection with a given label list
      *
-     * This is used for
      *
      * @param classes
      */
     explicit CTCollection(std::shared_ptr<CClassLabelSet> classes);
 
     /** Collection can be really huge, so we delete the copy operators for safety
-     * FIXME: add a copy method
      *
      * @param other
      */
+    // FIXME Add a copy method
     CTCollection(CTCollection const &other) = delete;
 
     CTCollection(CTCollection &&other) = default;
@@ -111,7 +110,7 @@ namespace control::classifier {
   };
 
 
-  /** Interface for a classifier training collection loader
+  /** @brief Interface for a classifier training collection loader
    *
    */
   class CTCLoader {
@@ -133,7 +132,7 @@ namespace control::classifier {
     std::shared_ptr<CClassLabelSet> classes;
   };
 
-  /** Classifier collection loader for image inputs
+  /** @brief Classifier collection loader for image inputs
    *
    */
   class CITCLoader : public CTCLoader {

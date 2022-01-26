@@ -3,6 +3,9 @@
 
 namespace nnet {
 
+  /** @brief MLPModelSerializer specialization for storing MLPModel as a plain text file
+   *
+   */
   class PlainTextMLPModelSerializer final : public MLPModelSerializer {
   public:
     /**

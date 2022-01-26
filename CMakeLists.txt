@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(CheckCXXCompilerFlag)
 
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
 # Compiler specific flags
 if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fast -O3 -qmkl -lm")
@@ -52,5 +54,6 @@ add_subdirectory(src)
 enable_testing()
 add_subdirectory(test)
 add_subdirectory(apps)
+add_subdirectory(docs)
 
 

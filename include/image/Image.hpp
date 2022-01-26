@@ -11,6 +11,11 @@ namespace image {
   constexpr unsigned max_brightness = 255;
   constexpr unsigned nb_colors = 256;
 
+  /** @brief Stores an image in grayscale format
+   *
+   * Provides access to the underlying array for transformations
+   *
+   */
   class GrayscaleImage {
   public:
     /**
@@ -152,8 +157,8 @@ namespace image {
     size_t width, height;
   };
 
-  /**
-   * @brief Helper class for image generation and serialization
+  /** @brief Helper class for image generation and serialization
+   *
    */
   class ImageSerializer {
   public:

@@ -5,7 +5,7 @@
 
 namespace control {
 
-  /** Utility class used for returning a controller's output
+  /** @brief Utility class used for returning a RunController output
    *
    *  Since no exception should reach the python layer, this class is used
    *  for returning messages and storing any caught errors
@@ -47,7 +47,7 @@ namespace control {
     std::string message;
   };
 
-  /** Interface for controllers
+  /** @brief Interface for controllers
    *
    */
   class RunController {

@@ -56,7 +56,7 @@ namespace nnet {
   };
 
   /**
-   * @brief Interface for a neural network
+   * @brief Base interface for MLPerceptron
    *
    */
   class MLPBase {

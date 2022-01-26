@@ -4,9 +4,7 @@
 
 namespace control::classifier {
 
-  /** A special input set for classifiers
-   * Stores an input path along with the class label, and the input matrices.
-   *
+  /** @brief Input set specialization for classifiers
    *
    */
   class ClassifierTrainingSet : public InputSet {

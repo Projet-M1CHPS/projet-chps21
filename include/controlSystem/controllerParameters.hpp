@@ -7,7 +7,7 @@
 
 namespace control {
 
-  /** Utility class to store the parameters of the controller.
+  /** @brief Utility class to store the parameters of a controller.
    *
    */
   class ControllerParameters {
@@ -49,7 +49,7 @@ namespace control {
     bool verbose;
   };
 
-  /** Extension of ControllerParameters that stores additional data for a training run
+  /** @brief Extension of ControllerParameters that stores additional data for a training run
    *
    */
   class TrainingControllerParameters : public ControllerParameters {
