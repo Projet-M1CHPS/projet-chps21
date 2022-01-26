@@ -4,9 +4,8 @@
 # https://devblogs.microsoft.com/cppblog/clear-functional-c-documentation-with-sphinx-breathe-doxygen-cmake/
 find_package(Doxygen)
 
+# Dont force the use of Doxygen, it may not be installed
 if (Doxygen_FOUND)
-
-
   set(DOXYGEN_INPUT_DIR "${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/include")
   set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen)
   set(DOXYGEN_INDEX_FILE ${CMAKE_CURRENT_SOURCE_DIR}/html/index.html)
