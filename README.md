@@ -10,9 +10,9 @@ through a Python api.
 
 # Requirements
 
+Manual install :
+
 * cmake >= 3.17
-* GoogleTest (No need to install it, it is imported by the project)
-* TSCL (No need to install it, it is imported by the project)
 * gcovr
 * doxygen (Optionnal)
 
@@ -22,7 +22,12 @@ For versions < 1.0.0
 
 For versions >= 1.0.0
 
-* OpenCL (
+* OpenCL
+
+Imported by the project :
+
+* GoogleTest (No need to install it, it is imported by the project)
+* TSCL (No need to install it, it is imported by the project)
 
 # Building the project
 
