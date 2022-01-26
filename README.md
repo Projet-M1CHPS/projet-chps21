@@ -2,8 +2,8 @@
 
 This project is part of the first year M1CHPS (High Performance Computing Degree) curriculum.
 
-The end goal is to implement in C++ a tool capable of cancer detection using various machine learning algorithms. Those
-algorithms will be implemented natively in C++, and no ML external libraries will be used.
+The end goal is to implement in C++ a tool capable of cancer detection using various machine learning (ML) algorithms.
+Those algorithms will be implemented natively in C++, and no ML external libraries will be used.
 
 In the end, the user will have the choice between various training methods, and will be able to interact with the tool
 through a Python api.
