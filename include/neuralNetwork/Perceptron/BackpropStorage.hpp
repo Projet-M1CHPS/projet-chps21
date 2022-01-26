@@ -6,15 +6,10 @@
 
 namespace nnet {
 
-  /** @brief Placeholder helper class for gradient descent storage
-   *
-   * @tparam T
-   */
-  template<typename T = float>
   class BackpropStorage {
   public:
     explicit BackpropStorage() = default;
-    explicit BackpropStorage(std::vector<math::Matrix<T>> &w) : weights(&w){};
+    explicit BackpropStorage(std::vector<math::FloatMatrix> &w) : weights(&w){};
 
     BackpropStorage(BackpropStorage const &other) = delete;
     BackpropStorage(BackpropStorage &&other) noexcept = default;
@@ -24,27 +19,27 @@ namespace nnet {
 
     ~BackpropStorage() = default;
 
-    math::Matrix<T> &getWeights(size_t i) { return weights->at(i); }
-    math::Matrix<T> const &getWeights(size_t i) const { return weights->at(i); }
+    math::FloatMatrix &getWeights(size_t i) { return weights->at(i); }
+    math::FloatMatrix const &getWeights(size_t i) const { return weights->at(i); }
 
-    math::Matrix<T> &getWeights() { return weights->at(index); }
-    math::Matrix<T> const &getWeights() const { return weights->at(index); }
+    math::FloatMatrix &getWeights() { return weights->at(index); }
+    math::FloatMatrix const &getWeights() const { return weights->at(index); }
 
     const long getIndex() const { return index; }
     void setIndex(const long i) { index = i; }
 
-    math::Matrix<T> &getGradient() { return gradient; }
-    const math::Matrix<T> &getGradient() const { return gradient; }
+    math::FloatMatrix &getGradient() { return gradient; }
+    const math::FloatMatrix &getGradient() const { return gradient; }
 
-    math::Matrix<T> &getError() { return current_error; }
-    const math::Matrix<T> &getError() const { return current_error; }
+    math::FloatMatrix &getError() { return current_error; }
+    const math::FloatMatrix &getError() const { return current_error; }
 
   private:
     long index = 0;
 
-    std::vector<math::Matrix<T>> *weights;
-    math::Matrix<T> gradient;
-    math::Matrix<T> current_error;
+    std::vector<math::FloatMatrix> *weights;
+    math::FloatMatrix gradient;
+    math::FloatMatrix  current_error;
   };
 
 }   // namespace nnet

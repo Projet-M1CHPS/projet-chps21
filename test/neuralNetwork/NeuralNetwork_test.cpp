@@ -10,7 +10,7 @@
 using namespace nnet;
 
 TEST(NeuralNetworkTest, CanCreateNeuralNetwork) {
-  MLPerceptron<float> nn;
+  MLPerceptron nn;
   auto &topology = nn.getTopology();
 
   ASSERT_EQ(0, topology.getOutputSize());
@@ -19,7 +19,7 @@ TEST(NeuralNetworkTest, CanCreateNeuralNetwork) {
 
 
 TEST(NeuralNetworkTest, CanSetLayerSize) {
-  MLPerceptron<float> nn;
+  MLPerceptron nn;
   MLPTopology layer_size = {2, 1};
   nn.setTopology(layer_size);
   auto topo = nn.getTopology();
@@ -29,21 +29,21 @@ TEST(NeuralNetworkTest, CanSetLayerSize) {
 }
 
 TEST(NeuralNetworkTest, ThrowOnInvalidLayerSize) {
-  MLPerceptron<float> nn;
+  MLPerceptron nn;
   MLPTopology layer_size = {1};
 
   ASSERT_ANY_THROW(nn.setTopology(layer_size));
 }
 
 TEST(NeuralNetworkTest, CanCopyNeuralNetwork) {
-  MLPerceptron<float> nn;
+  MLPerceptron nn;
   MLPTopology layer_size = {1, 2};
   nn.setTopology(layer_size);
 
   nn.randomizeWeight();
 
   // copy the network with constructor
-  nnet::MLPerceptron<float> nn2(nn);
+  nnet::MLPerceptron nn2(nn);
   auto topo = nn2.getTopology();
 
   ASSERT_EQ(2, topo.getOutputSize());
@@ -79,7 +79,7 @@ TEST(NeuralNetworkTest, CanCopyNeuralNetwork) {
   }
 
   // copy the network with operator
-  nnet::MLPerceptron<float> nn3 = nn;
+  nnet::MLPerceptron nn3 = nn;
   topo = nn3.getTopology();
 
   ASSERT_EQ(2, topo.getOutputSize());
@@ -115,39 +115,39 @@ TEST(NeuralNetworkTest, CanCopyNeuralNetwork) {
 }
 
 TEST(NeuralNetworkTest, ThrowOnInvalidInput) {
-  nnet::MLPerceptron<float> nn;
+  nnet::MLPerceptron nn;
   nn.setTopology({2, 2, 1});
-  math::Matrix<float> input = {1, 2, 3, 4};
+  math::FloatMatrix  input = {1, 2, 3, 4};
 
   ASSERT_THROW(nn.predict(input), std::invalid_argument);
 }
 
 TEST(NeuralNetworkTest, ThrowOnInvalidTarget) {
-  MLPModel<float> model;
+  MLPModel model;
   auto &nn1 = model.getPerceptron();
   nn1.setTopology({2, 2, 1});
 
-  auto stdTrain1 = std::make_shared<SGDOptimization<float>>(0.1);
-  nnet::MLPModelStochOptimizer<float> opti1(model, stdTrain1);
+  auto stdTrain1 = std::make_shared<SGDOptimization>(0.1);
+  nnet::MLPModelStochOptimizer opti1(model, stdTrain1);
 
-  math::Matrix<float> input1 = {1, 2, 3, 4};
-  math::Matrix<float> target1 = {1};
+  math::FloatMatrix  input1 = {1, 2, 3, 4};
+  math::FloatMatrix  target1 = {1};
 
   ASSERT_ANY_THROW(opti1.train(input1, target1));
 
 
   nn1.setTopology({2, 2, 1});
-  math::Matrix<float> input2 = {1, 2};
-  math::Matrix<float> target2 = {1, 2, 3};
+  math::FloatMatrix  input2 = {1, 2};
+  math::FloatMatrix  target2 = {1, 2, 3};
 
-  nnet::MLPModelStochOptimizer<float> opti2(model, stdTrain1);
+  nnet::MLPModelStochOptimizer opti2(model, stdTrain1);
 
   ASSERT_ANY_THROW(opti2.train(input2, target2));
 }
 
 
 TEST(NeuralNetworkTest, SimpleNeuralTest) {
-  nnet::MLPerceptron<float> nn;
+  nnet::MLPerceptron nn;
   nn.setTopology({2, 2, 1});
   nn.setActivationFunction(af::ActivationFunctionType::square);
 
@@ -162,14 +162,14 @@ TEST(NeuralNetworkTest, SimpleNeuralTest) {
     for (auto &e : i) { e = 1.f; }
   }
 
-  math::Matrix<float> input{1, 1};
+  math::FloatMatrix  input{1, 1};
   auto output = nn.predict(input);
 
   ASSERT_NEAR(361.f, output(0, 0), 0.005);
 }
 
 TEST(NeuralNetworkTest, ComplexNeuralTest) {
-  nnet::MLPerceptron<double> nn;
+  nnet::MLPerceptron nn;
   nn.setTopology({2, 4, 2, 3, 2});
   nn.setActivationFunction(af::ActivationFunctionType::relu);
 
@@ -184,7 +184,7 @@ TEST(NeuralNetworkTest, ComplexNeuralTest) {
     for (auto &e : i) { e = 1.f; }
   }
 
-  math::Matrix<double> input{1, 1};
+  math::FloatMatrix input{1, 1};
   auto output = nn.predict(input);
 
   ASSERT_NEAR(82.f, output(0, 0), 0.005);
@@ -195,18 +195,18 @@ TEST(NeuralNetworkTest, ComplexNeuralTest) {
 }
 
 TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
-  MLPModel<float> model;
+  MLPModel model;
   auto &nn = model.getPerceptron();
   nn.setTopology({2, 2, 2});
   nn.setActivationFunction(af::ActivationFunctionType::sigmoid);
 
-  auto stdTrain = std::make_shared<SGDOptimization<float>>(0.5);
-  nnet::MLPModelStochOptimizer<float> opti(model, stdTrain);
+  auto stdTrain = std::make_shared<SGDOptimization>(0.5);
+  nnet::MLPModelStochOptimizer opti(model, stdTrain);
 
-  math::Matrix<float> &w1 = nn.getWeights()[0];
-  math::Matrix<float> &b1 = nn.getBiases()[0];
-  math::Matrix<float> &w2 = nn.getWeights()[1];
-  math::Matrix<float> &b2 = nn.getBiases()[1];
+  math::FloatMatrix  &w1 = nn.getWeights()[0];
+  math::FloatMatrix  &b1 = nn.getBiases()[0];
+  math::FloatMatrix  &w2 = nn.getWeights()[1];
+  math::FloatMatrix  &b2 = nn.getBiases()[1];
 
   w1(0, 0) = 0.15;   // w1
   w1(0, 1) = 0.20;   // w3
@@ -222,8 +222,8 @@ TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
   b2(0, 0) = 0.60;   // b1
   b2(1, 0) = 0.60;   // b2
 
-  math::Matrix<float> input{0.05, 0.10};
-  math::Matrix<float> output{0.01, 0.99};
+  math::FloatMatrix  input{0.05, 0.10};
+  math::FloatMatrix  output{0.01, 0.99};
 
   auto prediction = nn.predict(input);
   ASSERT_NEAR(0.751365f, prediction(0, 0), 0.005);
@@ -233,10 +233,10 @@ TEST(NeuralNetworkTest, OtherComplexNeuralTest) {
 
   opti.train(input, output);
 
-  math::Matrix<float> &w1_ = nn.getWeights()[0];
-  math::Matrix<float> &b1_ = nn.getBiases()[0];
-  math::Matrix<float> &w2_ = nn.getWeights()[1];
-  math::Matrix<float> &b2_ = nn.getBiases()[1];
+  math::FloatMatrix  &w1_ = nn.getWeights()[0];
+  math::FloatMatrix  &b1_ = nn.getBiases()[0];
+  math::FloatMatrix  &w2_ = nn.getWeights()[1];
+  math::FloatMatrix  &b2_ = nn.getBiases()[1];
 
   //
   ASSERT_NEAR(0.149781f, w1_(0, 0), 0.005);

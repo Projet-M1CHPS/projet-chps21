@@ -52,7 +52,7 @@ namespace control {
    */
   class RunController {
   public:
-    explicit RunController(nnet::Model<float> &model) : model(&model) {}
+    explicit RunController(nnet::Model &model) : model(&model) {}
 
     /** Controllers should not be copied
      * This may change in the future if a case where this is needed is found
@@ -94,10 +94,10 @@ namespace control {
      *
      * @return
      */
-    [[nodiscard]] nnet::Model<float> *getModel() { return model; }
-    [[nodiscard]] nnet::Model<float> const *getModel() const { return model; }
+    [[nodiscard]] nnet::Model *getModel() { return model; }
+    [[nodiscard]] nnet::Model const *getModel() const { return model; }
 
   protected:
-    nnet::Model<float> *model;
+    nnet::Model *model;
   };
 }   // namespace control

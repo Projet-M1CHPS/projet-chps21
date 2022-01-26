@@ -18,9 +18,9 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
 
   auto &w1 = nn1.getWeights();
 
-  auto tmStandard = std::make_shared<nnet::SGDOptimization<float>>(0.2f);
+  auto tmStandard = std::make_shared<nnet::SGDOptimization>(0.2f);
 
-  nnet::MLPModelStochOptimizer<float> opt1(model, tmStandard);
+  nnet::MLPModelStochOptimizer opt1(model, tmStandard);
 
   std::vector<math::FloatMatrix> input(4);
   std::vector<math::FloatMatrix> target(4);

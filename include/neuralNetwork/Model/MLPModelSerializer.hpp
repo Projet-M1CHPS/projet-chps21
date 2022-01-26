@@ -13,12 +13,12 @@ namespace nnet {
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure
      */
-    virtual MLPModel<float> readFromFile(const std::filesystem::path &path) = 0;
+    virtual MLPModel readFromFile(const std::filesystem::path &path) = 0;
 
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure
      */
-    virtual MLPModel<float> readFromStream(std::istream &stream) = 0;
+    virtual MLPModel readFromStream(std::istream &stream) = 0;
 
     /**
      *
@@ -26,7 +26,7 @@ namespace nnet {
      * @param model The model to write
      * @return true on success, false on failure
      */
-    virtual bool writeToFile(const std::filesystem::path &path, const MLPModel<float> &model) = 0;
+    virtual bool writeToFile(const std::filesystem::path &path, const MLPModel &model) = 0;
 
     /**
      *
@@ -34,6 +34,6 @@ namespace nnet {
      * @param model The model to write
      * @return true on success, false on failure
      */
-    virtual bool writeToStream(std::ostream &stream, const MLPModel<float> &model) = 0;
+    virtual bool writeToStream(std::ostream &stream, const MLPModel &model) = 0;
   };
 }   // namespace nnet

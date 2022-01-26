@@ -6,12 +6,6 @@
 #include <iostream>
 
 namespace nnet {
-
-  /** @brief Base interface for neural network Models
-   *
-   * @tparam real
-   */
-  template<typename real = float, typename = std::enable_if<std::is_floating_point_v<real>>>
   class Model {
   public:
     Model() = default;
@@ -23,7 +17,7 @@ namespace nnet {
     Model(Model &&other) noexcept = default;
     Model &operator=(Model &&other) noexcept = default;
 
-    virtual math::Matrix<real> predict(math::Matrix<real> const &input) = 0;
+    virtual math::FloatMatrix predict(math::FloatMatrix const &input) = 0;
   };
 
 }   // namespace nnet
