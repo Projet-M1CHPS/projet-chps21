@@ -4,14 +4,14 @@
 
 namespace nnet {
 
-  MLPModel<float> PlainTextMLPModelSerializer::readFromFile(const std::filesystem::path &path) {
+  MLPModel PlainTextMLPModelSerializer::readFromFile(const std::filesystem::path &path) {
     std::ifstream file(path);
     if (!file.is_open()) { throw std::runtime_error("Could not open file: " + path.string()); }
     return readFromStream(file);
   }
 
-  MLPModel<float> PlainTextMLPModelSerializer::readFromStream(std::istream &stream) {
-    MLPModel<float> res;
+  MLPModel PlainTextMLPModelSerializer::readFromStream(std::istream &stream) {
+    MLPModel res;
     std::string line;
     std::getline(stream, line);
 
@@ -53,7 +53,7 @@ namespace nnet {
   }
 
   bool PlainTextMLPModelSerializer::writeToFile(const std::filesystem::path &path,
-                                                const MLPModel<float> &model) {
+                                                const MLPModel &model) {
     std::ofstream file(path);
     if (!file.is_open()) {
       tscl::logger("MLPModelSerializer: Could not open file " + path.string() + "for writing",
@@ -64,7 +64,7 @@ namespace nnet {
   }
 
   bool PlainTextMLPModelSerializer::writeToStream(std::ostream &stream,
-                                                  const MLPModel<float> &model) {
+                                                  const MLPModel &model) {
     // Write header
     stream << "#MLPModel" << std::endl;
     stream << "#Version " << tscl::Version::current.to_string() << std::endl;

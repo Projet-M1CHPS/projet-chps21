@@ -45,9 +45,9 @@ bool createAndTrain(std::filesystem::path const &input_path,
   nnet::MLPTopology topology = {32 * 32, 64, 64, 32, 32};
   topology.push_back(training_collection->getClassCount());
 
-  auto model = nnet::MLPModelFactory<float>::randomSigReluAlt(topology);
+  auto model = nnet::MLPModelFactory::randomSigReluAlt(topology);
 
-  auto tm = std::make_shared<nnet::DecayMomentumOptimization<float>>(model->getPerceptron(), 0.2,
+  auto tm = std::make_shared<nnet::DecayMomentumOptimization>(model->getPerceptron(), 0.2,
                                                                      0.1, 0.9);
 
   auto optimizer = std::make_unique<nnet::MLPMiniBatchOptimizer>(*model, tm, 16);
