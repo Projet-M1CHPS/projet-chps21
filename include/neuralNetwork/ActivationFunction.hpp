@@ -35,45 +35,45 @@ namespace af {
    *
    * Furthermore, every activation function should be linked to its derivative counterpart
    */
-  float identity(float x) {
+  inline float identity(float x) {
     return x;
   }
 
-  float didentity(float x) {
+  inline float didentity(float x) {
     return 1;
   }
 
-  float sigmoid(float x) {
+  inline float sigmoid(float x) {
     return 1.0 / (1.0 + std::exp(-x));
   }
 
-  float dsigmoid(float x) {
+  inline float dsigmoid(float x) {
     return sigmoid(x) * (1 - sigmoid(x));
   }
 
-  float relu(float x) {
+  inline float relu(float x) {
     return (x <= 0) ? 0.0 : x;
   }
 
-  float drelu(float x) {
+  inline float drelu(float x) {
     if (x == 0.0) { throw std::invalid_argument("Relu undefined on x = 0.0"); }
 
     return (x < 0) ? 0.0 : 1;
   }
 
-  float leakyRelu(float x) {
+  inline float leakyRelu(float x) {
     return (x < 0) ? (0.01 * x) : x;
   }
 
-  float dleakyRelu(float x) {
+  inline float dleakyRelu(float x) {
     return (x < 0) ? 0.01 : 1;
   }
 
-  float square(float x) {
+  inline float square(float x) {
     return x * x;
   }
 
-  float dsquare(float x) {
+  inline float dsquare(float x) {
     return 2 * x;
   }
 
@@ -85,7 +85,7 @@ namespace af {
    * @param type
    * @return std::function<float(float)>
    */
-  std::pair<std::function<float(float)>, std::function<float(float)>>
+  inline std::pair<std::function<float(float)>, std::function<float(float)>>
   getAFFromType(ActivationFunctionType type) {
     const std::unordered_map<ActivationFunctionType,
                              std::pair<std::function<float(float)>, std::function<float(float)>>>

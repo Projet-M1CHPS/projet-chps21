@@ -33,7 +33,7 @@ namespace control::classifier {
      * @param label Class label of the matrix
      * @param mat Input matrix
      */
-    void append(size_t input_id, ClassLabel const *label, math::Matrix<float> &&mat);
+    void append(size_t input_id, ClassLabel const *label, math::FloatMatrix &&mat);
 
     /** Appends a new input matrix to the set
      *
@@ -41,7 +41,7 @@ namespace control::classifier {
      * @param label Class label of the matrix
      * @param mat Input matrix
      */
-    void append(size_t input_id, ClassLabel const *label, const math::Matrix<float> &mat);
+    void append(size_t input_id, ClassLabel const *label, const math::FloatMatrix &mat);
 
     /** Shuffles the set with the given seed
      *
