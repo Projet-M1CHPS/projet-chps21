@@ -48,8 +48,6 @@
 
 # Common CMake build directories
 
-build
-debug
-Debug
-release
-Release
+[Bb]uild
+[Dd]ebug
+[Rr]elease
