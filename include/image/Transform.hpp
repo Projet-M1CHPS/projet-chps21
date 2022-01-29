@@ -4,6 +4,9 @@
 
 namespace image::transform {
 
+  /** Enumeration of all supported transformations, used for serialization
+   *
+   */
   enum class TransformType {
     crop,
     resize,
@@ -14,14 +17,18 @@ namespace image::transform {
     binaryScaleByMedian,
   };
 
-  // Transformation base class
-  // Note that all transformations are assumed to be reentrant
+  /** @brief Interface for GrayscaleImage transformations
+   *
+   */
   class Transformation {
   public:
     virtual ~Transformation() = default;
     virtual bool transform(image::GrayscaleImage &image) = 0;
   };
 
+  /** @brief Resizing transformation for GrayscaleImage
+   *
+   */
   class Resize : public Transformation {
   private:
     size_t width, height;
@@ -29,23 +36,28 @@ namespace image::transform {
   public:
     /**
      * Resize the given image to the desired dimensions.
-     * 
-     * Attention text This transformations implies losses. We can not assure that a double-resize image will be the same.
+     *
+     * This transformations implies losses. We can not assure that a double-resize
+     * image will be the same.
      */
     Resize(size_t width, size_t height);
     bool transform(image::GrayscaleImage &image) override;
   };
 
+  /** @brief Produces a view of a GrayscaleImage
+   *
+   */
   class Crop : public Transformation {
   private:
     size_t width, height, orig_x, orig_y;
 
   public:
     /**
-     * Transforms the given image into a view of itself from the given origin and with the desired dimensions.
-     * 
+     * Transforms the given image into a view of itself from the given origin and with the desired
+     * dimensions.
+     *
      * Every original image data out the view will be lost.
-     * 
+     *
      * @param orig_x column origin index (0 is left border)
      * @param orig_y row origin index (0 is top border)
      */
@@ -54,6 +66,9 @@ namespace image::transform {
   };
 
 
+  /** @brief Restriction transformation for GrayscaleImage
+   *
+   */
   class Restriction : public Transformation {
   private:
     size_t desired_step;
@@ -120,6 +135,9 @@ namespace image::transform {
     bool transform(image::GrayscaleImage &image) override;
   };
 
+  /** @brief Pipeline for applying transformations on GrayscaleImage
+   *
+   */
   class TransformEngine {
   public:
     // We want to be able to store the applied transformations in a file

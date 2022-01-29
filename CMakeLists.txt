@@ -1,18 +1,19 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(projet-chps21 VERSION 0.5.0.1 DESCRIPTION "Cancer detection using deep learning" LANGUAGES CXX C)
+project(projet-chps21 VERSION 0.5.0.2 DESCRIPTION "Cancer detection using deep learning" LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include(CheckCXXCompilerFlag)
 
-# Compiler specific flags
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
+# Setup compiler specific flags
+include(CheckCXXCompilerFlag)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fast -O3 -qmkl -lm")
   # Intel compilers are not supported for coverage tests
   set(CODE_COVERAGE OFF)
-  message(STATUS ${CMAKE_CXX_FLAGS_RELEASE})
 else ()
   CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
 
@@ -21,14 +22,8 @@ else ()
   endif ()
 endif ()
 
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-  # Code coverage flags
-  # Added as an external plugin
-  include(extern/CodeCoverage.cmake)
-  append_coverage_compiler_Flags()
-  set(COVERAGE_EXCLUDES "/extern" "/test")
-endif ()
+include(check_coverage)
+maybe_enable_coverage()
 
 # Defines version specific Macro
 configure_file(include/ProjectConstant.hpp.in include/ProjectVersion.hpp)
@@ -47,10 +42,22 @@ endif ()
 find_package(BLAS REQUIRED)
 
 set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
+# Setup external dependency of the project
 add_subdirectory(extern)
+# Main project directory
 add_subdirectory(src)
+
+# ! Must be called in the root cmakelist !
+# otherwise, the test target will not be properly set up
 enable_testing()
 add_subdirectory(test)
+
+# Contains various end executable
 add_subdirectory(apps)
+
+# Documentation generator setup
+# Uses Doxygen
+# (Optionnal)
+add_subdirectory(docs)
 
 

@@ -8,7 +8,7 @@
 
 namespace control {
 
-  /** @brief Stores a set of matrices to be fed to a model
+  /** @brief Stores a set of Matrix<float> to be fed to a model
    *
    * This base class only stores matrices, and has no additional information about the input paths
    * and is agnostic to the model used.
@@ -40,7 +40,7 @@ namespace control {
      * @param index
      * @return
      */
-    math::Matrix<float> const &operator[](size_t index) const {
+    math::FloatMatrix const &operator[](size_t index) const {
       if (index >= inputs.size()) {
         throw std::out_of_range("InputSet::operator[] Index out of range");
       }
@@ -53,10 +53,10 @@ namespace control {
      *
      * @return
      */
-    [[nodiscard]] const std::vector<math::Matrix<float>> &getVector() const { return inputs; }
+    [[nodiscard]] const std::vector<math::FloatMatrix> &getVector() const { return inputs; }
 
-    using Iterator = typename std::vector<math::Matrix<float>>::iterator;
-    using ConstIterator = typename std::vector<math::Matrix<float>>::const_iterator;
+    using Iterator = typename std::vector<math::FloatMatrix>::iterator;
+    using ConstIterator = typename std::vector<math::FloatMatrix>::const_iterator;
 
     /** Returns an iterator to the first input matrix
      *
@@ -101,7 +101,7 @@ namespace control {
   protected:
     virtual void print(std::ostream &os) const;
 
-    std::vector<math::Matrix<float>> inputs;
+    std::vector<math::FloatMatrix> inputs;
   };
 
 }   // namespace control

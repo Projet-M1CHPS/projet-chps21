@@ -7,7 +7,7 @@
 
 namespace control {
 
-  /** A set of images to be used as inputs to the control system.
+  /** @brief A set of images to be used as inputs to the control system.
    *
    */
   class ImageInputSet : public InputSet {
@@ -36,6 +36,9 @@ namespace control {
     }
   };
 
+  /** @brief Helper class to load an ImageInputSet from a directory
+   *
+   */
   class ImageInputSetLoader {
   public:
     /** Load a set of images from a directory or a single file

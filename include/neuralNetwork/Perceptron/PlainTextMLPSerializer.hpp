@@ -7,14 +7,14 @@ namespace nnet {
    */
   class PlainTextMLPSerializer : public MLPSerializer {
   public:
-    MLPerceptron<float> readFromFile(const std::filesystem::path &path) override;
+    MLPerceptron readFromFile(const std::filesystem::path &path) override;
 
-    MLPerceptron<float> readFromStream(std::istream &stream) override;
+    MLPerceptron readFromStream(std::istream &stream) override;
 
     bool writeToFile(const std::filesystem::path &path,
-                     const MLPerceptron<float> &perceptron) override;
+                     const MLPerceptron &perceptron) override;
 
-    bool writeToStream(std::ostream &stream, const MLPerceptron<float> &perceptron) override;
+    bool writeToStream(std::ostream &stream, const MLPerceptron &perceptron) override;
 
   private:
     MLPTopology readTopology(std::istream &stream);

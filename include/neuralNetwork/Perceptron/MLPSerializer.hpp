@@ -12,7 +12,7 @@
 
 namespace nnet {
 
-  /** Utility class for serializing and deserializing MLPerceptrons
+  /** @brief Utility class for serializing and deserializing MLPerceptrons
    *
    */
   class MLPSerializer {
@@ -20,12 +20,12 @@ namespace nnet {
     /**
      * @returns a new MLPerceptronSerializer, or nullptr on failure
      */
-    virtual MLPerceptron<float> readFromFile(const std::filesystem::path &path) = 0;
+    virtual MLPerceptron readFromFile(const std::filesystem::path &path) = 0;
 
     /**
      * @returns a new MLPerceptronSerializer, or nullptr on failure
      */
-    virtual MLPerceptron<float> readFromStream(std::istream &stream) = 0;
+    virtual MLPerceptron readFromStream(std::istream &stream) = 0;
 
     /**
      *
@@ -34,7 +34,7 @@ namespace nnet {
      * @return true on success, false on failure
      */
     virtual bool writeToFile(const std::filesystem::path &path,
-                             const MLPerceptron<float> &perceptron) = 0;
+                             const MLPerceptron &perceptron) = 0;
 
     /**
      *
@@ -42,6 +42,6 @@ namespace nnet {
      * @param perceptron The perceptron to write
      * @return true on success, false on failure
      */
-    virtual bool writeToStream(std::ostream &stream, const MLPerceptron<float> &perceptron) = 0;
+    virtual bool writeToStream(std::ostream &stream, const MLPerceptron &perceptron) = 0;
   };
 }   // namespace nnet

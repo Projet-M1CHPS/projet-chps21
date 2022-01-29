@@ -8,320 +8,88 @@
 #include <utility>
 
 namespace nnet {
-
-  template<typename real = float>
-  class MLPModelOptimizer : public ModelOptimizer<real> {
+  class MLPModelOptimizer : public ModelOptimizer {
   public:
-    MLPModelOptimizer(MLPModel<real> &model, std::shared_ptr<OptimizationMethod<real>> tm)
-        : neural_network(&model.getPerceptron()), opti_meth(tm) {}
+    MLPModelOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
     ~MLPModelOptimizer() override = default;
 
-    MLPModelOptimizer(const MLPModelOptimizer<real> &other) = delete;
-    MLPModelOptimizer(MLPModelOptimizer<real> &&other) noexcept = default;
+    MLPModelOptimizer(const MLPModelOptimizer &other) = delete;
+    MLPModelOptimizer(MLPModelOptimizer &&other) noexcept = default;
 
-    virtual void setModel(MLPModel<real> &model) = 0;
+    virtual void setModel(MLPModel &model) = 0;
 
-    MLPModelOptimizer<real> &operator=(const MLPModelOptimizer<real> &other) = delete;
-    MLPModelOptimizer<real> &operator=(MLPModelOptimizer<real> &&other) noexcept = default;
+    MLPModelOptimizer &operator=(const MLPModelOptimizer &other) = delete;
+    MLPModelOptimizer &operator=(MLPModelOptimizer &&other) noexcept = default;
 
-    MLPerceptron<real> *gePerceptron() const { return neural_network; }
-    OptimizationMethod<real> *getOptimizationMethod() const { return opti_meth; }
+    MLPerceptron *gePerceptron() const { return neural_network; }
+    OptimizationMethod *getOptimizationMethod() const { return opti_meth.get(); }
 
     void update() override { opti_meth->update(); }
 
   protected:
-    MLPerceptron<real> *neural_network;
-    std::shared_ptr<OptimizationMethod<real>> opti_meth;
+    MLPerceptron *neural_network;
+    std::shared_ptr<OptimizationMethod> opti_meth;
   };
 
-
-  template<typename real = float>
-  class MLPModelStochOptimizer final : public MLPModelOptimizer<real> {
+  class MLPModelStochOptimizer final : public MLPModelOptimizer {
   public:
-    MLPModelStochOptimizer(MLPModel<real> &model, std::shared_ptr<OptimizationMethod<real>> tm)
-        : MLPModelOptimizer<real>(model, tm) {
-      setModel(model);
-    }
+    MLPModelStochOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
 
-    void train(const math::Matrix<real> &input, const math::Matrix<real> &target) {
-      const size_t nbInput = input.getRows();
-      const size_t nbTarget = target.getRows();
+    void train(const math::FloatMatrix &input, const math::FloatMatrix &target);
 
-      auto &weights = this->neural_network->getWeights();
-      auto &topology = this->neural_network->getTopology();
+    void setModel(MLPModel &model) override;
 
-      if (nbInput != topology.getInputSize()) {
-        throw std::runtime_error("Invalid number of inputs");
-      }
-
-      if (nbTarget != topology.getOutputSize())
-        throw std::runtime_error("Invalid number of targets");
-
-      forward(input);
-      storage.getError() = layers_af[layers_af.size() - 1] - target;
-      backward(target);
-    }
-
-    void setModel(MLPModel<real> &model) override {
-      auto &mlp_model = dynamic_cast<MLPModel<real> &>(model);
-      auto &perceptron = mlp_model.getPerceptron();
-
-      storage = BackpropStorage<real>(perceptron.getWeights());
-      layers.resize(perceptron.getWeights().size() + 1);
-      layers_af.resize(perceptron.getWeights().size() + 1);
-    }
-
-    void optimize(const std::vector<math::Matrix<real>> &inputs,
-                  const std::vector<math::Matrix<real>> &targets) override {
-      if (inputs.size() != targets.size()) { throw std::runtime_error("Invalid number of inputs"); }
-      for (size_t i = 0; i < inputs.size(); ++i) { train(inputs[i], targets[i]); }
-    }
+    void optimize(const std::vector<math::FloatMatrix> &inputs,
+                  const std::vector<math::FloatMatrix> &targets) override;
 
   private:
-    void forward(math::Matrix<real> const &inputs) {
-      auto &weights = this->neural_network->getWeights();
-      auto &biases = this->neural_network->getBiases();
-      auto &activation_functions = this->neural_network->getActivationFunctions();
+    void forward(math::FloatMatrix const &inputs);
 
-      layers[0] = inputs;
-      layers_af[0] = inputs;
-
-      if (weights.empty()) return;
-
-      math::Matrix<real> current_layer =
-              math::Matrix<real>::matMatProdMatAdd(weights[0], inputs, biases[0]);
-      layers[1] = current_layer;
-      auto afunc = af::getAFFromType<real>(activation_functions[0]).first;
-      std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
-      layers_af[1] = current_layer;
-
-      for (size_t k = 1; k < weights.size(); k++) {
-        // C = W * C + B
-        current_layer = math::Matrix<real>::matMatProdMatAdd(weights[k], current_layer, biases[k]);
-        layers[k + 1] = current_layer;
-
-        // Apply activation function on every element of the matrix
-        afunc = af::getAFFromType<real>(activation_functions[k]).first;
-        std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
-
-        layers_af[k + 1] = current_layer;
-      }
-    }
-
-    void backward(math::Matrix<real> const &target) {
-      auto &weights = this->neural_network->getWeights();
-      auto &biases = this->neural_network->getBiases();
-      auto &activation_functions = this->neural_network->getActivationFunctions();
-
-      // storage.current_error = layers_af[layers_af.size() - 1] - target;
-
-      for (long i = weights.size() - 1; i >= 0; i--) {
-        storage.setIndex(i);
-
-        math::Matrix<real> derivative(layers[i + 1]);
-        auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
-        std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
-
-        derivative.hadamardProd(storage.getError());
-
-        storage.getError() = math::Matrix<real>::mul(true, weights[i], false, derivative);
-
-        storage.getGradient() = math::Matrix<real>::mul(false, derivative, true, layers_af[i], 1.0);
-
-        this->opti_meth->compute(storage);
-      }
-    }
+    void backward(math::FloatMatrix const &target);
 
   private:
     //
-    std::vector<math::Matrix<real>> layers, layers_af;
+    std::vector<math::FloatMatrix> layers, layers_af;
 
     //
-    BackpropStorage<real> storage;
+    BackpropStorage storage;
   };
 
 
-  template<typename real = float>
-  class MLPBatchOptimizer : public MLPModelOptimizer<real> {
+  class MLPBatchOptimizer : public MLPModelOptimizer {
   public:
-    explicit MLPBatchOptimizer(MLPModel<real> &model, std::shared_ptr<OptimizationMethod<real>> tm)
-        : MLPModelOptimizer<real>(model, tm) {
-      setModel(model);
-    }
+    explicit MLPBatchOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
 
-    void setModel(MLPModel<real> &model) override {
-      auto &mlp_model = dynamic_cast<MLPModel<real> &>(model);
+    void setModel(MLPModel &model) override;
 
-      auto &perceptron = mlp_model.getPerceptron();
-      auto &topology = perceptron.getTopology();
-
-      storage = BackpropStorage<real>(this->neural_network->getWeights());
-
-      layers.resize(perceptron.getWeights().size() + 1);
-      layers_af.resize(perceptron.getWeights().size() + 1);
-
-      for (size_t i = 0; i < perceptron.getWeights().size(); i++) {
-        avg_gradients.push_back(math::Matrix<real>(topology[i + 1], topology[i]));
-        avg_errors.push_back(math::Matrix<real>(topology[i + 1], 1));
-
-        avg_gradients[i].fill(0.0);
-        avg_errors[i].fill(0.0);
-      }
-    }
-
-    void optimize(const std::vector<math::Matrix<real>> &inputs,
-                  const std::vector<math::Matrix<real>> &targets) override {
-      size_t n = inputs.size();
-
-      auto mat_reset = [](math::Matrix<real> &m) { m.fill(0); };
-      std::for_each(avg_gradients.begin(), avg_gradients.end(), mat_reset);
-      std::for_each(avg_errors.begin(), avg_errors.end(), mat_reset);
-
-      for (long i = 0; i < n; i++) {
-        forward(inputs[i]);
-        storage.getError() = layers_af[layers_af.size() - 1] - targets[i];
-        computeGradient();
-      }
-
-      for (auto &it : avg_gradients) { it *= ((real) 1.0 / n); }
-
-      for (long i = this->neural_network->getWeights().size() - 1; i >= 0; i--) {
-        storage.setIndex(i);
-        storage.getGradient() = avg_gradients[i];
-        storage.getError() = avg_errors[i];
-        this->opti_meth->compute(storage);
-      }
-    }
+    void optimize(const std::vector<math::FloatMatrix> &inputs,
+                  const std::vector<math::FloatMatrix> &targets) override;
 
   protected:
-    void forward(math::Matrix<real> const &inputs) {
-      auto &weights = this->neural_network->getWeights();
-      auto &biases = this->neural_network->getBiases();
-      auto &activation_functions = this->neural_network->getActivationFunctions();
+    void forward(math::FloatMatrix const &inputs);
 
-      layers[0] = inputs;
-      layers_af[0] = inputs;
+    void computeGradient();
 
-      if (weights.empty()) return;
-
-      math::Matrix<real> current_layer =
-              math::Matrix<real>::matMatProdMatAdd(weights[0], inputs, biases[0]);
-      layers[1] = current_layer;
-      auto afunc = af::getAFFromType<real>(activation_functions[0]).first;
-      std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
-      layers_af[1] = current_layer;
-
-      for (size_t k = 1; k < weights.size(); k++) {
-        // C = W * C + B
-        current_layer = math::Matrix<real>::matMatProdMatAdd(weights[k], current_layer, biases[k]);
-        layers[k + 1] = current_layer;
-
-        // Apply activation function on every element of the matrix
-        afunc = af::getAFFromType<real>(activation_functions[k]).first;
-        std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
-
-        layers_af[k + 1] = current_layer;
-      }
-    }
-
-    void computeGradient() {
-      auto &weights = this->neural_network->getWeights();
-      auto &biases = this->neural_network->getBiases();
-      auto &activation_functions = this->neural_network->getActivationFunctions();
-
-      // Avoid the loop index underflowing back to +inf
-      if (weights.empty()) return;
-
-      for (long i = weights.size() - 1; i >= 0; i--) {
-        storage.setIndex(i);
-
-        math::Matrix<real> derivative(layers[i + 1]);
-        auto dafunc = af::getAFFromType<real>(activation_functions[i]).second;
-        std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
-
-        derivative.hadamardProd(storage.getError());
-
-        storage.getError() = math::Matrix<real>::mul(true, weights[i], false, derivative);
-
-        storage.getGradient() = math::Matrix<real>::mul(false, derivative, true, layers_af[i], 1.0);
-
-        avg_gradients[i] += storage.getGradient();
-      }
-    }
-
-    void backward(math::Matrix<real> const &target) {
-      auto &weights = this->neural_network->getWeights();
-      auto &biases = this->neural_network->getBiases();
-      auto &activation_functions = this->neural_network->getActivationFunctions();
-
-      // Avoid the loop index underflowing back to +inf
-      if (weights.empty()) return;
-
-      for (long i = weights.size() - 1; i >= 0; i--) {
-        storage.setIndex(i);
-        math::Matrix<real> derivative(layers[storage.index + 1]);
-        auto dafunc = af::getAFFromType<real>(activation_functions[storage.index]).second;
-        std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
-
-        derivative.hadamardProd(storage.current_error);
-
-        storage.getError() =
-                math::Matrix<real>::mul(true, weights[storage.index], false, derivative);
-
-        storage.getGradient() =
-                math::Matrix<real>::mul(false, derivative, true, layers_af[storage.index], 1.0);
-
-        this->opti_meth->compute(storage);
-      }
-    }
+    void backward(math::FloatMatrix const &target);
 
     //
-    std::vector<math::Matrix<real>> layers, layers_af;
+    std::vector<math::FloatMatrix> layers, layers_af;
 
     //
-    BackpropStorage<real> storage;
+    BackpropStorage storage;
 
-    std::vector<math::Matrix<real>> avg_errors;
-    std::vector<math::Matrix<real>> avg_gradients;
+    std::vector<math::FloatMatrix> avg_errors;
+    std::vector<math::FloatMatrix> avg_gradients;
   };
 
-  class MLPMiniBatchOptimizer : public MLPBatchOptimizer<float> {
+  class MLPMiniBatchOptimizer : public MLPBatchOptimizer {
   public:
-    explicit MLPMiniBatchOptimizer(MLPModel<float> &model,
-                                   std::shared_ptr<OptimizationMethod<float>> tm,
-                                   size_t batch_size = 8)
-        : MLPBatchOptimizer<float>(model, std::move(tm)), batch_size(batch_size) {}
+    explicit MLPMiniBatchOptimizer(MLPModel &model,
+                                   std::shared_ptr<OptimizationMethod> tm,
+                                   size_t batch_size = 8);
 
-    void optimize(const std::vector<math::Matrix<float>> &inputs,
-                  const std::vector<math::Matrix<float>> &targets) override {
-      size_t n = inputs.size();
-
-      for (size_t i = 0; i < n; i += batch_size) {
-        auto mat_reset = [](math::Matrix<float> &m) { m.fill(0); };
-        std::for_each(avg_gradients.begin(), avg_gradients.end(), mat_reset);
-        std::for_each(avg_errors.begin(), avg_errors.end(), mat_reset);
-
-        // If n is not a multiple of batch_size, the last batch will be smaller
-        size_t curr_batch_size = std::min(batch_size, n - i);
-
-        // Compute the average gradient and error for the current batch
-        for (size_t j = 0; j < curr_batch_size; j++) {
-          forward(inputs[i + j]);
-          storage.getError() = layers_af[layers_af.size() - 1] - targets[i + j];
-          computeGradient();
-        }
-
-        for (auto &it : avg_gradients) { it *= 1.0f / static_cast<float>(curr_batch_size); }
-
-        // Update the weights and biases using the average of the current batch
-        for (long j = this->neural_network->getWeights().size() - 1; j >= 0; j--) {
-          storage.setIndex(j);
-          storage.getGradient() = avg_gradients[j];
-          storage.getError() = avg_errors[j];
-          this->opti_meth->compute(storage);
-        }
-      }
-    }
+    void optimize(const std::vector<math::FloatMatrix> &inputs,
+                  const std::vector<math::FloatMatrix> &targets) override;
 
   private:
     size_t batch_size;

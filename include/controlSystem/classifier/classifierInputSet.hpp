@@ -4,9 +4,7 @@
 
 namespace control::classifier {
 
-  /** A special input set for classifiers
-   * Stores an input path along with the class label, and the input matrices.
-   *
+  /** @brief Input set specialization for classifiers
    *
    */
   class ClassifierTrainingSet : public InputSet {
@@ -33,7 +31,7 @@ namespace control::classifier {
      * @param label Class label of the matrix
      * @param mat Input matrix
      */
-    void append(size_t input_id, ClassLabel const *label, math::Matrix<float> &&mat);
+    void append(size_t input_id, ClassLabel const *label, math::FloatMatrix &&mat);
 
     /** Appends a new input matrix to the set
      *
@@ -41,7 +39,7 @@ namespace control::classifier {
      * @param label Class label of the matrix
      * @param mat Input matrix
      */
-    void append(size_t input_id, ClassLabel const *label, const math::Matrix<float> &mat);
+    void append(size_t input_id, ClassLabel const *label, const math::FloatMatrix &mat);
 
     /** Shuffles the set with the given seed
      *
