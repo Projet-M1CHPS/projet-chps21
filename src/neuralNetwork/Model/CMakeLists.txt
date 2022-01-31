@@ -7,5 +7,5 @@ add_library(Model
         PlainTextMLPModelSerializer.cpp ${CURRENT_INCLUDE_DIR}/MLPModelSerializer.hpp
         PlainTextMLPModelSerializer.cpp ${CURRENT_INCLUDE_DIR}/PlainTextMLPModelSerializer.hpp
         )
-target_link_libraries(Model Perceptron)
+target_link_libraries(Model Perceptron CNN)
 target_include_directories(Model PUBLIC ${CURRENT_INCLUDE_DIR})

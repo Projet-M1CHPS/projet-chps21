@@ -8,3 +8,7 @@
 #include "neuralNetwork/Model/ModelOptimizer.hpp"
 #include "neuralNetwork/Model/PlainTextMLPModelSerializer.hpp"
 #include "neuralNetwork/Perceptron/Perceptron.hpp"
+
+
+#include "neuralNetwork/CNN/PoolingLayer.hpp"
+#include "neuralNetwork/CNN/ConvolutionLayer.hpp"

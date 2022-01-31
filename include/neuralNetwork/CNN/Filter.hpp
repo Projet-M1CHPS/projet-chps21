@@ -7,6 +7,7 @@
 
 namespace cnnet {
 
+  using namespace math;
   class Filter {
   public:
     Filter(const size_t rows, const size_t cols);
@@ -16,13 +17,12 @@ namespace cnnet {
 
     ~Filter() = default;
 
-    void randomizeFilter();
-
     const size_t getRows() const { return filter.getRows(); }
     const size_t getCols() const { return filter.getCols(); }
+    const FloatMatrix& getMatrix() const { return filter; }
 
   private:
-    math::FloatMatrix filter;
+    FloatMatrix filter;
   };
 
 }   // namespace cnnet

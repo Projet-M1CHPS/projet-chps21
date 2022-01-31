@@ -9,7 +9,8 @@ namespace cnnet {
 
   class ConvolutionLayer {
   public:
-    ConvolutionLayer(const size_t rowsF, const size_t colsF, const size_t stride, const size_t padding = 0);
+    ConvolutionLayer(const size_t rowsF, const size_t colsF, const size_t stride,
+                     const size_t padding = 0);
     ConvolutionLayer(std::pair<size_t, size_t> sizeFilter, const size_t stride,
                      const size_t padding = 0);
 
@@ -21,7 +22,7 @@ namespace cnnet {
     const Filter &getFilter() const { return filter; }
 
 
-    void compute(const FloatMatrix &input, const FloatMatrix &output);
+    void compute(const FloatMatrix &input, FloatMatrix &output);
 
 
   private:

@@ -13,7 +13,34 @@ namespace cnnet {
       : filter(sizeFilter), stride(stride), padding(padding) {}
 
 
-  void ConvolutionLayer::compute(const FloatMatrix &input, const FloatMatrix &output) {
-    // deplacement du filtre sur la feature
+  void ConvolutionLayer::compute(const FloatMatrix &input, FloatMatrix &output) {
+    const size_t max = ((input.getRows() - filter.getRows() + 2 * padding) / stride) + 1; //* nombre de layer;
+    
+    const FloatMatrix& matFiltre = filter.getMatrix();
+
+    int rowsPos = -padding;
+    int colsPos = -padding;
+    
+    for (size_t i = 0; i < max; i++)
+    {
+      for (size_t j = 0; j < max; j++)
+      {
+        float sum = 0.f;
+        std::cout << "sum = 0" << std::endl;
+        for (size_t k = 0; k < matFiltre.getRows(); k++)
+        {
+          for (size_t l = 0; l < matFiltre.getCols(); l++)
+          {
+            sum += input(k + rowsPos, l + colsPos) * matFiltre(k, l);
+            std::cout << "sum += " << input(k + rowsPos, l + colsPos) << " * " << matFiltre(k, l) << std::endl;
+          }
+        }
+        std::cout << "\n" << std::endl;
+        output(i, j) = sum;
+        colsPos += stride;
+      }
+      rowsPos += stride;
+      colsPos = -padding;
+    }
   }
 }   // namespace cnnet
