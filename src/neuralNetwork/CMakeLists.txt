@@ -1,6 +1,7 @@
 
 
 add_subdirectory(Perceptron)
+add_subdirectory(CNN)
 add_subdirectory(Model)
 
 set(CURRENT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include/neuralNetwork)
