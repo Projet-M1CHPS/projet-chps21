@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Filter.hpp"
+#include <utility>
 
 namespace cnnet {
 
@@ -8,34 +9,38 @@ namespace cnnet {
 
   class PoolingLayer {
   public:
-    PoolingLayer(const size_t size, const size_t stride);
+    PoolingLayer(const std::pair<size_t, size_t> outputSize,
+                 const std::pair<size_t, size_t> PoolSize, const size_t stride);
     virtual ~PoolingLayer() = default;
 
     const size_t getStride() const { return stride; }
 
-    virtual void compute(const FloatMatrix &input, FloatMatrix &output) = 0;
+    virtual const FloatMatrix &compute(const FloatMatrix &input) = 0;
 
   protected:
-    const size_t size;
+    FloatMatrix output;
+    const std::pair<size_t, size_t> poolingSize;
     const size_t stride;
   };
 
 
   class MaxPoolingLayer : public PoolingLayer {
   public:
-    MaxPoolingLayer(const size_t size, const size_t stride);
+    MaxPoolingLayer(const std::pair<size_t, size_t> outputSize,
+                    const std::pair<size_t, size_t> PoolSize, const size_t stride);
     ~MaxPoolingLayer() = default;
 
-    void compute(const FloatMatrix &input, FloatMatrix &output) override;
+    const FloatMatrix &compute(const FloatMatrix &input) override;
   };
 
 
   class AvgPoolingLayer : public PoolingLayer {
   public:
-    AvgPoolingLayer(const size_t size, const size_t stride);
+    AvgPoolingLayer(const std::pair<size_t, size_t> outputSize,
+                    const std::pair<size_t, size_t> PoolSize, const size_t stride);
     ~AvgPoolingLayer() = default;
 
-    void compute(const FloatMatrix &input, FloatMatrix &output) override;
+    const FloatMatrix &compute(const FloatMatrix &input) override;
   };
 
 

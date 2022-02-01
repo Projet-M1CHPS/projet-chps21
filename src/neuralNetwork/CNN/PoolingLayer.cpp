@@ -3,22 +3,25 @@
 
 namespace cnnet {
 
-  PoolingLayer::PoolingLayer(const size_t size, const size_t stride) : size(size), stride(stride) {}
+  PoolingLayer::PoolingLayer(const std::pair<size_t, size_t> outputSize,
+                             const std::pair<size_t, size_t> poolSize, const size_t stride)
+      : output(outputSize.first, outputSize.second), poolingSize(poolSize), stride(stride) {}
 
 
-  MaxPoolingLayer::MaxPoolingLayer(const size_t size, const size_t stride)
-      : PoolingLayer(size, stride) {}
+  MaxPoolingLayer::MaxPoolingLayer(const std::pair<size_t, size_t> outputSize,
+                                   const std::pair<size_t, size_t> poolSize, const size_t stride)
+      : PoolingLayer(outputSize, poolSize, stride) {}
 
-  void MaxPoolingLayer::compute(const FloatMatrix &input, FloatMatrix &output) {
-    const size_t incrMax = ((input.getRows() - size) / stride) + 1;   //* nombre de layer;
+  const FloatMatrix &MaxPoolingLayer::compute(const FloatMatrix &input) {
+    const size_t incrMaxRows = ((input.getRows() - poolingSize.first) / stride) + 1;   //* nombre de layer;
 
     size_t rowsPos = 0, colsPos = 0;
 
-    for (size_t i = 0; i < incrMax; i++) {
-      for (size_t j = 0; j < incrMax; j++) {
+    for (size_t i = 0; i < incrMaxRows; i++) {
+      for (size_t j = 0; j < incrMaxRows; j++) {
         float max = input(rowsPos, colsPos);
-        for (size_t k = 0; k < size; k++) {
-          for (size_t l = 0; l < size; l++) {
+        for (size_t k = 0; k < poolingSize.first; k++) {
+          for (size_t l = 0; l < poolingSize.second; l++) {
             max = std::max(max, input(k + rowsPos, l + colsPos));
           }
         }
@@ -28,31 +31,34 @@ namespace cnnet {
       colsPos = 0;
       rowsPos += stride;
     }
+
+    return output;
   }
 
 
-  AvgPoolingLayer::AvgPoolingLayer(const size_t size, const size_t stride)
-      : PoolingLayer(size, stride) {}
+  AvgPoolingLayer::AvgPoolingLayer(const std::pair<size_t, size_t> outputSize,
+                                   const std::pair<size_t, size_t> poolSize, const size_t stride)
+      : PoolingLayer(outputSize, poolSize, stride) {}
 
-  void AvgPoolingLayer::compute(const FloatMatrix &input, FloatMatrix &output) {
-    const size_t incrMax = ((input.getRows() - size) / stride) + 1;   //* nombre de layer;
+  const FloatMatrix &AvgPoolingLayer::compute(const FloatMatrix &input) {
+    const size_t incrMaxRows = ((input.getRows() - poolingSize.first) / stride) + 1;   //* nombre de layer;
 
     size_t rowsPos = 0, colsPos = 0;
 
-    for (size_t i = 0; i < incrMax; i++) {
-      for (size_t j = 0; j < incrMax; j++) {
+    for (size_t i = 0; i < incrMaxRows; i++) {
+      for (size_t j = 0; j < incrMaxRows; j++) {
         float sum = 0.f;
-        for (size_t k = 0; k < size; k++) {
-          for (size_t l = 0; l < size; l++) {
-            sum += input(k + rowsPos, l + colsPos);
-          }
+        for (size_t k = 0; k < poolingSize.first; k++) {
+          for (size_t l = 0; l < poolingSize.second; l++) { sum += input(k + rowsPos, l + colsPos); }
         }
-        output(i, j) = sum / (size * size);
+        output(i, j) = sum / (poolingSize.first * poolingSize.second);
         colsPos += stride;
       }
       colsPos = 0;
       rowsPos += stride;
     }
+
+    return output;
   }
 
 }   // namespace cnnet
