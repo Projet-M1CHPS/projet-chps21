@@ -26,16 +26,14 @@ namespace cnnet {
       for (size_t j = 0; j < max; j++)
       {
         float sum = 0.f;
-        std::cout << "sum = 0" << std::endl;
+        //std::cout << "sum = 0" << std::endl;
         for (size_t k = 0; k < matFiltre.getRows(); k++)
         {
           for (size_t l = 0; l < matFiltre.getCols(); l++)
           {
             sum += input(k + rowsPos, l + colsPos) * matFiltre(k, l);
-            std::cout << "sum += " << input(k + rowsPos, l + colsPos) << " * " << matFiltre(k, l) << std::endl;
           }
         }
-        std::cout << "\n" << std::endl;
         output(i, j) = sum;
         colsPos += stride;
       }

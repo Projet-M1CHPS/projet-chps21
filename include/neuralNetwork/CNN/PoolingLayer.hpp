@@ -8,40 +8,34 @@ namespace cnnet {
 
   class PoolingLayer {
   public:
-    PoolingLayer(const size_t stride, const size_t padding = 0);
-
+    PoolingLayer(const size_t size, const size_t stride);
     virtual ~PoolingLayer() = default;
 
     const size_t getStride() const { return stride; }
-    const size_t getPadding() const { return padding; }
 
-    void compute(const FloatMatrix &input, const FloatMatrix &output);
+    virtual void compute(const FloatMatrix &input, FloatMatrix &output) = 0;
 
-  private:
-    virtual const float poolingMethode() = 0;
-
-  private:
-    const size_t stride, padding;
+  protected:
+    const size_t size;
+    const size_t stride;
   };
 
 
   class MaxPoolingLayer : public PoolingLayer {
   public:
-    MaxPoolingLayer(const size_t stride, const size_t padding = 0);
+    MaxPoolingLayer(const size_t size, const size_t stride);
     ~MaxPoolingLayer() = default;
 
-  private:
-    const float poolingMethode() override;
+    void compute(const FloatMatrix &input, FloatMatrix &output) override;
   };
 
 
   class AvgPoolingLayer : public PoolingLayer {
   public:
-    AvgPoolingLayer(const size_t stride, const size_t padding = 0);
+    AvgPoolingLayer(const size_t size, const size_t stride);
     ~AvgPoolingLayer() = default;
 
-  private:
-    const float poolingMethode() override;
+    void compute(const FloatMatrix &input, FloatMatrix &output) override;
   };
 
 
