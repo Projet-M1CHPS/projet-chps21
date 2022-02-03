@@ -1,9 +1,10 @@
 #include "classifierInputSet.hpp"
+#include <random>
 
 namespace control::classifier {
 
   void ClassifierTrainingSet::append(size_t input_id, ClassLabel const *label,
-                                     math::Matrix<float> &&mat) {
+                                     math::clMatrix &&mat) {
     if (label == nullptr) {
       throw std::invalid_argument("ClassifierTrainingSet: label is nullptr");
     }
@@ -13,7 +14,7 @@ namespace control::classifier {
   }
 
   void ClassifierTrainingSet::append(size_t input_id, const ClassLabel *label,
-                                     const math::Matrix<float> &mat) {
+                                     const math::clMatrix &mat) {
     if (label == nullptr) {
       throw std::invalid_argument("ClassifierTrainingSet: label is nullptr");
     }

@@ -1,5 +1,5 @@
 #pragma once
-#include "Matrix.hpp"
+#include "clMatrix.hpp"
 #include <filesystem>
 #include <iostream>
 #include <set>
@@ -40,7 +40,7 @@ namespace control {
      * @param index
      * @return
      */
-    math::FloatMatrix const &operator[](size_t index) const {
+    math::clMatrix const &operator[](size_t index) const {
       if (index >= inputs.size()) {
         throw std::out_of_range("InputSet::operator[] Index out of range");
       }
@@ -53,10 +53,10 @@ namespace control {
      *
      * @return
      */
-    [[nodiscard]] const std::vector<math::FloatMatrix> &getVector() const { return inputs; }
+    [[nodiscard]] const std::vector<math::clMatrix> &getVector() const { return inputs; }
 
-    using Iterator = typename std::vector<math::FloatMatrix>::iterator;
-    using ConstIterator = typename std::vector<math::FloatMatrix>::const_iterator;
+    using Iterator = typename std::vector<math::clMatrix>::iterator;
+    using ConstIterator = typename std::vector<math::clMatrix>::const_iterator;
 
     /** Returns an iterator to the first input matrix
      *
@@ -101,7 +101,7 @@ namespace control {
   protected:
     virtual void print(std::ostream &os) const;
 
-    std::vector<math::FloatMatrix> inputs;
+    std::vector<math::clMatrix> inputs;
   };
 
 }   // namespace control

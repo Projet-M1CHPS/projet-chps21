@@ -10,4 +10,4 @@ add_library(Classifier STATIC
         classifierClass.cpp ${CURRENT_INCLUDE_DIR}/classifierClass.hpp
         )
 target_include_directories(Classifier PUBLIC "${INCLUDE_DIR}" "${CURRENT_INCLUDE_DIR}")
-target_link_libraries(Classifier PUBLIC Math Image tscl::tscl)
+target_link_libraries(Classifier PUBLIC Math Image OpenCL::OpenCL tscl::tscl clUtils)

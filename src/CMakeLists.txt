@@ -5,6 +5,8 @@ add_library(Utils STATIC
 set_target_properties(Utils PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 target_include_directories(Utils PUBLIC "${CMAKE_SOURCE_DIR}/include")
 
+add_subdirectory(clUtils)
+
 # This avoids adding the include path to all targets that needs Matrix.h
 # It also propagates the dependency on BLAS
 add_library(Math INTERFACE)

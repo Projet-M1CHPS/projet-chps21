@@ -1,6 +1,7 @@
 #pragma once
 #include "Image.hpp"
 #include "Transform.hpp"
+#include "clWrapper.hpp"
 #include "classifierInputSet.hpp"
 
 namespace control::classifier {
@@ -109,33 +110,10 @@ namespace control::classifier {
     std::shared_ptr<CClassLabelSet> class_list;
   };
 
-
-  /** @brief Interface for a classifier training collection loader
-   *
-   */
-  class CTCLoader {
-  public:
-    virtual ~CTCLoader() = default;
-
-    /** Set the classes that will be used by the loader
-     * This function takes a shared ptr to the class list
-     * since the loader has to build one himself if none is provided
-     *
-     * @param list
-     */
-    void setClasses(std::shared_ptr<CClassLabelSet> list) { classes = std::move(list); }
-
-    [[nodiscard]] CClassLabelSet &getClasses() { return *classes; }
-    [[nodiscard]] CClassLabelSet &getClasses() const { return *classes; }
-
-  protected:
-    std::shared_ptr<CClassLabelSet> classes;
-  };
-
   /** @brief Classifier collection loader for image inputs
    *
    */
-  class CITCLoader : public CTCLoader {
+  class CITCLoader {
   public:
     /** Creates a loader that will rescale the image to a given size before inserting them in the
      * collection
@@ -151,7 +129,8 @@ namespace control::classifier {
      * @param input_path a path to a directory containing the evaluation and training set
      * @return
      */
-    [[nodiscard]] std::unique_ptr<CTCollection> load(const std::filesystem::path &input_path);
+    [[nodiscard]] std::unique_ptr<CTCollection> load(const std::filesystem::path &input_path,
+                                                     utils::clWrapper &wrapper);
 
     /** Returns the transformation engine that gets applied before the rescaling
      *
@@ -161,6 +140,17 @@ namespace control::classifier {
     [[nodiscard]] image::transform::TransformEngine const &getPreProcessEngine() const {
       return pre_process;
     }
+
+    /** Set the classes that will be used by the loader
+     * This function takes a shared ptr to the class list
+     * since the loader has to build one himself if none is provided
+     *
+     * @param list
+     */
+    void setClasses(std::shared_ptr<CClassLabelSet> list) { classes = std::move(list); }
+
+    [[nodiscard]] CClassLabelSet &getClasses() { return *classes; }
+    [[nodiscard]] CClassLabelSet &getClasses() const { return *classes; }
 
     /** Returns the transformations engine that gets applied after the rescaling
      *
@@ -180,10 +170,9 @@ namespace control::classifier {
      * @param input_path
      */
     void loadClasses(std::filesystem::path const &input_path);
-    void loadEvalSet(CTCollection &res, const std::filesystem::path &input_path);
-    void loadTrainingSet(CTCollection &res, std::filesystem::path const &input_path);
 
-    void loadSet(ClassifierTrainingSet &res, std::filesystem::path const &input_path);
+    void loadSet(ClassifierTrainingSet &res, std::filesystem::path const &input_path,
+                 utils::clWrapper &wrapper);
 
     image::transform::TransformEngine pre_process, post_process;
 
@@ -191,5 +180,6 @@ namespace control::classifier {
      *
      */
     size_t target_width, target_height;
+    std::shared_ptr<CClassLabelSet> classes;
   };
 }   // namespace control::classifier

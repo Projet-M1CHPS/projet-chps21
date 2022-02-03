@@ -47,8 +47,8 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   auto model = nnet::MLPModelFactory::randomSigReluAlt(topology);
 
-  auto tm = std::make_shared<nnet::DecayMomentumOptimization>(model->getPerceptron(), 0.2,
-                                                                     0.1, 0.9);
+  auto tm =
+          std::make_shared<nnet::DecayMomentumOptimization>(model->getPerceptron(), 0.2, 0.1, 0.9);
 
   auto optimizer = std::make_unique<nnet::MLPMiniBatchOptimizer>(*model, tm, 16);
 
@@ -68,9 +68,39 @@ bool createAndTrain(std::filesystem::path const &input_path,
   return true;
 }
 
+#include <CL/opencl.hpp>
+
 int main(int argc, char **argv) {
   Version::setCurrent(Version(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TWEAK));
   setupLogger();
+
+  std::vector<cl::Platform> all_platforms;
+  cl::Platform::get(&all_platforms);
+  if (all_platforms.empty()) {
+    tscl::logger("No OpenCL platforms found", tscl::Log::Error);
+    return 1;
+  }
+
+  for (auto &platform : all_platforms) {
+    tscl::logger("Found platform: " + platform.getInfo<CL_PLATFORM_NAME>(), tscl::Log::Debug);
+  }
+  cl::Platform default_platform = all_platforms[0];
+  tscl::logger("Using platform: " + default_platform.getInfo<CL_PLATFORM_NAME>(), tscl::Log::Debug);
+
+  std::vector<cl::Device> all_devices;
+  default_platform.getDevices(CL_DEVICE_TYPE_ALL, &all_devices);
+
+  if (all_devices.empty()) {
+    tscl::logger("No OpenCL devices found", tscl::Log::Error);
+    return 1;
+  }
+  cl::Device default_device = all_devices[0];
+  tscl::logger("Using device: " + default_device.getInfo<CL_DEVICE_NAME>(), tscl::Log::Debug);
+  cl::Context context(all_devices);
+  cl::Context::setDefault(context);
+  cl::CommandQueue queue(context, default_device);
+  cl::CommandQueue::setDefault(queue);
+
 
   std::vector<std::string> args;
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);

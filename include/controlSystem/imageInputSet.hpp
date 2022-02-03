@@ -18,13 +18,13 @@ namespace control {
      *
      * @param image
      */
-    void append(const math::FloatMatrix &image) { inputs.push_back(image); }
+    void append(const math::clMatrix &image) { inputs.push_back(image); }
 
     /** Move copy a single image to the set
      *
      * @param image
      */
-    void append(math::FloatMatrix &&image) { inputs.push_back(image); }
+    void append(math::clMatrix &&image) { inputs.push_back(image); }
 
     /** Appends a single image to the set, first convert it to a float matrix
      *
@@ -32,7 +32,8 @@ namespace control {
      * @param normalization Divide every pixel by this value
      */
     void append(const image::GrayscaleImage &image, float normalization = 255.0f) {
-      inputs.push_back(image::imageToMatrix(image, normalization));
+      // TODO: FIXME
+      // inputs.push_back(image::imageToMatrix(image, normalization));
     }
   };
 
