@@ -12,7 +12,6 @@
 **/_deps/*
 **/CMakeCache.txt
 **/Makefile
-*.cmake
 *.findOrBuildEnvironnement
 *.marks
 *.pc

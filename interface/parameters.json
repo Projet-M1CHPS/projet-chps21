@@ -1,0 +1,11 @@
+{
+    "dataset_folder_path": "../dataset",
+    "output_folder_path": "run/results/",
+    "training": {
+        "use_logger": true,
+        "logger_folder_path": "logs/",
+        "resize": 32,
+        "preprocess_transformations": ["INVERSION"],
+        "postprocess_transformations": ["BINARISE"]
+    }
+}

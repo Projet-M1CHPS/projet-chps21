@@ -5,7 +5,8 @@ project(projet-chps21 VERSION 0.5.0.2 DESCRIPTION "Cancer detection using deep l
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(PROGRAM_PERMISSIONS_DEFAULT OWNER_WRITE OWNER_READ OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # Setup compiler specific flags
@@ -42,6 +43,8 @@ endif ()
 find_package(BLAS REQUIRED)
 
 set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
+set(SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
+
 # Setup external dependency of the project
 add_subdirectory(extern)
 # Main project directory
@@ -59,5 +62,7 @@ add_subdirectory(apps)
 # Uses Doxygen
 # (Optionnal)
 add_subdirectory(docs)
+
+add_subdirectory(interface)
 
 
