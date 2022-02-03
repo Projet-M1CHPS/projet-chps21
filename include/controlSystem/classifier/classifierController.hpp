@@ -1,5 +1,5 @@
 #pragma once
-#include "classifierCollection.hpp"
+#include "CTCollection.hpp"
 #include "classifierInputSet.hpp"
 #include "classifierTracker.hpp"
 #include "controlSystem/controller.hpp"

@@ -3,7 +3,8 @@
 set(CURRENT_INCLUDE_DIR ${CURRENT_INCLUDE_DIR}/classifier)
 
 add_library(Classifier STATIC
-        classifierCollection.cpp ${CURRENT_INCLUDE_DIR}/classifierCollection.hpp
+        CTCollection.cpp ${CURRENT_INCLUDE_DIR}/CTCollection.hpp
+        CITCLoader.cpp ${CURRENT_INCLUDE_DIR}/CITCLoader.hpp
         classifierController.cpp ${CURRENT_INCLUDE_DIR}/classifierController.hpp
         classifierInputSet.cpp ${CURRENT_INCLUDE_DIR}/classifierInputSet.hpp
         classifierTracker.cpp ${CURRENT_INCLUDE_DIR}/classifierTracker.hpp

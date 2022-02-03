@@ -1,5 +1,5 @@
 #pragma once
-#define __CL_ENABLE_EXCEPTIONS
+#define CL_HPP_ENABLE_EXCEPTIONS 1
 #include <CL/opencl.hpp>
 
 namespace math {

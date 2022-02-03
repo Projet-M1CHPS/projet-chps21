@@ -1,8 +1,4 @@
-
-#include "classifierCollection.hpp"
-#include "tscl.hpp"
-#include <clUtils/clWrapper.hpp>
-#include <functional>
+#include "CITCLoader.hpp"
 
 namespace fs = std::filesystem;
 namespace tr = image::transform;
@@ -44,19 +40,6 @@ namespace control::classifier {
     }
   }   // namespace
 
-  CTCollection::CTCollection(std::shared_ptr<CClassLabelSet> classes)
-      : class_list(std::move(classes)) {}
-
-  std::ostream &operator<<(std::ostream &os, CTCollection const &set) {
-    os << "Classifier training set: " << std::endl;
-    os << "\tTraining set contains " << set.training_set.size() << " elements" << std::endl;
-    os << "\tEvaluation set contains " << set.eval_set.size() << " elements" << std::endl;
-
-    os << "Classes: " << std::endl;
-    os << *set.class_list << std::endl;
-
-    return os;
-  }
 
   // If the user didn't specify which classes to load, we load all of them
   // by associating each class with a directory
@@ -159,5 +142,6 @@ namespace control::classifier {
 
     return res;
   }
+
 
 }   // namespace control::classifier
