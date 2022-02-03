@@ -71,7 +71,7 @@ namespace control::classifier {
     }
   }
 
-  void CITCLoader::loadSet(ClassifierTrainingSet &res, const std::filesystem::path &input_path,
+  void CITCLoader::loadSet(CTrainingSet &res, const std::filesystem::path &input_path,
                            utils::clWrapper &wrapper) {
     image::transform::Resize resize(target_width, target_height);
 

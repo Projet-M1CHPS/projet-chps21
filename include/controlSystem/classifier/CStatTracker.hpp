@@ -1,7 +1,7 @@
 
 #pragma once
+#include "CTrainingSet.hpp"
 #include "Matrix.hpp"
-#include "classifierInputSet.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -68,13 +68,13 @@ namespace control::classifier {
     std::shared_ptr<std::vector<std::ofstream>> f1_outputs;
   };
 
-  class CTracker;
+  class CStatTracker;
 
   /** @brief Containers for classifier metrics and serialization
    *
    */
   class CStats {
-    friend CTracker;
+    friend CStatTracker;
     friend std::ostream &operator<<(std::ostream &os, CStats const &stat);
 
   public:
@@ -101,9 +101,9 @@ namespace control::classifier {
   /** @brief Helper class to compute classifier metrics, including the f1_score
    *
    */
-  class CTracker {
+  class CStatTracker {
   public:
-    CTracker(std::filesystem::path const &output_path, const CClassLabelSet &class_labels)
+    CStatTracker(std::filesystem::path const &output_path, const CClassLabelSet &class_labels)
         : epoch(0), state(std::make_shared<CTrackerState>(output_path, class_labels)) {}
 
     [[nodiscard]] CStats computeStats(math::Matrix<size_t> const &confusion) {

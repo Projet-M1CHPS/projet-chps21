@@ -1,7 +1,7 @@
 
-#include "classifierController.hpp"
+#include "CTController.hpp"
+#include "CStatTracker.hpp"
 #include "Network.hpp"
-#include "classifierTracker.hpp"
 #include "tscl.hpp"
 
 namespace control::classifier {
@@ -28,7 +28,7 @@ namespace control::classifier {
 
     auto &classes = training_collection->getClasses();
     size_t nclass = classes.size();
-    CTracker stracker(params.getOutputPath() / "eval", classes);
+    CStatTracker stracker(params.getOutputPath() / "eval", classes);
 
     trainingLoop(stracker);
     printPostTrainingStats(stracker);
@@ -37,7 +37,7 @@ namespace control::classifier {
     return {true, "Training finished"};
   }
 
-  void CTController::trainingLoop(CTracker &stracker) {
+  void CTController::trainingLoop(CStatTracker &stracker) {
     // Aliases for convenience
     size_t max_epoch = params.getMaxEpoch(), batch_size = params.getBatchSize();
     auto &training_set = training_collection->getTrainingSet();
@@ -46,7 +46,7 @@ namespace control::classifier {
 
     // Used for computing stats
     size_t nclass = classes.size();
-    CTracker training_tracker(params.getOutputPath() / "train", classes);
+    CStatTracker training_tracker(params.getOutputPath() / "train", classes);
     math::Matrix<size_t> confusion(nclass, nclass);
     math::FloatMatrix target(nclass, 1);
 
@@ -109,7 +109,7 @@ namespace control::classifier {
     }
   }
 
-  void CTController::printPostTrainingStats(CTracker &stracker) {
+  void CTController::printPostTrainingStats(CStatTracker &stracker) {
     auto &eval_set = training_collection->getEvalSet();
     auto &classes = training_collection->getClasses();
     size_t nclass = classes.size();

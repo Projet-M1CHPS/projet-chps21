@@ -1,18 +1,18 @@
-#include "classifierInputSet.hpp"
+#include "CTrainingSet.hpp"
 #include <gtest/gtest.h>
 
 using namespace control::classifier;
 
 
 TEST(ClassifierTrainingSet, CanBuild) {
-  ClassifierTrainingSet set;
+  CTrainingSet set;
   EXPECT_EQ(0, set.size());
   EXPECT_TRUE(set.empty());
   EXPECT_EQ(set.begin(), set.end());
 }
 
 TEST(ClassifierTrainingSet, CanAppend) {
-  ClassifierTrainingSet set;
+  CTrainingSet set;
   ClassLabel label1(1, "label1");
   // Append with move copy of the matrix
   set.append(0, &label1, {1, 2, 3});
@@ -42,7 +42,7 @@ TEST(ClassifierTrainingSet, CanAppend) {
 }
 
 TEST(ClassifierTrainingSet, CanClear) {
-  ClassifierTrainingSet set;
+  CTrainingSet set;
   ClassLabel label1(1, "label1");
   set.append(0, &label1, {1, 2, 3});
   set.clear();
@@ -51,7 +51,7 @@ TEST(ClassifierTrainingSet, CanClear) {
 }
 
 TEST(ClassifierTrainingSet, CanShuffle) {
-  ClassifierTrainingSet set;
+  CTrainingSet set;
 
   ClassLabel label1(1, "1");
   ClassLabel label2(2, "2");
@@ -77,7 +77,7 @@ TEST(ClassifierTrainingSet, CanShuffle) {
 }
 
 TEST(ClassifierTrainingSet, ThrowsOnInvalidAppend) {
-  ClassifierTrainingSet set;
+  CTrainingSet set;
   // Should throw if the label is null
   EXPECT_THROW(set.append(0, nullptr, {1, 2, 3}), std::invalid_argument);
   math::Matrix<float> mat({4, 5, 6});

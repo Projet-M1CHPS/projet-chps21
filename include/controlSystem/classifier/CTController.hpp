@@ -1,7 +1,7 @@
 #pragma once
+#include "CStatTracker.hpp"
 #include "CTCollection.hpp"
-#include "classifierInputSet.hpp"
-#include "classifierTracker.hpp"
+#include "CTrainingSet.hpp"
 #include "controlSystem/controller.hpp"
 
 namespace control::classifier {
@@ -54,8 +54,8 @@ namespace control::classifier {
 
   private:
     ControllerResult train();
-    void trainingLoop(CTracker &stracker);
-    void printPostTrainingStats(CTracker &stracker);
+    void trainingLoop(CStatTracker &stracker);
+    void printPostTrainingStats(CStatTracker &stracker);
 
     nnet::ModelOptimizer *optimizer;
     TrainingControllerParameters params;

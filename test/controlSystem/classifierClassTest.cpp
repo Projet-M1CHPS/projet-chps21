@@ -1,4 +1,4 @@
-#include "classifierClass.hpp"
+#include "ClassLabel.hpp"
 #include <gtest/gtest.h>
 
 

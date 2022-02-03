@@ -1,10 +1,9 @@
-#include "classifierInputSet.hpp"
+#include "CTrainingSet.hpp"
 #include <random>
 
 namespace control::classifier {
 
-  void ClassifierTrainingSet::append(size_t input_id, ClassLabel const *label,
-                                     math::clMatrix &&mat) {
+  void CTrainingSet::append(size_t input_id, ClassLabel const *label, math::clMatrix &&mat) {
     if (label == nullptr) {
       throw std::invalid_argument("ClassifierTrainingSet: label is nullptr");
     }
@@ -13,8 +12,7 @@ namespace control::classifier {
     set_labels.push_back(label);
   }
 
-  void ClassifierTrainingSet::append(size_t input_id, const ClassLabel *label,
-                                     const math::clMatrix &mat) {
+  void CTrainingSet::append(size_t input_id, const ClassLabel *label, const math::clMatrix &mat) {
     if (label == nullptr) {
       throw std::invalid_argument("ClassifierTrainingSet: label is nullptr");
     }
@@ -24,7 +22,7 @@ namespace control::classifier {
   }
 
 
-  void ClassifierTrainingSet::shuffle(size_t seed) {
+  void CTrainingSet::shuffle(size_t seed) {
     std::mt19937_64 rng(seed);
     std::shuffle(inputs_id.begin(), inputs_id.end(), rng);
 
@@ -35,12 +33,12 @@ namespace control::classifier {
     std::shuffle(set_labels.begin(), set_labels.end(), rng);
   }
 
-  void ClassifierTrainingSet::print(std::ostream &os) const {
+  void CTrainingSet::print(std::ostream &os) const {
     for (size_t i = 0; i < inputs.size(); i++) {
       os << "\tinput_id: " << inputs_id[i] << ", label: " << *set_labels[i] << std::endl;
     }
   }
-  void ClassifierTrainingSet::clear() {
+  void CTrainingSet::clear() {
     InputSet::clear();
     inputs_id.clear();
     set_labels.clear();

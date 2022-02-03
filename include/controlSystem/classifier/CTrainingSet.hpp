@@ -1,5 +1,5 @@
 #pragma once
-#include "classifierClass.hpp"
+#include "ClassLabel.hpp"
 #include "controlSystem/inputSet.hpp"
 
 namespace control::classifier {
@@ -7,9 +7,9 @@ namespace control::classifier {
   /** @brief Input set specialization for classifiers
    *
    */
-  class ClassifierTrainingSet : public InputSet {
+  class CTrainingSet : public InputSet {
   public:
-    ClassifierTrainingSet() = default;
+    CTrainingSet() = default;
 
     /** Returns the nth input matrix
      *

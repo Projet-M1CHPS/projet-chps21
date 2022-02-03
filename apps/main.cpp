@@ -39,7 +39,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
 
   tscl::logger("Loading collection", tscl::Log::Information);
-  auto training_collection = loader.load(input_path);
+  auto training_collection = loader.load(input_path, wrapper);
 
   // Create a correctly-sized topology
   nnet::MLPTopology topology = {32 * 32, 64, 64, 32, 32};

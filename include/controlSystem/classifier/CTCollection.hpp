@@ -1,6 +1,6 @@
 #pragma once
 
-#include "classifierInputSet.hpp"
+#include "CTrainingSet.hpp"
 
 namespace control::classifier {
 
@@ -36,15 +36,15 @@ namespace control::classifier {
      *
      * @param set
      */
-    [[nodiscard]] ClassifierTrainingSet &getTrainingSet() { return training_set; }
-    [[nodiscard]] ClassifierTrainingSet const &getTrainingSet() const { return training_set; }
+    [[nodiscard]] CTrainingSet &getTrainingSet() { return training_set; }
+    [[nodiscard]] CTrainingSet const &getTrainingSet() const { return training_set; }
 
     /** Returns the evaluation set
      *
      * @return
      */
-    [[nodiscard]] ClassifierTrainingSet &getEvalSet() { return eval_set; };
-    [[nodiscard]] ClassifierTrainingSet const &getEvalSet() const { return eval_set; };
+    [[nodiscard]] CTrainingSet &getEvalSet() { return eval_set; };
+    [[nodiscard]] CTrainingSet const &getEvalSet() const { return eval_set; };
 
     /** Returns the number of classes in this collection
      *
@@ -104,7 +104,7 @@ namespace control::classifier {
     }
 
   private:
-    ClassifierTrainingSet training_set, eval_set;
+    CTrainingSet training_set, eval_set;
     std::shared_ptr<CClassLabelSet> class_list;
   };
 }   // namespace control::classifier
