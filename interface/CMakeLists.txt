@@ -23,9 +23,7 @@ set(PYTHON_EXECUTABLE "/usr/bin/python3.8")
 message(${PYTHON_EXECUTABLE})
 message("===========================")
 
-
-install(TARGETS kreps 
-COMPONENT interface
-LIBRARY DESTINATION "${CMAKE_BINARY_DIR}/bin"
+install(SCRIPT kreps 
+RUNTIME DESTINATION "${CMAKE_BINARY_DIR}/bin"
 )
-configure_file(test.py "${CMAKE_BINARY_DIR}/bin" COPYONLY) 
+configure_file(test.py "${CMAKE_BINARY_DIR}/interface" COPYONLY) 
