@@ -9,6 +9,7 @@ extern "C" {
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <utility>
 
 #define USE_BLAS
 
@@ -25,6 +26,12 @@ namespace math {
     Matrix() = default;
 
     Matrix(size_t rows, size_t cols) : rows(rows), cols(cols) {
+      if (rows == 0 || cols == 0) { return; }
+
+      data = utils::make_aligned_unique<T>(64, rows * cols);
+    }
+
+    Matrix(const std::pair<size_t, size_t> size) : rows(size.first), cols(size.second) {
       if (rows == 0 || cols == 0) { return; }
 
       data = utils::make_aligned_unique<T>(64, rows * cols);
