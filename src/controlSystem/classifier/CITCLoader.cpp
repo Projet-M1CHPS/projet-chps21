@@ -134,8 +134,8 @@ namespace control::classifier {
     auto res = std::make_unique<CTCollection>(classes);
 
     // Load both sets
-    loadSet(res->getEvalSet(), input_path, wrapper);
-    loadSet(res->getTrainingSet(), input_path, wrapper);
+    loadSet(res->getEvalSet(), input_path / "eval", wrapper);
+    loadSet(res->getTrainingSet(), input_path / "train", wrapper);
 
     tscl::logger("Loaded " + std::to_string(res->getTrainingSet().size()) + " inputs",
                  tscl::Log::Trace);
