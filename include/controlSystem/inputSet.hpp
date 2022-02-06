@@ -22,6 +22,7 @@ namespace control {
 
   public:
     InputSet() = default;
+    virtual ~InputSet() = default;
 
     /** Sets can get really huge, so we destroy the copy constructor by precaution
      * FIXME: Add a copy() method

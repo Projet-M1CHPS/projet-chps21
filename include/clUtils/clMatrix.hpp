@@ -1,6 +1,8 @@
 #pragma once
+#define CL_HPP_TARGET_OPENCL_VERSION 200
 #define CL_HPP_ENABLE_EXCEPTIONS 1
 #include <CL/opencl.hpp>
+#include "Matrix.hpp"
 
 namespace math {
 
@@ -11,6 +13,11 @@ namespace math {
   class clMatrix {
   public:
     clMatrix() = default;
+    clMatrix(const clMatrix&) = default;
+    clMatrix(clMatrix&&) = default;
+
+    clMatrix& operator=(const clMatrix&) = default;
+    clMatrix& operator=(clMatrix&&) = default;
 
     /**
      * @brief allocates a new matrix on the device
@@ -56,6 +63,7 @@ namespace math {
     }
 
     cl::Buffer &getBuffer() { return data; }
+    const cl::Buffer &getBuffer() const { return data; }
 
     size_t getRows() const { return rows; }
     size_t getCols() const { return cols; }
@@ -64,4 +72,12 @@ namespace math {
     cl::Buffer data;
     size_t rows = 0, cols = 0;
   };
+
+  /**
+   * @brief Fetch an open cl matrix an store it in a matrix in the host memory
+   * @param matrix The matrix stored in device memory to fetch
+   * @param queue The queue to use for the fetch
+   * @return A copy of the matrix in the host memory
+   */
+  math::Matrix<float> fetchClMatrix(const clMatrix &matrix, const cl::CommandQueue &queue);
 }   // namespace math

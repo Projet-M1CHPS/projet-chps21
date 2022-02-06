@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Matrix.hpp"
-#include "clMatrix.hpp"
 #include <filesystem>
 #include <memory>
 #include <vector>
@@ -207,16 +206,4 @@ namespace image {
 
   private:
   };
-
-  // FIXME: remove inline
-  inline math::Matrix<float> imageToMatrix(GrayscaleImage const &image, float normalize = 1.0) {
-    math::Matrix<float> res(image.getHeight() * image.getWidth(), 1);
-
-    auto data = res.getData();
-    auto image_data = image.getData();
-
-    for (size_t i = 0; i < image.getSize(); i++) { data[i] = (float) image_data[i] / normalize; }
-
-    return res;
-  }
 }   // namespace image

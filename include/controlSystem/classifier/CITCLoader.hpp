@@ -66,8 +66,9 @@ namespace control::classifier {
     }
 
   private:
-    /** Only called if no classes are provided by the user
-     * Automatically fetch the class from the sub-directories name
+    /**
+     * @brief Automatically fetch the class from the sub-directories name
+     * Only called if no classes are provided by the user
      * @param input_path
      */
     void loadClasses(std::filesystem::path const &input_path);
@@ -77,8 +78,8 @@ namespace control::classifier {
 
     image::transform::TransformEngine pre_process, post_process;
 
-    /** Rescaling size
-     *
+    /**
+     * @brief Rescaling size
      */
     size_t target_width, target_height;
     std::shared_ptr<CClassLabelSet> classes;

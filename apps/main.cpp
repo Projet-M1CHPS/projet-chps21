@@ -7,6 +7,8 @@
 #include <iostream>
 #include <vector>
 
+#include <CL/opencl.hpp>
+
 using namespace control;
 using namespace control::classifier;
 using namespace tscl;
@@ -36,10 +38,11 @@ bool createAndTrain(utils::clWrapper &wrapper, std::filesystem::path const &inpu
   pre_engine.addTransformation(std::make_shared<image::transform::Inversion>());
   auto &engine = loader.getPostProcessEngine();
   // Add postprocessing transformations here
-  engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
+  // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
 
   tscl::logger("Loading collection", tscl::Log::Information);
   auto training_collection = loader.load(input_path, wrapper);
+  exit(1);
 
   // Create a correctly-sized topology
   nnet::MLPTopology topology = {32 * 32, 64, 64, 32, 32};
@@ -68,12 +71,17 @@ bool createAndTrain(utils::clWrapper &wrapper, std::filesystem::path const &inpu
   return true;
 }
 
-#include <CL/opencl.hpp>
-
 int main(int argc, char **argv) {
   Version::setCurrent(Version(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TWEAK));
   setupLogger();
 
+  if (argc < 2) {
+    tscl::logger("Usage: " + std::string(argv[0]) + " <input_path> (<output_path>)",
+                 tscl::Log::Information);
+    return 1;
+  }
+
+  tscl::logger("Initializing OpenCL...", tscl::Log::Debug);
   utils::clWrapper wrapper = utils::clWrapper::makeDefaultWrapper();
   utils::printAvailablePlatforms();
 

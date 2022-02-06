@@ -9,10 +9,11 @@ add_subdirectory(clUtils)
 
 # This avoids adding the include path to all targets that needs Matrix.h
 # It also propagates the dependency on BLAS
-add_library(Math INTERFACE)
+add_library(Math INTERFACE ${INCLUDE_DIR}/Matrix.hpp)
 target_include_directories(Math INTERFACE "${CMAKE_SOURCE_DIR}/include")
 target_link_libraries(Math INTERFACE BLAS::BLAS)
 
 add_subdirectory(image)
 add_subdirectory(controlSystem)
 add_subdirectory(neuralNetwork)
+add_subdirectory(kernels)

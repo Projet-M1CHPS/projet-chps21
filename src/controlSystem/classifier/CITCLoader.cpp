@@ -6,37 +6,81 @@ namespace tr = image::transform;
 namespace control::classifier {
   namespace {
 
-    bool loadImageToclMatrix(math::clMatrix &res, const fs::path &path,
-                             const tr::TransformEngine &preprocess,
-                             const tr::TransformEngine &postprocess,
-                             const tr::Transformation &resize, float normalization_factor,
-                             utils::clWrapper &wrapper, cl::CommandQueue &queue) {
-      try {
-        // Load the image and apply the transformations pipeline
-        image::GrayscaleImage img = image::ImageSerializer::load(path);
-        preprocess.apply(img);
-        resize.transform(img);
-        postprocess.apply(img);
+    /**
+     * @brief Helper class for image loading and pipelining
+     */
+    class TransformationPipeline {
+    public:
+      /**
+       * @brief Build a pipeline from a list of transformations
+       * @param transformations
+       */
+      TransformationPipeline(std::initializer_list<tr::TransformEngine> transformations)
+          : engines(transformations) {}
 
-        // Allocate a new cl matrix
-        res = math::clMatrix(img.getWidth() * img.getHeight(), 1, wrapper.getContext());
-        // Convert the char array to a cl matrix
-        cl::Program program = wrapper.getProgram("loadCharToFloat");
-        cl::Kernel kernel(program, "loadCharToFloat");
-        kernel.setArg(0, res);
-        kernel.setArg(1, img.getData());
+      /**
+       * @brief Apply the pipeline to an image loaded from disk
+       * @param image_path Path to the image to load
+       * @return The transformed image
+       */
+      image::GrayscaleImage loadAndTransform(const fs::path &image_path) const;
 
-        // Normalize the matrix by a given factor
-        kernel.setArg(2, normalization_factor);
-        queue.enqueueNDRangeKernel(kernel, cl::NullRange,
-                                   cl::NDRange(img.getWidth() * img.getHeight()), cl::NullRange);
-        return true;
-      } catch (std::runtime_error &e) {
-        tscl::logger("CITCLoader::loadSet: Error loading image " + path.string() + ": " + e.what(),
-                     tscl::Log::Warning);
-        tscl::logger("CITCLoader::loadSet: Skipping image", tscl::Log::Warning);
+    private:
+      /**
+       * @brief The list of transformations to apply when loading an image
+       */
+      std::vector<tr::TransformEngine> engines;
+    };
+
+    image::GrayscaleImage
+    TransformationPipeline::loadAndTransform(const fs::path &image_path) const {
+      image::GrayscaleImage image = image::ImageSerializer::load(image_path);
+      for (auto &engine : engines) { engine.apply(image); }
+      return image;
+    }
+
+    // Takes a grayscale image and load it to a clMatrix
+    // The image is normalized using a given factor
+    math::clMatrix normalizeToDevice(const image::GrayscaleImage &img, utils::clWrapper &wrapper,
+                                     cl::CommandQueue &queue) {
+      // Load the conversion kernel
+      cl::Program program = wrapper.getProgram("kernels/NormalizeCharToFloat.cl");
+      // This kernel cast a char array to a float array and normalize it
+      cl::Kernel kernel(program, "normalizeCharToFloat");
+
+      // Allocate a new cl matrix
+      math::clMatrix res(img.getWidth() * img.getHeight(), 1, wrapper.getContext());
+
+      // We need to load the image to the cl device before applying the kernel
+      cl::Buffer img_buffer(wrapper.getContext(), CL_MEM_READ_ONLY,
+                            img.getWidth() * img.getHeight());
+      queue.enqueueWriteBuffer(img_buffer, CL_FALSE, 0, img.getWidth() * img.getHeight(),
+                               img.getData());
+
+      kernel.setArg(0, img_buffer);
+      kernel.setArg(1, res.getBuffer());
+
+      // We also normalize the matrix by a given factor
+      kernel.setArg(2, 255);
+      // OpenCL does not support size_t, so we cast it to unsigned long
+      kernel.setArg(3, (cl_ulong) img.getSize());
+      queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(img.getSize()), cl::NullRange);
+      return res;
+    }
+
+    std::vector<math::clMatrix> loadDirectory(const fs::path &directory,
+                                              const TransformationPipeline &pipeline,
+                                              utils::clWrapper &wrapper, cl::CommandQueue &queue) {
+      std::vector<math::clMatrix> res;
+      // We iterate on the directory, creating an OpenCL buffer for each image
+      for (auto &file : fs::directory_iterator(directory)) {
+        if (not file.is_regular_file()) continue;
+
+        auto img = pipeline.loadAndTransform(file.path());
+        auto cl_matrix = normalizeToDevice(img, wrapper, queue);
+        res.push_back(cl_matrix);
       }
-      return false;
+      return res;
     }
   }   // namespace
 
@@ -71,13 +115,24 @@ namespace control::classifier {
     }
   }
 
+  // Load a set from an input directory
+  // The directory should contain a subdirectory for each class
+  // Each class should contain a set of images
+  // Images are loaded as grayscale images and feeded to the process pipeline
+  // Image -> preprocess -> resize -> postprocess -> OpenCL matrix
+  //
+  // During the openCL conversion, matrices are normalized by a given factor (255 so values are
+  // contained between 0 and 1). This prevent exploding gradient during the training process
   void CITCLoader::loadSet(CTrainingSet &res, const std::filesystem::path &input_path,
                            utils::clWrapper &wrapper) {
-    image::transform::Resize resize(target_width, target_height);
+    // Create an engine for the resize transformation
+    tr::TransformEngine resize;
+    resize.addTransformation(std::make_shared<tr::Resize>(target_width, target_height));
+    // Instantiates the  pipeline
+    TransformationPipeline pipeline({pre_process, resize, post_process});
 
     cl::Context context = wrapper.getContext();
-    // Create an out-of-order queue
-    cl::CommandQueue queue(context, CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE);
+    cl::CommandQueue queue(context);
 
     // Each class is a directory
     // inside the input path
@@ -91,17 +146,10 @@ namespace control::classifier {
         throw std::runtime_error("CITSLoader: " + input_path.string() + " is missing class id: " +
                                  std::to_string(c.first) + " (\"" + c_name + "\")");
       }
-
-      // We iterate on the directory, creating an OpenCL buffer for each image
-      for (auto &entry : fs::directory_iterator(target_path)) {
-        if (not entry.is_regular_file()) continue;
-
-        math::clMatrix tmp;
-        if (loadImageToclMatrix(tmp, entry.path(), pre_process, post_process, resize, 255, wrapper,
-                                queue))
-          res.append(0, &c.second, tmp);
-      }
+      auto inputs = loadDirectory(target_path, pipeline, wrapper, queue);
+      for (auto &i : inputs) { res.append(0, &c.second, std::move(i)); }
     }
+
     // Wait for all jobs to finish
     queue.finish();
   }
@@ -118,7 +166,8 @@ namespace control::classifier {
 
     tscl::logger("Loading Classifier training collection from " + input_path.string(),
                  tscl::Log::Debug);
-    // If the user didn't specify classes, we extract them from the inpuy directory layout
+
+    // If the user didn't specify classes, we extract them from the input directory layout
     // Since each class must have one folder
     if (not classes) {
       tscl::logger("Looking for classes", tscl::Log::Debug);

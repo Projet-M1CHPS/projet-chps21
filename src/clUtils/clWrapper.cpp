@@ -3,6 +3,33 @@
 
 namespace utils {
 
+  namespace {
+    std::vector<cl::Platform> findCPUPlatform() {
+      std::vector<cl::Platform> platforms;
+      cl::Platform::get(&platforms);
+
+      std::vector<cl::Platform> cpu_platforms;
+      for (auto &platform : platforms) {
+        std::vector<cl::Device> devices;
+        platform.getDevices(CL_DEVICE_TYPE_CPU, &devices);
+        if (!devices.empty()) { cpu_platforms.push_back(platform); }
+      }
+      return platforms;
+    }
+
+    std::vector<cl::Platform> findGPUPlatform() {
+      std::vector<cl::Platform> platforms;
+      cl::Platform::get(&platforms);
+
+      std::vector<cl::Platform> gpu_platforms;
+      for (auto &platform : platforms) {
+        std::vector<cl::Device> devices;
+        platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
+        if (!devices.empty()) { gpu_platforms.push_back(platform); }
+      }
+      return platforms;
+    }
+  }   // namespace
 
   clWrapper::clWrapper(clWrapper &other) {
     std::shared_lock<std::shared_mutex> lock(other.main_mutex);
@@ -11,32 +38,6 @@ namespace utils {
     default_queue = other.default_queue;
     programs = other.programs;
     platform = other.platform;
-  }
-
-  std::vector<cl::Platform> findCPUPlatform() {
-    std::vector<cl::Platform> platforms;
-    cl::Platform::get(&platforms);
-
-    std::vector<cl::Platform> cpu_platforms;
-    for (auto &platform : platforms) {
-      std::vector<cl::Device> devices;
-      platform.getDevices(CL_DEVICE_TYPE_CPU, &devices);
-      if (!devices.empty()) { cpu_platforms.push_back(platform); }
-    }
-    return platforms;
-  }
-
-  std::vector<cl::Platform> findGPUPlatform() {
-    std::vector<cl::Platform> platforms;
-    cl::Platform::get(&platforms);
-
-    std::vector<cl::Platform> gpu_platforms;
-    for (auto &platform : platforms) {
-      std::vector<cl::Device> devices;
-      platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
-      if (!devices.empty()) { gpu_platforms.push_back(platform); }
-    }
-    return platforms;
   }
 
   clWrapper clWrapper::makeDefaultWrapper() {
@@ -52,6 +53,13 @@ namespace utils {
       }
     }
 
+    for (auto &platform : gpu_platforms) {
+      std::vector<cl::Device> devices;
+      platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
+      for (auto &device : devices) {
+        std::cout << "OpenCL CPU device: " << device.getInfo<CL_DEVICE_NAME>() << std::endl;
+      }
+    }
     cl::Platform default_platform = cpu_platforms[0];
     /*
     if (not gpu_platforms.empty()) default_platform = gpu_platforms[0];
@@ -99,16 +107,16 @@ namespace utils {
       std::unique_lock<std::shared_mutex> lock2(main_mutex);
       it = programs.find(program_name);
 
+      std::string source = readFile(program_name);
+      cl::Program program(context, source);
       try {
-        std::string source = readFile(program_name);
-        cl::Program program(context, source);
-        auto status = program.build();
-        if (status != CL_SUCCESS) {
-          tscl::logger("Failed to build program: " + program_name + "\n", tscl::Log::Fatal);
-        }
+        program.build();
         it = programs.emplace(program_name, program).first;
       } catch (std::exception &e) {
-        tscl::logger("Failed to build program: " + program_name + "\n", tscl::Log::Fatal);
+
+        std::string build_log = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device);
+        tscl::logger(build_log, tscl::Log::Error);
+        tscl::logger("Failed to build program: " + program_name, tscl::Log::Fatal);
       }
     }
     return it->second;

@@ -6,7 +6,6 @@ add_library(Perceptron STATIC
         OptimizationMethod.cpp ${CURRENT_INCLUDE_DIR}/OptimizationMethod.hpp
         PlainTextMLPSerializer.cpp ${CURRENT_INCLUDE_DIR}/PlainTextMLPSerializer.hpp
         ActivationFunction.cpp ${INCLUDE_DIR}/neuralNetwork/ActivationFunction.hpp
-        ${INCLUDE_DIR}/clMatrix.hpp
         )
 
 target_include_directories(Perceptron PUBLIC ${INCLUDE_DIR} ${CURRENT_INCLUDE_DIR} ${INCLUDE_DIR}/neuralNetwork)
