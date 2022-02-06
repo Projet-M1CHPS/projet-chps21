@@ -77,8 +77,7 @@ namespace nnet {
   /**
    * @brief A neural network that supports most fp precision as template
    * parameters
-   *
-   * @tparam real
+   * 
    */
   class MLPerceptron final : public MLPBase {
   public:
