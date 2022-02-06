@@ -35,25 +35,15 @@ namespace af {
    *
    * Furthermore, every activation function should be linked to its derivative counterpart
    */
-  inline float identity(float x) {
-    return x;
-  }
+  inline float identity(float x) { return x; }
 
-  inline float didentity(float x) {
-    return 1;
-  }
+  inline float didentity(float x) { return 1; }
 
-  inline float sigmoid(float x) {
-    return 1.0 / (1.0 + std::exp(-x));
-  }
+  inline float sigmoid(float x) { return 1.0 / (1.0 + std::exp(-x)); }
 
-  inline float dsigmoid(float x) {
-    return sigmoid(x) * (1 - sigmoid(x));
-  }
+  inline float dsigmoid(float x) { return sigmoid(x) * (1 - sigmoid(x)); }
 
-  inline float relu(float x) {
-    return (x <= 0) ? 0.0 : x;
-  }
+  inline float relu(float x) { return (x <= 0) ? 0.0 : x; }
 
   inline float drelu(float x) {
     if (x == 0.0) { throw std::invalid_argument("Relu undefined on x = 0.0"); }
@@ -61,21 +51,13 @@ namespace af {
     return (x < 0) ? 0.0 : 1;
   }
 
-  inline float leakyRelu(float x) {
-    return (x < 0) ? (0.01 * x) : x;
-  }
+  inline float leakyRelu(float x) { return (x < 0) ? (0.01 * x) : x; }
 
-  inline float dleakyRelu(float x) {
-    return (x < 0) ? 0.01 : 1;
-  }
+  inline float dleakyRelu(float x) { return (x < 0) ? 0.01 : 1; }
 
-  inline float square(float x) {
-    return x * x;
-  }
+  inline float square(float x) { return x * x; }
 
-  inline float dsquare(float x) {
-    return 2 * x;
-  }
+  inline float dsquare(float x) { return 2 * x; }
 
   /**
    * @brief Return the function pair associated with an ActivationFunctionType

@@ -14,7 +14,7 @@ namespace nnet {
    *
    */
   enum class OptimizationAlgorithm { standard, decay, momentum, rpropPlus };
-  
+
   class OptimizationMethod {
   public:
     OptimizationMethod() = default;
@@ -52,8 +52,7 @@ namespace nnet {
 
   class MomentumOptimization : public OptimizationMethod {
   public:
-    MomentumOptimization(MLPerceptron &perceptron, const float learning_rate,
-                         const float momentum)
+    MomentumOptimization(MLPerceptron &perceptron, const float learning_rate, const float momentum)
         : lr(learning_rate), momentum(momentum) {
       setPerceptron(perceptron);
     }

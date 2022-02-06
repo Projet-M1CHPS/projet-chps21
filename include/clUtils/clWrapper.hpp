@@ -21,6 +21,7 @@ namespace utils {
     cl::Device getDefaultDevice() { return default_device; }
 
     cl::Program getProgram(const std::string &program_name);
+    cl::Kernel getKernel(const std::string &program_name, const std::string &kernel_name);
 
   private:
     clWrapper() = default;

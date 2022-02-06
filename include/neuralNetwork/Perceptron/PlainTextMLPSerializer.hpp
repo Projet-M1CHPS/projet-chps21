@@ -11,8 +11,7 @@ namespace nnet {
 
     MLPerceptron readFromStream(std::istream &stream) override;
 
-    bool writeToFile(const std::filesystem::path &path,
-                     const MLPerceptron &perceptron) override;
+    bool writeToFile(const std::filesystem::path &path, const MLPerceptron &perceptron) override;
 
     bool writeToStream(std::ostream &stream, const MLPerceptron &perceptron) override;
 

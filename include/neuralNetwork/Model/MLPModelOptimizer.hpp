@@ -84,8 +84,7 @@ namespace nnet {
 
   class MLPMiniBatchOptimizer : public MLPBatchOptimizer {
   public:
-    explicit MLPMiniBatchOptimizer(MLPModel &model,
-                                   std::shared_ptr<OptimizationMethod> tm,
+    explicit MLPMiniBatchOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm,
                                    size_t batch_size = 8);
 
     void optimize(const std::vector<math::FloatMatrix> &inputs,

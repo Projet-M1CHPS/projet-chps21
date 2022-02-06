@@ -39,7 +39,7 @@ namespace nnet {
 
     std::vector<math::FloatMatrix> *weights;
     math::FloatMatrix gradient;
-    math::FloatMatrix  current_error;
+    math::FloatMatrix current_error;
   };
 
 }   // namespace nnet

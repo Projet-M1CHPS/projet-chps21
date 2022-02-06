@@ -16,6 +16,7 @@ target_include_directories(ControlSystem_test
 target_link_libraries(
         ControlSystem_test PUBLIC
         ControlSystem
+        Classifier
         gtest_main
 )
 gtest_discover_tests(ControlSystem_test)

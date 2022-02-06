@@ -8,4 +8,4 @@ namespace math {
                             matrix.getRows() * matrix.getCols() * sizeof(float), res.getData());
     return res;
   }
-}   // namespace utils
+}   // namespace math

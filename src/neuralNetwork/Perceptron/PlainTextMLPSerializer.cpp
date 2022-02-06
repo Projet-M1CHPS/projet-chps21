@@ -146,8 +146,7 @@ namespace nnet {
     return writeToStream(file, perceptron);
   }
 
-  bool PlainTextMLPSerializer::writeToStream(std::ostream &stream,
-                                             const MLPerceptron &perceptron) {
+  bool PlainTextMLPSerializer::writeToStream(std::ostream &stream, const MLPerceptron &perceptron) {
     // We want the maximum precision for outputing in plain text
     // This wouldn't be necessary if we were using binary files
     std::streamsize old_precision = stream.precision();

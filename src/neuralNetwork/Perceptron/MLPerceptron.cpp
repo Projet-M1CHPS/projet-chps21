@@ -2,13 +2,13 @@
 
 namespace nnet {
 
-    MLPTopology MLPTopology::fromString(const std::string &str) {
-      std::vector<size_t> layers;
-      std::stringstream ss(str);
-      std::string token;
-      while (std::getline(ss, token, ',')) { layers.push_back(std::stoi(token)); }
-      return MLPTopology(layers);
-    }
+  MLPTopology MLPTopology::fromString(const std::string &str) {
+    std::vector<size_t> layers;
+    std::stringstream ss(str);
+    std::string token;
+    while (std::getline(ss, token, ',')) { layers.push_back(std::stoi(token)); }
+    return MLPTopology(layers);
+  }
 
   math::FloatMatrix MLPerceptron::predict(math::FloatMatrix const &input) const {
     const size_t nbInput = input.getRows();

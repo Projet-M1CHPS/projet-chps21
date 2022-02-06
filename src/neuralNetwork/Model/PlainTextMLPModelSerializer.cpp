@@ -63,8 +63,7 @@ namespace nnet {
     return writeToStream(file, model);
   }
 
-  bool PlainTextMLPModelSerializer::writeToStream(std::ostream &stream,
-                                                  const MLPModel &model) {
+  bool PlainTextMLPModelSerializer::writeToStream(std::ostream &stream, const MLPModel &model) {
     // Write header
     stream << "#MLPModel" << std::endl;
     stream << "#Version " << tscl::Version::current.to_string() << std::endl;

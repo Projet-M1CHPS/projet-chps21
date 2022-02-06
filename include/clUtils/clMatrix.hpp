@@ -1,8 +1,8 @@
 #pragma once
 #define CL_HPP_TARGET_OPENCL_VERSION 200
 #define CL_HPP_ENABLE_EXCEPTIONS 1
-#include <CL/opencl.hpp>
 #include "Matrix.hpp"
+#include <CL/opencl.hpp>
 
 namespace math {
 
@@ -13,11 +13,11 @@ namespace math {
   class clMatrix {
   public:
     clMatrix() = default;
-    clMatrix(const clMatrix&) = default;
-    clMatrix(clMatrix&&) = default;
+    clMatrix(const clMatrix &) = default;
+    clMatrix(clMatrix &&) = default;
 
-    clMatrix& operator=(const clMatrix&) = default;
-    clMatrix& operator=(clMatrix&&) = default;
+    clMatrix &operator=(const clMatrix &) = default;
+    clMatrix &operator=(clMatrix &&) = default;
 
     /**
      * @brief allocates a new matrix on the device

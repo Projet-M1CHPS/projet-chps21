@@ -113,13 +113,18 @@ namespace utils {
         program.build();
         it = programs.emplace(program_name, program).first;
       } catch (std::exception &e) {
-
         std::string build_log = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device);
         tscl::logger(build_log, tscl::Log::Error);
         tscl::logger("Failed to build program: " + program_name, tscl::Log::Fatal);
       }
     }
     return it->second;
+  }
+
+  cl::Kernel clWrapper::getKernel(const std::string &program_name, const std::string &kernel_name) {
+    cl::Program program = getProgram(program_name);
+    cl::Kernel kernel(program, kernel_name.c_str());
+    return kernel;
   }
 
   void printAvailablePlatforms() {

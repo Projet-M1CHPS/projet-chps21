@@ -44,9 +44,7 @@ namespace control::classifier {
     math::clMatrix normalizeToDevice(const image::GrayscaleImage &img, utils::clWrapper &wrapper,
                                      cl::CommandQueue &queue) {
       // Load the conversion kernel
-      cl::Program program = wrapper.getProgram("kernels/NormalizeCharToFloat.cl");
-      // This kernel cast a char array to a float array and normalize it
-      cl::Kernel kernel(program, "normalizeCharToFloat");
+      cl::Kernel kernel = wrapper.getKernel("kernels/NormalizeCharToFloat.cl", "normalizeCharToFloat");
 
       // Allocate a new cl matrix
       math::clMatrix res(img.getWidth() * img.getHeight(), 1, wrapper.getContext());
@@ -116,13 +114,14 @@ namespace control::classifier {
   }
 
   // Load a set from an input directory
-  // The directory should contain a subdirectory for each class
-  // Each class should contain a set of images
-  // Images are loaded as grayscale images and feeded to the process pipeline
-  // Image -> preprocess -> resize -> postprocess -> OpenCL matrix
+  // The directory should contain a subdirectory for each class.
+  // Each class should contain a set of images.
+  // Images are loaded as grayscale images and fed to the processing pipeline.
+  //
+  // Image -> preprocess -> resize -> postprocess -> OpenCL buffer on device
   //
   // During the openCL conversion, matrices are normalized by a given factor (255 so values are
-  // contained between 0 and 1). This prevent exploding gradient during the training process
+  // contained between 0 and 1). This prevents exploding gradient during the training process
   void CITCLoader::loadSet(CTrainingSet &res, const std::filesystem::path &input_path,
                            utils::clWrapper &wrapper) {
     // Create an engine for the resize transformation

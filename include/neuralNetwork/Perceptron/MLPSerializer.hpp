@@ -33,8 +33,7 @@ namespace nnet {
      * @param perceptron The perceptron to write
      * @return true on success, false on failure
      */
-    virtual bool writeToFile(const std::filesystem::path &path,
-                             const MLPerceptron &perceptron) = 0;
+    virtual bool writeToFile(const std::filesystem::path &path, const MLPerceptron &perceptron) = 0;
 
     /**
      *

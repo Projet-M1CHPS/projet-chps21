@@ -15,8 +15,7 @@ namespace nnet {
     return res;
   }
 
-  std::unique_ptr<MLPModel>
-  MLPModelFactory::randomSigReluAlt(MLPTopology const &topology) {
+  std::unique_ptr<MLPModel> MLPModelFactory::randomSigReluAlt(MLPTopology const &topology) {
     auto res = std::make_unique<MLPModel>();
     auto &mlp = res->getPerceptron();
     mlp.setTopology(topology);
