@@ -3,13 +3,37 @@
 namespace cnnet {
 
   void CNN::setTopology(CNNTopology const &topology) {
-    std::pair<size_t, size_t> InputSize(topology.getInputSize());
+    const size_t deepth = topology.getDeepth();
 
-    for (const auto &i : topology) {
-      layers.push_back(i->convertToLayer());
-      layerMatrix.push_back(FloatMatrix(i->calculateOutputSize(InputSize)));
-      // layerMatrix.back().randomize();
-      InputSize = std::make_pair(layerMatrix.back().getRows(), layerMatrix.back().getCols());
+    layers.resize(deepth);
+    layerMatrix.resize(deepth);
+
+    layers[0].resize(topology(0)->getFeatures());
+    layerMatrix[0].resize(topology(0)->getFeatures());
+
+    for (size_t i = 1; i < deepth; i++) {
+      layers[i].resize(topology(i)->getFeatures() * layers[i - 1].size());
+      layerMatrix[i].resize(topology(i)->getFeatures() * layerMatrix[i - 1].size());
+    }
+
+    for (auto &i : layers) std::cout << i.size() << std::endl;
+
+
+    std::pair<size_t, size_t> inputSize(topology.getInputSize());
+    for (size_t i = 0; i < topology(0)->getFeatures(); i++) {
+      layers[0][i] = topology(0)->convertToLayer();
+      layerMatrix[0][i] = FloatMatrix(topology(0)->calculateOutputSize(inputSize));
+    }
+
+    inputSize = std::make_pair(layerMatrix[0].front().getRows(), layerMatrix[0].front().getCols());
+
+    for (size_t i = 1; i < deepth; i++) {
+      inputSize = std::make_pair(layerMatrix[i - 1].front().getRows(),
+                                 layerMatrix[i - 1].front().getCols());
+      for (size_t j = 0; j < layers[i].size(); j++) {
+        layers[i][j] = topology(i)->convertToLayer();
+        layerMatrix[i][j] = FloatMatrix(topology(i)->calculateOutputSize(inputSize));
+      }
     }
 
     this->topology = topology;
@@ -25,20 +49,36 @@ namespace cnnet {
       throw std::runtime_error("Input size does not match topology input size");
     }
 
+    std::cout << "forward \n" << std::endl;
     std::cout << input << std::endl;
-    for (auto &i : layerMatrix) std::cout << "\n" << i << std::endl;
 
-    layers[0]->compute(input, layerMatrix[0]);
-
-    for (size_t i = 1; i < layers.size(); i++) {
-      layers[i]->compute(layerMatrix[i - 1], layerMatrix[i]);
+    for (size_t i = 0; i < layers.size(); i++) {
+      std::cout << "------------------------------------------" << std::endl;
+      for (size_t j = 0; j < layers[i].size(); j++)
+        std::cout << layerMatrix[i][j] << "\n" << std::endl;
     }
 
-    std::cout << "\n------------------------------------------------------------------\n" << std::endl;
-    std::cout << input << std::endl;
-    for (auto &i : layerMatrix) std::cout << "\n" << i << std::endl;
+    for (size_t i = 0; i < topology(0)->getFeatures(); i++)
+      layers[0][i]->compute(input, layerMatrix[0][i]);
 
-    return layerMatrix.back();
+    for (size_t i = 1; i < topology.getDeepth(); i++) {
+      size_t l = 0;
+      for (size_t j = 0; j < layers[i - 1].size(); j++) {
+        for (size_t k = 0; k < topology(i)->getFeatures(); k++) {
+          std::cout << "(" << i - 1 << ", " << j << ") (" << i << ", " << l << ")" << std::endl;
+          layers[i][j]->compute(layerMatrix[i - 1][j], layerMatrix[i][l++]);
+        }
+      }
+    }
+
+    std::cout << "////////////////////////////////////////////" << std::endl;
+    for (size_t i = 0; i < layers.size(); i++) {
+      std::cout << "------------------------------------------" << std::endl;
+      for (size_t j = 0; j < layers[i].size(); j++)
+        std::cout << layerMatrix[i][j] << "\n" << std::endl;
+    }
+
+    return layerMatrix[0][0];
   }
 
 }   // namespace cnnet

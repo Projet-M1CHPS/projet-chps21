@@ -28,8 +28,8 @@ namespace cnnet {
   private:
     CNNTopology topology;
 
-    std::vector<std::unique_ptr<CNNLayer>> layers;
-    std::vector<FloatMatrix> layerMatrix;
+    std::vector<std::vector<std::unique_ptr<CNNLayer>>> layers;
+    std::vector<std::vector<FloatMatrix>> layerMatrix;
 
     af::ActivationFunctionType activation_function;
   };

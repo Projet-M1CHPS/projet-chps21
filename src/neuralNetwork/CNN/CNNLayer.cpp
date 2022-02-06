@@ -27,7 +27,7 @@ namespace cnnet {
             sum += input(k + rowsPos, l + colsPos) * matFiltre(k, l);
           }
         }
-        std::cout << "index " << i + padding << " " << j + padding << " " << sum << std::endl;
+        //std::cout << "index " << i + padding << " " << j + padding << " " << sum << std::endl;
         output(i + padding, j + padding) = sum;
         colsPos += stride;
       }

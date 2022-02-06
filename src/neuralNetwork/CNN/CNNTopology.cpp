@@ -30,7 +30,7 @@ namespace cnnet {
   }
 
   std::ostream &CNNTopologyLayerConvolution::printTo(std::ostream &os) const {
-    os << "Convolution layer: filter{" << filter.first << ", " << filter.second << "}, stride{"
+    os << "Convolution layer: features{" << features << "}, filter{" << filter.first << ", " << filter.second << "}, stride{"
        << stride << "}, padding{" << padding << "}";
     return os;
   }
@@ -65,6 +65,14 @@ namespace cnnet {
 
   CNNTopology::CNNTopology() : inputSize(0, 0) {}
   CNNTopology::CNNTopology(const std::pair<size_t, size_t> &inputSize) : inputSize(inputSize) {}
+
+  const std::shared_ptr<CNNTopologyLayer> &CNNTopology::operator()(size_t index) const
+  {
+    if(index >= layers.size())
+      throw std::out_of_range("Index out of range");
+    
+    return layers[index];
+  }
 
   void CNNTopology::addConvolution(const size_t features,
                                    const std::pair<size_t, size_t> &filterSize, const size_t stride,

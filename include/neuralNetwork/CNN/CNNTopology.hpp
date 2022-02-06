@@ -19,6 +19,7 @@ namespace cnnet {
 
     const std::pair<size_t, size_t> &getFilterSize() const { return filter; }
     const size_t &getStride() const { return stride; }
+    virtual const size_t getFeatures() const { return 1; }
 
     virtual std::unique_ptr<CNNLayer> convertToLayer() const = 0;
 
@@ -40,7 +41,7 @@ namespace cnnet {
                                 const size_t stride, const size_t padding);
     ~CNNTopologyLayerConvolution() = default;
 
-    const size_t &getFeatures() const { return features; }
+    const size_t getFeatures() const override { return features; }
     const size_t &getPadding() const { return padding; }
 
     std::unique_ptr<CNNLayer> convertToLayer() const override;
@@ -93,12 +94,16 @@ namespace cnnet {
     const_iterator end() const { return layers.end(); }
 
 
+    const std::shared_ptr<CNNTopologyLayer> &operator()(size_t index) const;
+
+
     void addConvolution(const size_t features, const std::pair<size_t, size_t> &filterSize,
                         const size_t stride, const size_t padding);
 
     void addPooling(const std::pair<size_t, size_t> &poolSize, const size_t stride);
 
     const std::pair<size_t, size_t> &getInputSize() const { return inputSize; }
+    const size_t getDeepth() const { return layers.size(); }
     const std::vector<std::shared_ptr<CNNTopologyLayer>> &getTopology() const { return layers; }
 
   private:
