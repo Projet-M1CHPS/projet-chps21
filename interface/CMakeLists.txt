@@ -3,7 +3,7 @@ include(pybind11.cmake)
 
 ## Interface build
 
-file (GLOB PYTHON_FILES "*.cpp" "*.hpp")
+file (GLOB PYTHON_FILES "${CMAKE_SOURCE_DIR}/interface/*.cpp" "${CMAKE_SOURCE_DIR}/interface/*.hpp")
 
 pybind11_add_module(kreps 
 	${SOURCE_DIR}
@@ -11,10 +11,12 @@ pybind11_add_module(kreps
 	${PYTHON_FILES}
 )
 
+add_library(NetworkInterface INTERFACE)
+target_include_directories(NetworkInterface INTERFACE "${CMAKE_SOURCE_DIR}/interface")
+
 set_property(TARGET tscl PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-
-target_link_libraries(kreps PUBLIC nlohmann_json::nlohmann_json ControlSystem NeuralNetwork Threads::Threads tscl::tscl BLAS::BLAS)
+target_link_libraries(kreps PUBLIC NetworkInterface nlohmann_json::nlohmann_json ControlSystem NeuralNetwork Threads::Threads tscl::tscl BLAS::BLAS)
 
 message("= = = = = = = = = = = = = =")
 set(PYTHON_LIBRARY_DIR "/usr/lib/python3.8/")
@@ -26,4 +28,4 @@ message("===========================")
 install(SCRIPT kreps 
 RUNTIME DESTINATION "${CMAKE_BINARY_DIR}/bin"
 )
-configure_file(test.py "${CMAKE_BINARY_DIR}/interface" COPYONLY) 
+configure_file(main.py "${CMAKE_BINARY_DIR}/interface" COPYONLY) 

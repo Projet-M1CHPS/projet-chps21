@@ -1,11 +1,79 @@
 {
-    "dataset_folder_path": "../dataset",
-    "output_folder_path": "run/results/",
+    "input_path": "../dataset",
+    "output_path": "run/results/",
     "training": {
         "use_logger": true,
         "logger_folder_path": "logs/",
         "resize": 32,
         "preprocess_transformations": ["INVERSION"],
-        "postprocess_transformations": ["BINARISE"]
+        "postprocess_transformations": ["BINARISE"],
+        "activation": {
+            "identity": {
+                "enabled": false
+
+            },
+            "sigmoid": {
+                "enabled": false
+
+            },
+            "relu": {
+                "enabled": false
+
+            },
+            "leakyRelu": {
+                "enabled": false
+
+            },
+            "square": {
+                "enabled": false
+
+            }
+        },
+
+        "optimization": {
+            "sgd": {
+                "enabled": false,
+                "learning_rate": 0.1
+            },
+            "decay": {
+                "enabled": false,
+                "lr0": 0.2,
+                "dr": 0.1,
+                "mom": 0.9
+            },
+            "momentum": {
+                "enabled": false,
+                "learning_rate": 0.1
+            },
+            "decaymomentum": {
+                "enabled": false,
+                "lr0": 0.2,
+                "dr": 0.1,
+                "mom": 0.9,
+                "learning_rate": 0.1
+            },
+            "rprop": {
+                "enabled": false,
+                "eta_p": 1.2,
+                "eta_m": 0.5,
+                "learning_rate_max": 50.0,
+                "learning_rate_min": 1e-6
+            }
+        },
+        "model": {
+            "stochastic": {
+                "enabled": false
+
+            },
+            "batch": {
+                "enabled": false
+
+            },
+            "minibatch": {
+                "enabled": false,
+                "size": 8
+            }
+
+        }
     }
 }
