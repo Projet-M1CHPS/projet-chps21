@@ -5,64 +5,63 @@
 #include "Transform.hpp"
 namespace image::transform {
 
-  namespace {
 
-    const std::map<std::string, TransformType> transformEnumMap({
-            {"binaryscale", TransformType::binaryScale},
-            {"binaryScaleByMedian", TransformType::binaryScaleByMedian},
-            {"resize", TransformType::resize},
-            {"crop", TransformType::crop},
-            {"inversion", TransformType::inversion},
-            {"equalize", TransformType::equalize},
-            {"restriction", TransformType::restriction},
-            // Add new functions here
-    });
+  static const std::map<std::string, TransformType> transformEnumMap({
+          {"binaryscale", TransformType::binaryScale},
+          {"binaryScaleByMedian", TransformType::binaryScaleByMedian},
+          {"resize", TransformType::resize},
+          {"crop", TransformType::crop},
+          {"inversion", TransformType::inversion},
+          {"equalize", TransformType::equalize},
+          {"restriction", TransformType::restriction},
+          // Add new functions here
+  });
 
-    TransformType strToTransformEnum(std::string identifier) {
-      auto t_enum = transformEnumMap.find(identifier);
-      if (t_enum == transformEnumMap.end())
+  TransformType TransformEngine::strToTransformEnum(std::string identifier) {
+    auto t_enum = transformEnumMap.find(identifier);
+    if (t_enum == transformEnumMap.end())
+      throw "[ERROR]: " + identifier + "is not recognised as a valid Transform. \n" +
+              "If you declared a new transformation please declare it in: TransformEngine.cpp " +
+              "[namespace 'transform_enumerates'] subfunctions.\n";
+    return t_enum->second;
+  }
+
+  std::shared_ptr<Transformation>
+  TransformEngine::getTransformationFromString(std::string identifier) {
+    switch (strToTransformEnum(identifier)) {
+      case TransformType::binaryScale:
+        return std::make_shared<BinaryScale>();
+      case TransformType::binaryScaleByMedian:
+        return std::make_shared<BinaryScaleByMedian>();
+      case TransformType::resize:   // TODO: Rebuild the TransformationEngine system
+        return std::make_shared<Resize>(0, 0);
+      case TransformType::crop:   // TODO: Rebuild the TransformationEngine system
+        return std::make_shared<Crop>(0, 0, 0, 0);
+      case TransformType::inversion:
+        return std::make_shared<Inversion>();
+      case TransformType::equalize:
+        return std::make_shared<Equalize>();
+      case TransformType::restriction:   // TODO: Rebuild the TransformationEngine system
+        return std::make_shared<Restriction>(32);
+
+      // Add new functions here
+      default:
         throw "[ERROR]: " + identifier + "is not recognised as a valid Transform. \n" +
-                "If you declared a new transformation please declare it in: TransformEngine.cpp " +
+                "If you declared a new transformation please declare it in: "
+                "TransformEngine.cpp " +
                 "[namespace 'transform_enumerates'] subfunctions.\n";
-      return t_enum->second;
     }
+  }
 
-    std::shared_ptr<Transformation> getTransformationFromString(std::string identifier) {
-      switch (strToTransformEnum(identifier)) {
-        case TransformType::binaryScale:
-          return std::make_shared<BinaryScale>();
-        case TransformType::binaryScaleByMedian:
-          return std::make_shared<BinaryScaleByMedian>();
-        case TransformType::resize:   // TODO: Rebuild the TransformationEngine system
-          return std::make_shared<Resize>(0, 0);
-        case TransformType::crop:   // TODO: Rebuild the TransformationEngine system
-          return std::make_shared<Crop>(0, 0, 0, 0);
-        case TransformType::inversion:
-          return std::make_shared<Inversion>();
-        case TransformType::equalize:
-          return std::make_shared<Equalize>();
-        case TransformType::restriction:   // TODO: Rebuild the TransformationEngine system
-          return std::make_shared<Restriction>(32);
+  std::string TransformEngine::transformEnumToStr(TransformType t_enum) {
+    for (auto pair : transformEnumMap)
+      if (pair.second == t_enum) return pair.first;
+    throw "[ERROR]: transformEnumToStr(t_enum): t_enum can not be recognised as a valid "
+          "Transform identifier.\nIf you declared a new transformation please declare it in: "
+          "TransformEngine.cpp [namespace 'transform_enumerates'] subfunctions.\n";
+    return "_";
+  }
 
-        // Add new functions here
-        default:
-          throw "[ERROR]: " + identifier + "is not recognised as a valid Transform. \n" +
-                  "If you declared a new transformation please declare it in: "
-                  "TransformEngine.cpp " +
-                  "[namespace 'transform_enumerates'] subfunctions.\n";
-      }
-    }
-
-    std::string transformEnumToStr(TransformType t_enum) {
-      for (auto pair : transformEnumMap)
-        if (pair.second == t_enum) return pair.first;
-      throw "[ERROR]: transformEnumToStr(t_enum): t_enum can not be recognised as a valid "
-            "Transform identifier.\nIf you declared a new transformation please declare it in: "
-            "TransformEngine.cpp [namespace 'transform_enumerates'] subfunctions.\n";
-      return "_";
-    }
-
-  }   // namespace
 
   void TransformEngine::loadFromFile(std::string const &fileName) {
     std::ifstream fp(fileName);

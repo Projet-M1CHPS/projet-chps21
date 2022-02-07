@@ -140,6 +140,9 @@ namespace image::transform {
    */
   class TransformEngine {
   public:
+    static TransformType strToTransformEnum(std::string identifier);
+    static std::shared_ptr<Transformation> getTransformationFromString(std::string identifier);
+    static std::string transformEnumToStr(TransformType t_enum);
     // We want to be able to store the applied transformations in a file
     // (Should throw an exception on error)
     void loadFromFile(std::string const &fileName);

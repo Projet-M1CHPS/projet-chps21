@@ -7,6 +7,10 @@
         "resize": 32,
         "preprocess_transformations": ["INVERSION"],
         "postprocess_transformations": ["BINARISE"],
+        "max_epoch": 50,
+        "batch_size": 1,
+        "verbose": false,
+        "topology": [1024, 64, 64, 32, 32],
         "activation": {
             "identity": {
                 "enabled": false
@@ -33,47 +37,50 @@
         "optimization": {
             "sgd": {
                 "enabled": false,
-                "learning_rate": 0.1
+                "lr": 0.1
             },
             "decay": {
                 "enabled": false,
                 "lr0": 0.2,
                 "dr": 0.1,
-                "mom": 0.9
             },
             "momentum": {
                 "enabled": false,
-                "learning_rate": 0.1
+                "lr": 0.1,
+                "mom": 0.9
             },
             "decaymomentum": {
                 "enabled": false,
                 "lr0": 0.2,
                 "dr": 0.1,
                 "mom": 0.9,
-                "learning_rate": 0.1
             },
             "rprop": {
                 "enabled": false,
                 "eta_p": 1.2,
                 "eta_m": 0.5,
-                "learning_rate_max": 50.0,
-                "learning_rate_min": 1e-6
+                "lr_max": 50.0,
+                "lr_min": 1e-6
+            }
+        },
+        "optimizer": {
+            "batch": {
+                "enabled": false
+            },
+            "minibatch": {
+                "enabled": false,
+                "size": 8
             }
         },
         "model": {
-            "stochastic": {
+            "random": {
                 "enabled": false
 
             },
             "batch": {
                 "enabled": false
 
-            },
-            "minibatch": {
-                "enabled": false,
-                "size": 8
             }
-
         }
     }
 }

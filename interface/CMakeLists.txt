@@ -11,7 +11,7 @@ pybind11_add_module(kreps
 	${PYTHON_FILES}
 )
 
-add_library(NetworkInterface INTERFACE)
+add_library(NetworkInterface INTERFACE NetworkInterface.cpp)
 target_include_directories(NetworkInterface INTERFACE "${CMAKE_SOURCE_DIR}/interface")
 
 set_property(TARGET tscl PROPERTY POSITION_INDEPENDENT_CODE ON)
