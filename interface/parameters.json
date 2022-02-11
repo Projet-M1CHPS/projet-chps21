@@ -5,16 +5,25 @@
         "use_logger": true,
         "logger_folder_path": "logs/",
         "resize": 32,
-        "preprocess_transformations": ["INVERSION"],
-        "postprocess_transformations": ["BINARISE"],
+        "preprocess_transformations": [
+            "INVERSION"
+        ],
+        "postprocess_transformations": [
+            "BINARYSCALE"
+        ],
         "max_epoch": 50,
         "batch_size": 1,
         "verbose": false,
-        "topology": [1024, 64, 64, 32, 32],
+        "topology": [
+            1024,
+            64,
+            64,
+            32,
+            32
+        ],
         "activation": {
             "identity": {
                 "enabled": false
-
             },
             "sigmoid": {
                 "enabled": false
@@ -42,7 +51,7 @@
             "decay": {
                 "enabled": false,
                 "lr0": 0.2,
-                "dr": 0.1,
+                "dr": 0.1
             },
             "momentum": {
                 "enabled": false,
@@ -53,7 +62,7 @@
                 "enabled": false,
                 "lr0": 0.2,
                 "dr": 0.1,
-                "mom": 0.9,
+                "mom": 0.9
             },
             "rprop": {
                 "enabled": false,
