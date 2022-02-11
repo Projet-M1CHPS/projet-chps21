@@ -1,9 +1,10 @@
 #include "NetworkInterface.hpp"
 
 #pragma region anonymous_utils
+
 bool isJsonSectionEnabled(const json &e) {
   return e.contains("enabled") && e["enabled"].is_boolean() && e["enabled"];
-};
+}
 
 std::unique_ptr<nnet::MLPModel> getModelFromConfig(const json &modelsConfig,
                                                    const nnet::MLPTopology &topology) {
@@ -17,21 +18,24 @@ std::shared_ptr<nnet::OptimizationMethod>
 getOptimizationFromConfig(const json &optimizationConfig,
                           const std::unique_ptr<nnet::MLPModel> &model) {
   if (isJsonSectionEnabled(optimizationConfig["sgd"]))
-    return std::make_shared<nnet::SGDOptimization>(optimizationConfig["lr"]);
+    return std::make_shared<nnet::SGDOptimization>((float) optimizationConfig["sgd"]["lr"]);
+
   if (isJsonSectionEnabled(optimizationConfig["decay"]))
-    return std::make_shared<nnet::DecayOptimization>(optimizationConfig["lr0"],
-                                                     optimizationConfig["dr"]);
+    return std::make_shared<nnet::DecayOptimization>(optimizationConfig["decay"]["lr0"],
+                                                     optimizationConfig["decay"]["dr"]);
   if (isJsonSectionEnabled(optimizationConfig["momentum"]))
-    return std::make_shared<nnet::MomentumOptimization>(
-            model->getPerceptron(), optimizationConfig["lr"], optimizationConfig["mom"]);
+    return std::make_shared<nnet::MomentumOptimization>(model->getPerceptron(),
+                                                        optimizationConfig["momentum"]["lr"],
+                                                        optimizationConfig["momentum"]["mom"]);
   if (isJsonSectionEnabled(optimizationConfig["decaymomentum"]))
     return std::make_shared<nnet::DecayMomentumOptimization>(
-            model->getPerceptron(), optimizationConfig["lr0"], optimizationConfig["dr"],
-            optimizationConfig["mom"]);
+            model->getPerceptron(), optimizationConfig["decaymomentum"]["lr0"],
+            optimizationConfig["decaymomentum"]["dr"], optimizationConfig["decaymomentum"]["mom"]);
   if (isJsonSectionEnabled(optimizationConfig["rprop"]))
     return std::make_shared<nnet::RPropPOptimization>(
-            model->getPerceptron(), optimizationConfig["eta_p"], optimizationConfig["eta_m"],
-            optimizationConfig["lr_max"], optimizationConfig["lr_min"]);
+            model->getPerceptron(), optimizationConfig["rprop"]["eta_p"],
+            optimizationConfig["rprop"]["eta_m"], optimizationConfig["rprop"]["lr_max"],
+            optimizationConfig["rprop"]["lr_min"]);
   throw std::invalid_argument(
           "No optimization defined. Should have been detected before. Report this.");
 }
@@ -41,7 +45,7 @@ getOptimizerFromConfig(const json &optimizerConfig, const std::unique_ptr<nnet::
                        const std::shared_ptr<nnet::OptimizationMethod> &optimization) {
   if (isJsonSectionEnabled(optimizerConfig["minibatch"]))
     return std::make_unique<nnet::MLPMiniBatchOptimizer>(*model, optimization,
-                                                         optimizerConfig["size"]);
+                                                         optimizerConfig["minibatch"]["size"]);
 
   if (isJsonSectionEnabled(optimizerConfig["batch"]))
     return std::make_unique<nnet::MLPBatchOptimizer>(*model, optimization);
@@ -153,13 +157,19 @@ bool NetworkInterface::createAndTrain() {
     tscl::logger("Output path: " + output_path.string(), tscl::Log::Debug);
   }
 
+  if (not std::filesystem::exists(input_path)) {
+    tscl::logger("Input path is not valid", tscl::Log::Error);
+    return false;
+  }
+
   if (not std::filesystem::exists(output_path)) std::filesystem::create_directories(output_path);
 
   tscl::logger("Creating collection loader", tscl::Log::Debug);
   int resize_dimension = trainingConfig["resize"];
   CITCLoader loader(resize_dimension, resize_dimension);
 
-
+  tscl::logger("Image processing:", tscl::Log::Debug);
+  tscl::logger("\tpre-processing", tscl::Log::Debug);
   auto &pre_engine = loader.getPreProcessEngine();
   // Add preprocessing transformations here
   std::for_each(trainingConfig["preprocess_transformations"].begin(),
@@ -169,6 +179,7 @@ bool NetworkInterface::createAndTrain() {
                   pre_engine.addTransformation(tr);
                 });
 
+  tscl::logger("\tpost-processing", tscl::Log::Debug);
   auto &engine = loader.getPostProcessEngine();
   // Add postprocessing transformations here
   std::for_each(trainingConfig["postprocess_transformations"].begin(),
@@ -178,24 +189,26 @@ bool NetworkInterface::createAndTrain() {
                   engine.addTransformation(tr);
                 });
 
-  tscl::logger("Loading collection", tscl::Log::Information);
+  tscl::logger("Loading collection", tscl::Log::Debug);
   auto training_collection = loader.load(input_path);
 
+  tscl::logger("Creating topology", tscl::Log::Debug);
   // Create a correctly-sized topology
   std::vector<size_t> topology_config = trainingConfig["topology"];
   nnet::MLPTopology topology(topology_config);
 
   topology.push_back(training_collection->getClassCount());
 
-
+  tscl::logger("Creating model", tscl::Log::Debug);
   auto model = getModelFromConfig(trainingConfig["model"], topology);
 
+  tscl::logger("Creating optimization", tscl::Log::Debug);
   auto optimization = getOptimizationFromConfig(trainingConfig["optimization"], model);
 
+  tscl::logger("Creating optimizer", tscl::Log::Debug);
   auto optimizer = getOptimizerFromConfig(trainingConfig["optimizer"], model, optimization);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
-
   TrainingControllerParameters parameters(input_path, output_path, trainingConfig["max_epoch"],
                                           trainingConfig["batch_size"], trainingConfig["verbose"]);
   CTController controller(parameters, *model, *optimizer, *training_collection);
