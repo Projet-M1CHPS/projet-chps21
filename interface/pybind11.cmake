@@ -1,7 +1,5 @@
 include(FetchContent)
 
-set(FETCHCONTENT_QUIET FALSE)
-
 FetchContent_Declare(
     pybind11
     URL https://github.com/pybind/pybind11/archive/refs/tags/v2.9.0.tar.gz
