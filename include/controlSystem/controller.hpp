@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tscl.hpp"
+#include <NeuralNetwork.hpp>
 #include <controlSystem/controllerParameters.hpp>
 
 namespace control {

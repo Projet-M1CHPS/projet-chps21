@@ -22,7 +22,7 @@ namespace control::classifier {
      * @param collection The collection of input used for training
      */
     explicit CTController(const TrainingControllerParameters &params, nnet::Model &model,
-                          nnet::ModelOptimizer &optimizer, CTCollection &collection)
+                          nnet::Optimizer &optimizer, CTCollection &collection)
         : RunController(model), params(params), optimizer(&optimizer),
           training_collection(&collection) {}
 
@@ -57,7 +57,7 @@ namespace control::classifier {
     void trainingLoop(CStatTracker &stracker);
     void printPostTrainingStats(CStatTracker &stracker);
 
-    nnet::ModelOptimizer *optimizer;
+    nnet::Optimizer *optimizer;
     TrainingControllerParameters params;
     CTCollection *training_collection;
   };

@@ -4,12 +4,11 @@
 namespace nnet {
 
 
-  MLPOptimizer::MLPOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm)
+  MLPOptimizer::MLPOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm)
       : neural_network(&model.getPerceptron()), opti_meth(tm) {}
 
 
-  MLPModelStochOptimizer::MLPModelStochOptimizer(MLPModel &model,
-                                                 std::shared_ptr<OptimizationMethod> tm)
+  MLPModelStochOptimizer::MLPModelStochOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm)
       : MLPOptimizer(model, tm) {
     setModel(model);
   }
@@ -105,7 +104,7 @@ namespace nnet {
   }
 
 
-  MLPBatchOptimizer::MLPBatchOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm)
+  MLPBatchOptimizer::MLPBatchOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm)
       : MLPOptimizer(model, tm) {
     setModel(model);
   }
@@ -211,35 +210,7 @@ namespace nnet {
     }
   }
 
-  void MLPBatchOptimizer::backward(math::FloatMatrix const &target) {
-    auto &weights = this->neural_network->getWeights();
-    auto &biases = this->neural_network->getBiases();
-    auto &activation_functions = this->neural_network->getActivationFunctions();
-
-    // Avoid the loop index underflowing back to +inf
-    if (weights.empty()) return;
-
-    for (long i = weights.size() - 1; i >= 0; i--) {
-      storage.setIndex(i);
-      math::FloatMatrix derivative(layers[storage.getIndex() + 1]);
-      auto dafunc = af::getAFFromType(activation_functions[storage.getIndex()]).second;
-      std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
-
-      derivative.hadamardProd(storage.getError());
-
-      storage.getError() =
-              math::FloatMatrix::mul(true, weights[storage.getIndex()], false, derivative);
-
-      storage.getGradient() =
-              math::FloatMatrix::mul(false, derivative, true, layers_af[storage.getIndex()], 1.0);
-
-      this->opti_meth->optimize(storage);
-    }
-  }
-
-
-  MLPMiniBatchOptimizer::MLPMiniBatchOptimizer(MLPModel &model,
-                                               std::shared_ptr<OptimizationMethod> tm,
+  MLPMiniBatchOptimizer::MLPMiniBatchOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm,
                                                size_t batch_size)
       : MLPBatchOptimizer(model, std::move(tm)), batch_size(batch_size) {}
 

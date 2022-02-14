@@ -1,6 +1,7 @@
 #include "MLPModelSerializer.hpp"
 #include "MLPSerializer.hpp"
 #include <fstream>
+#include <tscl.hpp>
 
 namespace nnet {
 
@@ -45,8 +46,7 @@ namespace nnet {
       }
     }
 
-    MLPSerializer serializer;
-    auto perceptron = serializer.readFromStream(stream);
+    auto perceptron = nnet::MLPSerializer::readFromStream(stream);
     res.getPerceptron() = std::move(perceptron);
 
     return res;
@@ -67,8 +67,6 @@ namespace nnet {
     stream << "#MLPModel" << std::endl;
     stream << "#Version " << tscl::Version::current.to_string() << std::endl;
 
-    MLPSerializer serializer;
-
-    return serializer.writeToStream(stream, model.getPerceptron());
+    return nnet::MLPSerializer::writeToStream(stream, model.getPerceptron());
   }
 }   // namespace nnet

@@ -1,5 +1,5 @@
 #include "Control.hpp"
-#include "Network.hpp"
+#include "NeuralNetwork.hpp"
 #include "ProjectVersion.hpp"
 #include "tscl.hpp"
 
@@ -48,7 +48,7 @@ bool createAndTrain(utils::clWrapper &wrapper, std::filesystem::path const &inpu
   nnet::MLPTopology topology = {32 * 32, 64, 64, 32, 32};
   topology.push_back(training_collection->getClassCount());
 
-  auto model = nnet::MLPModelFactory::randomSigReluAlt(topology);
+  auto model = nnet::MLPModel::randomReluSigmoid(topology);
 
   auto tm =
           std::make_shared<nnet::DecayMomentumOptimization>(model->getPerceptron(), 0.2, 0.1, 0.9);
@@ -66,8 +66,7 @@ bool createAndTrain(utils::clWrapper &wrapper, std::filesystem::path const &inpu
     tscl::logger(res.getMessage(), tscl::Log::Error);
     return false;
   }
-  nnet::PlainTextMLPModelSerializer serializer;
-  serializer.writeToFile(output_path / "model.nnet", *model);
+  nnet::MLPModelSerializer::writeToFile(output_path / "model.nnet", *model);
   return true;
 }
 

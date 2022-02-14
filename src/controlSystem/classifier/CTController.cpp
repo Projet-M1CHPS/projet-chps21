@@ -1,7 +1,7 @@
 
 #include "CTController.hpp"
 #include "CStatTracker.hpp"
-#include "Network.hpp"
+#include "NeuralNetwork.hpp"
 #include "tscl.hpp"
 
 namespace control::classifier {

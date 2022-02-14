@@ -1,16 +1,16 @@
 #pragma once
 
 #include "MLPModel.hpp"
+#include "MLPerceptron.hpp"
+#include "Optimization/Optimization.hpp"
 #include "Optimizer.hpp"
-#include "neuralNetwork/Perceptron/MLPerceptron.hpp"
-#include "neuralNetwork/Perceptron/OptimizationMethod.hpp"
 #include <iostream>
 #include <utility>
 
 namespace nnet {
   class MLPOptimizer : public Optimizer {
   public:
-    MLPOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
+    MLPOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm);
     ~MLPOptimizer() override = default;
 
     MLPOptimizer(const MLPOptimizer &other) = delete;
@@ -22,18 +22,18 @@ namespace nnet {
     MLPOptimizer &operator=(MLPOptimizer &&other) noexcept = default;
 
     MLPerceptron *gePerceptron() const { return neural_network; }
-    OptimizationMethod *getOptimizationMethod() const { return opti_meth.get(); }
+    Optimization *getOptimizationMethod() const { return opti_meth.get(); }
 
     void update() override { opti_meth->update(); }
 
   protected:
     MLPerceptron *neural_network;
-    std::shared_ptr<OptimizationMethod> opti_meth;
+    std::shared_ptr<Optimization> opti_meth;
   };
 
   class MLPModelStochOptimizer final : public MLPOptimizer {
   public:
-    MLPModelStochOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
+    MLPModelStochOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm);
 
     void train(const math::FloatMatrix &input, const math::FloatMatrix &target);
 
@@ -58,7 +58,7 @@ namespace nnet {
 
   class MLPBatchOptimizer : public MLPOptimizer {
   public:
-    explicit MLPBatchOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
+    explicit MLPBatchOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm);
 
     void setModel(MLPModel &model) override;
 
@@ -69,8 +69,6 @@ namespace nnet {
     void forward(math::FloatMatrix const &inputs);
 
     void computeGradient();
-
-    void backward(math::FloatMatrix const &target);
 
     //
     std::vector<math::FloatMatrix> layers, layers_af;
@@ -84,7 +82,7 @@ namespace nnet {
 
   class MLPMiniBatchOptimizer : public MLPBatchOptimizer {
   public:
-    explicit MLPMiniBatchOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm,
+    explicit MLPMiniBatchOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm,
                                    size_t batch_size = 8);
 
     void optimize(const std::vector<math::FloatMatrix> &inputs,

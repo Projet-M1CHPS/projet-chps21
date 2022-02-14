@@ -1,5 +1,5 @@
 
-#include "Network.hpp"
+#include "NeuralNetwork.hpp"
 #include "ProjectVersion.hpp"
 #include "tscl.hpp"
 

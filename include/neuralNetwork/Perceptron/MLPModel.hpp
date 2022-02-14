@@ -1,7 +1,7 @@
 #pragma once
 
+#include "MLPerceptron.hpp"
 #include "Model.hpp"
-#include "neuralNetwork/Perceptron/MLPerceptron.hpp"
 
 namespace nnet {
 

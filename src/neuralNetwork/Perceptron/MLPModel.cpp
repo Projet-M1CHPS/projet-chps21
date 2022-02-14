@@ -36,9 +36,9 @@ namespace nnet {
     auto &mlp = res->getPerceptron();
     mlp.setTopology(topology);
     mlp.setActivationFunction(af);
-    mlp.randomizeWeight()
+    mlp.randomizeWeight();
 
-            return res;
+    return res;
   }
 
   std::unique_ptr<MLPModel> MLPModel::randomReluSigmoid(MLPTopology const &topology) {

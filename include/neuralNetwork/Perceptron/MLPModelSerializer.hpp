@@ -10,6 +10,8 @@ namespace nnet {
    */
   class MLPModelSerializer {
   public:
+    MLPModelSerializer() = delete;
+
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure
      */
