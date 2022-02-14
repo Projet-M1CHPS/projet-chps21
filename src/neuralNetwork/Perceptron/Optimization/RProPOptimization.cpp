@@ -1,62 +1,6 @@
-#include "Optimization/Optimization.hpp"
+#include "Optimization/RProPOptimization.hpp"
 
 namespace nnet {
-
-  SGDOptimization::SGDOptimization(const MLPerceptron &perceptron, float lr) : learning_r(lr) {}
-
-  void SGDOptimization::optimize(BackpropStorage &storage) {
-    storage.getWeights() -= (storage.getGradient() * learning_r);
-  }
-
-  void DecayOptimization::optimize(BackpropStorage &storage) {
-    storage.getWeights() -= (storage.getGradient() * learning_r);
-  }
-
-  void DecayOptimization::update() {
-    epoch++;
-    learning_r = (1 / (1 + decay_r * static_cast<float>(epoch))) * initial_lr;
-  }
-
-  MomentumOptimization::MomentumOptimization(const MLPerceptron &perceptron,
-                                             const float learning_rate, const float momentum)
-      : lr(learning_rate), momentum(momentum) {
-    auto &topology = perceptron.getTopology();
-    for (size_t i = 0; i < topology.size() - 1; i++) {
-      old_weight_change.emplace_back(topology[i + 1], topology[i]);
-      old_weight_change.back().fill(0.0);
-    }
-  }
-
-  void MomentumOptimization::optimize(BackpropStorage &storage) {
-    auto weight_change =
-            (storage.getGradient() * lr) + (old_weight_change[storage.getIndex()] * momentum);
-    storage.getWeights() -= weight_change;
-    old_weight_change[storage.getIndex()] = std::move(weight_change);
-  }
-
-  DecayMomentumOptimization::DecayMomentumOptimization(const MLPerceptron &perceptron,
-                                                       const float lr_0, const float dr,
-                                                       const float mom)
-      : initial_lr(lr_0), learning_r(lr_0), momentum(mom), decay_r(dr) {
-    auto &topology = perceptron.getTopology();
-    for (size_t i = 0; i < topology.size() - 1; i++) {
-      old_weight_change.emplace_back(topology[i + 1], topology[i]);
-      old_weight_change.back().fill(0.0);
-    }
-  }
-
-  void DecayMomentumOptimization::optimize(BackpropStorage &storage) {
-    auto dw = (storage.getGradient() * learning_r) +
-              (old_weight_change[storage.getIndex()] * momentum);
-    storage.getWeights() -= dw;
-    old_weight_change[storage.getIndex()] = std::move(dw);
-  }
-
-
-  void DecayMomentumOptimization::update() {
-    epoch++;
-    learning_r = (1 / (1 + decay_r * static_cast<float>(epoch))) * static_cast<float>(initial_lr);
-  }
 
   RPropPOptimization::RPropPOptimization(const MLPerceptron &perceptron, const float eta_p,
                                          const float eta_m, const float lr_max, const float lr_min)

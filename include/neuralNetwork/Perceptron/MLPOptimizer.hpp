@@ -2,7 +2,7 @@
 
 #include "MLPModel.hpp"
 #include "MLPerceptron.hpp"
-#include "Optimization/Optimization.hpp"
+#include "Optimization/RProPOptimization.hpp"
 #include "Optimizer.hpp"
 #include <iostream>
 #include <utility>

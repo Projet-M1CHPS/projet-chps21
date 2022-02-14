@@ -1,41 +1,18 @@
 
 #include "MLPOptimizer.hpp"
 
+#include <utility>
+
 namespace nnet {
 
 
   MLPOptimizer::MLPOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm)
-      : neural_network(&model.getPerceptron()), opti_meth(tm) {}
+      : neural_network(&model.getPerceptron()), opti_meth(std::move(tm)) {}
 
 
   MLPModelStochOptimizer::MLPModelStochOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm)
-      : MLPOptimizer(model, tm) {
-    setModel(model);
-  }
-
-
-  void MLPModelStochOptimizer::train(const math::FloatMatrix &input,
-                                     const math::FloatMatrix &target) {
-    const size_t nbInput = input.getRows();
-    const size_t nbTarget = target.getRows();
-
-    auto &weights = this->neural_network->getWeights();
-    auto &topology = this->neural_network->getTopology();
-
-    if (nbInput != topology.getInputSize()) {
-      throw std::runtime_error("Invalid number of inputs");
-    }
-
-    if (nbTarget != topology.getOutputSize()) throw std::runtime_error("Invalid number of targets");
-
-    forward(input);
-    storage.getError() = layers_af[layers_af.size() - 1] - target;
-    backward(target);
-  }
-
-  void MLPModelStochOptimizer::setModel(MLPModel &model) {
-    auto &mlp_model = dynamic_cast<MLPModel &>(model);
-    auto &perceptron = mlp_model.getPerceptron();
+      : MLPOptimizer(model, std::move(tm)) {
+    auto &perceptron = model.getPerceptron();
 
     storage = BackpropStorage(perceptron.getWeights());
     layers.resize(perceptron.getWeights().size() + 1);
@@ -44,8 +21,23 @@ namespace nnet {
 
   void MLPModelStochOptimizer::optimize(const std::vector<math::FloatMatrix> &inputs,
                                         const std::vector<math::FloatMatrix> &targets) {
-    if (inputs.size() != targets.size()) { throw std::runtime_error("Invalid number of inputs"); }
-    for (size_t i = 0; i < inputs.size(); ++i) { train(inputs[i], targets[i]); }
+    if (inputs.size() != targets.size()) {
+      throw std::runtime_error("MLPModelStochOptimizer: Inputs and targets number doesn't match !");
+    }
+
+    for (size_t i = 0; i < inputs.size(); ++i) {
+      const auto &input = inputs[i];
+      const auto &target = targets[i];
+      const size_t nb_input = input.getRows();
+      const size_t nb_target = target.getRows();
+
+      auto &weights = this->neural_network->getWeights();
+      auto &topology = this->neural_network->getTopology();
+
+      forward(input);
+      storage.getError() = layers_af[layers_af.size() - 1] - target;
+      backward(target);
+    }
   }
 
 
@@ -99,31 +91,26 @@ namespace nnet {
 
       storage.getGradient() = math::FloatMatrix::mul(false, derivative, true, layers_af[i], 1.0);
 
-      this->opti_meth->optimize(storage);
+      opti_meth->optimize(storage);
     }
   }
 
 
   MLPBatchOptimizer::MLPBatchOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm)
       : MLPOptimizer(model, tm) {
-    setModel(model);
-  }
-
-
-  void MLPBatchOptimizer::setModel(MLPModel &model) {
-    auto &mlp_model = dynamic_cast<MLPModel &>(model);
+    auto &mlp_model = model;
 
     auto &perceptron = mlp_model.getPerceptron();
     auto &topology = perceptron.getTopology();
 
-    storage = BackpropStorage(this->neural_network->getWeights());
+    storage = BackpropStorage(neural_network->getWeights());
 
     layers.resize(perceptron.getWeights().size() + 1);
     layers_af.resize(perceptron.getWeights().size() + 1);
 
     for (size_t i = 0; i < perceptron.getWeights().size(); i++) {
-      avg_gradients.push_back(math::FloatMatrix(topology[i + 1], topology[i]));
-      avg_errors.push_back(math::FloatMatrix(topology[i + 1], 1));
+      avg_gradients.emplace_back(topology[i + 1], topology[i]);
+      avg_errors.emplace_back(topology[i + 1], 1);
 
       avg_gradients[i].fill(0.0);
       avg_errors[i].fill(0.0);
@@ -132,8 +119,10 @@ namespace nnet {
 
   void MLPBatchOptimizer::optimize(const std::vector<math::FloatMatrix> &inputs,
                                    const std::vector<math::FloatMatrix> &targets) {
-    size_t n = inputs.size();
+    if (inputs.size() != targets.size())
+      throw std::runtime_error("MLPBatchOptimizer: Inputs and targets number doesn't match !");
 
+    size_t n = inputs.size();
     auto mat_reset = [](math::FloatMatrix &m) { m.fill(0); };
     std::for_each(avg_gradients.begin(), avg_gradients.end(), mat_reset);
     std::for_each(avg_errors.begin(), avg_errors.end(), mat_reset);
@@ -144,13 +133,13 @@ namespace nnet {
       computeGradient();
     }
 
-    for (auto &it : avg_gradients) { it *= ((float) 1.0 / n); }
+    for (auto &it : avg_gradients) { it *= ((float) 1.0 / static_cast<float>(n)); }
 
-    for (long i = this->neural_network->getWeights().size() - 1; i >= 0; i--) {
+    for (long i = neural_network->getWeights().size() - 1; i >= 0; i--) {
       storage.setIndex(i);
       storage.getGradient() = avg_gradients[i];
       storage.getError() = avg_errors[i];
-      this->opti_meth->optimize(storage);
+      opti_meth->optimize(storage);
     }
   }
 
@@ -237,7 +226,7 @@ namespace nnet {
       for (auto &it : avg_gradients) { it *= 1.0f / static_cast<float>(curr_batch_size); }
 
       // Update the weights and biases using the average of the current batch
-      for (long j = this->neural_network->getWeights().size() - 1; j >= 0; j--) {
+      for (long j = neural_network->getWeights().size() - 1; j >= 0; j--) {
         storage.setIndex(j);
         storage.getGradient() = avg_gradients[j];
         storage.getError() = avg_errors[j];
