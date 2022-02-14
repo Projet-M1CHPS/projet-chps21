@@ -1,4 +1,4 @@
-#include "PlainTextMLPSerializer.hpp"
+#include "MLPSerializer.hpp"
 
 namespace nnet {
 
@@ -17,7 +17,7 @@ namespace nnet {
     str.erase(str.find_last_not_of(" \t\n\r\f\v") + 1);
   }
 
-  MLPTopology PlainTextMLPSerializer::readTopology(std::istream &stream) {
+  MLPTopology MLPSerializer::readTopology(std::istream &stream) {
     std::string line = getNextNonEmptyLine(stream);
     if (line != "#Topology") {
       throw std::runtime_error("Utf8MLPSerialiazer::readTopology: #Topology section is missing");
@@ -40,7 +40,7 @@ namespace nnet {
   }
 
   std::vector<af::ActivationFunctionType>
-  PlainTextMLPSerializer::readActivationFunctions(std::istream &stream) {
+  MLPSerializer::readActivationFunctions(std::istream &stream) {
     std::string line = getNextNonEmptyLine(stream);
 
     if (line != "#ActivationFunctions") {
@@ -61,9 +61,8 @@ namespace nnet {
     return res;
   }
 
-  void PlainTextMLPSerializer::readMatrices(std::istream &stream,
-                                            std::vector<math::FloatMatrix> &matrices,
-                                            const std::string &section_name) {
+  void MLPSerializer::readMatrices(std::istream &stream, std::vector<math::FloatMatrix> &matrices,
+                                   const std::string &section_name) {
     std::string line = getNextNonEmptyLine(stream);
 
     if (line != "#" + section_name) {
@@ -83,7 +82,7 @@ namespace nnet {
   }
 
 
-  MLPerceptron PlainTextMLPSerializer::readFromFile(const std::filesystem::path &path) {
+  MLPerceptron MLPSerializer::readFromFile(const std::filesystem::path &path) {
     std::ifstream file(path);
     if (!file.is_open()) {
       throw std::runtime_error("MLPerceptronSerializer: Could not open file " + path.string() +
@@ -92,7 +91,7 @@ namespace nnet {
     return readFromStream(file);
   }
 
-  MLPerceptron PlainTextMLPSerializer::readFromStream(std::istream &stream) {
+  MLPerceptron MLPSerializer::readFromStream(std::istream &stream) {
     MLPerceptron res;
     std::string line;
     auto topology = readTopology(stream);
@@ -112,7 +111,7 @@ namespace nnet {
     return res;
   }
 
-  void PlainTextMLPSerializer::writeTopology(std::ostream &stream, const MLPTopology &topology) {
+  void MLPSerializer::writeTopology(std::ostream &stream, const MLPTopology &topology) {
     // We output the topology first, so we can allocate the right amount of memory
     // when reading
     stream << "#Topology" << std::endl;
@@ -120,23 +119,23 @@ namespace nnet {
     stream << std::endl;
   }
 
-  void PlainTextMLPSerializer::writeActivationFunctions(
+  void MLPSerializer::writeActivationFunctions(
           std::ostream &stream, const std::vector<af::ActivationFunctionType> &functions) {
     stream << "#ActivationFunctions" << std::endl;
     for (const auto &af : functions) { stream << af::AFTypeToStr(af) << " "; }
     stream << std::endl;
   }
 
-  void PlainTextMLPSerializer::writeMatrices(std::ostream &stream,
-                                             const std::vector<math::FloatMatrix> &matrices,
-                                             const std::string &section_name) {
+  void MLPSerializer::writeMatrices(std::ostream &stream,
+                                    const std::vector<math::FloatMatrix> &matrices,
+                                    const std::string &section_name) {
     stream << "#" << section_name << std::endl;
     for (auto const &m : matrices) { stream << m << std::endl; }
   }
 
 
-  bool PlainTextMLPSerializer::writeToFile(const std::filesystem::path &path,
-                                           const MLPerceptron &perceptron) {
+  bool MLPSerializer::writeToFile(const std::filesystem::path &path,
+                                  const MLPerceptron &perceptron) {
     std::ofstream file(path);
     if (!file.is_open()) {
       tscl::logger("MLPerceptronSerializer: Could not open file " + path.string() + "for writing",
@@ -146,7 +145,7 @@ namespace nnet {
     return writeToStream(file, perceptron);
   }
 
-  bool PlainTextMLPSerializer::writeToStream(std::ostream &stream, const MLPerceptron &perceptron) {
+  bool MLPSerializer::writeToStream(std::ostream &stream, const MLPerceptron &perceptron) {
     // We want the maximum precision for outputing in plain text
     // This wouldn't be necessary if we were using binary files
     std::streamsize old_precision = stream.precision();

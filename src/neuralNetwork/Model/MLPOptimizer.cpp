@@ -1,16 +1,16 @@
 
-#include "MLPModelOptimizer.hpp"
+#include "MLPOptimizer.hpp"
 
 namespace nnet {
 
 
-  MLPModelOptimizer::MLPModelOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm)
+  MLPOptimizer::MLPOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm)
       : neural_network(&model.getPerceptron()), opti_meth(tm) {}
 
 
   MLPModelStochOptimizer::MLPModelStochOptimizer(MLPModel &model,
                                                  std::shared_ptr<OptimizationMethod> tm)
-      : MLPModelOptimizer(model, tm) {
+      : MLPOptimizer(model, tm) {
     setModel(model);
   }
 
@@ -106,7 +106,7 @@ namespace nnet {
 
 
   MLPBatchOptimizer::MLPBatchOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm)
-      : MLPModelOptimizer(model, tm) {
+      : MLPOptimizer(model, tm) {
     setModel(model);
   }
 

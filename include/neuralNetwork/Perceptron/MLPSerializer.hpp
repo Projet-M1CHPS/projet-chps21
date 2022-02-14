@@ -1,46 +1,32 @@
-
 #pragma once
-#include "tscl.hpp"
-
-#include "MLPerceptron.hpp"
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include <type_traits>
-#include <utility>
+#include "MLPSerializer.hpp"
 
 namespace nnet {
-
-  /** @brief Utility class for serializing and deserializing MLPerceptrons
+  /** Utility class for serializing and deserializing MLPerceptrons
    *
    */
-  class MLPSerializer {
+  class MLPSerializer : public MLPSerializer {
   public:
-    /**
-     * @returns a new MLPerceptronSerializer, or nullptr on failure
-     */
-    virtual MLPerceptron readFromFile(const std::filesystem::path &path) = 0;
+    MLPerceptron readFromFile(const std::filesystem::path &path) override;
 
-    /**
-     * @returns a new MLPerceptronSerializer, or nullptr on failure
-     */
-    virtual MLPerceptron readFromStream(std::istream &stream) = 0;
+    MLPerceptron readFromStream(std::istream &stream) override;
 
-    /**
-     *
-     * @param path Path to the file to write to
-     * @param perceptron The perceptron to write
-     * @return true on success, false on failure
-     */
-    virtual bool writeToFile(const std::filesystem::path &path, const MLPerceptron &perceptron) = 0;
+    bool writeToFile(const std::filesystem::path &path, const MLPerceptron &perceptron) override;
 
-    /**
-     *
-     * @param stream The stream to write to
-     * @param perceptron The perceptron to write
-     * @return true on success, false on failure
-     */
-    virtual bool writeToStream(std::ostream &stream, const MLPerceptron &perceptron) = 0;
+    bool writeToStream(std::ostream &stream, const MLPerceptron &perceptron) override;
+
+  private:
+    MLPTopology readTopology(std::istream &stream);
+    void writeTopology(std::ostream &stream, const MLPTopology &topology);
+
+    std::vector<af::ActivationFunctionType> readActivationFunctions(std::istream &stream);
+    void writeActivationFunctions(std::ostream &stream,
+                                  const std::vector<af::ActivationFunctionType> &functions);
+
+    void readMatrices(std::istream &stream, std::vector<math::FloatMatrix> &matrices,
+                      const std::string &section_name);
+
+    void writeMatrices(std::ostream &stream, const std::vector<math::FloatMatrix> &matrices,
+                       const std::string &section_name);
   };
 }   // namespace nnet

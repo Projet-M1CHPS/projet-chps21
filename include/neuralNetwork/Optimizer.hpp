@@ -6,12 +6,12 @@
 
 namespace nnet {
 
-  class ModelOptimizer {
+  class Optimizer {
   public:
     virtual void optimize(const std::vector<math::FloatMatrix> &inputs,
                           const std::vector<math::FloatMatrix> &targets) = 0;
 
-    virtual ~ModelOptimizer() = default;
+    virtual ~Optimizer() = default;
 
     virtual void update() = 0;
   };

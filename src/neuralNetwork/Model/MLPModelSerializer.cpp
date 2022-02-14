@@ -1,16 +1,16 @@
-#include "PlainTextMLPModelSerializer.hpp"
-#include "PlainTextMLPSerializer.hpp"
+#include "MLPModelSerializer.hpp"
+#include "MLPSerializer.hpp"
 #include <fstream>
 
 namespace nnet {
 
-  MLPModel PlainTextMLPModelSerializer::readFromFile(const std::filesystem::path &path) {
+  MLPModel MLPModelSerializer::readFromFile(const std::filesystem::path &path) {
     std::ifstream file(path);
     if (!file.is_open()) { throw std::runtime_error("Could not open file: " + path.string()); }
     return readFromStream(file);
   }
 
-  MLPModel PlainTextMLPModelSerializer::readFromStream(std::istream &stream) {
+  MLPModel MLPModelSerializer::readFromStream(std::istream &stream) {
     MLPModel res;
     std::string line;
     std::getline(stream, line);
@@ -45,15 +45,14 @@ namespace nnet {
       }
     }
 
-    PlainTextMLPSerializer serializer;
+    MLPSerializer serializer;
     auto perceptron = serializer.readFromStream(stream);
     res.getPerceptron() = std::move(perceptron);
 
     return res;
   }
 
-  bool PlainTextMLPModelSerializer::writeToFile(const std::filesystem::path &path,
-                                                const MLPModel &model) {
+  bool MLPModelSerializer::writeToFile(const std::filesystem::path &path, const MLPModel &model) {
     std::ofstream file(path);
     if (!file.is_open()) {
       tscl::logger("MLPModelSerializer: Could not open file " + path.string() + "for writing",
@@ -63,12 +62,12 @@ namespace nnet {
     return writeToStream(file, model);
   }
 
-  bool PlainTextMLPModelSerializer::writeToStream(std::ostream &stream, const MLPModel &model) {
+  bool MLPModelSerializer::writeToStream(std::ostream &stream, const MLPModel &model) {
     // Write header
     stream << "#MLPModel" << std::endl;
     stream << "#Version " << tscl::Version::current.to_string() << std::endl;
 
-    PlainTextMLPSerializer serializer;
+    MLPSerializer serializer;
 
     return serializer.writeToStream(stream, model.getPerceptron());
   }

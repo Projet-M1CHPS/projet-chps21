@@ -1,25 +1,25 @@
 #pragma once
 
 #include "MLPModel.hpp"
-#include "ModelOptimizer.hpp"
+#include "Optimizer.hpp"
 #include "neuralNetwork/Perceptron/MLPerceptron.hpp"
 #include "neuralNetwork/Perceptron/OptimizationMethod.hpp"
 #include <iostream>
 #include <utility>
 
 namespace nnet {
-  class MLPModelOptimizer : public ModelOptimizer {
+  class MLPOptimizer : public Optimizer {
   public:
-    MLPModelOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
-    ~MLPModelOptimizer() override = default;
+    MLPOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
+    ~MLPOptimizer() override = default;
 
-    MLPModelOptimizer(const MLPModelOptimizer &other) = delete;
-    MLPModelOptimizer(MLPModelOptimizer &&other) noexcept = default;
+    MLPOptimizer(const MLPOptimizer &other) = delete;
+    MLPOptimizer(MLPOptimizer &&other) noexcept = default;
 
     virtual void setModel(MLPModel &model) = 0;
 
-    MLPModelOptimizer &operator=(const MLPModelOptimizer &other) = delete;
-    MLPModelOptimizer &operator=(MLPModelOptimizer &&other) noexcept = default;
+    MLPOptimizer &operator=(const MLPOptimizer &other) = delete;
+    MLPOptimizer &operator=(MLPOptimizer &&other) noexcept = default;
 
     MLPerceptron *gePerceptron() const { return neural_network; }
     OptimizationMethod *getOptimizationMethod() const { return opti_meth.get(); }
@@ -31,7 +31,7 @@ namespace nnet {
     std::shared_ptr<OptimizationMethod> opti_meth;
   };
 
-  class MLPModelStochOptimizer final : public MLPModelOptimizer {
+  class MLPModelStochOptimizer final : public MLPOptimizer {
   public:
     MLPModelStochOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
 
@@ -56,7 +56,7 @@ namespace nnet {
   };
 
 
-  class MLPBatchOptimizer : public MLPModelOptimizer {
+  class MLPBatchOptimizer : public MLPOptimizer {
   public:
     explicit MLPBatchOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
 
