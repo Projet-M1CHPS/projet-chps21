@@ -100,7 +100,7 @@ namespace nnet {
 
       storage.getGradient() = math::FloatMatrix::mul(false, derivative, true, layers_af[i], 1.0);
 
-      this->opti_meth->compute(storage);
+      this->opti_meth->optimize(storage);
     }
   }
 
@@ -151,7 +151,7 @@ namespace nnet {
       storage.setIndex(i);
       storage.getGradient() = avg_gradients[i];
       storage.getError() = avg_errors[i];
-      this->opti_meth->compute(storage);
+      this->opti_meth->optimize(storage);
     }
   }
 
@@ -233,7 +233,7 @@ namespace nnet {
       storage.getGradient() =
               math::FloatMatrix::mul(false, derivative, true, layers_af[storage.getIndex()], 1.0);
 
-      this->opti_meth->compute(storage);
+      this->opti_meth->optimize(storage);
     }
   }
 
@@ -270,7 +270,7 @@ namespace nnet {
         storage.setIndex(j);
         storage.getGradient() = avg_gradients[j];
         storage.getError() = avg_errors[j];
-        this->opti_meth->compute(storage);
+        this->opti_meth->optimize(storage);
       }
     }
   }

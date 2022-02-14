@@ -98,7 +98,7 @@ namespace control::classifier {
   std::ostream &operator<<(std::ostream &os, CStats const &stat);
 
 
-  /** @brief Helper class to compute classifier metrics, including the f1_score
+  /** @brief Helper class to optimize classifier metrics, including the f1_score
    *
    */
   class CStatTracker {

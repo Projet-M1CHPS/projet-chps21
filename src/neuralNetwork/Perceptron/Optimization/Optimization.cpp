@@ -1,73 +1,75 @@
-#include "OptimizationMethod.hpp"
+#include "Optimization/Optimization.hpp"
 
 namespace nnet {
 
-  void SGDOptimization::compute(BackpropStorage &storage) {
+  SGDOptimization::SGDOptimization(const MLPerceptron &perceptron, float lr) : learning_r(lr) {}
+
+  void SGDOptimization::optimize(BackpropStorage &storage) {
     storage.getWeights() -= (storage.getGradient() * learning_r);
   }
 
-  void DecayOptimization::compute(BackpropStorage &storage) {
-    storage.getWeights() -= (storage.getGradient() * curr_lr);
+  void DecayOptimization::optimize(BackpropStorage &storage) {
+    storage.getWeights() -= (storage.getGradient() * learning_r);
   }
 
   void DecayOptimization::update() {
     epoch++;
-    curr_lr = (1 / (1 + decay_r * epoch)) * initial_lr;
+    learning_r = (1 / (1 + decay_r * static_cast<float>(epoch))) * initial_lr;
   }
 
-  void MomentumOptimization::setPerceptron(MLPerceptron &perceptron) {
-    old_weight_change.clear();
-
+  MomentumOptimization::MomentumOptimization(const MLPerceptron &perceptron,
+                                             const float learning_rate, const float momentum)
+      : lr(learning_rate), momentum(momentum) {
     auto &topology = perceptron.getTopology();
     for (size_t i = 0; i < topology.size() - 1; i++) {
-      old_weight_change.push_back(math::FloatMatrix(topology[i + 1], topology[i]));
+      old_weight_change.emplace_back(topology[i + 1], topology[i]);
       old_weight_change.back().fill(0.0);
     }
   }
 
-  void MomentumOptimization::compute(BackpropStorage &storage) {
+  void MomentumOptimization::optimize(BackpropStorage &storage) {
     auto weight_change =
             (storage.getGradient() * lr) + (old_weight_change[storage.getIndex()] * momentum);
     storage.getWeights() -= weight_change;
     old_weight_change[storage.getIndex()] = std::move(weight_change);
   }
 
-  void DecayMomentumOptimization::setPerceptron(MLPerceptron &perceptron) {
-    old_weight_change.clear();
-
+  DecayMomentumOptimization::DecayMomentumOptimization(const MLPerceptron &perceptron,
+                                                       const float lr_0, const float dr,
+                                                       const float mom)
+      : initial_lr(lr_0), learning_r(lr_0), momentum(mom), decay_r(dr) {
     auto &topology = perceptron.getTopology();
     for (size_t i = 0; i < topology.size() - 1; i++) {
-      old_weight_change.push_back(math::FloatMatrix(topology[i + 1], topology[i]));
+      old_weight_change.emplace_back(topology[i + 1], topology[i]);
       old_weight_change.back().fill(0.0);
     }
   }
 
-  void DecayMomentumOptimization::compute(BackpropStorage &storage) {
+  void DecayMomentumOptimization::optimize(BackpropStorage &storage) {
     auto dw = (storage.getGradient() * learning_r) +
               (old_weight_change[storage.getIndex()] * momentum);
     storage.getWeights() -= dw;
     old_weight_change[storage.getIndex()] = std::move(dw);
   }
 
+
   void DecayMomentumOptimization::update() {
     epoch++;
-    learning_r = (1 / (1 + decay_r * epoch)) * static_cast<float>(initial_lr);
+    learning_r = (1 / (1 + decay_r * static_cast<float>(epoch))) * static_cast<float>(initial_lr);
   }
 
-  void RPropPOptimization::setPerceptron(MLPerceptron &perceptron) {
-    weights_updates.clear();
-    old_gradients.clear();
-    weights_changes.clear();
-
+  RPropPOptimization::RPropPOptimization(const MLPerceptron &perceptron, const float eta_p,
+                                         const float eta_m, const float lr_max, const float lr_min)
+      : eta_plus(eta_p), eta_minus(eta_m), update_max(lr_max), update_min(lr_min) {
     auto &topology = perceptron.getTopology();
     for (size_t i = 0; i < topology.size() - 1; i++) {
-      weights_updates.push_back(math::FloatMatrix(topology[i + 1], topology[i]));
+      weights_updates.emplace_back(topology[i + 1], topology[i]);
       weights_updates.back().fill(0.1);
 
-      old_gradients.push_back(math::FloatMatrix(topology[i + 1], topology[i]));
+      old_gradients.emplace_back(topology[i + 1], topology[i]);
       old_gradients.back().fill(0.0);
 
-      weights_changes.push_back(math::FloatMatrix(topology[i + 1], topology[i]));
+      weights_changes.emplace_back(topology[i + 1], topology[i]);
       weights_changes.back().fill(0.0);
     }
   }
@@ -81,7 +83,7 @@ namespace nnet {
     return -1;
   }
 
-  void RPropPOptimization::compute(BackpropStorage &storage) {
+  void RPropPOptimization::optimize(BackpropStorage &storage) {
     // Aliases to increase readability
     size_t index = storage.getIndex();
     auto &weights = storage.getWeights();

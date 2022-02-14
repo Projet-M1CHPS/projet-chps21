@@ -2,10 +2,13 @@
 set(CURRENT_INCLUDE_DIR ${INCLUDE_DIR}/neuralNetwork/Perceptron)
 add_library(Perceptron STATIC
         MLPerceptron.cpp ${CURRENT_INCLUDE_DIR}/MLPerceptron.hpp
-        ${CURRENT_INCLUDE_DIR}/MLPSerializer.hpp
-        OptimizationMethod.cpp ${CURRENT_INCLUDE_DIR}/OptimizationMethod.hpp
-        MLPSerializer.cpp ${CURRENT_INCLUDE_DIR}/PlainTextMLPSerializer.hpp
-        ActivationFunction.cpp ${INCLUDE_DIR}/neuralNetwork/ActivationFunction.hpp
+        MLPSerializer.cpp ${CURRENT_INCLUDE_DIR}/MLPSerializer.hpp
+
+        MLPModel.cpp ${CURRENT_INCLUDE_DIR}/MLPModel.hpp
+        MLPModelSerializer.cpp ${CURRENT_INCLUDE_DIR}/MLPModelSerializer.hpp
+
+        Optimization/Optimization.cpp ${CURRENT_INCLUDE_DIR}/Optimization/Optimization.hpp
+        MLPOptimizer.cpp ${CURRENT_INCLUDE_DIR}/MLPOptimizer.hpp
         )
 
 target_include_directories(Perceptron PUBLIC ${INCLUDE_DIR} ${CURRENT_INCLUDE_DIR} ${INCLUDE_DIR}/neuralNetwork)

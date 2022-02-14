@@ -1,30 +1,31 @@
 #pragma once
-#include "MLPModelSerializer.hpp"
+#include <MLPModel.hpp>
+#include <filesystem>
+#include <iostream>
 
 namespace nnet {
 
   /** @brief MLPModelSerializer specialization for storing MLPModel as a plain text file
    *
    */
-  class MLPModelSerializer final : public MLPModelSerializer {
+  class MLPModelSerializer {
   public:
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure
      */
-    MLPModel readFromFile(const std::filesystem::path &path) override;
+    static MLPModel readFromFile(const std::filesystem::path &path);
 
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure
      */
-    MLPModel readFromStream(std::istream &stream) override;
+    static MLPModel readFromStream(std::istream &stream);
 
     /**
-     *
      * @param path Path to the file to write to
      * @param model The model to write
      * @return true on success, false on failure
      */
-    bool writeToFile(const std::filesystem::path &path, const MLPModel &model) override;
+    static bool writeToFile(const std::filesystem::path &path, const MLPModel &model);
 
     /**
      *
@@ -32,6 +33,6 @@ namespace nnet {
      * @param model The model to write
      * @return true on success, false on failure
      */
-    bool writeToStream(std::ostream &stream, const MLPModel &model) override;
+    static bool writeToStream(std::ostream &stream, const MLPModel &model);
   };
 }   // namespace nnet

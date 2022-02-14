@@ -1,32 +1,18 @@
 #pragma once
-#include "MLPSerializer.hpp"
+#include "MLPerceptron.hpp"
 
 namespace nnet {
   /** Utility class for serializing and deserializing MLPerceptrons
    *
    */
-  class MLPSerializer : public MLPSerializer {
+  class MLPSerializer {
   public:
-    MLPerceptron readFromFile(const std::filesystem::path &path) override;
+    static MLPerceptron readFromFile(const std::filesystem::path &path);
 
-    MLPerceptron readFromStream(std::istream &stream) override;
+    static MLPerceptron readFromStream(std::istream &stream);
 
-    bool writeToFile(const std::filesystem::path &path, const MLPerceptron &perceptron) override;
+    static bool writeToFile(const std::filesystem::path &path, const MLPerceptron &perceptron);
 
-    bool writeToStream(std::ostream &stream, const MLPerceptron &perceptron) override;
-
-  private:
-    MLPTopology readTopology(std::istream &stream);
-    void writeTopology(std::ostream &stream, const MLPTopology &topology);
-
-    std::vector<af::ActivationFunctionType> readActivationFunctions(std::istream &stream);
-    void writeActivationFunctions(std::ostream &stream,
-                                  const std::vector<af::ActivationFunctionType> &functions);
-
-    void readMatrices(std::istream &stream, std::vector<math::FloatMatrix> &matrices,
-                      const std::string &section_name);
-
-    void writeMatrices(std::ostream &stream, const std::vector<math::FloatMatrix> &matrices,
-                       const std::string &section_name);
+    static bool writeToStream(std::ostream &stream, const MLPerceptron &perceptron);
   };
 }   // namespace nnet
