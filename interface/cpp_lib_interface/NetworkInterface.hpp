@@ -8,6 +8,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <csignal>
 #include <iostream>
 #include <utility>
 #include <vector>

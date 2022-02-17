@@ -56,6 +56,34 @@ getOptimizerFromConfig(const json &optimizerConfig, const std::unique_ptr<nnet::
 
 #pragma endregion
 
+#pragma region Signals handling
+
+void signalHandler(int signal_num) {
+  switch (signal_num) {
+    case SIGINT:
+      std::cout << "CPP_INTERFACE: Ignored SIGINT (Ctrl+C), use SIGQUIT / SIGABRT instead for soft "
+                   "end."
+                << std::endl;
+      break;
+    case SIGQUIT:
+      std::cout << "CPP_INTERFACE: Signal SIGQUIT trapped." << std::endl;
+      exit(signal_num);
+    case SIGABRT:
+      std::cout << "CPP_INTERFACE: Signal SIGABRT trapped." << std::endl;
+      exit(signal_num);
+    default:
+      std::cout << "CPP_INTERFACE: Unhandled signal " << signal_num << ". Report this."
+                << std::endl;
+  }
+}
+
+void initSignalHandler() {
+  signal(SIGINT, signalHandler);
+  signal(SIGQUIT, signalHandler);
+  signal(SIGABRT, signalHandler);
+}
+
+#pragma endregion
 
 #pragma region private_section
 
