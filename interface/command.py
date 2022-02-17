@@ -137,6 +137,12 @@ class MyPrompt(Cmd):
 		GUI.GUI.start()
 		self.my_prompt("Closing the GUI.")
 
+	def do_duel(self, inp=""):
+		try:
+			duel.start()
+		except Exception as e:
+			print(e)
+
 	def do_run(self, inp=""):
 		try:
 			self.subprocess_pid = prog.start(inp.split(' '))
