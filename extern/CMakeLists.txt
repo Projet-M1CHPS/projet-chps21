@@ -8,3 +8,9 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(tscl)
+
+## Extern tools
+# JSON parsing lib:
+include(nlohmann_json.cmake)
+# Pythin binding lib:
+include(pybind11.cmake)

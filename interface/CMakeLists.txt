@@ -1,9 +1,3 @@
-## Extern tools
-# JSON parsing lib:
-include(nlohmann_json.cmake)
-# Pythin binding lib:
-include(pybind11.cmake)
-
 ## Interface build
 add_subdirectory(cpp_lib_interface)
 
