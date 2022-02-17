@@ -50,10 +50,8 @@ bool createAndTrain(utils::clWrapper &wrapper, std::filesystem::path const &inpu
 
   auto model = nnet::MLPModel::randomReluSigmoid(topology);
 
-  auto tm =
-          std::make_shared<nnet::DecayMomentumOptimization>(model->getPerceptron(), 0.2, 0.1, 0.9);
-
-  auto optimizer = std::make_unique<nnet::MLPMiniBatchOptimizer>(*model, tm, 16);
+  auto optimizer = nnet::MLPMiniBatchOptimizer::make<nnet::DecayMomentumOptimization>(
+          *model, 64, 0.2, 0.1, 0.9);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
 

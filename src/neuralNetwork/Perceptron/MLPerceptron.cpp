@@ -41,8 +41,8 @@ namespace nnet {
     for (size_t i = 0; i < topology.size() - 1; i++) {
       // Create a matrix of size (layers[i + 1] x layers[i])
       // So that each weight matrix can be multiplied by the previous layer
-      weights.push_back(math::FloatMatrix(topology[i + 1], topology[i]));
-      biases.push_back(math::FloatMatrix(topology[i + 1], 1));
+      weights.emplace_back(topology[i + 1], topology[i]);
+      biases.emplace_back(topology[i + 1], 1);
       activation_functions.push_back(af::ActivationFunctionType::sigmoid);
     }
     this->topology = topology;

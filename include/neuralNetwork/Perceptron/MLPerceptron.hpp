@@ -1,8 +1,8 @@
 #pragma once
 
+#include "ActivationFunction.hpp"
 #include "Matrix.hpp"
 #include "Utils.hpp"
-#include "neuralNetwork/ActivationFunction.hpp"
 #include <cmath>
 #include <functional>
 #include <iostream>

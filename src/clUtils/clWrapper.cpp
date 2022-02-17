@@ -29,6 +29,14 @@ namespace utils {
       }
       return platforms;
     }
+
+    std::string readFile(const std::string &path) {
+      std::ifstream t(path);
+      if (!t.is_open()) { throw std::runtime_error("Could not open file: " + path); }
+      std::string res((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+      return res;
+    }
+
   }   // namespace
 
   clWrapper::clWrapper(clWrapper &other) {
@@ -85,14 +93,6 @@ namespace utils {
     res.default_queue = queue;
     res.default_device = default_device;
     res.platform = default_platform;
-    return res;
-  }
-
-
-  std::string readFile(const std::string &path) {
-    std::ifstream t(path);
-    if (!t.is_open()) { throw std::runtime_error("Could not open file: " + path); }
-    std::string res((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
     return res;
   }
 

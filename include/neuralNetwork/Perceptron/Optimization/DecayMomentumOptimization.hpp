@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Optimization.hpp"
 
 namespace nnet {

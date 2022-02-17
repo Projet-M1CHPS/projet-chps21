@@ -1,10 +1,9 @@
 /**
  * @brief This is a helper header file that includes all the headers related to neural networks
  */
-
 #pragma once
 
-#include "neuralNetwork/ActivationFunction.hpp"
+#include "ActivationFunction.hpp"
 #include "neuralNetwork/Model.hpp"
 #include "neuralNetwork/Optimizer.hpp"
 
@@ -18,4 +17,8 @@
 #include "neuralNetwork/Perceptron/Optimization/RProPOptimization.hpp"
 #include "neuralNetwork/Perceptron/Optimization/SGDOptimization.hpp"
 
+// Optimizers
+#include "neuralNetwork/Perceptron/MLPBatchOptimizer.hpp"
+#include "neuralNetwork/Perceptron/MLPMiniBatchOptimizer.hpp"
 #include "neuralNetwork/Perceptron/MLPOptimizer.hpp"
+#include "neuralNetwork/Perceptron/MLPStochOptimizer.hpp"

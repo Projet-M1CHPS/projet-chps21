@@ -24,10 +24,8 @@ namespace math {
      * @param rows Numbers of rows of the new matrix
      * @param cols Numbers of columns of the new matrix
      * @param context OpenCL context to use
-     * @param queue OpenCL command queue to use
      */
-    clMatrix(size_t rows, size_t cols, cl::Context context = cl::Context::getDefault(),
-             cl::CommandQueue queue = cl::CommandQueue::getDefault())
+    clMatrix(size_t rows, size_t cols, const cl::Context &context = cl::Context::getDefault())
         : rows(rows), cols(cols) {
       data = cl::Buffer(context, CL_MEM_READ_WRITE, rows * cols * sizeof(float));
     }
@@ -38,28 +36,18 @@ namespace math {
      * @param rows Numbers of rows of the new matrix
      * @param cols Numbers of columns of the new matrix
      * @param context OpenCL context to use
-     * @param queue OpenCL command queue to use
      */
     clMatrix(float *source, size_t rows, size_t cols,
-             const cl::Context &context = cl::Context::getDefault(),
-             const cl::CommandQueue &queue = cl::CommandQueue::getDefault())
+             const cl::Context &context = cl::Context::getDefault())
         : rows(rows), cols(cols) {
-      data = cl::Buffer(context, CL_MEM_READ_WRITE, rows * cols * sizeof(float), NULL);
+      data = cl::Buffer(context, CL_MEM_READ_WRITE, rows * cols * sizeof(float), source);
     }
 
-    /**
-     * @brief allocates a new matrix on the device
-     * @param source Source char array to copy from
-     * @param rows Numbers of rows of the new matrix
-     * @param cols Numbers of columns of the new matrix
-     * @param context OpenCL context to use
-     * @param queue OpenCL command queue to use
-     */
-    clMatrix(char *source, size_t rows, size_t cols,
-             const cl::Context &context = cl::Context::getDefault(),
-             const cl::CommandQueue &queue = cl::CommandQueue::getDefault())
-        : rows(rows), cols(cols) {
-      data = cl::Buffer(context, CL_MEM_READ_WRITE, rows * cols * sizeof(float));
+    explicit clMatrix(const math::FloatMatrix &matrix,
+                      const cl::Context &context = cl::Context::getDefault())
+        : rows(matrix.getRows()), cols(matrix.getCols()) {
+      data = cl::Buffer(context, CL_MEM_READ_WRITE, rows * cols * sizeof(float),
+                        (void *) matrix.getData());
     }
 
     cl::Buffer &getBuffer() { return data; }
