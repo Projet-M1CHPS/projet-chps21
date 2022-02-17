@@ -1,8 +1,9 @@
 import sys
 
-from PyQt5.QtCore import QFile, Qt
+from PyQt5.QtCore import QFile
 from PyQt5.QtDesigner import QFormBuilder
-from PyQt5.QtWidgets import QApplication, QWidget, QTabWidget
+from PyQt5.QtWidgets import QApplication, QWidget
+
 
 #
 # class AppWindow(QWidget):
@@ -26,17 +27,27 @@ from PyQt5.QtWidgets import QApplication, QWidget, QTabWidget
 # window.show()
 # sys.exit(App.exec())
 
-app = QApplication(sys.argv)
-file = QFile("./GUI.ui")
-file.open(QFile.ReadOnly)
-widget: QWidget = QFormBuilder().load(file)
 
-tabWidget = widget.findChild(QTabWidget, "tabWidget")
-if not tabWidget:
-	exit(1)
-tabs = tabWidget.children()[0].findChildren(QWidget, options=Qt.FindDirectChildrenOnly)
-for each in tabs:
-	print(each.objectName())
+def start():
+    app = QApplication(sys.argv)
+    file = QFile("GUI.ui")
+    file.open(QFile.ReadOnly)
+    widget: QWidget = QFormBuilder().load(file)
+    if widget is None:
+        print(".ui file can not be found.", file=sys.stderr)
+        exit(1)
 
-widget.show()
-sys.exit(app.exec())
+    # tab_widget = widget.findChild(QTabWidget, "tab_widget")
+    # if not tab_widget:
+    # 	print("no tab widegt")
+    # 	exit(1)
+    # tabs = tab_widget.children()[0].findChildren(QWidget, options=Qt.FindDirectChildrenOnly)
+    # for each in tabs:
+    # 	print(each.objectName())
+
+    widget.show()
+    app.exec()
+
+
+if __name__ == '__main__':
+    start()
