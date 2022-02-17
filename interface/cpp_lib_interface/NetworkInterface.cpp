@@ -77,7 +77,7 @@ void signalHandler(int signal_num) {
   }
 }
 
-void initSignalHandler() {
+void NetworkInterface::initSignalHandler() {
   signal(SIGINT, signalHandler);
   signal(SIGQUIT, signalHandler);
   signal(SIGABRT, signalHandler);

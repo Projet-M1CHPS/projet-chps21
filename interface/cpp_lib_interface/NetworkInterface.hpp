@@ -6,9 +6,8 @@
 #include "tscl.hpp"
 
 
-#include <iomanip>
-#include <iostream>
 #include <csignal>
+#include <iomanip>
 #include <iostream>
 #include <utility>
 #include <vector>
@@ -22,6 +21,8 @@ using json = nlohmann::json;
 class NetworkInterface {
 private:
   std::string parameterFilepath;
+
+  static void initSignalHandler();
 
   /// \return Raw JSON from the config file
   [[nodiscard]] static json readJSONConfig(const std::string &config_file_path);
