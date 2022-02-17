@@ -8,6 +8,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <iostream>
 #include <utility>
 #include <vector>
 
@@ -21,19 +22,29 @@ class NetworkInterface {
 private:
   std::string parameterFilepath;
 
-  [[nodiscard]] json readJSONConfigFile() const;
+  /// \return Raw JSON from the config file
+  [[nodiscard]] static json readJSONConfig(const std::string &config_file_path);
+  [[nodiscard]] json readJSONConfig() const;
 
-  [[nodiscard]] static bool checkConfigValid(const json &config);
+  /// Will throw if an error is detected
+  static void checkConfigValid(const json &config);
 
   static void setupLogger();
 
 public:
   explicit NetworkInterface(std::string parameter_filepath)
       : parameterFilepath(std::move(parameter_filepath)){};
+  explicit NetworkInterface() = default;
+  ;
   ~NetworkInterface() = default;
 
-  [[nodiscard]] json getJSONConfig() const { return readJSONConfigFile(); }
-  void printJSONConfig() const { std::cout << std::setw(4) << getJSONConfig() << std::endl; }
+  ///
+  /// \return readJSONConfig() with checked & filtered attributes.
+  [[nodiscard]] json getJSONConfig() const;
+
+  void printJSONConfig() const;
+
+  void onPrecisionChanged(const std::function<void(float)> &callback) const;
 
   bool createAndTrain();
 };

@@ -56,18 +56,32 @@ getOptimizerFromConfig(const json &optimizerConfig, const std::unique_ptr<nnet::
 
 #pragma endregion
 
+
 #pragma region private_section
 
-json NetworkInterface::readJSONConfigFile() const {
-  std::ifstream i(parameterFilepath);
+json NetworkInterface::readJSONConfig(const std::string &config_file_path) {
+  std::ifstream i(config_file_path);
   json json_obj;
   i >> json_obj;
   i.close();
   return json_obj;
 }
 
+json NetworkInterface::readJSONConfig() const { return readJSONConfig(parameterFilepath); }
 
-bool NetworkInterface::checkConfigValid(const json &config) {
+json NetworkInterface::getJSONConfig() const {
+  json cfg = readJSONConfig();
+  // TODO: Remove unnecessary attributes
+  checkConfigValid(cfg);
+  return cfg;
+}
+
+void NetworkInterface::printJSONConfig() const {
+  std::cout << std::setw(4) << getJSONConfig() << std::endl;
+}
+
+
+void NetworkInterface::checkConfigValid(const json &config) {
   if (!config.contains("input_path") || !config["input_path"].is_string())
     throw std::invalid_argument("Input_path not/badly defined in the configuration");
 
@@ -91,11 +105,11 @@ bool NetworkInterface::checkConfigValid(const json &config) {
     throw std::invalid_argument(
             "Postprocess_transformations not/badly defined in the configuration");
 
-  if (!trainingConfig.contains("max_epoch") || !trainingConfig["topology"].is_number())
+  if (!trainingConfig.contains("max_epoch") || !trainingConfig["max_epoch"].is_number())
     throw std::invalid_argument("Max_epoch not/badly defined in the configuration");
-  if (!trainingConfig.contains("batch_size") || !trainingConfig["topology"].is_number())
+  if (!trainingConfig.contains("batch_size") || !trainingConfig["batch_size"].is_number())
     throw std::invalid_argument("Batch_size not/badly defined in the configuration");
-  if (!trainingConfig.contains("verbose") || !trainingConfig["topology"].is_boolean())
+  if (!trainingConfig.contains("verbose") || !trainingConfig["verbose"].is_boolean())
     throw std::invalid_argument("Verbose not/badly defined in the configuration");
   if (!trainingConfig.contains("topology") || !trainingConfig["topology"].is_array() ||
       !std::all_of(trainingConfig["topology"].begin(), trainingConfig["topology"].end(),
@@ -125,8 +139,6 @@ bool NetworkInterface::checkConfigValid(const json &config) {
   json models = trainingConfig["model"];
   if (!std::any_of(models.begin(), models.end(), isJsonSectionEnabled))
     throw std::invalid_argument("No model enabled in the configuration");
-
-  return true;
 }
 
 void NetworkInterface::setupLogger() {
@@ -146,9 +158,11 @@ void NetworkInterface::setupLogger() {
 bool NetworkInterface::createAndTrain() {
   json config = getJSONConfig();
   json trainingConfig = config["training"];
-  assert(checkConfigValid(config));
+  checkConfigValid(config);
   std::filesystem::path input_path = std::string(config["input_path"]);
   std::filesystem::path output_path = std::string(config["output_path"]);
+
+  initSignalHandler();
 
   if (trainingConfig["use_logger"]) {
     setupLogger();
@@ -222,6 +236,10 @@ bool NetworkInterface::createAndTrain() {
   nnet::PlainTextMLPModelSerializer serializer;
   serializer.writeToFile(output_path / "model.nnet", *model);
   return true;
+}
+
+void NetworkInterface::onPrecisionChanged(const std::function<void(float)> &callback) const {
+  callback(((float) ((float) rand()) / ((float) RAND_MAX)));
 }
 
 #pragma endregion
