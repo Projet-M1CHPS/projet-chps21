@@ -79,8 +79,7 @@ int main(int argc, char **argv) {
   }
 
   tscl::logger("Initializing OpenCL...", tscl::Log::Debug);
-  utils::clWrapper wrapper = utils::clWrapper::makeDefaultWrapper();
-  utils::printAvailablePlatforms();
+  utils::clWrapper wrapper = utils::clWrapper::getDefaultWrapper();
 
   std::vector<std::string> args;
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);

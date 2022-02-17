@@ -11,8 +11,7 @@ namespace nnet {
   public:
     MLPStochOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm);
 
-    math::FloatMatrix optimize(const math::FloatMatrix &input,
-                               const math::FloatMatrix &target) override;
+    math::FloatMatrix optimize(const math::FloatMatrix &input, const math::FloatMatrix &target);
 
     void optimize(const std::vector<math::FloatMatrix> &inputs,
                   const std::vector<math::FloatMatrix> &targets) override;
@@ -29,7 +28,7 @@ namespace nnet {
     template<class Optim, typename... Args, typename = std::is_base_of<nnet::Optimization, Optim>>
     static std::unique_ptr<MLPStochOptimizer> make(MLPModel &model, Args &&...args) {
       return std::make_unique<MLPStochOptimizer>(
-              model, std::make_unique<Optim>(model, std::forward<Args>(args)...));
+              model, std::make_unique<Optim>(model.getPerceptron(), std::forward<Args>(args)...));
     }
 
   private:

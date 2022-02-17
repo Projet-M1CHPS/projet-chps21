@@ -23,8 +23,9 @@ namespace nnet {
      * @param target
      * @return
      */
-    virtual math::FloatMatrix optimize(const math::FloatMatrix &input,
-                                       const math::FloatMatrix &target) = 0;
+    virtual void optimize(const std::vector<math::FloatMatrix> &inputs,
+                          const std::vector<math::FloatMatrix> &targets);
+
 
     void update() override { opti_meth->update(); }
 
