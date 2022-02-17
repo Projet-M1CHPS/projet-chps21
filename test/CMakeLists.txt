@@ -25,12 +25,13 @@ include(GoogleTest)
 add_subdirectory(image)
 add_subdirectory(controlSystem)
 add_subdirectory(neuralNetwork)
+add_subdirectory(interface)
 
 gtest_discover_tests(Math_test)
 if (COVERARE_ENABLED)
-  setup_target_for_coverage_gcovr_html(NAME coverage
-          EXECUTABLE ctest -j
-          EXCLUDE "${CMAKE_SOURCE_DIR}/extern/*" "/usr/*" "${CMAKE_BINARY_DIR}/_deps/*" "${CMAKE_SOURCE_DIR}/test/*"
-          "${CMAKE_SOURCE_DIR}/apps/*"
-          )
+    setup_target_for_coverage_gcovr_html(NAME coverage
+            EXECUTABLE ctest -j
+            EXCLUDE "${CMAKE_SOURCE_DIR}/extern/*" "/usr/*" "${CMAKE_BINARY_DIR}/_deps/*" "${CMAKE_SOURCE_DIR}/test/*"
+            "${CMAKE_SOURCE_DIR}/apps/*"
+            )
 endif ()
