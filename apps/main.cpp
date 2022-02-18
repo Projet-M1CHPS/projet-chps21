@@ -42,7 +42,7 @@ bool createAndTrain(utils::clWrapper &wrapper, std::filesystem::path const &inpu
 
   tscl::logger("Loading collection", tscl::Log::Information);
   auto training_collection = loader.load(input_path, wrapper);
-  exit(1);
+
 
   // Create a correctly-sized topology
   nnet::MLPTopology topology = {32 * 32, 64, 64, 32, 32};
@@ -50,6 +50,7 @@ bool createAndTrain(utils::clWrapper &wrapper, std::filesystem::path const &inpu
 
   auto model = nnet::MLPModel::randomReluSigmoid(topology);
 
+  exit(1);
   auto optimizer = nnet::MLPMiniBatchOptimizer::make<nnet::DecayMomentumOptimization>(
           *model, 64, 0.2, 0.1, 0.9);
 

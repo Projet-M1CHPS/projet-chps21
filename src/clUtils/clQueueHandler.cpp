@@ -12,6 +12,7 @@ namespace utils {
   clQueueHandler &clQueueHandler::operator=(const clQueueHandler &other) {
     // No need to lock the mutex for copying
     for (auto &q : other.queues) { queues.push_back(q); }
+    current_queue_index = 0;
     return *this;
   }
 
@@ -36,7 +37,8 @@ namespace utils {
     std::scoped_lock<std::mutex> lock(queue_mutex);
 
     // Enqueue the kernel on the current queue and increment the queue index, looping if necessary
-    auto &queue = queues[current_queue_index++];
+    auto &queue = queues[current_queue_index];
+    current_queue_index = (current_queue_index + 1) % queues.size();
     queue.enqueueNDRangeKernel(kernel, offset, global, local, events_queue, event);
   }
 

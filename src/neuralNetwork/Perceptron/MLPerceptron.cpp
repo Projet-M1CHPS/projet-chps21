@@ -10,7 +10,8 @@ namespace nnet {
     return MLPTopology(layers);
   }
 
-  math::FloatMatrix MLPerceptron::predict(math::FloatMatrix const &input) const {
+  math::clMatrix MLPerceptron::predict(math::clMatrix const &input,
+                                       utils::clWrapper &wrapper) const {
     const size_t nbInput = input.getRows();
 
     if (nbInput != weights.front().getCols()) {
@@ -32,7 +33,7 @@ namespace nnet {
   }
 
 
-  void MLPerceptron::setTopology(MLPTopology const &topology) {
+  void MLPerceptron::setTopology(MLPTopology const &topology, utils::clWrapper &wrapper) {
     if (topology.empty()) return;
     if (topology.size() < 2) { throw std::invalid_argument("Requires atleast 2 layers"); }
 
@@ -41,22 +42,26 @@ namespace nnet {
     for (size_t i = 0; i < topology.size() - 1; i++) {
       // Create a matrix of size (layers[i + 1] x layers[i])
       // So that each weight matrix can be multiplied by the previous layer
-      weights.emplace_back(topology[i + 1], topology[i]);
-      biases.emplace_back(topology[i + 1], 1);
+      weights.emplace_back(topology[i + 1], topology[i], wrapper);
+      biases.emplace_back(topology[i + 1], 1, wrapper);
       activation_functions.push_back(af::ActivationFunctionType::sigmoid);
     }
     this->topology = topology;
   }
 
-  void MLPerceptron::randomizeWeight() {
+  void MLPerceptron::randomizeWeight(utils::clWrapper &wrapper) {
     for (auto &layer : weights) {
-      double x = std::sqrt(2.0 / (double) layer.getRows());
-      math::randomize<float>(layer, -x, x);
+      float x = std::sqrt(2.0f / (float) layer.getRows());
+      math::FloatMatrix buf(layer.getRows(), layer.getCols());
+      math::randomize<float>(buf, -x, x);
+      layer.fromFloatMatrix(buf, wrapper);
     }
 
     for (auto &layer : biases) {
-      double x = std::sqrt(2.0 / (double) layer.getRows());
-      math::randomize<float>(layer, -x, x);
+      float x = std::sqrt(2.0f / (float) layer.getRows());
+      math::FloatMatrix buf(layer.getRows(), layer.getCols());
+      math::randomize<float>(buf, -x, x);
+      layer.fromFloatMatrix(buf, wrapper);
     }
   }
 

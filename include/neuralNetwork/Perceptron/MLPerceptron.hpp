@@ -3,6 +3,8 @@
 #include "ActivationFunction.hpp"
 #include "Matrix.hpp"
 #include "Utils.hpp"
+#include "clUtils/clMatrix.hpp"
+#include "clUtils/clWrapper.hpp"
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -56,31 +58,12 @@ namespace nnet {
   };
 
   /**
-   * @brief Base interface for MLPerceptron
-   *
-   */
-  class MLPBase {
-  public:
-    MLPBase() = default;
-
-    virtual ~MLPBase() = default;
-
-    virtual void setTopology(MLPTopology const &topology) = 0;
-    [[nodiscard]] MLPTopology const &getTopology() const { return topology; }
-
-    virtual void randomizeWeight() = 0;
-
-  protected:
-    MLPTopology topology;
-  };
-
-  /**
    * @brief A neural network that supports most fp precision as template
    * parameters
    *
    * @tparam real
    */
-  class MLPerceptron final : public MLPBase {
+  class MLPerceptron final {
   public:
     /**
      * @brief Construct a new Neural Network object with no layer
@@ -103,7 +86,9 @@ namespace nnet {
      * @param end
      * @return
      */
-    math::FloatMatrix predict(math::FloatMatrix const &input) const;
+    math::clMatrix predict(math::clMatrix const &input, utils::clWrapper &wrapper) const;
+
+    MLPTopology const &getTopology() const { return topology; }
 
     /**
      * @brief Take a vector of sizes correspondig to the number of neurons
@@ -112,7 +97,7 @@ namespace nnet {
      *
      * @param layers
      */
-    void setTopology(MLPTopology const &topology) override;
+    void setTopology(MLPTopology const &topology, utils::clWrapper &wrapper);
     void setActivationFunction(af::ActivationFunctionType type) {
       for (auto &activation_function : activation_functions) { activation_function = type; }
     }
@@ -132,20 +117,20 @@ namespace nnet {
      *
      * @param seed
      */
-    void randomizeWeight() override;
+    void randomizeWeight(utils::clWrapper &wrapper);
 
-    [[nodiscard]] std::vector<math::FloatMatrix> &getWeights() { return weights; }
+    [[nodiscard]] std::vector<math::clMatrix> &getWeights() { return weights; }
 
-    [[nodiscard]] const std::vector<math::FloatMatrix> &getWeights() const { return weights; }
+    [[nodiscard]] const std::vector<math::clMatrix> &getWeights() const { return weights; }
 
-    [[nodiscard]] std::vector<math::FloatMatrix> &getBiases() { return biases; }
+    [[nodiscard]] std::vector<math::clMatrix> &getBiases() { return biases; }
 
-    [[nodiscard]] const std::vector<math::FloatMatrix> &getBiases() const { return biases; }
-
+    [[nodiscard]] const std::vector<math::clMatrix> &getBiases() const { return biases; }
 
   private:
-    std::vector<math::FloatMatrix> weights;
-    std::vector<math::FloatMatrix> biases;
+    MLPTopology topology;
+    std::vector<math::clMatrix> weights;
+    std::vector<math::clMatrix> biases;
 
     // We want every layer to have its own activation function
     std::vector<af::ActivationFunctionType> activation_functions;

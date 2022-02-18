@@ -44,7 +44,8 @@ namespace control::classifier {
     math::clMatrix normalizeToDevice(const image::GrayscaleImage &img, utils::clWrapper &wrapper,
                                      cl::CommandQueue &queue) {
       // Load the conversion kernel
-      cl::Kernel kernel = wrapper.getKernel("kernels/NormalizeCharToFloat.cl", "normalizeCharToFloat");
+      cl::Kernel kernel =
+              wrapper.getKernel("kernels/NormalizeCharToFloat.cl", "normalizeCharToFloat");
 
       // Allocate a new cl matrix
       math::clMatrix res(img.getWidth() * img.getHeight(), 1, wrapper.getContext());
@@ -62,7 +63,8 @@ namespace control::classifier {
       kernel.setArg(2, 255);
       // OpenCL does not support size_t, so we cast it to unsigned long
       kernel.setArg(3, (cl_ulong) img.getSize());
-      queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(img.getSize()), cl::NullRange);
+      wrapper.getDefaultQueueHandler().enqueue(kernel, cl::NullRange, cl::NDRange(img.getSize()),
+                                               cl::NullRange);
       return res;
     }
 

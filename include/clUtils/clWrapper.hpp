@@ -16,7 +16,7 @@ namespace utils {
     explicit clWrapper(cl::Platform &platform);
 
     static clWrapper getDefaultWrapper();
-    static void setDefaultWrapper(std::unique_ptr<clWrapper> &&wrapper);
+    static void setDefaultWrapper(clWrapper &wrapper);
 
     cl::Platform getPlatform() { return platform; }
     cl::Context getContext() { return context; }
@@ -32,7 +32,7 @@ namespace utils {
      * @brief Returns a new queue handler containing all available devices in this wrapper.
      * @return a new queue handler
      */
-    clQueueHandler &makeQueueHandler(cl::QueueProperties properties = {});
+    clQueueHandler makeQueueHandler(cl::QueueProperties properties = {});
     cl::Device getDefaultDevice() { return default_device; }
 
     /**
@@ -57,11 +57,16 @@ namespace utils {
 
   private:
     std::shared_mutex main_mutex;
+
     cl::Platform platform;
     cl::Context context;
+
+    cl::Device default_device;
+    std::vector<cl::Device> devices;
+
     cl::CommandQueue default_queue;
     clQueueHandler default_queue_handler;
-    cl::Device default_device;
+
     std::map<std::string, cl::Program> programs;
   };
 }   // namespace utils

@@ -91,7 +91,7 @@ namespace utils {
 
   private:
     std::mutex queue_mutex;
-    int current_queue_index = 0;
+    size_t current_queue_index = 0;
     std::vector<cl::CommandQueue> queues;
   };
 }   // namespace utils

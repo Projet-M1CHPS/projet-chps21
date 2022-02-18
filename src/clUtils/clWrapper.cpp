@@ -69,7 +69,6 @@ namespace utils {
 
   clWrapper::clWrapper(cl::Platform &platform) {
     this->platform = platform;
-    std::vector<cl::Device> devices;
     platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
 
     default_device = devices[0];
@@ -81,9 +80,12 @@ namespace utils {
   }
 
   clWrapper::clWrapper(clWrapper &other) {
-    context = other.context;
-    default_queue = other.default_queue;
     platform = other.platform;
+    context = other.context;
+    default_device = other.default_device;
+    default_queue = other.default_queue;
+    default_queue_handler = other.default_queue_handler;
+
 
     // We lock the mutex to ensure no program is added while we are copying them
     std::shared_lock<std::shared_mutex> lock(other.main_mutex);
@@ -108,6 +110,15 @@ namespace utils {
     }
     // Copy the default wrapper while we own the shared lock
     return *default_wrapper;
+  }
+
+  void clWrapper::setDefaultWrapper(clWrapper &wrapper) {
+    std::scoped_lock<std::shared_mutex> lock(default_wrapper_mutex);
+    default_wrapper = std::make_unique<clWrapper>(wrapper);
+  }
+
+  clQueueHandler clWrapper::makeQueueHandler(cl::QueueProperties properties) {
+    return clQueueHandler(context, devices, properties);
   }
 
   cl::Program clWrapper::getProgram(const std::string &program_name) {
