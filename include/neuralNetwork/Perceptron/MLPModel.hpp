@@ -10,8 +10,8 @@ namespace nnet {
    */
   class MLPModel : public Model {
   public:
-    MLPModel();
-    MLPModel(std::unique_ptr<MLPerceptron> &&perceptron);
+    explicit MLPModel(std::shared_ptr<utils::clWrapper> wrapper);
+    MLPModel(std::shared_ptr<utils::clWrapper> wrapper, std::unique_ptr<MLPerceptron> &&perceptron);
 
     [[nodiscard]] MLPerceptron &getPerceptron() { return *perceptron; }
     [[nodiscard]] MLPerceptron const &getPerceptron() const { return *perceptron; }
@@ -21,7 +21,7 @@ namespace nnet {
      * @param input The matrix to be fed to the perceptron
      * @return The output of the perceptron
      */
-    math::FloatMatrix predict(math::FloatMatrix const &input) const override;
+    math::clMatrix predict(math::clMatrix const &input) const override;
 
 
     bool load(const std::filesystem::path &path) override;
@@ -34,7 +34,7 @@ namespace nnet {
      * @return a random model
      */
     static std::unique_ptr<MLPModel>
-    random(MLPTopology const &topology,
+    random(const std::shared_ptr<utils::clWrapper> &wrapper_ptr, MLPTopology const &topology,
            af::ActivationFunctionType af = af::ActivationFunctionType::sigmoid);
 
     /**
@@ -45,7 +45,9 @@ namespace nnet {
      * @param topology The topology to be used for the model
      * @return
      */
-    static std::unique_ptr<MLPModel> randomReluSigmoid(MLPTopology const &topology);
+    static std::unique_ptr<MLPModel>
+    randomReluSigmoid(const std::shared_ptr<utils::clWrapper> &wrapper_ptr,
+                      MLPTopology const &topology);
 
   private:
     std::unique_ptr<MLPerceptron> perceptron;

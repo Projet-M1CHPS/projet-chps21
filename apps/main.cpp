@@ -23,7 +23,8 @@ void setupLogger() {
   thandler.minLvl(Log::Information);
 }
 
-bool createAndTrain(utils::clWrapper &wrapper, std::filesystem::path const &input_path,
+bool createAndTrain(std::shared_ptr<utils::clWrapper> wrapper,
+                    std::filesystem::path const &input_path,
                     std::filesystem::path const &output_path) {
   tscl::logger("Current version: " + tscl::Version::current.to_string(), tscl::Log::Debug);
   tscl::logger("Fetching model from  " + input_path.string(), tscl::Log::Debug);
@@ -41,14 +42,14 @@ bool createAndTrain(utils::clWrapper &wrapper, std::filesystem::path const &inpu
   // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
 
   tscl::logger("Loading collection", tscl::Log::Information);
-  auto training_collection = loader.load(input_path, wrapper);
+  auto training_collection = loader.load(input_path, *wrapper);
 
 
   // Create a correctly-sized topology
   nnet::MLPTopology topology = {32 * 32, 64, 64, 32, 32};
-  topology.push_back(training_collection->getClassCount());
+  topology.pushBack(training_collection->getClassCount());
 
-  auto model = nnet::MLPModel::randomReluSigmoid(topology);
+  auto model = nnet::MLPModel::randomReluSigmoid(wrapper, topology);
 
   exit(1);
   auto optimizer = nnet::MLPMiniBatchOptimizer::make<nnet::DecayMomentumOptimization>(
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
   }
 
   tscl::logger("Initializing OpenCL...", tscl::Log::Debug);
-  utils::clWrapper wrapper = utils::clWrapper::getDefaultWrapper();
+  std::shared_ptr<utils::clWrapper> wrapper = utils::clWrapper::makeDefaultWrapper();
 
   std::vector<std::string> args;
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);

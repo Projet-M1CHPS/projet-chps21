@@ -18,6 +18,8 @@ namespace math {
     // clMatrix are not copyable without a context
     // We delete the copy operator to prevent misuse
     clMatrix(const clMatrix &) = delete;
+    clMatrix &operator=(const clMatrix &) = delete;
+
     clMatrix(clMatrix &&) = default;
     clMatrix &operator=(clMatrix &&) = default;
 
@@ -60,7 +62,7 @@ namespace math {
       }
     }
 
-    FloatMatrix toFloatMatrix(utils::clWrapper &wrapper) {
+    FloatMatrix toFloatMatrix(utils::clWrapper &wrapper) const {
       FloatMatrix matrix(rows, cols);
       wrapper.getDefaultQueue().enqueueReadBuffer(data, CL_TRUE, 0, rows * cols * sizeof(float),
                                                   (void *) matrix.getData());

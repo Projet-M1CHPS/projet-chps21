@@ -1,6 +1,7 @@
 #pragma once
 #define CL_HPP_TARGET_OPENCL_VERSION 200
 #define CL_HPP_ENABLE_EXCEPTIONS 1
+#include "clKernelMap.hpp"
 #include "clQueueHandler.hpp"
 #include <CL/opencl.hpp>
 #include <iostream>
@@ -12,48 +13,41 @@
 namespace utils {
   class clWrapper {
   public:
-    clWrapper(clWrapper &other);
-    explicit clWrapper(cl::Platform &platform);
+    clWrapper(const clWrapper &other);
+    clWrapper &operator=(const clWrapper &other);
 
-    static clWrapper getDefaultWrapper();
-    static void setDefaultWrapper(clWrapper &wrapper);
+    clWrapper &operator=(clWrapper &&other);
+    clWrapper(clWrapper &&other);
 
-    cl::Platform getPlatform() { return platform; }
-    cl::Context getContext() { return context; }
-    cl::CommandQueue getDefaultQueue() { return default_queue; }
+    explicit clWrapper(cl::Platform &platform,
+                       const std::filesystem::path &kernels_search_path");
+
+    static std::unique_ptr<clWrapper> makeDefaultWrapper(std::filesystem::path kernels_search_path = "kernels");
+
+    cl::Platform getPlatform() {
+      return platform; }
+    cl::Context getContext() {
+      return context; }
+    cl::CommandQueue getDefaultQueue() {
+      return default_queue; }
 
     /**
      * @brief Returns the default queue handler containing all available devices in this wrapper.
      * @return The default queue handler that may already be in used
      */
-    clQueueHandler &getDefaultQueueHandler() { return default_queue_handler; }
+    clQueueHandler &getDefaultQueueHandler() {
+      return default_queue_handler; }
 
     /**
      * @brief Returns a new queue handler containing all available devices in this wrapper.
      * @return a new queue handler
      */
     clQueueHandler makeQueueHandler(cl::QueueProperties properties = {});
-    cl::Device getDefaultDevice() { return default_device; }
+    cl::Device getDefaultDevice() {
+      return default_device; }
 
-    /**
-     * @brief Lazy load a program and cache it for further query
-     * If the program is not found, the app crashes.
-     * FIXME: add a default path for programs lookup and improve error handling
-     * @param program_name The name of the program to load. This is the path of the file
-     * @return The program if it was loader, fatal error otherwise
-     */
-    cl::Program getProgram(const std::string &program_name);
-
-    /**
-     * @brief Lookup the given program in the cache (or lazy load it) and returns the corresponding
-     * kernel inside. If the kernel or the program is not found, the app crashes.
-     * FIXME: improve error handling
-     * @param program_name The name of the program containing the kernel. This is the path of the
-     * file
-     * @param kernel_name The name of the kernel to retrieve
-     * @return The kernel if it was found, fatal error otherwise
-     */
-    cl::Kernel getKernel(const std::string &program_name, const std::string &kernel_name);
+    clKernelMap &getKernels() {
+      return *kernels; }
 
   private:
     std::shared_mutex main_mutex;
@@ -67,6 +61,6 @@ namespace utils {
     cl::CommandQueue default_queue;
     clQueueHandler default_queue_handler;
 
-    std::map<std::string, cl::Program> programs;
+    std::shared_ptr<clKernelMap> kernels;
   };
 }   // namespace utils

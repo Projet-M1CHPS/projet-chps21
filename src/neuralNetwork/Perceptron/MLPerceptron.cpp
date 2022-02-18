@@ -6,12 +6,18 @@ namespace nnet {
     std::vector<size_t> layers;
     std::stringstream ss(str);
     std::string token;
+
     while (std::getline(ss, token, ',')) { layers.push_back(std::stoi(token)); }
     return MLPTopology(layers);
   }
 
+  MLPerceptron::MLPerceptron(utils::clWrapper *wrapper, const MLPTopology &topology) {
+    if (not topology.empty()) { setTopology(topology); }
+    this->wrapper = wrapper;
+  }
+
   math::clMatrix MLPerceptron::predict(math::clMatrix const &input,
-                                       utils::clWrapper &wrapper) const {
+                                       utils::clQueueHandler &qhandler) const {
     const size_t nbInput = input.getRows();
 
     if (nbInput != weights.front().getCols()) {
@@ -33,7 +39,7 @@ namespace nnet {
   }
 
 
-  void MLPerceptron::setTopology(MLPTopology const &topology, utils::clWrapper &wrapper) {
+  void MLPerceptron::setTopology(MLPTopology const &topology) {
     if (topology.empty()) return;
     if (topology.size() < 2) { throw std::invalid_argument("Requires atleast 2 layers"); }
 
@@ -42,37 +48,41 @@ namespace nnet {
     for (size_t i = 0; i < topology.size() - 1; i++) {
       // Create a matrix of size (layers[i + 1] x layers[i])
       // So that each weight matrix can be multiplied by the previous layer
-      weights.emplace_back(topology[i + 1], topology[i], wrapper);
-      biases.emplace_back(topology[i + 1], 1, wrapper);
+      weights.emplace_back(topology[i + 1], topology[i], *wrapper);
+      biases.emplace_back(topology[i + 1], 1, *wrapper);
       activation_functions.push_back(af::ActivationFunctionType::sigmoid);
     }
     this->topology = topology;
   }
 
-  void MLPerceptron::randomizeWeight(utils::clWrapper &wrapper) {
+  void MLPerceptron::randomizeWeight() {
     for (auto &layer : weights) {
       float x = std::sqrt(2.0f / (float) layer.getRows());
       math::FloatMatrix buf(layer.getRows(), layer.getCols());
       math::randomize<float>(buf, -x, x);
-      layer.fromFloatMatrix(buf, wrapper);
+      layer.fromFloatMatrix(buf, *wrapper);
     }
 
     for (auto &layer : biases) {
       float x = std::sqrt(2.0f / (float) layer.getRows());
       math::FloatMatrix buf(layer.getRows(), layer.getCols());
       math::randomize<float>(buf, -x, x);
-      layer.fromFloatMatrix(buf, wrapper);
+      layer.fromFloatMatrix(buf, *wrapper);
     }
   }
 
   std::ostream &operator<<(std::ostream &os, const MLPerceptron &nn) {
+    auto wrapper = nn.getWrapper();
     const size_t size = nn.getWeights().size();
     os << "-------input-------\n";
     for (size_t i = 0; i < size; i++) {
       os << "-----weight[" << i << "]-----\n";
-      os << nn.getWeights()[i];
+      // We need to fetch the matrix from the defice to print it
+      auto buf1 = nn.getWeights()[i].toFloatMatrix(wrapper);
+      os << buf1;
       os << "------bias[" << i << "]------\n";
-      os << nn.getBiases()[i];
+      auto buf2 = nn.getBiases()[i].toFloatMatrix(wrapper);
+      os << buf2;
       if (i != size - 1) { os << "-----hidden[" << i << "]-----\n"; }
     }
     os << "-------output------\n";

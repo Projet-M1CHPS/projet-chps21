@@ -50,22 +50,25 @@ namespace utils {
      */
     clQueueHandler(const cl::Context &context, const std::vector<cl::Device> &devices,
                    cl::QueueProperties properties = {});
-
-    /**
-     * @brief Dispatch a kernel to the next queue
-     * @param kernel The kernel to dispatch, with arguments already set
-     * @param events_queue The queue to use for the event
-     * @param event The event associated with this kernel
-     */
-    void enqueue(cl::Kernel &kernel, const cl::NDRange &offset, const cl::NDRange &global,
-                 const cl::NDRange &local, const std::vector<cl::Event> *events_queue = nullptr,
-                 cl::Event *event = nullptr);
-
     /**
      * @brief Returns the next queue that will be used for enqueuing kernels
      * @return
      */
-    cl::CommandQueue getCurrentQueue();
+    cl::CommandQueue &current() {
+      std::scoped_lock<std::mutex> lock(queue_mutex);
+      return queues[current_queue_index];
+    }
+
+    /**
+     * @brief Returns a queue and advances the queue index
+     * @return The next queue
+     */
+    cl::CommandQueue &next() {
+      std::scoped_lock<std::mutex> lock(queue_mutex);
+      auto &res = queues[current_queue_index];
+      current_queue_index = (current_queue_index + 1) % queues.size();
+      return res;
+    }
 
     /**
      * @brief returns a raw pointer to the queues array

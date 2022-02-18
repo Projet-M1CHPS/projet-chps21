@@ -5,18 +5,6 @@ namespace utils {
 
   namespace {
 
-    // We use a global variable to store the default wrapper
-    // Normally I would implement a singleton using a static variable
-    // However, this allows one to swap the wrapper at runtime
-    //
-    // Since wrappers are copyable, it is safe to swap the wrapper while it's in use elsewhere
-    // since OpenCL will only deallocate platforms, devices, ..., when all references are destroyed
-    // To ensure this, we need to ensure the default wrapper is only retrievable through copy
-    std::unique_ptr<clWrapper> default_wrapper;
-
-    // Needed to prevent the wrapper being swapped while it is being copied
-    std::shared_mutex default_wrapper_mutex;
-
     // Placeholder functions, needs more testing on a multi-cpu and multi-gpu architecture
     // The main issue here is letting the user choose which platform to use
     // One option would be to display a menu at runtime and let the user choose, use a configuration
@@ -54,20 +42,9 @@ namespace utils {
       std::string res((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
       return res;
     }
-
-    // Takes an exclusive lock on the default wrapper to prevent erroneous use
-    // This ensures that the caller
-    void makeDefaultWrapper() {
-      std::scoped_lock<std::shared_mutex> lock(default_wrapper_mutex);
-      if (default_wrapper) return;
-
-      std::vector<cl::Platform> cpu_platforms = findCPUPlatform();
-      default_wrapper = std::make_unique<clWrapper>(cpu_platforms[0]);
-    }
-
   }   // namespace
 
-  clWrapper::clWrapper(cl::Platform &platform) {
+  clWrapper::clWrapper(cl::Platform &platform, const std::filesystem::path &kernels_search_path) {
     this->platform = platform;
     platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
 
@@ -77,44 +54,31 @@ namespace utils {
     // By default, we do not enable out-of-order execution for the queue handler
     // The user is free to create queues with out-of-order execution enabled
     default_queue_handler = clQueueHandler(context, devices);
+
+    kernels = std::make_shared<clKernelMap>(context, kernels_search_path);
   }
 
-  clWrapper::clWrapper(clWrapper &other) {
+  clWrapper::clWrapper(const clWrapper &other) {
     platform = other.platform;
     context = other.context;
     default_device = other.default_device;
     default_queue = other.default_queue;
     default_queue_handler = other.default_queue_handler;
-
-
-    // We lock the mutex to ensure no program is added while we are copying them
-    std::shared_lock<std::shared_mutex> lock(other.main_mutex);
-    // No issues copying the programs, as they are only wrappers around cl objects
-    programs = other.programs;
+    kernels = other.kernels;
   }
 
-  clWrapper clWrapper::getDefaultWrapper() {
-    // We use a shared_mutex to avoid contentions
-    std::shared_lock<std::shared_mutex> lock(default_wrapper_mutex);
+  std::unique_ptr<clWrapper>
+  clWrapper::makeDefaultWrapper(std::filesystem::path kernels_search_path) {
+    auto cpu_platforms = findCPUPlatform();
+    auto gpu_platforms = findGPUPlatform();
 
-    // Bloat code to ensure thread safety
-    // This will only occur the first time the default wrapper is allocated
-    if (not default_wrapper) {
-      // If the default_wrapper is not allocated yet, we need to free the shared_lock and acquire an
-      // exclusive lock
-      // this is inefficient, but guarantees thread safety and should only be done for the first
-      // allocation
-      lock.unlock();
-      makeDefaultWrapper();
-      lock.lock();
+    if (cpu_platforms.empty()) { throw std::runtime_error("No CPU platform found"); }
+
+    if (not gpu_platforms.empty()) {
+      return std::make_unique<clWrapper>(gpu_platforms[0], kernels_search_path);
+    } else {
+      return std::make_unique<clWrapper>(cpu_platforms[0], kernels_search_path);
     }
-    // Copy the default wrapper while we own the shared lock
-    return *default_wrapper;
-  }
-
-  void clWrapper::setDefaultWrapper(clWrapper &wrapper) {
-    std::scoped_lock<std::shared_mutex> lock(default_wrapper_mutex);
-    default_wrapper = std::make_unique<clWrapper>(wrapper);
   }
 
   clQueueHandler clWrapper::makeQueueHandler(cl::QueueProperties properties) {

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Matrix.hpp"
+#include "clUtils/clMatrix.hpp"
+#include "clUtils/clWrapper.hpp"
 #include <filesystem>
 
 namespace nnet {
@@ -9,7 +11,7 @@ namespace nnet {
    */
   class Model {
   public:
-    Model() = default;
+    Model(std::shared_ptr<utils::clWrapper> wrapper_ptr);
     virtual ~Model() = default;
 
     //
@@ -26,7 +28,7 @@ namespace nnet {
      * @param input The model's input
      * @return The model's output
      */
-    virtual math::FloatMatrix predict(math::FloatMatrix const &input) const = 0;
+    virtual math::clMatrix predict(math::clMatrix const &input) const = 0;
 
     /**
      * @brief Save the model to the given path
@@ -43,6 +45,9 @@ namespace nnet {
      * @return True if the model was loaded successfully, false otherwise
      */
     virtual bool load(const std::filesystem::path &path) = 0;
+
+  protected:
+    std::shared_ptr<utils::clWrapper> cl_wrapper_ptr;
   };
 
 }   // namespace nnet

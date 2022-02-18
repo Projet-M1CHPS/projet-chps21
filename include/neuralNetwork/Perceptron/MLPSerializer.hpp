@@ -11,9 +11,9 @@ namespace nnet {
     // This class is fully static
     MLPSerializer() = delete;
 
-    static MLPerceptron readFromFile(const std::filesystem::path &path);
+    static MLPerceptron readFromFile(utils::clWrapper &wrapper, const std::filesystem::path &path);
 
-    static MLPerceptron readFromStream(std::istream &stream);
+    static MLPerceptron readFromStream(utils::clWrapper &wrapper, std::istream &stream);
 
     static bool writeToFile(const std::filesystem::path &path, const MLPerceptron &perceptron);
 
