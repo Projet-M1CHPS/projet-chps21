@@ -20,34 +20,29 @@ namespace utils {
     clWrapper(clWrapper &&other);
 
     explicit clWrapper(cl::Platform &platform,
-                       const std::filesystem::path &kernels_search_path");
+                       const std::filesystem::path &kernels_search_path = "kernels");
 
-    static std::unique_ptr<clWrapper> makeDefaultWrapper(std::filesystem::path kernels_search_path = "kernels");
+    static std::unique_ptr<clWrapper>
+    makeDefaultWrapper(std::filesystem::path kernels_search_path = "kernels");
 
-    cl::Platform getPlatform() {
-      return platform; }
-    cl::Context getContext() {
-      return context; }
-    cl::CommandQueue getDefaultQueue() {
-      return default_queue; }
+    cl::Platform getPlatform() { return platform; }
+    cl::Context getContext() { return context; }
+    cl::CommandQueue getDefaultQueue() { return default_queue; }
 
     /**
      * @brief Returns the default queue handler containing all available devices in this wrapper.
      * @return The default queue handler that may already be in used
      */
-    clQueueHandler &getDefaultQueueHandler() {
-      return default_queue_handler; }
+    clQueueHandler &getDefaultQueueHandler() { return default_queue_handler; }
 
     /**
      * @brief Returns a new queue handler containing all available devices in this wrapper.
      * @return a new queue handler
      */
     clQueueHandler makeQueueHandler(cl::QueueProperties properties = {});
-    cl::Device getDefaultDevice() {
-      return default_device; }
+    cl::Device getDefaultDevice() { return default_device; }
 
-    clKernelMap &getKernels() {
-      return *kernels; }
+    clKernelMap &getKernels() { return *kernels; }
 
   private:
     std::shared_mutex main_mutex;

@@ -41,18 +41,20 @@ namespace control::classifier {
 
     // Takes a grayscale image and load it to a clMatrix
     // The image is normalized using a given factor
-    math::clMatrix normalizeToDevice(const image::GrayscaleImage &img, utils::clWrapper &wrapper,
-                                     cl::CommandQueue &queue) {
+    math::clMatrix normalizeToDevice(const image::GrayscaleImage &img, utils::clWrapper &wrapper) {
       // Load the conversion kernel
       cl::Kernel kernel =
-              wrapper.getKernel("kernels/NormalizeCharToFloat.cl", "normalizeCharToFloat");
+              wrapper.getKernels().getKernel("NormalizeCharToFloat.cl", "normalizeCharToFloat");
 
       // Allocate a new cl matrix
-      math::clMatrix res(img.getWidth() * img.getHeight(), 1, wrapper.getContext());
+      math::clMatrix res(img.getWidth() * img.getHeight(), 1, wrapper);
 
       // We need to load the image to the cl device before applying the kernel
       cl::Buffer img_buffer(wrapper.getContext(), CL_MEM_READ_ONLY,
                             img.getWidth() * img.getHeight());
+
+      auto &queue = wrapper.getDefaultQueueHandler().next();
+
       queue.enqueueWriteBuffer(img_buffer, CL_FALSE, 0, img.getWidth() * img.getHeight(),
                                img.getData());
 
@@ -63,8 +65,9 @@ namespace control::classifier {
       kernel.setArg(2, 255);
       // OpenCL does not support size_t, so we cast it to unsigned long
       kernel.setArg(3, (cl_ulong) img.getSize());
-      wrapper.getDefaultQueueHandler().enqueue(kernel, cl::NullRange, cl::NDRange(img.getSize()),
-                                               cl::NullRange);
+
+      queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(img.getSize()), cl::NullRange);
+
       return res;
     }
 
@@ -77,7 +80,7 @@ namespace control::classifier {
         if (not file.is_regular_file()) continue;
 
         auto img = pipeline.loadAndTransform(file.path());
-        auto cl_matrix = normalizeToDevice(img, wrapper, queue);
+        auto cl_matrix = normalizeToDevice(img, wrapper);
         res.push_back(cl_matrix);
       }
       return res;
