@@ -5,6 +5,7 @@ add_library(CNN STATIC
         Filter.cpp ${CURRENT_INCLUDE_DIR}/Filter.hpp
         CNNLayer.cpp ${CURRENT_INCLUDE_DIR}/CNNLayer.hpp
         CNN.cpp ${CURRENT_INCLUDE_DIR}/CNN.hpp
+        CNNStorageBP.cpp ${CURRENT_INCLUDE_DIR}/CNNStorageBP.hpp
         )
 
 target_include_directories(CNN PUBLIC ${INCLUDE_DIR} ${CURRENT_INCLUDE_DIR} ${INCLUDE_DIR}/neuralNetwork)

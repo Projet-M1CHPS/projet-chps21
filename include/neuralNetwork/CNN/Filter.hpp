@@ -12,7 +12,8 @@ namespace cnnet {
   public:
     Filter(const size_t rows, const size_t cols);
     Filter(const std::pair<size_t, size_t>& sizeFilter);
-    Filter(const Filter &other) = delete;
+    Filter(const Filter &other) = default;
+    Filter(Filter &&other) = default;
     Filter const &operator=(const Filter &other) = delete;
 
     ~Filter() = default;

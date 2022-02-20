@@ -12,8 +12,14 @@ namespace cnnet {
                                                            const size_t padding)
       : features(features), CNNTopologyLayer(filter, stride), padding(padding) {}
 
-  std::unique_ptr<CNNLayer> CNNTopologyLayerConvolution::convertToLayer() const {
-    return std::make_unique<CNNConvolutionLayer>(filter, stride, padding);
+  std::shared_ptr<CNNLayer> CNNTopologyLayerConvolution::convertToLayer() const {
+    return std::make_shared<CNNConvolutionLayer>(filter, stride, padding);
+  }
+
+  std::shared_ptr<CNNStorageBP>
+  CNNTopologyLayerConvolution::createStorage(const std::pair<size_t, size_t> &inputSize) const {
+    return std::make_shared<CNNStorageBPConvolution>(inputSize, calculateOutputSize(inputSize),
+                                                     filter);
   }
 
   const std::pair<size_t, size_t> CNNTopologyLayerConvolution::calculateOutputSize(
@@ -30,8 +36,8 @@ namespace cnnet {
   }
 
   std::ostream &CNNTopologyLayerConvolution::printTo(std::ostream &os) const {
-    os << "Convolution layer: features{" << features << "}, filter{" << filter.first << ", " << filter.second << "}, stride{"
-       << stride << "}, padding{" << padding << "}";
+    os << "Convolution layer: features{" << features << "}, filter{" << filter.first << ", "
+       << filter.second << "}, stride{" << stride << "}, padding{" << padding << "}";
     return os;
   }
 
@@ -40,8 +46,13 @@ namespace cnnet {
                                                    const size_t stride)
       : CNNTopologyLayer(filter, stride) {}
 
-  std::unique_ptr<CNNLayer> CNNTopologyLayerPooling::convertToLayer() const {
-    return std::make_unique<CNNMaxPoolingLayer>(filter, stride);
+  std::shared_ptr<CNNLayer> CNNTopologyLayerPooling::convertToLayer() const {
+    return std::make_shared<CNNMaxPoolingLayer>(filter, stride);
+  }
+
+  std::shared_ptr<CNNStorageBP>
+  CNNTopologyLayerPooling::createStorage(const std::pair<size_t, size_t> &inputSize) const {
+    return std::make_shared<CNNStorageBPMaxPooling>(inputSize, calculateOutputSize(inputSize));
   }
 
   const std::pair<size_t, size_t>
@@ -66,11 +77,9 @@ namespace cnnet {
   CNNTopology::CNNTopology() : inputSize(0, 0) {}
   CNNTopology::CNNTopology(const std::pair<size_t, size_t> &inputSize) : inputSize(inputSize) {}
 
-  const std::shared_ptr<CNNTopologyLayer> &CNNTopology::operator()(size_t index) const
-  {
-    if(index >= layers.size())
-      throw std::out_of_range("Index out of range");
-    
+  const std::shared_ptr<CNNTopologyLayer> &CNNTopology::operator()(size_t index) const {
+    if (index >= layers.size()) throw std::out_of_range("Index out of range");
+
     return layers[index];
   }
 

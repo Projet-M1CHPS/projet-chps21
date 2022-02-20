@@ -2,6 +2,21 @@
 
 namespace cnnet {
 
+  CNN::CNN(CNN &&other) noexcept {
+    this->topology = std::move(other.topology);
+    this->layers = std::move(other.layers);
+    this->layerMatrix = std::move(other.layerMatrix);
+    this->activation_function = std::move(other.activation_function);
+  }
+
+  CNN &CNN::operator=(CNN &&other) noexcept {
+    this->topology = std::move(other.topology);
+    this->layers = std::move(other.layers);
+    this->layerMatrix = std::move(other.layerMatrix);
+    this->activation_function = std::move(other.activation_function);
+    return *this;
+  }
+
   void CNN::setTopology(CNNTopology const &topology) {
     const size_t deepth = topology.getDeepth();
 
@@ -15,9 +30,6 @@ namespace cnnet {
       layers[i].resize(topology(i)->getFeatures() * layers[i - 1].size());
       layerMatrix[i].resize(topology(i)->getFeatures() * layerMatrix[i - 1].size());
     }
-
-    for (auto &i : layers) std::cout << i.size() << std::endl;
-
 
     std::pair<size_t, size_t> inputSize(topology.getInputSize());
     for (size_t i = 0; i < topology(0)->getFeatures(); i++) {
@@ -39,14 +51,15 @@ namespace cnnet {
     this->topology = topology;
   }
 
-  void CNN::setActivationFunction(af::ActivationFunctionType type) { activation_function = type; }
 
   void CNN::randomizeWeight() {}
 
-  const math::FloatMatrix &CNN::predict(math::FloatMatrix const &input) {
+  void CNN::predict(math::FloatMatrix const &input, math::FloatMatrix &output) {
     if (input.getCols() != topology.getInputSize().first or
         input.getRows() != topology.getInputSize().second) {
       throw std::runtime_error("Input size does not match topology input size");
+    } else if (output.getCols() != 1 or output.getRows() != getOutputSize()) {
+      throw std::runtime_error("Output size does not match topology output size");
     }
 
     std::cout << "forward \n" << std::endl;
@@ -71,14 +84,21 @@ namespace cnnet {
       }
     }
 
+    size_t index = 0;
+
+    for (auto mat : layerMatrix.back()) {
+      for (auto val : mat) {
+        output(index, 0) = val;
+        index++;
+      }
+    }
+
     std::cout << "////////////////////////////////////////////" << std::endl;
     for (size_t i = 0; i < layers.size(); i++) {
       std::cout << "------------------------------------------" << std::endl;
       for (size_t j = 0; j < layers[i].size(); j++)
         std::cout << layerMatrix[i][j] << "\n" << std::endl;
     }
-
-    return layerMatrix[0][0];
   }
 
 }   // namespace cnnet

@@ -14,6 +14,16 @@ namespace cnnet {
     filter(0, 1) = 1;
     filter(1, 0) = 0.5;
     filter(1, 1) = 1.5;
+
+    //filter(0, 0) = 0.5;
+    //filter(0, 1) = 0.5;
+    //filter(0, 2) = 1;
+    //filter(1, 0) = 1;
+    //filter(1, 1) = 2;
+    //filter(1, 2) = 0.5;
+    //filter(2, 0) = 1;
+    //filter(2, 1) = 2;
+    //filter(2, 2) = 0.5;
   }
 
 

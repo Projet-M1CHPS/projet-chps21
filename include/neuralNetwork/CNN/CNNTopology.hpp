@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "CNNLayer.hpp"
+#include "CNNStorageBP.hpp"
 
 namespace cnnet {
 
@@ -21,7 +22,8 @@ namespace cnnet {
     const size_t &getStride() const { return stride; }
     virtual const size_t getFeatures() const { return 1; }
 
-    virtual std::unique_ptr<CNNLayer> convertToLayer() const = 0;
+    virtual std::shared_ptr<CNNLayer> convertToLayer() const = 0;
+    virtual std::shared_ptr<CNNStorageBP> createStorage(const std::pair<size_t, size_t> &inputSize) const = 0;
 
     virtual const std::pair<size_t, size_t>
     calculateOutputSize(const std::pair<size_t, size_t> &inputSize) const = 0;
@@ -44,7 +46,8 @@ namespace cnnet {
     const size_t getFeatures() const override { return features; }
     const size_t &getPadding() const { return padding; }
 
-    std::unique_ptr<CNNLayer> convertToLayer() const override;
+    std::shared_ptr<CNNLayer> convertToLayer() const override;
+    std::shared_ptr<CNNStorageBP> createStorage(const std::pair<size_t, size_t> &inputSize) const override;
 
     const std::pair<size_t, size_t>
     calculateOutputSize(const std::pair<size_t, size_t> &inputSize) const override;
@@ -63,7 +66,8 @@ namespace cnnet {
     CNNTopologyLayerPooling(const std::pair<size_t, size_t> filter, const size_t stride);
     ~CNNTopologyLayerPooling() = default;
 
-    std::unique_ptr<CNNLayer> convertToLayer() const override;
+    std::shared_ptr<CNNLayer> convertToLayer() const override;
+    std::shared_ptr<CNNStorageBP> createStorage(const std::pair<size_t, size_t> &inputSize) const override;
 
     const std::pair<size_t, size_t>
     calculateOutputSize(const std::pair<size_t, size_t> &inputSize) const override;
@@ -84,6 +88,7 @@ namespace cnnet {
     CNNTopology(const CNNTopology &) = default;
     CNNTopology(CNNTopology &&) = default;
     CNNTopology &operator=(const CNNTopology &) = default;
+    CNNTopology &operator=(CNNTopology &&) = default;
 
     ~CNNTopology() = default;
 

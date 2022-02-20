@@ -5,13 +5,14 @@
 #include "neuralNetwork/Perceptron/MLPerceptron.hpp"
 #include "neuralNetwork/Perceptron/OptimizationMethod.hpp"
 #include <iostream>
+#include <memory>
 #include <utility>
 
 namespace nnet {
   class MLPModelOptimizer : public ModelOptimizer {
   public:
+    MLPModelOptimizer() = default;
     MLPModelOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
-    ~MLPModelOptimizer() override = default;
 
     MLPModelOptimizer(const MLPModelOptimizer &other) = delete;
     MLPModelOptimizer(MLPModelOptimizer &&other) noexcept = default;
@@ -21,7 +22,7 @@ namespace nnet {
     MLPModelOptimizer &operator=(const MLPModelOptimizer &other) = delete;
     MLPModelOptimizer &operator=(MLPModelOptimizer &&other) noexcept = default;
 
-    MLPerceptron *gePerceptron() const { return neural_network; }
+    MLPerceptron *getPerceptron() const { return neural_network; }
     OptimizationMethod *getOptimizationMethod() const { return opti_meth.get(); }
 
     void update() override { opti_meth->update(); }
@@ -34,8 +35,9 @@ namespace nnet {
   class MLPModelStochOptimizer final : public MLPModelOptimizer {
   public:
     MLPModelStochOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm);
+    MLPModelStochOptimizer(MLPerceptron &mlp, std::shared_ptr<OptimizationMethod> tm);
 
-    void train(const math::FloatMatrix &input, const math::FloatMatrix &target);
+    math::FloatMatrix train(const math::FloatMatrix &input, const math::FloatMatrix &target);
 
     void setModel(MLPModel &model) override;
 
@@ -84,8 +86,7 @@ namespace nnet {
 
   class MLPMiniBatchOptimizer : public MLPBatchOptimizer {
   public:
-    explicit MLPMiniBatchOptimizer(MLPModel &model,
-                                   std::shared_ptr<OptimizationMethod> tm,
+    explicit MLPMiniBatchOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm,
                                    size_t batch_size = 8);
 
     void optimize(const std::vector<math::FloatMatrix> &inputs,

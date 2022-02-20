@@ -4,20 +4,27 @@
 namespace nnet {
 
 
-  MLPModelOptimizer::MLPModelOptimizer(MLPModel &model,
-                                             std::shared_ptr<OptimizationMethod> tm)
+  MLPModelOptimizer::MLPModelOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm)
       : neural_network(&model.getPerceptron()), opti_meth(tm) {}
 
-
   MLPModelStochOptimizer::MLPModelStochOptimizer(MLPModel &model,
-                                                       std::shared_ptr<OptimizationMethod> tm)
+                                                 std::shared_ptr<OptimizationMethod> tm)
       : MLPModelOptimizer(model, tm) {
     setModel(model);
   }
 
+  MLPModelStochOptimizer::MLPModelStochOptimizer(MLPerceptron &mlp,
+                                                 std::shared_ptr<OptimizationMethod> tm) {
+    neural_network = &mlp;
+    opti_meth = tm;
+    storage = BackpropStorage(mlp.getWeights());
+    layers.resize(mlp.getWeights().size() + 1);
+    layers_af.resize(mlp.getWeights().size() + 1);
+  }
 
-  void MLPModelStochOptimizer::train(const math::FloatMatrix &input,
-                                           const math::FloatMatrix &target) {
+
+  math::FloatMatrix MLPModelStochOptimizer::train(const math::FloatMatrix &input,
+                                                  const math::FloatMatrix &target) {
     const size_t nbInput = input.getRows();
     const size_t nbTarget = target.getRows();
 
@@ -33,6 +40,7 @@ namespace nnet {
     forward(input);
     storage.getError() = layers_af[layers_af.size() - 1] - target;
     backward(target);
+    return std::move(storage.getError());
   }
 
   void MLPModelStochOptimizer::setModel(MLPModel &model) {
@@ -45,7 +53,7 @@ namespace nnet {
   }
 
   void MLPModelStochOptimizer::optimize(const std::vector<math::FloatMatrix> &inputs,
-                                              const std::vector<math::FloatMatrix> &targets) {
+                                        const std::vector<math::FloatMatrix> &targets) {
     if (inputs.size() != targets.size()) { throw std::runtime_error("Invalid number of inputs"); }
     for (size_t i = 0; i < inputs.size(); ++i) { train(inputs[i], targets[i]); }
   }
@@ -106,8 +114,7 @@ namespace nnet {
   }
 
 
-  MLPBatchOptimizer::MLPBatchOptimizer(MLPModel &model,
-                                             std::shared_ptr<OptimizationMethod> tm)
+  MLPBatchOptimizer::MLPBatchOptimizer(MLPModel &model, std::shared_ptr<OptimizationMethod> tm)
       : MLPModelOptimizer(model, tm) {
     setModel(model);
   }
@@ -134,7 +141,7 @@ namespace nnet {
   }
 
   void MLPBatchOptimizer::optimize(const std::vector<math::FloatMatrix> &inputs,
-                                         const std::vector<math::FloatMatrix> &targets) {
+                                   const std::vector<math::FloatMatrix> &targets) {
     size_t n = inputs.size();
 
     auto mat_reset = [](math::FloatMatrix &m) { m.fill(0); };
@@ -241,13 +248,13 @@ namespace nnet {
 
 
   MLPMiniBatchOptimizer::MLPMiniBatchOptimizer(MLPModel &model,
-                                                     std::shared_ptr<OptimizationMethod> tm,
-                                                     size_t batch_size)
+                                               std::shared_ptr<OptimizationMethod> tm,
+                                               size_t batch_size)
       : MLPBatchOptimizer(model, std::move(tm)), batch_size(batch_size) {}
 
 
   void MLPMiniBatchOptimizer::optimize(const std::vector<math::FloatMatrix> &inputs,
-                                             const std::vector<math::FloatMatrix> &targets) {
+                                       const std::vector<math::FloatMatrix> &targets) {
     size_t n = inputs.size();
 
     for (size_t i = 0; i < n; i += batch_size) {

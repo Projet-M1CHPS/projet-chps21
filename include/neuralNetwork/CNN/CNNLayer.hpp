@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include "CNNStorageBP.hpp"
 #include "Filter.hpp"
 #include "Matrix.hpp"
 
@@ -18,6 +19,7 @@ namespace cnnet {
 
     const size_t getStride() const { return stride; };
     virtual void compute(const FloatMatrix &input, FloatMatrix &output) = 0;
+    virtual void computeBackward(const FloatMatrix &input, CNNStorageBP &storage) = 0;
 
   protected:
     const size_t stride;
@@ -27,7 +29,7 @@ namespace cnnet {
   class CNNConvolutionLayer : public CNNLayer {
   public:
     CNNConvolutionLayer(std::pair<size_t, size_t> sizeFilter, const size_t stride,
-                     const size_t padding = 0);
+                        const size_t padding = 0);
 
     ~CNNConvolutionLayer() = default;
 
@@ -38,6 +40,7 @@ namespace cnnet {
 
 
     void compute(const FloatMatrix &input, FloatMatrix &output) override;
+    void computeBackward(const FloatMatrix &input, CNNStorageBP &storage) override;
 
 
   private:
@@ -52,6 +55,7 @@ namespace cnnet {
     virtual ~CNNPoolingLayer() = default;
 
     virtual void compute(const FloatMatrix &input, FloatMatrix &output) = 0;
+    void computeBackward(const FloatMatrix &input, CNNStorageBP &storage) = 0;
 
   protected:
     const std::pair<size_t, size_t> poolingSize;
@@ -64,6 +68,7 @@ namespace cnnet {
     ~CNNMaxPoolingLayer() = default;
 
     void compute(const FloatMatrix &input, FloatMatrix &output) override;
+    void computeBackward(const FloatMatrix &input, CNNStorageBP &storage) override {};
   };
 
 
@@ -73,7 +78,11 @@ namespace cnnet {
     ~CNNAvgPoolingLayer() = default;
 
     void compute(const FloatMatrix &input, FloatMatrix &output) override;
+    void computeBackward(const FloatMatrix &input, CNNStorageBP &storage) override {};
   };
 
+
+  void fillDilatedMatrix(const FloatMatrix &input, FloatMatrix &dilated, const size_t stride,
+                         const std::pair<size_t, size_t> padding);
 
 }   // namespace cnnet

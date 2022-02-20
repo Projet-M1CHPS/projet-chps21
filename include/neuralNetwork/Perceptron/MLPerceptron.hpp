@@ -37,6 +37,7 @@ namespace nnet {
     [[nodiscard]] size_t getOutputSize() const { return layers.empty() ? 0 : layers.back(); }
     void setOutputSize(size_t i) { layers.back() = i; }
     void push_back(size_t i) { layers.push_back(i); }
+    void push_front(size_t i) { layers.insert(layers.begin(), i); }
 
     [[nodiscard]] bool empty() const { return layers.empty(); }
     [[nodiscard]] size_t size() const { return layers.size(); }
