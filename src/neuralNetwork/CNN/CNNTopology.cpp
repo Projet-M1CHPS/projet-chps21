@@ -18,8 +18,8 @@ namespace cnnet {
 
   std::shared_ptr<CNNStorageBP>
   CNNTopologyLayerConvolution::createStorage(const std::pair<size_t, size_t> &inputSize) const {
-    return std::make_shared<CNNStorageBPConvolution>(inputSize, calculateOutputSize(inputSize),
-                                                     filter);
+    return std::make_shared<CNNStorageBPConvolution>(calculateOutputSize(inputSize), filter,
+                                                     stride);
   }
 
   const std::pair<size_t, size_t> CNNTopologyLayerConvolution::calculateOutputSize(
@@ -46,15 +46,6 @@ namespace cnnet {
                                                    const size_t stride)
       : CNNTopologyLayer(filter, stride) {}
 
-  std::shared_ptr<CNNLayer> CNNTopologyLayerPooling::convertToLayer() const {
-    return std::make_shared<CNNMaxPoolingLayer>(filter, stride);
-  }
-
-  std::shared_ptr<CNNStorageBP>
-  CNNTopologyLayerPooling::createStorage(const std::pair<size_t, size_t> &inputSize) const {
-    return std::make_shared<CNNStorageBPMaxPooling>(inputSize, calculateOutputSize(inputSize));
-  }
-
   const std::pair<size_t, size_t>
   CNNTopologyLayerPooling::calculateOutputSize(const std::pair<size_t, size_t> &inputSize) const {
     //(((W - K)/S) + 1)
@@ -67,11 +58,47 @@ namespace cnnet {
     return std::make_pair(rows, cols);
   }
 
-  std::ostream &CNNTopologyLayerPooling::printTo(std::ostream &os) const {
-    os << "Pooling layer: filter{" << filter.first << ", " << filter.second << "}, stride{"
+
+  CNNTopologyLayerMaxPooling::CNNTopologyLayerMaxPooling(const std::pair<size_t, size_t> filter,
+                                                         const size_t stride)
+      : CNNTopologyLayerPooling(filter, stride) {}
+
+  std::shared_ptr<CNNLayer> CNNTopologyLayerMaxPooling::convertToLayer() const {
+    return std::make_shared<CNNMaxPoolingLayer>(filter, stride);
+  }
+
+  std::shared_ptr<CNNStorageBP>
+  CNNTopologyLayerMaxPooling::createStorage(const std::pair<size_t, size_t> &inputSize) const {
+    return std::make_shared<CNNStorageBPMaxPooling>(calculateOutputSize(inputSize));
+  }
+
+  std::ostream &CNNTopologyLayerMaxPooling::printTo(std::ostream &os) const {
+    os << "Max Pooling layer: filter{" << filter.first << ", " << filter.second << "}, stride{"
        << stride << "}";
     return os;
   }
+
+
+  CNNTopologyLayerAvgPooling::CNNTopologyLayerAvgPooling(const std::pair<size_t, size_t> filter,
+                                                         const size_t stride)
+      : CNNTopologyLayerPooling(filter, stride) {}
+
+  std::shared_ptr<CNNLayer> CNNTopologyLayerAvgPooling::convertToLayer() const {
+    return std::make_shared<CNNAvgPoolingLayer>(filter, stride);
+  }
+
+  std::shared_ptr<CNNStorageBP>
+  CNNTopologyLayerAvgPooling::createStorage(const std::pair<size_t, size_t> &inputSize) const {
+    return std::make_shared<CNNStorageBPAvgPooling>(calculateOutputSize(inputSize));
+  }
+
+  std::ostream &CNNTopologyLayerAvgPooling::printTo(std::ostream &os) const {
+    os << "Avg Pooling layer: filter{" << filter.first << ", " << filter.second << "}, stride{"
+       << stride << "}";
+    return os;
+  }
+
+
 
 
   CNNTopology::CNNTopology() : inputSize(0, 0) {}
@@ -90,10 +117,36 @@ namespace cnnet {
             std::make_shared<CNNTopologyLayerConvolution>(features, filterSize, stride, padding));
   }
 
-  void CNNTopology::addPooling(const std::pair<size_t, size_t> &poolSize, const size_t stride) {
-    layers.push_back(std::make_shared<CNNTopologyLayerPooling>(poolSize, stride));
+  void CNNTopology::addPooling(const PoolingType poolingType,
+                               const std::pair<size_t, size_t> &poolSize, const size_t stride) {
+    switch (poolingType) {
+      case PoolingType::MAX:
+        layers.push_back(std::make_shared<CNNTopologyLayerMaxPooling>(poolSize, stride));
+        break;
+      case PoolingType::AVERAGE:
+        layers.push_back(std::make_shared<CNNTopologyLayerAvgPooling>(poolSize, stride));
+        break;
+      default:
+        throw std::invalid_argument("Invalid pooling type");
+    }
   }
 
+
+  const LayerType stringToLayerType(const std::string &str) {
+    if (str == "convolution") return LayerType::CONVOLUTION;
+    else if (str == "pooling")
+      return LayerType::POOLING;
+    else
+      throw std::invalid_argument("Unknown layer type");
+  }
+
+  const PoolingType stringToPoolingType(const std::string &str) {
+    if (str == "max") return PoolingType::MAX;
+    else if (str == "avg")
+      return PoolingType::AVERAGE;
+    else
+      throw std::invalid_argument("Unknown pooling type");
+  }
 
   const CNNTopology stringToTopology(const std::string &str) {
     std::stringstream ss(str);
@@ -104,14 +157,17 @@ namespace cnnet {
 
     std::string type;
     while (ss >> type) {
-      if (type == "convolution") {
+      LayerType layerType = stringToLayerType(type);
+      if (layerType == LayerType::CONVOLUTION) {
         size_t features = 0, filterRow = 0, filterCol = 0, stride = 0, padding = 0;
         ss >> features >> filterRow >> filterCol >> stride >> padding;
         res.addConvolution(features, {filterRow, filterCol}, stride, padding);
-      } else if (type == "pooling") {
+      } else if (layerType == LayerType::POOLING) {
+        std::string strPoolingType;
         size_t poolRow, poolCol, stride;
-        ss >> poolRow >> poolCol >> stride;
-        res.addPooling({poolRow, poolCol}, stride);
+        ss >> strPoolingType >> poolRow >> poolCol >> stride;
+        PoolingType poolType = stringToPoolingType(strPoolingType);
+        res.addPooling(poolType, {poolRow, poolCol}, stride);
       } else {
         throw std::invalid_argument("Invalid type " + type);
       }

@@ -12,6 +12,18 @@ namespace cnnet {
   using namespace math;
 
 
+  enum class LayerType {
+    CONVOLUTION,
+    POOLING
+  };
+
+  enum class PoolingType {
+    MAX,
+    AVERAGE
+  };
+
+
+
   class CNNLayer {
   public:
     CNNLayer(const size_t stride);
@@ -19,7 +31,8 @@ namespace cnnet {
 
     const size_t getStride() const { return stride; };
     virtual void compute(const FloatMatrix &input, FloatMatrix &output) = 0;
-    virtual void computeBackward(const FloatMatrix &input, CNNStorageBP &storage) = 0;
+    virtual void computeForward(FloatMatrix &input, CNNStorageBP &storage) = 0;
+    virtual void computeBackward(FloatMatrix &input, CNNStorageBP &storage) = 0;
 
   protected:
     const size_t stride;
@@ -40,7 +53,8 @@ namespace cnnet {
 
 
     void compute(const FloatMatrix &input, FloatMatrix &output) override;
-    void computeBackward(const FloatMatrix &input, CNNStorageBP &storage) override;
+    void computeForward(FloatMatrix &input, CNNStorageBP &storage) override;
+    void computeBackward(FloatMatrix &input, CNNStorageBP &storage) override;
 
 
   private:
@@ -55,7 +69,8 @@ namespace cnnet {
     virtual ~CNNPoolingLayer() = default;
 
     virtual void compute(const FloatMatrix &input, FloatMatrix &output) = 0;
-    void computeBackward(const FloatMatrix &input, CNNStorageBP &storage) = 0;
+    void computeForward(FloatMatrix &input, CNNStorageBP &storage) = 0;
+    void computeBackward(FloatMatrix &input, CNNStorageBP &storage) = 0;
 
   protected:
     const std::pair<size_t, size_t> poolingSize;
@@ -68,7 +83,8 @@ namespace cnnet {
     ~CNNMaxPoolingLayer() = default;
 
     void compute(const FloatMatrix &input, FloatMatrix &output) override;
-    void computeBackward(const FloatMatrix &input, CNNStorageBP &storage) override {};
+    void computeForward(FloatMatrix &input, CNNStorageBP &storage) override;
+    void computeBackward(FloatMatrix &input, CNNStorageBP &storage) override;
   };
 
 
@@ -78,7 +94,8 @@ namespace cnnet {
     ~CNNAvgPoolingLayer() = default;
 
     void compute(const FloatMatrix &input, FloatMatrix &output) override;
-    void computeBackward(const FloatMatrix &input, CNNStorageBP &storage) override {};
+    void computeForward(FloatMatrix &input, CNNStorageBP &storage) override;
+    void computeBackward(FloatMatrix &input, CNNStorageBP &storage) override;
   };
 
 

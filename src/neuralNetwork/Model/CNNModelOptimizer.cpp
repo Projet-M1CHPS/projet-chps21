@@ -49,7 +49,7 @@ namespace cnnet {
       }
       std::cout << std::endl;
     }
-    std::cout << "flatten \n" << *flatten << std::endl;
+    //std::cout << "flatten \n" << *flatten << std::endl;
 
     FloatMatrix errorFlatten = FloatMatrix(flatten->getRows(), flatten->getCols());
     for (auto &i : errorFlatten) { i = 1.f; }
@@ -78,14 +78,12 @@ namespace cnnet {
       size_t l = 0;
       for (size_t j = 0; j < layers[i - 1].size(); j++) {
         for (size_t k = 0; k < topology(i)->getFeatures(); k++) {
-          layers[i][j]->compute(storage[i - 1][j]->output, storage[i][l++]->output);
+          layers[i][j]->computeForward(storage[i - 1][j]->output, *storage[i][l++]);
         }
       }
     }
 
     size_t index = 0;
-
-    std::cout << "flatten" << std::endl;
 
     for (auto &storageElement : storage.back()) {
       for (auto val : storageElement->output) {
@@ -110,13 +108,14 @@ namespace cnnet {
     auto &layers = nn_cnn->getLayers();
     auto &topology = nn_cnn->getTopology();
 
-
     for (long i = storage.size() - 2; i >= 0; i--) {
       size_t l = 0;
       for (size_t j = 0; j < storage[i].size(); j++) {
         for(size_t k = 0; k < topology(i + 1)->getFeatures(); k++) {
-          std::cout << "[" << i << ", " << j << "] [" << i + 1 << ", " << l++ << "]" << std::endl;
-          //layers[i][j]->computeBackward(storage[i][j]->output, *storage[i][j]);
+          std::cout << "\n[" << i << ", " << j << "] [" << i + 1 << ", " << l << "]" << std::endl;
+          std::cout << storage[i+1][l]->output << std::endl;
+          layers[i + 1][j]->computeBackward(storage[i][j]->output, *storage[i + 1][l++]);
+          std::cout << storage[i][j]->output << std::endl;
         }
       }
     }
