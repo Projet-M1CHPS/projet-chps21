@@ -80,7 +80,9 @@ namespace utils {
     auto cpu_platforms = findCPUPlatform();
     auto gpu_platforms = findGPUPlatform();
 
-    if (cpu_platforms.empty() and gpu_platforms.empty()) { throw std::runtime_error("No OpenCL platforms found"); }
+    if (cpu_platforms.empty() and gpu_platforms.empty()) {
+      throw std::runtime_error("No OpenCL platforms found");
+    }
 
     if (not gpu_platforms.empty()) {
       return std::make_unique<clWrapper>(gpu_platforms[0], kernels_search_path);

@@ -72,8 +72,8 @@ namespace control::classifier {
     }
 
     std::vector<math::clFMatrix> loadDirectory(const fs::path &directory,
-                                              const TransformationPipeline &pipeline,
-                                              utils::clWrapper &wrapper, cl::CommandQueue &queue) {
+                                               const TransformationPipeline &pipeline,
+                                               utils::clWrapper &wrapper, cl::CommandQueue &queue) {
       std::vector<math::clFMatrix> res;
       // We iterate on the directory, creating an OpenCL buffer for each image
       for (auto &file : fs::directory_iterator(directory)) {

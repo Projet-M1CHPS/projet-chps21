@@ -17,7 +17,7 @@ namespace nnet {
   }
 
   math::clFMatrix MLPerceptron::predict(math::clFMatrix const &input,
-                                       utils::clQueueHandler &qhandler) const {
+                                        utils::clQueueHandler &qhandler) const {
     const size_t nbInput = input.getRows();
 
     if (nbInput != weights.front().getCols()) {
