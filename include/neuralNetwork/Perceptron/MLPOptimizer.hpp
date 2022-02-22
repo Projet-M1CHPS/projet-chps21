@@ -11,7 +11,8 @@ namespace nnet {
   class MLPOptimizer : public Optimizer {
   public:
     MLPOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm)
-        : neural_network(&model.getPerceptron()), opti_meth(std::move(tm)) {}
+        : wrapper(&model.getClWrapper()), neural_network(&model.getPerceptron()),
+          opti_meth(std::move(tm)) {}
 
     MLPerceptron *gePerceptron() const { return neural_network; }
     Optimization *getOptimizationMethod() const { return opti_meth.get(); }
@@ -23,13 +24,14 @@ namespace nnet {
      * @param target
      * @return
      */
-    virtual void optimize(const std::vector<math::FloatMatrix> &inputs,
-                          const std::vector<math::FloatMatrix> &targets);
+    virtual void optimize(const std::vector<math::clFMatrix> &inputs,
+                          const std::vector<math::clFMatrix> &targets) = 0;
 
 
     void update() override { opti_meth->update(); }
 
   protected:
+    utils::clWrapper *wrapper;
     MLPerceptron *neural_network;
     std::shared_ptr<Optimization> opti_meth;
   };

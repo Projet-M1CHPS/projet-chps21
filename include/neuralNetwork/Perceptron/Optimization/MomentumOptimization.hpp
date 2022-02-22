@@ -8,13 +8,15 @@ namespace nnet {
    */
   class MomentumOptimization : public Optimization {
   public:
-    MomentumOptimization(const MLPerceptron &perceptron, float learning_rate, float momentum);
+    MomentumOptimization(const MLPerceptron &perceptron, utils::clWrapper &wrapper,
+                         float learning_rate, float momentum);
 
-    void optimize(BackpropStorage &storage) override;
+    void optimize(BackpropStorage &storage, utils::clWrapper &wrapper,
+                  cl::CommandQueue &queue) override;
 
   private:
     const float lr;
     const float momentum;
-    std::vector<math::FloatMatrix> old_weight_change;
+    std::vector<math::clFMatrix> old_weight_change;
   };
 }   // namespace nnet

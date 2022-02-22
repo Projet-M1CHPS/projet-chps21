@@ -1,6 +1,29 @@
 #include "MLPStochOptimizer.hpp"
 
+using namespace utils;
+using namespace math;
+
 namespace nnet {
+
+  namespace {
+    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, utils::clWrapper &wrapper,
+                 cl::CommandQueue &queue) {
+      if (type == af::ActivationFunctionType::identity) return;
+      auto afunc = af::getAFKernelFromType(type, wrapper).first;
+      afunc.setArg(0, mat.getBuffer());
+      queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
+    }
+
+    void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
+                           utils::clWrapper &wrapper, cl::CommandQueue &queue) {
+      if (type == af::ActivationFunctionType::identity) return;
+      auto afunc = af::getAFKernelFromType(type, wrapper).second;
+      afunc.setArg(0, mat.getBuffer());
+      queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
+    }
+  }   // namespace
+
+
   MLPStochOptimizer::MLPStochOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm)
       : MLPOptimizer(model, std::move(tm)) {
     auto &perceptron = model.getPerceptron();
@@ -10,19 +33,20 @@ namespace nnet {
     layers_af.resize(perceptron.getWeights().size() + 1);
   }
 
-  math::FloatMatrix MLPStochOptimizer::optimize(const math::FloatMatrix &input,
-                                                const math::FloatMatrix &target) {
+  math::clFMatrix MLPStochOptimizer::optimize(const math::clFMatrix &input,
+                                                const math::clFMatrix &target) {
     auto &weights = this->neural_network->getWeights();
     auto &topology = this->neural_network->getTopology();
 
-    forward(input);
-    storage.getError() = layers_af[layers_af.size() - 1] - target;
-    backward(target);
-    return storage.getError();
+    cl::CommandQueue queue(wrapper->getDefaultDevice());
+    forward(input, queue);
+    storage.getError() = layers_af[layers_af.size() - 1].sub(target, *wrapper);
+    backward(target, queue);
+    return {storage.getError(), *wrapper};
   }
 
-  void MLPStochOptimizer::optimize(const std::vector<math::FloatMatrix> &inputs,
-                                   const std::vector<math::FloatMatrix> &targets) {
+  void MLPStochOptimizer::optimize(const std::vector<math::clFMatrix> &inputs,
+                                   const std::vector<math::clFMatrix> &targets) {
     if (inputs.size() != targets.size()) {
       throw std::runtime_error("MLPModelStochOptimizer: Inputs and targets number doesn't match !");
     }
@@ -31,37 +55,41 @@ namespace nnet {
   }
 
 
-  void MLPStochOptimizer::forward(math::FloatMatrix const &inputs) {
+  void MLPStochOptimizer::forward(math::clFMatrix const &inputs, cl::CommandQueue &queue) {
     auto &weights = this->neural_network->getWeights();
     auto &biases = this->neural_network->getBiases();
     auto &activation_functions = this->neural_network->getActivationFunctions();
 
-    layers[0] = inputs;
-    layers_af[0] = inputs;
+    layers[0] = clFMatrix(inputs, *wrapper, queue, false);
+    layers_af[0] = clFMatrix(inputs, *wrapper, queue, false);
 
     if (weights.empty()) return;
 
-    math::FloatMatrix current_layer =
-            math::FloatMatrix::matMatProdMatAdd(weights[0], inputs, biases[0]);
-    layers[1] = current_layer;
-    auto afunc = af::getAFFromType(activation_functions[0]).first;
-    std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
-    layers_af[1] = current_layer;
+    auto current_layer = clFMatrix::gemm(1.0f, false, weights[0], false, inputs, 1.0f, biases[0],
+                                         *wrapper, queue);
+    // Store the matrix before the activation function
+    layers[1] = clFMatrix(current_layer, *wrapper, queue, false);
+
+    // Apply the activation function
+    applyAF(activation_functions[0], layers_af[1], *wrapper, queue);
+    // Store the matrix after the activation function
+    layers_af[1] = clFMatrix(current_layer, *wrapper, queue, false);
 
     for (size_t k = 1; k < weights.size(); k++) {
-      // C = W * C + B
-      current_layer = math::FloatMatrix::matMatProdMatAdd(weights[k], current_layer, biases[k]);
-      layers[k + 1] = current_layer;
+      // Multiply the current layer by the weights and add the biases
+      current_layer = clFMatrix::gemm(1.0f, false, weights[k], false, current_layer, 1.0f,
+                                      biases[k], *wrapper, queue);
 
-      // Apply activation function on every element of the matrix
-      afunc = af::getAFFromType(activation_functions[k]).first;
-      std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
+      // Store the matrix before the activation function
+      layers[k + 1] = clFMatrix(current_layer, *wrapper, queue, false);
 
-      layers_af[k + 1] = current_layer;
+      applyAF(activation_functions[k], current_layer, *wrapper, queue);
+      // Store the matrix after the activation function
+      layers_af[k + 1] = clFMatrix(current_layer, *wrapper, false);
     }
   }
 
-  void MLPStochOptimizer::backward(math::FloatMatrix const &target) {
+  void MLPStochOptimizer::backward(math::clFMatrix const &target, cl::CommandQueue &queue) {
     auto &weights = this->neural_network->getWeights();
     auto &biases = this->neural_network->getBiases();
     auto &activation_functions = this->neural_network->getActivationFunctions();
@@ -71,17 +99,17 @@ namespace nnet {
     for (long i = weights.size() - 1; i >= 0; i--) {
       storage.setIndex(i);
 
-      math::FloatMatrix derivative(layers[i + 1]);
-      auto dafunc = af::getAFFromType(activation_functions[i]).second;
-      std::transform(derivative.cbegin(), derivative.cend(), derivative.begin(), dafunc);
+      math::clFMatrix derivative(layers[i + 1], *wrapper, queue, false);
+      applyDerivativeAF(activation_functions[i], derivative, *wrapper, queue);
 
-      derivative.hadamardProd(storage.getError());
+      derivative.hadamard(storage.getError(), *wrapper, queue);
 
-      storage.getError() = math::FloatMatrix::mul(true, weights[i], false, derivative);
+      storage.getError() =
+              clFMatrix::gemm(1.0f, true, weights[i], false, derivative, *wrapper, queue);
 
-      storage.getGradient() = math::FloatMatrix::mul(false, derivative, true, layers_af[i], 1.0);
-
-      opti_meth->optimize(storage);
+      storage.getGradient() =
+              clFMatrix::gemm(1.0f, false, derivative, true, layers_af[i], *wrapper, queue);
+      opti_meth->optimize(storage, *wrapper, queue);
     }
   }
 

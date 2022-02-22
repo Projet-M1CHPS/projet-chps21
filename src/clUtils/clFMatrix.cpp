@@ -91,7 +91,7 @@ namespace math {
 
     // Perform the sum on the platform
     cl::Buffer res_buf(wrapper.getContext(), CL_MEM_READ_WRITE, sizeof(float));
-    clblast::Asum<float>(size(), res_buf(), 0, data(), 0, 1, &wrapper.getDefaultQueue()());
+    clblast::Asum<float>(size(), res_buf(), 0, data(), 0, 1, &queue());
 
     // Shift the result to the host
     float res = 0;
@@ -102,7 +102,7 @@ namespace math {
   float clFMatrix::l2norm(utils::clWrapper &wrapper, cl::CommandQueue &queue) const {
     // Perform the l2norm on the platform
     cl::Buffer res_buf(wrapper.getContext(), CL_MEM_READ_WRITE, sizeof(float));
-    clblast::Nrm2<float>(size(), res_buf(), 0, data(), 0, 1, &wrapper.getDefaultQueue()());
+    clblast::Nrm2<float>(size(), res_buf(), 0, data(), 0, 1, &queue());
 
     // Shift the result to the host
     float res = 0;
@@ -119,8 +119,7 @@ namespace math {
 
     cl::Event evt;
     clblast::Omatcopy<float>(clblast::Layout::kRowMajor, clblast::Transpose::kYes, rows, cols, 1.0f,
-                             data(), 0, cols, res.data(), 0, rows, &wrapper.getDefaultQueue()(),
-                             &evt());
+                             data(), 0, cols, res.data(), 0, rows, &queue(), &evt());
     if (blocking) evt.wait();
     return res;
   }
@@ -131,8 +130,7 @@ namespace math {
       throw std::invalid_argument("Matrix dimensions do not match");
     }
     cl::Event evt;
-    clblast::Axpy<float>(size(), 1.0f, other.data(), 0, 1, data(), 0, 1,
-                         &wrapper.getDefaultQueue()(), &evt());
+    clblast::Axpy<float>(size(), 1.0f, other.data(), 0, 1, data(), 0, 1, &queue(), &evt());
     if (blocking) evt.wait();
   }
 
@@ -149,8 +147,7 @@ namespace math {
 
     clFMatrix res(other, wrapper);
     cl::Event evt;
-    clblast::Axpy<float>(size(), 1.0f, data(), 0, 1, res.data(), 0, 1, &wrapper.getDefaultQueue()(),
-                         &evt());
+    clblast::Axpy<float>(size(), 1.0f, data(), 0, 1, res.data(), 0, 1, &queue(), &evt());
     if (blocking) evt.wait();
     return res;
   }
@@ -162,8 +159,7 @@ namespace math {
     }
 
     cl::Event evt;
-    clblast::Axpy<float>(size(), -1.0f, other.data(), 0, 1, data(), 0, 1,
-                         &wrapper.getDefaultQueue()(), &evt());
+    clblast::Axpy<float>(size(), -1.0f, other.data(), 0, 1, data(), 0, 1, &queue(), &evt());
     if (blocking) evt.wait();
   }
 
@@ -180,46 +176,46 @@ namespace math {
 
     clFMatrix res(*this, wrapper);
     cl::Event evt;
-    clblast::Axpy<float>(size(), -1.0f, other.data(), 0, 1, res.data(), 0, 1,
-                         &wrapper.getDefaultQueue()(), &evt());
+    clblast::Axpy<float>(size(), -1.0f, other.data(), 0, 1, res.data(), 0, 1, &queue(), &evt());
     if (blocking) evt.wait();
     return res;
   }
 
-  void clFMatrix::ipscale(const float scale, utils::clWrapper &wrapper) {
-    clblast::Scal<float>(rows * cols, scale, data(), 0, 1, &wrapper.getDefaultQueue()());
+  void clFMatrix::ipscale(float scale, utils::clWrapper &wrapper, cl::CommandQueue &queue,
+                          bool blocking) {
+    if (size() == 0) return;
+
+    cl::Event evt;
+    clblast::Scal<float>(rows * cols, scale, data(), 0, 1, &queue(), &evt());
+    if (blocking) evt.wait();
   }
 
-  clFMatrix clFMatrix::scale(const float scale, utils::clWrapper &wrapper) const {
+  clFMatrix clFMatrix::scale(float scale, utils::clWrapper &wrapper, cl::CommandQueue &queue,
+                             bool blocking) const {
     clFMatrix res(*this, wrapper);
 
-    clblast::Scal<float>(rows * cols, scale, res.data(), 0, 1, &wrapper.getDefaultQueue()());
+    if (size() == 0) return res;
+
+    cl::Event evt;
+    clblast::Scal<float>(rows * cols, scale, res.data(), 0, 1, &queue(), &evt());
+    if (blocking) evt.wait();
     return res;
   }
 
-  clFMatrix clFMatrix::iphadamard(const clFMatrix &other, utils::clWrapper &wrapper) const {
+  clFMatrix clFMatrix::iphadamard(const clFMatrix &other, utils::clWrapper &wrapper,
+                                  cl::CommandQueue &queue, bool blocking) const {
     if (rows != other.rows or cols != other.cols) {
       throw std::invalid_argument("Matrix dimensions do not match");
     }
 
     clFMatrix res(rows, cols, wrapper);
 
+    if (size() == 0) return res;
 
-    clblast::Had<float>(rows * cols, 1.0f, data(), 0, 1, other.data(), 0, 1, 0.0f, data(), 0, 1,
-                        &wrapper.getDefaultQueue()());
-    return res;
-  }
-
-  clFMatrix clFMatrix::hadamard(const clFMatrix &other, utils::clWrapper &wrapper) const {
-    if (rows != other.rows or cols != other.cols) {
-      throw std::invalid_argument("Matrix dimensions do not match");
-    }
-
-    clFMatrix res(rows, cols, wrapper);
-
-
+    cl::Event evt;
     clblast::Had<float>(rows * cols, 1.0f, data(), 0, 1, other.data(), 0, 1, 0.0f, res.data(), 0, 1,
-                        &wrapper.getDefaultQueue()());
+                        &queue(), &evt());
+    if (blocking) evt.wait();
     return res;
   }
 
@@ -241,16 +237,15 @@ namespace math {
     clFMatrix res((transpose_a ? A_cols : A_rows), (transpose_b ? B_rows : B_cols), wrapper);
     cl::Event evt;
     clblast::Gemm<float>(clblast::Layout::kRowMajor, ta, tb, m, n, k, alpha, A.data(), 0, A_cols,
-                         B.data(), 0, B_cols, 0.f, res.data(), 0, res.getCols(),
-                         &wrapper.getDefaultQueue()(), &evt());
+                         B.data(), 0, B_cols, 0.f, res.data(), 0, res.getCols(), &queue(), &evt());
     if (blocking) evt.wait();
 
     return res;
   }
 
   clFMatrix clFMatrix::gemm(float alpha, bool transpose_a, const clFMatrix &A, bool transpose_b,
-                            const clFMatrix &B, float beta, clFMatrix &C, utils::clWrapper &wrapper,
-                            cl::CommandQueue &queue, bool blocking) {
+                            const clFMatrix &B, float beta, const clFMatrix &C,
+                            utils::clWrapper &wrapper, cl::CommandQueue &queue, bool blocking) {
     const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols,
                  C_rows = C.rows, C_cols = C.cols;
 
@@ -267,8 +262,7 @@ namespace math {
     clFMatrix res(C, wrapper);
     cl::Event evt;
     clblast::Gemm<float>(clblast::Layout::kRowMajor, ta, tb, m, n, k, alpha, A.data(), 0, A_cols,
-                         B.data(), 0, B_cols, beta, res.data(), 0, res.getCols(),
-                         &wrapper.getDefaultQueue()(), &evt());
+                         B.data(), 0, B_cols, beta, res.data(), 0, res.getCols(), &queue(), &evt());
     if (blocking) evt.wait();
     return res;
   }

@@ -8,10 +8,12 @@ namespace nnet {
    */
   class DecayOptimization : public Optimization {
   public:
-    DecayOptimization(const MLPerceptron &perceptron, const float lr_0, const float dr)
+    DecayOptimization(const MLPerceptron &perceptron, utils::clWrapper &wrapper, const float lr_0,
+                      const float dr)
         : initial_lr(lr_0), decay_r(dr), learning_r(lr_0), epoch(0) {}
 
-    void optimize(BackpropStorage &storage) override;
+    void optimize(BackpropStorage &storage, utils::clWrapper &wrapper,
+                  cl::CommandQueue &queue) override;
     void update() override;
 
   private:

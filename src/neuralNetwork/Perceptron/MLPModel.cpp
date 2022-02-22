@@ -17,7 +17,7 @@ namespace nnet {
 
 
   math::clFMatrix MLPModel::predict(math::clFMatrix const &input) const {
-    return perceptron->predict(input, cl_wrapper_ptr->getDefaultQueueHandler());
+    return perceptron->predict(input);
   }
 
   std::unique_ptr<MLPModel> MLPModel::random(const std::shared_ptr<utils::clWrapper> &wrapper_ptr,

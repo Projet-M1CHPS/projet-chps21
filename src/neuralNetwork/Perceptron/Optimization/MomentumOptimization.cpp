@@ -12,7 +12,7 @@ namespace nnet {
     }
   }
 
-  void MomentumOptimization::optimize(BackpropStorage &storage) {
+  void MomentumOptimization::optimize(BackpropStorage &storage, utils::clWrapper& wrapper, cl::CommandQueue& queue) {
     auto weight_change =
             (storage.getGradient() * lr) + (old_weight_change[storage.getIndex()] * momentum);
     storage.getWeights() -= weight_change;

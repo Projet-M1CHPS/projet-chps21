@@ -91,7 +91,7 @@ namespace nnet {
      * @param qhandler
      * @return
      */
-    math::clFMatrix predict(math::clFMatrix const &input, utils::clQueueHandler &qhandler) const;
+    math::clFMatrix predict(math::clFMatrix const &input) const;
     [[nodiscard]] MLPTopology const &getTopology() const { return topology; }
 
     /**

@@ -2,6 +2,17 @@
 
 namespace nnet {
 
+  namespace {
+    void applyAF(af::ActivationFunctionType type, math::clFMatrix& mat, utils::clWrapper& wrapper, cl::CommandQueue& queue) {
+
+      if (type == af::ActivationFunctionType::identity)
+        return;
+      auto afunc = af::getAFKernelFromType(type, wrapper).first;
+      afunc.setArg(0, mat.getBuffer());
+      queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
+    }
+  }
+
   MLPTopology MLPTopology::fromString(const std::string &str) {
     std::vector<size_t> layers;
     std::stringstream ss(str);
@@ -16,25 +27,27 @@ namespace nnet {
     this->wrapper = wrapper;
   }
 
-  math::clFMatrix MLPerceptron::predict(math::clFMatrix const &input,
-                                        utils::clQueueHandler &qhandler) const {
+  math::clFMatrix MLPerceptron::predict(math::clFMatrix const &input) const {
     const size_t nbInput = input.getRows();
 
     if (nbInput != weights.front().getCols()) {
       throw std::invalid_argument("Invalid number of input");
     }
 
-    auto current_layer = math::FloatMatrix::matMatProdMatAdd(weights[0], input, biases[0]);
-    auto afunc = af::getAFFromType(activation_functions[0]).first;
-    std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
+    cl::CommandQueue queue(wrapper->getDefaultDevice());
+
+    auto current_layer = math::clFMatrix::gemm(1.0f, false, weights[0], false, input, 1.0f,
+                                               biases[0], *wrapper, queue);
+
+    applyAF(activation_functions[0], current_layer, *wrapper, queue);
 
     for (size_t i = 1; i < weights.size(); i++) {
-      current_layer = math::FloatMatrix::matMatProdMatAdd(weights[i], current_layer, biases[i]);
+      current_layer = math::clFMatrix::gemm(1.0f, false, weights[i], false, current_layer, 1.0f,
+                                            biases[i], *wrapper, queue);
 
-      // Apply activation function on every element of the matrix
-      afunc = af::getAFFromType(activation_functions[i]).first;
-      std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
+      applyAF(activation_functions[i], current_layer, *wrapper, queue);
     }
+    queue.finish();
     return current_layer;
   }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utils.hpp"
+#include "clUtils/clWrapper.hpp"
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -84,5 +85,8 @@ namespace af {
     }
     return pair->second;
   }
+
+  std::pair<cl::Kernel, cl::Kernel> getAFKernelFromType(ActivationFunctionType type,
+                                                        utils::clWrapper &wrapper);
 
 }   // namespace af

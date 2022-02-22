@@ -11,10 +11,10 @@ namespace nnet {
   public:
     MLPStochOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm);
 
-    math::FloatMatrix optimize(const math::FloatMatrix &input, const math::FloatMatrix &target);
+    math::clFMatrix optimize(const math::clFMatrix &input, const math::clFMatrix &target);
 
-    void optimize(const std::vector<math::FloatMatrix> &inputs,
-                  const std::vector<math::FloatMatrix> &targets) override;
+    void optimize(const std::vector<math::clFMatrix> &inputs,
+                  const std::vector<math::clFMatrix> &targets) override;
 
     /**
      * @brief Builds a new optimization algorithm, forwarding parameters, and returns an
@@ -28,17 +28,17 @@ namespace nnet {
     template<class Optim, typename... Args, typename = std::is_base_of<nnet::Optimization, Optim>>
     static std::unique_ptr<MLPStochOptimizer> make(MLPModel &model, Args &&...args) {
       return std::make_unique<MLPStochOptimizer>(
-              model, std::make_unique<Optim>(model.getPerceptron(), std::forward<Args>(args)...));
+              model, std::make_unique<Optim>(model.getPerceptron(), model.getClWrapper(),
+                                             std::forward<Args>(args)...));
     }
 
   private:
-    void forward(math::FloatMatrix const &inputs);
-
-    void backward(math::FloatMatrix const &target);
+    void forward(math::clFMatrix const &inputs, cl::CommandQueue &queue);
+    void backward(math::clFMatrix const &target, cl::CommandQueue &queue);
 
   private:
     //
-    std::vector<math::FloatMatrix> layers, layers_af;
+    std::vector<math::clFMatrix> layers, layers_af;
 
     //
     BackpropStorage storage;

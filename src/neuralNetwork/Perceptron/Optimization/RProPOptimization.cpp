@@ -27,7 +27,7 @@ namespace nnet {
     return -1;
   }
 
-  void RPropPOptimization::optimize(BackpropStorage &storage) {
+  void RPropPOptimization::optimize(BackpropStorage &storage, utils::clWrapper& wrapper, cl::CommandQueue& queue) {
     // Aliases to increase readability
     size_t index = storage.getIndex();
     auto &weights = storage.getWeights();
