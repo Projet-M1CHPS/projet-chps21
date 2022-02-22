@@ -14,7 +14,7 @@ TEST(clFMatrixTest, CanCreate) {
   ASSERT_EQ(11, m.getCols());
 
   // Should be able to create an empty matrix
-  const Matrix<float> n;
+  const clFMatrix n;
 
   ASSERT_EQ(0, n.getRows());
   ASSERT_EQ(0, n.getCols());
@@ -39,7 +39,6 @@ TEST(clFMatrixTest, CanCopy) {
   }
 
   // Should be able to copy two clFMatrices
-  // Should be able to copy with constructor
   clFMatrix p(m, *wrapper);
   auto test2 = p.toFloatMatrix(*wrapper);
 
@@ -105,8 +104,6 @@ TEST(clFMatrixTest, CanAdd) {
   clFMatrix a(m, *wrapper);
   clFMatrix b(n, *wrapper);
   auto buf = a.add(b, *wrapper);
-  wrapper->getDefaultQueue().finish();
-
   auto c = buf.toFloatMatrix(*wrapper);
 
   for (size_t i = 0; i < 2; i++)
@@ -115,7 +112,6 @@ TEST(clFMatrixTest, CanAdd) {
   // Check that we can add in place
   buf = clFMatrix(m, *wrapper);
   buf.ipadd(b, *wrapper);
-  wrapper->getDefaultQueue().finish();
   c = buf.toFloatMatrix(*wrapper);
 
   for (size_t i = 0; i < 2; i++) {
@@ -124,9 +120,8 @@ TEST(clFMatrixTest, CanAdd) {
 }
 
 TEST(clFMatrixTest, ThrowOnInvalidAdd) {
-  Matrix<float> m(2, 2), n(2, 1), o;
   auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(m, *wrapper), b(n, *wrapper), c(o, *wrapper);
+  clFMatrix a(2, 2, *wrapper), b(2, 1, *wrapper), c;
 
   ASSERT_ANY_THROW(auto h = a.add(b, *wrapper));
   ASSERT_ANY_THROW(a.ipadd(b, *wrapper));
@@ -150,8 +145,6 @@ TEST(clFMatrixTest, CanSubtract) {
   clFMatrix a(m, *wrapper);
   clFMatrix b(n, *wrapper);
   auto buf = a.sub(b, *wrapper);
-  wrapper->getDefaultQueue().finish();
-
   auto c = buf.toFloatMatrix(*wrapper);
 
   for (size_t i = 0; i < 2; i++)
@@ -160,7 +153,6 @@ TEST(clFMatrixTest, CanSubtract) {
   // Check that we can add in place
   buf = clFMatrix(m, *wrapper);
   buf.ipsub(b, *wrapper);
-  wrapper->getDefaultQueue().finish();
   c = buf.toFloatMatrix(*wrapper);
 
   for (size_t i = 0; i < 2; i++) {
@@ -169,9 +161,8 @@ TEST(clFMatrixTest, CanSubtract) {
 }
 
 TEST(clFMatrixTest, ThrowOnInvalidSubtraction) {
-  Matrix<float> m(2, 2), n(2, 1), o;
   auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(m, *wrapper), b(n, *wrapper), c(o, *wrapper);
+  clFMatrix a(2, 2, *wrapper), b(2, 1, *wrapper), c;
 
   ASSERT_ANY_THROW(auto h = a.sub(b, *wrapper));
   ASSERT_ANY_THROW(a.ipsub(b, *wrapper));
@@ -191,7 +182,6 @@ TEST(clFMatrixTest, CanScale) {
   clFMatrix a(m, *wrapper);
 
   auto c = a.scale(scale, *wrapper);
-  wrapper->getDefaultQueue().finish();
   auto n = c.toFloatMatrix(*wrapper);
 
   for (size_t i = 0; i < 2; i++) {
@@ -201,7 +191,6 @@ TEST(clFMatrixTest, CanScale) {
   // Check that we can scale in place
   c = clFMatrix(a, *wrapper);
   c.ipscale(scale, *wrapper);
-  wrapper->getDefaultQueue().finish();
   n = c.toFloatMatrix(*wrapper);
 
 
@@ -217,16 +206,15 @@ TEST(clFMatrixTest, CanScale) {
 }
 
 TEST(clFMatrixTest, CanTranspose) {
-  Matrix<float> n(3, 5), o;
+  Matrix<float> n(3, 5);
 
   randomize(n, 0.f, 100.f);
   auto wrapper = clWrapper::makeDefault();
   clFMatrix m(n, *wrapper);
 
   auto w = m.transpose(*wrapper);
-  wrapper->getDefaultQueue().finish();
-
   auto t = w.toFloatMatrix(*wrapper);
+
   ASSERT_EQ(5, t.getRows());
   ASSERT_EQ(3, t.getCols());
 
@@ -235,7 +223,7 @@ TEST(clFMatrixTest, CanTranspose) {
   }
 
   // should be able to transpose an empty matrix without error
-  w = clFMatrix(o, *wrapper).transpose(*wrapper);
+  w = clFMatrix().transpose(*wrapper);
   wrapper->getDefaultQueue().finish();
 
   auto u = w.toFloatMatrix(*wrapper);
