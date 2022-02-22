@@ -309,25 +309,38 @@ namespace math {
       return sub(other, wrapper, wrapper.getDefaultQueue(), blocking);
     }
 
-    [[nodiscard]] clFMatrix mul(const clFMatrix &other, utils::clWrapper &wrapper) const;
     void ipscale(float scale, utils::clWrapper &wrapper);
 
     [[nodiscard]] clFMatrix scale(float scale, utils::clWrapper &wrapper) const;
     clFMatrix iphadamard(const clFMatrix &other, utils::clWrapper &wrapper) const;
 
     clFMatrix hadamard(const clFMatrix &other, utils::clWrapper &wrapper) const;
-    [[nodiscard]] static clFMatrix matMatProdMatAdd(const clFMatrix &A, const clFMatrix &B,
-                                                    const clFMatrix &C, utils::clWrapper &wrapper);
 
-    [[nodiscard]] static clFMatrix matTransMatProd(const clFMatrix &A, const clFMatrix &B,
-                                                   utils::clWrapper &wrapper);
 
-    [[nodiscard]] static clFMatrix matMatTransProd(const clFMatrix &A, const clFMatrix &B,
-                                                   utils::clWrapper &wrapper);
+    [[nodiscard]] static clFMatrix gemm(float alpha, bool transpose_a, const clFMatrix &A,
+                                        bool transpose_b, const clFMatrix &B,
+                                        utils::clWrapper &wrapper, cl::CommandQueue &queue,
+                                        bool blocking = false);
 
-    [[nodiscard]] static clFMatrix mul(bool transpose_a, const clFMatrix &A, bool transpose_b,
-                                       const clFMatrix &B, utils::clWrapper &wrapper,
-                                       float alpha = 1.0);
+    [[nodiscard]] static clFMatrix gemm(float alpha, bool transpose_a, const clFMatrix &A,
+                                        bool transpose_b, const clFMatrix &B,
+                                        utils::clWrapper &wrapper, bool blocking = false) {
+      return gemm(alpha, transpose_a, A, transpose_b, B, wrapper, wrapper.getDefaultQueue(),
+                  blocking);
+    }
+
+    [[nodiscard]] static clFMatrix gemm(float alpha, bool transpose_a, const clFMatrix &A,
+                                        bool transpose_b, const clFMatrix &B, float beta,
+                                        clFMatrix &C, utils::clWrapper &wrapper,
+                                        cl::CommandQueue &queue, bool blocking = false);
+
+    [[nodiscard]] static clFMatrix gemm(float alpha, bool transpose_a, const clFMatrix &A,
+                                        bool transpose_b, const clFMatrix &B, float beta,
+                                        clFMatrix &C, utils::clWrapper &wrapper,
+                                        bool blocking = false) {
+      return gemm(alpha, transpose_a, A, transpose_b, B, beta, C, wrapper,
+                  wrapper.getDefaultQueue(), blocking);
+    }
 
   private:
     cl::Buffer data;

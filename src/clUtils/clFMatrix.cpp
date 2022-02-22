@@ -87,6 +87,8 @@ namespace math {
   }
 
   float clFMatrix::sumReduce(utils::clWrapper &wrapper, cl::CommandQueue &queue) const {
+    if (size() == 0) throw std::runtime_error("Cannot sum an empty matrix");
+
     // Perform the sum on the platform
     cl::Buffer res_buf(wrapper.getContext(), CL_MEM_READ_WRITE, sizeof(float));
     clblast::Asum<float>(size(), res_buf(), 0, data(), 0, 1, &wrapper.getDefaultQueue()());
@@ -221,67 +223,9 @@ namespace math {
     return res;
   }
 
-  clFMatrix clFMatrix::matMatProdMatAdd(const clFMatrix &A, const clFMatrix &B, const clFMatrix &C,
-                                        utils::clWrapper &wrapper) {
-    const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols,
-                 C_rows = C.rows, C_cols = C.cols;
-
-    if (A_cols != B_rows || A_rows != C_rows || B_cols != C_cols) {
-      throw std::invalid_argument("Matrix dimensions do not match");
-    }
-
-    clFMatrix res(C, wrapper);
-    clblast::Gemm<float>(clblast::Layout::kRowMajor, clblast::Transpose::kNo,
-                         clblast::Transpose::kNo, A_rows, B_cols, A_cols, 1.f, A.data(), 0, A_cols,
-                         B.data(), 0, B_cols, 1.f, res.data(), 0, C_cols,
-                         &wrapper.getDefaultQueue()());
-    return res;
-  }
-
-  clFMatrix clFMatrix::matTransMatProd(const clFMatrix &A, const clFMatrix &B,
-                                       utils::clWrapper &wrapper) {
-    const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
-
-    if (A_rows != B_rows) { throw std::invalid_argument("Matrix dimensions do not match"); }
-
-    clFMatrix res(A_cols, B_cols, wrapper);
-    clblast::Gemm<float>(clblast::Layout::kRowMajor, clblast::Transpose::kYes,
-                         clblast::Transpose::kNo, A_rows, B_cols, A_cols, 1.f, A.data(), 0, A_cols,
-                         B.data(), 0, B_cols, 0.f, res.data(), 0, B_cols,
-                         &wrapper.getDefaultQueue()());
-
-    return res;
-  }
-
-  clFMatrix clFMatrix::matMatTransProd(const clFMatrix &A, const clFMatrix &B,
-                                       utils::clWrapper &wrapper) {
-    const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
-
-    if (A_cols != B_cols) { throw std::invalid_argument("Matrix dimensions do not match"); }
-
-    clFMatrix res(A_cols, B_cols, wrapper);
-    clblast::Gemm<float>(clblast::Layout::kRowMajor, clblast::Transpose::kNo,
-                         clblast::Transpose::kYes, A_rows, B_cols, A_cols, 1.f, A.data(), 0, A_cols,
-                         B.data(), 0, B_cols, 0.f, res.data(), 0, B_cols,
-                         &wrapper.getDefaultQueue()());
-    return res;
-  }
-
-  clFMatrix clFMatrix::mul(const clFMatrix &other, utils::clWrapper &wrapper) const {
-    const size_t other_rows = other.rows, other_cols = other.cols;
-    if (cols != other_rows) { throw std::invalid_argument("Matrix dimensions do not match"); }
-
-    clFMatrix res(rows, other_cols, wrapper);
-
-    clblast::Gemm<float>(clblast::Layout::kRowMajor, clblast::Transpose::kNo,
-                         clblast::Transpose::kNo, rows, other_cols, cols, 1.f, data(), 0, cols,
-                         other.data(), 0, other_cols, 0.f, res.data(), 0, other_cols,
-                         &wrapper.getDefaultQueue()());
-    return res;
-  }
-
-  clFMatrix clFMatrix::mul(const bool transpose_a, const clFMatrix &A, const bool transpose_b,
-                           const clFMatrix &B, utils::clWrapper &wrapper, const float alpha) {
+  clFMatrix clFMatrix::gemm(float alpha, bool transpose_a, const clFMatrix &A, bool transpose_b,
+                            const clFMatrix &B, utils::clWrapper &wrapper, cl::CommandQueue &queue,
+                            bool blocking) {
     const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
 
     if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows)) {
@@ -295,10 +239,37 @@ namespace math {
     size_t k = (transpose_a ? A_rows : A_cols);
 
     clFMatrix res((transpose_a ? A_cols : A_rows), (transpose_b ? B_rows : B_cols), wrapper);
+    cl::Event evt;
     clblast::Gemm<float>(clblast::Layout::kRowMajor, ta, tb, m, n, k, alpha, A.data(), 0, A_cols,
                          B.data(), 0, B_cols, 0.f, res.data(), 0, res.getCols(),
-                         &wrapper.getDefaultQueue()());
+                         &wrapper.getDefaultQueue()(), &evt());
+    if (blocking) evt.wait();
 
+    return res;
+  }
+
+  clFMatrix clFMatrix::gemm(float alpha, bool transpose_a, const clFMatrix &A, bool transpose_b,
+                            const clFMatrix &B, float beta, clFMatrix &C, utils::clWrapper &wrapper,
+                            cl::CommandQueue &queue, bool blocking) {
+    const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols,
+                 C_rows = C.rows, C_cols = C.cols;
+
+    if (A_cols != B_rows || A_rows != C_rows || B_cols != C_cols) {
+      throw std::invalid_argument("Matrix dimensions do not match");
+    }
+
+    auto ta = transpose_a ? clblast::Transpose::kYes : clblast::Transpose::kNo;
+    auto tb = transpose_b ? clblast::Transpose::kYes : clblast::Transpose::kNo;
+    size_t m = (transpose_a ? A_cols : A_rows);
+    size_t n = (transpose_b ? B_rows : B_cols);
+    size_t k = (transpose_a ? A_rows : A_cols);
+
+    clFMatrix res(C, wrapper);
+    cl::Event evt;
+    clblast::Gemm<float>(clblast::Layout::kRowMajor, ta, tb, m, n, k, alpha, A.data(), 0, A_cols,
+                         B.data(), 0, B_cols, beta, res.data(), 0, res.getCols(),
+                         &wrapper.getDefaultQueue()(), &evt());
+    if (blocking) evt.wait();
     return res;
   }
 }   // namespace math

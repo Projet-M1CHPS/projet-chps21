@@ -303,7 +303,7 @@ TEST(MatrixTest, CanMultiplyMatrixWithScale) {
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) * scale, c(i, j));
   }
 
-  // Check that we can mul in place
+  // Check that we can gemm in place
   c = m;
   c *= scale;
 
