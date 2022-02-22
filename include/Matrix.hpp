@@ -380,8 +380,8 @@ namespace math {
         cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans, A_rows, B_rows, A_cols, 1.f,
                     A.getData(), A_cols, B.getData(), B_cols, 0.f, res.getData(), res.getCols());
       } else if constexpr (std::is_same_v<T, double>) {
-        cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, A_cols, B_cols, A_rows, 1.0,
-                    A.getData(), A_cols, B.getData(), B_cols, 0.0, res.getData(), B_cols);
+        cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, A_rows, B_rows, A_cols, 1.f,
+                    A.getData(), A_cols, B.getData(), B_cols, 0.f, res.getData(), res.getCols());
       }
 #else
       res = A * B.transpose();
@@ -411,7 +411,7 @@ namespace math {
                     0.f, res.getData(), res.getCols());
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_dgemm(CblasRowMajor, ta, tb, m, n, k, alpha, A.getData(), A_cols, B.getData(), B_cols,
-                    0.1, res.getData(), res.getCols());
+                    0.0, res.getData(), res.getCols());
       }
 #else
       if (!transpose_a && !transpose_b) {

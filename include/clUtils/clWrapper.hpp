@@ -17,17 +17,17 @@ namespace utils {
     clWrapper &operator=(const clWrapper &other);
 
     clWrapper &operator=(clWrapper &&other);
-    clWrapper(clWrapper &&other);
+    clWrapper(clWrapper &&other) noexcept ;
 
     explicit clWrapper(cl::Platform &platform,
                        const std::filesystem::path &kernels_search_path = "kernels");
 
     static std::unique_ptr<clWrapper>
-    makeDefaultWrapper(std::filesystem::path kernels_search_path = "kernels");
+    makeDefault(const std::filesystem::path& kernels_search_path = "kernels");
 
     cl::Platform getPlatform() { return platform; }
     cl::Context getContext() { return context; }
-    cl::CommandQueue getDefaultQueue() { return default_queue; }
+    cl::CommandQueue& getDefaultQueue() { return default_queue; }
 
     /**
      * @brief Returns the default queue handler containing all available devices in this wrapper.

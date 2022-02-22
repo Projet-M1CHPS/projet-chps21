@@ -3,7 +3,7 @@
 #include "ActivationFunction.hpp"
 #include "Matrix.hpp"
 #include "Utils.hpp"
-#include "clUtils/clMatrix.hpp"
+#include "clUtils/clFMatrix.hpp"
 #include "clUtils/clWrapper.hpp"
 #include <cmath>
 #include <functional>
@@ -91,7 +91,7 @@ namespace nnet {
      * @param qhandler
      * @return
      */
-    math::clMatrix predict(math::clMatrix const &input, utils::clQueueHandler &qhandler) const;
+    math::clFMatrix predict(math::clFMatrix const &input, utils::clQueueHandler &qhandler) const;
     [[nodiscard]] MLPTopology const &getTopology() const { return topology; }
 
     /**
@@ -122,11 +122,11 @@ namespace nnet {
      */
     void randomizeWeight();
 
-    [[nodiscard]] std::vector<math::clMatrix> &getWeights() { return weights; }
-    [[nodiscard]] const std::vector<math::clMatrix> &getWeights() const { return weights; }
+    [[nodiscard]] std::vector<math::clFMatrix> &getWeights() { return weights; }
+    [[nodiscard]] const std::vector<math::clFMatrix> &getWeights() const { return weights; }
 
-    [[nodiscard]] std::vector<math::clMatrix> &getBiases() { return biases; }
-    [[nodiscard]] const std::vector<math::clMatrix> &getBiases() const { return biases; }
+    [[nodiscard]] std::vector<math::clFMatrix> &getBiases() { return biases; }
+    [[nodiscard]] const std::vector<math::clFMatrix> &getBiases() const { return biases; }
 
     [[nodiscard]] utils::clWrapper &getWrapper() { return *wrapper; }
     [[nodiscard]] const utils::clWrapper &getWrapper() const { return *wrapper; }
@@ -137,8 +137,8 @@ namespace nnet {
     // Wrapper used for memory allocations and kernels
     utils::clWrapper *wrapper;
 
-    std::vector<math::clMatrix> weights;
-    std::vector<math::clMatrix> biases;
+    std::vector<math::clFMatrix> weights;
+    std::vector<math::clFMatrix> biases;
 
     // We want every layer to have its own activation function
     std::vector<af::ActivationFunctionType> activation_functions;

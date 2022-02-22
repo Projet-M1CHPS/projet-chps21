@@ -87,7 +87,7 @@ namespace nnet {
 
     // Fill the matrices with the values from the stream
     // Matrices should already be allocated, and the size should match the topology
-    void readMatrices(std::istream &stream, std::vector<math::clMatrix> &matrices,
+    void readMatrices(std::istream &stream, std::vector<math::clFMatrix> &matrices,
                       utils::clWrapper &wrapper, const std::string &section_name) {
       std::string line = getNextNonEmptyLine(stream);
 
@@ -109,7 +109,7 @@ namespace nnet {
       }
     }
 
-    void writeMatrices(std::ostream &stream, const std::vector<math::clMatrix> &matrices,
+    void writeMatrices(std::ostream &stream, const std::vector<math::clFMatrix> &matrices,
                        utils::clWrapper &wrapper, const std::string &section_name) {
       stream << "#" << section_name << std::endl;
       for (auto const &m : matrices) {

@@ -16,7 +16,7 @@ namespace nnet {
   }
 
 
-  math::clMatrix MLPModel::predict(math::clMatrix const &input) const {
+  math::clFMatrix MLPModel::predict(math::clFMatrix const &input) const {
     return perceptron->predict(input, cl_wrapper_ptr->getDefaultQueueHandler());
   }
 

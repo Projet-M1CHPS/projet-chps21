@@ -21,7 +21,7 @@ namespace nnet {
      * @param input The matrix to be fed to the perceptron
      * @return The output of the perceptron
      */
-    math::clMatrix predict(math::clMatrix const &input) const override;
+    math::clFMatrix predict(math::clFMatrix const &input) const override;
 
 
     bool load(const std::filesystem::path &path) override;

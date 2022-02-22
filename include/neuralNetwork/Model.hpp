@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Matrix.hpp"
-#include "clUtils/clMatrix.hpp"
+#include "clUtils/clFMatrix.hpp"
 #include "clUtils/clWrapper.hpp"
 #include <filesystem>
 
@@ -28,7 +28,7 @@ namespace nnet {
      * @param input The model's input
      * @return The model's output
      */
-    virtual math::clMatrix predict(math::clMatrix const &input) const = 0;
+    virtual math::clFMatrix predict(math::clFMatrix const &input) const = 0;
 
     /**
      * @brief Save the model to the given path

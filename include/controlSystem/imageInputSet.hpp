@@ -18,13 +18,13 @@ namespace control {
      *
      * @param image
      */
-    void append(const math::clMatrix &image) { inputs.push_back(image); }
+    void append(const math::clFMatrix &image) { inputs.push_back(image); }
 
     /** Move copy a single image to the set
      *
      * @param image
      */
-    void append(math::clMatrix &&image) { inputs.push_back(image); }
+    void append(math::clFMatrix &&image) { inputs.push_back(image); }
 
     /** Appends a single image to the set, first convert it to a float matrix
      *

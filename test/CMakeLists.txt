@@ -12,6 +12,7 @@ add_executable(
         Math_test
         Math_test.cpp
         ${CMAKE_SOURCE_DIR}/include/Matrix.hpp
+        clFMatrix_test.cpp ${CMAKE_SOURCE_DIR}/include/clUtils/clFMatrix.hpp
 )
 
 target_link_libraries(
@@ -19,12 +20,17 @@ target_link_libraries(
         Utils
         gtest_main
         BLAS::BLAS
+        clUtils
+        clblast
 )
 
 include(GoogleTest)
 add_subdirectory(image)
 add_subdirectory(controlSystem)
 add_subdirectory(neuralNetwork)
+
+add_executable(opencl_test opencl_test.cpp)
+target_link_libraries(opencl_test PUBLIC OpenCL::OpenCL clblast)
 
 gtest_discover_tests(Math_test)
 if (COVERARE_ENABLED)

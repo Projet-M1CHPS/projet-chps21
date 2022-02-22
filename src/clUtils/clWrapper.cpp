@@ -17,9 +17,13 @@ namespace utils {
       for (auto &platform : platforms) {
         std::vector<cl::Device> devices;
         platform.getDevices(CL_DEVICE_TYPE_CPU, &devices);
+        if (devices.empty()) continue;
+        std::cout << "Platform: " << platform.getInfo<CL_PLATFORM_NAME>() << std::endl;
+        for (size_t i = 0; i < devices.size(); i++)
+          std::cout << "\t d" << i << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
         if (!devices.empty()) { cpu_platforms.push_back(platform); }
       }
-      return platforms;
+      return cpu_platforms;
     }
 
     std::vector<cl::Platform> findGPUPlatform() {
@@ -30,9 +34,13 @@ namespace utils {
       for (auto &platform : platforms) {
         std::vector<cl::Device> devices;
         platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
+        if (devices.empty()) continue;
+        std::cout << "Platform: " << platform.getInfo<CL_PLATFORM_NAME>() << std::endl;
+        for (size_t i = 0; i < devices.size(); i++)
+          std::cout << "\t d" << i << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
         if (!devices.empty()) { gpu_platforms.push_back(platform); }
       }
-      return platforms;
+      return gpu_platforms;
     }
 
     // Loading an OpenCL program requires it to be loaded into a buffer first
@@ -68,11 +76,11 @@ namespace utils {
   }
 
   std::unique_ptr<clWrapper>
-  clWrapper::makeDefaultWrapper(std::filesystem::path kernels_search_path) {
+  clWrapper::makeDefault(const std::filesystem::path &kernels_search_path) {
     auto cpu_platforms = findCPUPlatform();
     auto gpu_platforms = findGPUPlatform();
 
-    if (cpu_platforms.empty()) { throw std::runtime_error("No CPU platform found"); }
+    if (cpu_platforms.empty() and gpu_platforms.empty()) { throw std::runtime_error("No OpenCL platforms found"); }
 
     if (not gpu_platforms.empty()) {
       return std::make_unique<clWrapper>(gpu_platforms[0], kernels_search_path);
@@ -85,38 +93,4 @@ namespace utils {
     return clQueueHandler(context, devices, properties);
   }
 
-  cl::Program clWrapper::getProgram(const std::string &program_name) {
-    std::shared_lock<std::shared_mutex> lock(main_mutex);
-    auto it = programs.find(program_name);
-
-    // If we failed to find the program in the map, we need to build it
-    if (it == programs.end()) {
-      // Reacquire an exclusive lock
-      lock.unlock();
-      std::unique_lock<std::shared_mutex> lock2(main_mutex);
-      it = programs.find(program_name);
-
-      // Check again that the program was not added while we were waiting for the lock
-      if (it != programs.end()) { return it->second; }
-
-      std::string source = readFile(program_name);
-      cl::Program program(context, source);
-      try {
-        program.build();
-        it = programs.emplace(program_name, program).first;
-        return it->second;
-      } catch (std::exception &e) {
-        std::string build_log = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device);
-        tscl::logger(build_log, tscl::Log::Error);
-        tscl::logger("Failed to build program: " + program_name, tscl::Log::Fatal);
-      }
-    }
-    return it->second;
-  }
-
-  cl::Kernel clWrapper::getKernel(const std::string &program_name, const std::string &kernel_name) {
-    cl::Program program = getProgram(program_name);
-    cl::Kernel kernel(program, kernel_name.c_str());
-    return kernel;
-  }
 }   // namespace utils

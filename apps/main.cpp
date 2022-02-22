@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
   }
 
   tscl::logger("Initializing OpenCL...", tscl::Log::Debug);
-  std::shared_ptr<utils::clWrapper> wrapper = utils::clWrapper::makeDefaultWrapper();
+  std::shared_ptr<utils::clWrapper> wrapper = utils::clWrapper::makeDefault();
 
   std::vector<std::string> args;
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);

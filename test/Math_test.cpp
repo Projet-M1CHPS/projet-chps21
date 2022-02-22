@@ -186,7 +186,6 @@ TEST(MatrixTest, ThrowOnInvalidMatrixSub) {
 TEST(MatrixTest, CanTransposeMatrix) {
   Matrix<float> n(3, 5), o;
 
-math:
   randomize(n, 0.f, 100.f);
 
   auto t = n.transpose();
@@ -376,7 +375,7 @@ TEST(MatrixTest, CanMatMatProdMatAdd) {
   auto res = Matrix<float>::matMatProdMatAdd(A, B, C);
 
   for (size_t i = 0; i < 2; i++) {
-    for (size_t j = 0; j < 2; j++) ASSERT_EQ(D(i, j), res(i, j));
+    for (size_t j = 0; j < 1; j++) ASSERT_EQ(D(i, j), res(i, j));
   }
 }
 
@@ -419,7 +418,7 @@ TEST(MatrixTest, CanMulMatrix) {
   Matrix<float> G = Matrix<float>::mul(false, A, true, C);
 
   Matrix<float> d = A * 2.f * B;
-  Matrix<float> e = A.transpose() * 3.f * B.transpose();
+  Matrix<float> e = (A.transpose() * 3.f) * B.transpose();
   Matrix<float> f = A.transpose() * 4.f * C;
   Matrix<float> g = A * C.transpose();
 

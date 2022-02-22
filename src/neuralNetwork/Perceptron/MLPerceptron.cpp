@@ -16,7 +16,7 @@ namespace nnet {
     this->wrapper = wrapper;
   }
 
-  math::clMatrix MLPerceptron::predict(math::clMatrix const &input,
+  math::clFMatrix MLPerceptron::predict(math::clFMatrix const &input,
                                        utils::clQueueHandler &qhandler) const {
     const size_t nbInput = input.getRows();
 

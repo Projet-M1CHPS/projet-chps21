@@ -3,7 +3,7 @@
 
 namespace control::classifier {
 
-  void CTrainingSet::append(size_t input_id, ClassLabel const *label, math::clMatrix &&mat) {
+  void CTrainingSet::append(size_t input_id, ClassLabel const *label, math::clFMatrix &&mat) {
     if (label == nullptr) {
       throw std::invalid_argument("ClassifierTrainingSet: label is nullptr");
     }
@@ -12,7 +12,7 @@ namespace control::classifier {
     set_labels.push_back(label);
   }
 
-  void CTrainingSet::append(size_t input_id, const ClassLabel *label, const math::clMatrix &mat) {
+  void CTrainingSet::append(size_t input_id, const ClassLabel *label, const math::clFMatrix &mat) {
     if (label == nullptr) {
       throw std::invalid_argument("ClassifierTrainingSet: label is nullptr");
     }

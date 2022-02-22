@@ -39,15 +39,15 @@ namespace control::classifier {
       return image;
     }
 
-    // Takes a grayscale image and load it to a clMatrix
+    // Takes a grayscale image and load it to a clFMatrix
     // The image is normalized using a given factor
-    math::clMatrix normalizeToDevice(const image::GrayscaleImage &img, utils::clWrapper &wrapper) {
+    math::clFMatrix normalizeToDevice(const image::GrayscaleImage &img, utils::clWrapper &wrapper) {
       // Load the conversion kernel
       cl::Kernel kernel =
               wrapper.getKernels().getKernel("NormalizeCharToFloat.cl", "normalizeCharToFloat");
 
       // Allocate a new cl matrix
-      math::clMatrix res(img.getWidth() * img.getHeight(), 1, wrapper);
+      math::clFMatrix res(img.getWidth() * img.getHeight(), 1, wrapper);
 
       // We need to load the image to the cl device before applying the kernel
       cl::Buffer img_buffer(wrapper.getContext(), CL_MEM_READ_ONLY,
@@ -71,10 +71,10 @@ namespace control::classifier {
       return res;
     }
 
-    std::vector<math::clMatrix> loadDirectory(const fs::path &directory,
+    std::vector<math::clFMatrix> loadDirectory(const fs::path &directory,
                                               const TransformationPipeline &pipeline,
                                               utils::clWrapper &wrapper, cl::CommandQueue &queue) {
-      std::vector<math::clMatrix> res;
+      std::vector<math::clFMatrix> res;
       // We iterate on the directory, creating an OpenCL buffer for each image
       for (auto &file : fs::directory_iterator(directory)) {
         if (not file.is_regular_file()) continue;
