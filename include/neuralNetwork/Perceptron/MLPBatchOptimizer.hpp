@@ -7,8 +7,8 @@ namespace nnet {
   public:
     explicit MLPBatchOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm);
 
-    void optimize(const std::vector<math::FloatMatrix> &inputs,
-                  const std::vector<math::FloatMatrix> &targets) override;
+    void optimize(const std::vector<math::clFMatrix> &inputs,
+                  const std::vector<math::clFMatrix> &targets) override;
 
     /**
      * @brief Builds a new optimization algorithm, forwarding parameters, and returns an
@@ -28,18 +28,18 @@ namespace nnet {
 
 
   protected:
-    void forward(math::FloatMatrix const &inputs);
+    void forward(math::clFMatrix const &inputs, cl::CommandQueue &queue);
 
-    void computeGradient();
+    void computeGradient(cl::CommandQueue &queue);
 
     //
-    std::vector<math::FloatMatrix> layers, layers_af;
+    std::vector<math::clFMatrix> layers, layers_af;
 
     //
     BackpropStorage storage;
 
-    std::vector<math::FloatMatrix> avg_errors;
-    std::vector<math::FloatMatrix> avg_gradients;
+    std::vector<math::clFMatrix> avg_errors;
+    std::vector<math::clFMatrix> avg_gradients;
   };
 
 }   // namespace nnet

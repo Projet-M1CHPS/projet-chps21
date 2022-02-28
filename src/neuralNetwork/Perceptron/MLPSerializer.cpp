@@ -131,7 +131,7 @@ namespace nnet {
   }
 
   MLPerceptron MLPSerializer::readFromStream(utils::clWrapper &wrapper, std::istream &stream) {
-    MLPerceptron res(wrapper);
+    MLPerceptron res(&wrapper);
     std::string line;
     auto topology = readTopology(stream);
     res.setTopology(topology);
