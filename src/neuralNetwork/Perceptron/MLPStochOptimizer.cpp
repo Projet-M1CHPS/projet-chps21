@@ -40,12 +40,11 @@ namespace nnet {
     auto &weights = this->neural_network->getWeights();
     auto &topology = this->neural_network->getTopology();
 
-    cl::CommandQueue queue(wrapper->getContext(), wrapper->getDefaultDevice());
+    //cl::CommandQueue queue(wrapper->getContext(), wrapper->getDefaultDevice());
+    auto &queue = wrapper->getDefaultQueue();
     forward(input, queue);
-    storage.getError() = layers_af[layers_af.size() - 1].sub(target, *wrapper);
+    storage.getError() = layers_af[layers_af.size() - 1].sub(target, *wrapper, queue);
     backward(target, queue);
-    queue.finish();
-
     return {storage.getError(), *wrapper};
   }
 
@@ -56,6 +55,7 @@ namespace nnet {
     }
 
     for (size_t i = 0; i < inputs.size(); ++i) { optimize(inputs[i], targets[i]); }
+    wrapper->getDefaultQueue().finish();
   }
 
 

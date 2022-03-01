@@ -46,13 +46,13 @@ bool createAndTrain(std::shared_ptr<utils::clWrapper> wrapper,
 
 
   // Create a correctly-sized topology1
-  nnet::MLPTopology topology = {32 * 32, 64, 32, 16};
+  nnet::MLPTopology topology = {32 * 32, 64, 64, 32, 16};
   topology.pushBack(training_collection->getClassCount());
 
   auto model = nnet::MLPModel::randomReluSigmoid(wrapper, topology);
 
   auto optimizer = nnet::MLPStochOptimizer::make<nnet::SGDOptimization>(
-          *model, 0.3);
+          *model, 0.1);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
 

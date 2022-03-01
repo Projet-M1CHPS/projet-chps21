@@ -152,14 +152,14 @@ namespace math {
     return res;
   }
 
-  void clFMatrix::ipsub(const clFMatrix &other, utils::clWrapper &wrapper, cl::CommandQueue &queue,
-                        bool blocking) {
+  void clFMatrix::ipsub(float factor, const clFMatrix &other, utils::clWrapper &wrapper, cl::CommandQueue &queue,
+                  bool blocking) {
     if (rows != other.rows or cols != other.cols) {
       throw std::invalid_argument("Matrix dimensions do not match");
     }
 
     cl::Event evt;
-    clblast::Axpy<float>(size(), -1.0f, other.data(), 0, 1, data(), 0, 1, &queue(), &evt());
+    clblast::Axpy<float>(size(), -factor, other.data(), 0, 1, data(), 0, 1, &queue(), &evt());
     if (blocking) evt.wait();
   }
 

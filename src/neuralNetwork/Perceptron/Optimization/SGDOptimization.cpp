@@ -8,7 +8,6 @@ namespace nnet {
 
   void SGDOptimization::optimize(BackpropStorage &storage, utils::clWrapper &wrapper,
                                  cl::CommandQueue &queue) {
-    auto buf = storage.getGradient().scale(learning_r, wrapper, queue);
-    storage.getWeights().ipsub(buf, wrapper, queue);
+    storage.getWeights().ipsub(learning_r, storage.getGradient(), wrapper, queue);
   }
 }   // namespace nnet

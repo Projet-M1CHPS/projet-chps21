@@ -55,6 +55,13 @@ namespace utils {
   clWrapper::clWrapper(cl::Platform &platform, const std::filesystem::path &kernels_search_path) {
     this->platform = platform;
     platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+    std::cout << "Selected Platform: " << platform.getInfo<CL_PLATFORM_NAME>() << std::endl;
+    for (size_t i = 0; i < devices.size(); i++) {
+      if (i == 0)
+        std::cout << "Default Device d0: " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
+      else
+        std::cout << "\t d" << i << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
+    }
 
     default_device = devices[0];
     context = cl::Context(devices);

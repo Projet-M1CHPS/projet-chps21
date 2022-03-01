@@ -265,8 +265,22 @@ namespace math {
      * Note that if this operation is non-blocking, the user is responsible for ensuring that the
      * operation is finished before using the matrix
      */
-    void ipsub(const clFMatrix &other, utils::clWrapper &wrapper, cl::CommandQueue &queue,
+    void ipsub(float factor, const clFMatrix &other, utils::clWrapper &wrapper, cl::CommandQueue &queue,
                bool blocking = false);
+
+    /**
+     * @brief Inplace subtraction of two matrices. By default, this operation is non-blocking
+     * @param other The other matrix to subtract
+     * @param wrapper The wrapper of the platform
+     * @param queue The queue to use for this operation
+     * @param blocking True if the operation is blocking, false otherwise
+     * Note that if this operation is non-blocking, the user is responsible for ensuring that the
+     * operation is finished before using the matrix
+     */
+    void ipsub(const clFMatrix &other, utils::clWrapper &wrapper, cl::CommandQueue &queue,
+               bool blocking = false) {
+      ipsub(1.0f, other, wrapper, wrapper.getDefaultQueue(), blocking);
+    }
 
     /**
      * @brief Inplace subtraction of two matrices. By default, this operation is non-blocking and

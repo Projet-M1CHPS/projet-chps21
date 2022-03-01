@@ -68,8 +68,6 @@ namespace control::classifier {
       for (int i = 0; i < batch_size; i++) {
         optimizer->optimize(training_set.getVector(), training_targets);
       }
-      // Re-shuffle after each training batch
-      // training_set.shuffle(std::random_device{}());
 
       confusion.fill(0);
       for (int i = 0; i < training_set.size(); i++) {
