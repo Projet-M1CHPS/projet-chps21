@@ -18,8 +18,8 @@ namespace nnet {
      * @param inputs The inputs to be fed to the model
      * @param targets The corresponding ouputs targets to be fed to the model
      */
-    virtual void optimize(const std::vector<math::FloatMatrix> &inputs,
-                          const std::vector<math::FloatMatrix> &targets) = 0;
+    virtual void optimize(const std::vector<math::clFMatrix> &inputs,
+                          const std::vector<math::clFMatrix> &targets) = 0;
 
     /**
      * @brief The optimizer may hold some internal state that needs updating after each epoch

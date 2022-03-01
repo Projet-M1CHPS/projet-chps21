@@ -11,7 +11,8 @@ namespace nnet {
       if (type == af::ActivationFunctionType::identity) return;
       auto afunc = af::getAFKernelFromType(type, wrapper).first;
       afunc.setArg(0, mat.getBuffer());
-      queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
+      queue.enqueueNDRangeKernel(afunc, cl::NullRange, cl::NDRange(mat.getRows(), mat.getCols()),
+                                 cl::NullRange);
     }
 
     void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
@@ -19,7 +20,8 @@ namespace nnet {
       if (type == af::ActivationFunctionType::identity) return;
       auto afunc = af::getAFKernelFromType(type, wrapper).second;
       afunc.setArg(0, mat.getBuffer());
-      queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
+      queue.enqueueNDRangeKernel(afunc, cl::NullRange, cl::NDRange(mat.getRows(), mat.getCols()),
+                                 cl::NullRange);
     }
   }   // namespace
 
@@ -34,14 +36,16 @@ namespace nnet {
   }
 
   math::clFMatrix MLPStochOptimizer::optimize(const math::clFMatrix &input,
-                                                const math::clFMatrix &target) {
+                                              const math::clFMatrix &target) {
     auto &weights = this->neural_network->getWeights();
     auto &topology = this->neural_network->getTopology();
 
-    cl::CommandQueue queue(wrapper->getDefaultDevice());
+    cl::CommandQueue queue(wrapper->getContext(), wrapper->getDefaultDevice());
     forward(input, queue);
     storage.getError() = layers_af[layers_af.size() - 1].sub(target, *wrapper);
     backward(target, queue);
+    queue.finish();
+
     return {storage.getError(), *wrapper};
   }
 
@@ -67,11 +71,12 @@ namespace nnet {
 
     auto current_layer = clFMatrix::gemm(1.0f, false, weights[0], false, inputs, 1.0f, biases[0],
                                          *wrapper, queue);
+
     // Store the matrix before the activation function
     layers[1] = clFMatrix(current_layer, *wrapper, queue, false);
 
     // Apply the activation function
-    applyAF(activation_functions[0], layers_af[1], *wrapper, queue);
+    applyAF(activation_functions[0], current_layer, *wrapper, queue);
     // Store the matrix after the activation function
     layers_af[1] = clFMatrix(current_layer, *wrapper, queue, false);
 
@@ -85,7 +90,7 @@ namespace nnet {
 
       applyAF(activation_functions[k], current_layer, *wrapper, queue);
       // Store the matrix after the activation function
-      layers_af[k + 1] = clFMatrix(current_layer, *wrapper, false);
+      layers_af[k + 1] = clFMatrix(current_layer, *wrapper, queue, false);
     }
   }
 
@@ -94,15 +99,13 @@ namespace nnet {
     auto &biases = this->neural_network->getBiases();
     auto &activation_functions = this->neural_network->getActivationFunctions();
 
-    // storage.current_error = layers_af[layers_af.size() - 1] - target;
-
     for (long i = weights.size() - 1; i >= 0; i--) {
       storage.setIndex(i);
 
       math::clFMatrix derivative(layers[i + 1], *wrapper, queue, false);
       applyDerivativeAF(activation_functions[i], derivative, *wrapper, queue);
 
-      derivative.hadamard(storage.getError(), *wrapper, queue);
+      derivative.iphadamard(storage.getError(), *wrapper, queue);
 
       storage.getError() =
               clFMatrix::gemm(1.0f, true, weights[i], false, derivative, *wrapper, queue);

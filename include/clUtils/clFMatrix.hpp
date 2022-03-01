@@ -322,12 +322,12 @@ namespace math {
       return scale(s, wrapper, wrapper.getDefaultQueue(), blocking);
     }
 
-    clFMatrix iphadamard(const clFMatrix &other, utils::clWrapper &wrapper, cl::CommandQueue &queue,
+    void iphadamard(const clFMatrix &other, utils::clWrapper &wrapper, cl::CommandQueue &queue,
                          bool blocking = false) const;
 
-    clFMatrix iphadamard(const clFMatrix &other, utils::clWrapper &wrapper,
+    void iphadamard(const clFMatrix &other, utils::clWrapper &wrapper,
                          bool blocking = false) const {
-      return iphadamard(other, wrapper, wrapper.getDefaultQueue(), blocking);
+      iphadamard(other, wrapper, wrapper.getDefaultQueue(), blocking);
     }
 
     clFMatrix hadamard(const clFMatrix &other, utils::clWrapper &wrapper, cl::CommandQueue& queue, bool blocking = false) const;

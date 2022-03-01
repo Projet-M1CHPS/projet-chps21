@@ -15,12 +15,12 @@ namespace nnet {
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure
      */
-    static MLPModel readFromFile(const std::filesystem::path &path);
+    static MLPModel readFromFile(const std::filesystem::path &path, std::shared_ptr<utils::clWrapper> wrapper);
 
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure
      */
-    static MLPModel readFromStream(std::istream &stream);
+    static MLPModel readFromStream(std::istream &stream, std::shared_ptr<utils::clWrapper> wrapper);
 
     /**
      * @param path Path to the file to write to

@@ -3,6 +3,8 @@
 function(copy_kernels)
     set(kernels
             NormalizeCharToFloat.cl
+            ActivationFunction.cl
+            optimization.cl
             )
     foreach (kernel ${kernels})
         configure_file(

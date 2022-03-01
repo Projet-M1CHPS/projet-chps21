@@ -1,4 +1,5 @@
 #include "clKernelMap.hpp"
+#include "Logger.hpp"
 #include <fstream>
 #include <utility>
 
@@ -28,12 +29,21 @@ namespace utils {
     std::string program_str((std::istreambuf_iterator<char>(file)),
                             std::istreambuf_iterator<char>());
     auto res = map.emplace(program_name, cl::Program(context, program_str));
+    try {
+      res.first->second.build();
+    } catch (const cl::Error &e) {
+      tscl::logger("Error building program " + program_name + ": " + e.what(), tscl::Log::Error);
+      tscl::logger("Build log:\n " +
+                   res.first->second.getBuildInfo<CL_PROGRAM_BUILD_LOG>(
+                           context.getInfo<CL_CONTEXT_DEVICES>()[0]), tscl::Log::Fatal);
+    }
     return res.first->second;
   }
 
   cl::Kernel clKernelMap::getKernel(const std::string &program_name,
                                     const std::string &kernel_name) {
     auto &program = getProgram(program_name);
-    return {program, kernel_name.c_str()};
+    cl::Kernel res = {program, kernel_name.c_str()};
+    return res;
   }
 }   // namespace utils

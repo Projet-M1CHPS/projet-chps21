@@ -5,14 +5,18 @@
 
 namespace nnet {
 
-  MLPModel MLPModelSerializer::readFromFile(const std::filesystem::path &path) {
+  MLPModel MLPModelSerializer::readFromFile(const std::filesystem::path &path, std::shared_ptr<utils::clWrapper> wrapper) {
     std::ifstream file(path);
     if (!file.is_open()) { throw std::runtime_error("Could not open file: " + path.string()); }
-    return readFromStream(file);
+    return readFromStream(file, wrapper);
   }
 
-  MLPModel MLPModelSerializer::readFromStream(std::istream &stream) {
-    MLPModel res;
+  MLPModel MLPModelSerializer::readFromStream(std::istream &stream, std::shared_ptr<utils::clWrapper> wrapper) {
+
+    if (not wrapper)
+      wrapper = utils::clWrapper::makeDefault();
+
+    MLPModel res(wrapper);
     std::string line;
     std::getline(stream, line);
 
@@ -46,7 +50,7 @@ namespace nnet {
       }
     }
 
-    auto perceptron = nnet::MLPSerializer::readFromStream(stream);
+    auto perceptron = nnet::MLPSerializer::readFromStream(*wrapper, stream);
     res.getPerceptron() = std::move(perceptron);
 
     return res;

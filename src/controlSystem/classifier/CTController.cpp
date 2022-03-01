@@ -54,19 +54,19 @@ namespace control::classifier {
     training_collection->shuffleSets(std::random_device{}());
 
     // We build the target matrices
-    std::vector<math::FloatMatrix> training_targets;
+    std::vector<math::clFMatrix> training_targets;
     tscl::logger("Building target matrices...");
     for (size_t i = 0; auto const &set : training_set) {
       target.fill(0);
       target(training_set.getLabel(i).getId(), 0) = 1.f;
-      training_targets.push_back(target);
+      training_targets.emplace_back(target, model->getClWrapper());
       i++;
     }
 
     tscl::logger("Training started", tscl::Log::Information);
     while (stracker.getEpoch() < max_epoch) {
       for (int i = 0; i < batch_size; i++) {
-        // optimizer->optimize(training_set.getVector(), training_targets);
+        optimizer->optimize(training_set.getVector(), training_targets);
       }
       // Re-shuffle after each training batch
       // training_set.shuffle(std::random_device{}());
@@ -74,10 +74,11 @@ namespace control::classifier {
       confusion.fill(0);
       for (int i = 0; i < training_set.size(); i++) {
         auto type = training_set.getLabel(i).getId();
-        // auto res = model->predict(training_set[i]);
-        // auto res_type = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
+        auto res = model->predict(training_set[i]);
+        auto buf = res.toFloatMatrix(model->getClWrapper());
+        auto res_type = std::distance(buf.begin(), std::max_element(buf.begin(), buf.end()));
 
-        // confusion(res_type, type)++;
+        confusion(res_type, type)++;
       }
       auto tstats = training_tracker.computeStats(confusion);
       tscl::logger("[Epoch " + std::to_string(stracker.getEpoch()) +
@@ -91,10 +92,11 @@ namespace control::classifier {
       confusion.fill(0);
       for (int i = 0; i < eval_set.size(); i++) {
         auto type = eval_set.getLabel(i).getId();
-        // auto res = model->predict(eval_set[i]);
-        // auto res_type = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
+        auto res = model->predict(eval_set[i]);
+        auto buf = res.toFloatMatrix(model->getClWrapper());
+        auto res_type = std::distance(buf.begin(), std::max_element(buf.begin(), buf.end()));
 
-        // confusion(res_type, type)++;
+        confusion(res_type, type)++;
       }
 
       auto stats = stracker.computeStats(confusion);
@@ -120,14 +122,15 @@ namespace control::classifier {
 
     for (int i = 0; i < eval_set.size(); i++) {
       auto &type = eval_set.getLabel(i);
-      // auto res = model->predict(eval_set[i]);
-      // auto res_type = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
+      auto res = model->predict(eval_set[i]);
+      auto buf = res.toFloatMatrix(model->getClWrapper());
+      auto res_type = std::distance(buf.begin(), std::max_element(buf.begin(), buf.end()));
 
 
-      // ss << "[Image: " << i << ", " << type << "] output :\n" << res;
+      ss << "[Image: " << i << ", " << type << "] output :\n" << buf;
       tscl::logger(ss.str(), tscl::Log::Information);
       ss.str("");
-      // confusion(res_type, type.getId())++;
+      confusion(res_type, type.getId())++;
     }
     auto stats = stracker.computeStats(confusion);
     // stats.classification_report(os, classes);

@@ -39,25 +39,24 @@ bool createAndTrain(std::shared_ptr<utils::clWrapper> wrapper,
   pre_engine.addTransformation(std::make_shared<image::transform::Inversion>());
   auto &engine = loader.getPostProcessEngine();
   // Add postprocessing transformations here
-  // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
+  engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
 
   tscl::logger("Loading collection", tscl::Log::Information);
   auto training_collection = loader.load(input_path, *wrapper);
 
 
-  // Create a correctly-sized topology
-  nnet::MLPTopology topology = {32 * 32, 64, 64, 32, 32};
+  // Create a correctly-sized topology1
+  nnet::MLPTopology topology = {32 * 32, 64, 32, 16};
   topology.pushBack(training_collection->getClassCount());
 
   auto model = nnet::MLPModel::randomReluSigmoid(wrapper, topology);
 
-  exit(1);
-  auto optimizer = nnet::MLPMiniBatchOptimizer::make<nnet::DecayMomentumOptimization>(
-          *model, 64, 0.2, 0.1, 0.9);
+  auto optimizer = nnet::MLPStochOptimizer::make<nnet::SGDOptimization>(
+          *model, 0.3);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
 
-  TrainingControllerParameters parameters(input_path, output_path, 100, 1, false);
+  TrainingControllerParameters parameters(input_path, output_path, 50, 1, false);
   CTController controller(parameters, *model, *optimizer, *training_collection);
   ControllerResult res = controller.run();
 

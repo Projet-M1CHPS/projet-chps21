@@ -39,7 +39,20 @@ namespace control::classifier {
      * @param label Class label of the matrix
      * @param mat Input matrix
      */
-    void append(size_t input_id, ClassLabel const *label, const math::clFMatrix &mat);
+    void append(size_t input_id, const ClassLabel *label, const math::clFMatrix &mat,
+                utils::clWrapper &wrapper, cl::CommandQueue &queue, bool blocking = true);
+
+
+    /** Appends a new input matrix to the set
+     *
+     * @param input_id The unique id of the input matrix
+     * @param label Class label of the matrix
+     * @param mat Input matrix
+     */
+    void append(size_t input_id, const ClassLabel *label, const math::clFMatrix &mat,
+                utils::clWrapper &wrapper, bool blocking = true) {
+      append(input_id, label, mat, wrapper, wrapper.getDefaultQueue(), blocking);
+    }
 
     /** Shuffles the set with the given seed
      *

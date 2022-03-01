@@ -47,27 +47,26 @@ namespace control::classifier {
               wrapper.getKernels().getKernel("NormalizeCharToFloat.cl", "normalizeCharToFloat");
 
       // Allocate a new cl matrix
-      math::clFMatrix res(img.getWidth() * img.getHeight(), 1, wrapper);
+      math::clFMatrix res(img.getSize(), 1, wrapper);
 
       // We need to load the image to the cl device before applying the kernel
-      cl::Buffer img_buffer(wrapper.getContext(), CL_MEM_READ_ONLY,
-                            img.getWidth() * img.getHeight());
+      cl::Buffer img_buffer(wrapper.getContext(), CL_MEM_READ_WRITE,
+                            img.getSize());
 
-      auto &queue = wrapper.getDefaultQueueHandler().next();
+      auto &queue = wrapper.getDefaultQueue();
 
-      queue.enqueueWriteBuffer(img_buffer, CL_FALSE, 0, img.getWidth() * img.getHeight(),
+      queue.enqueueWriteBuffer(img_buffer, CL_TRUE, 0, img.getSize(),
                                img.getData());
 
       kernel.setArg(0, img_buffer);
       kernel.setArg(1, res.getBuffer());
 
       // We also normalize the matrix by a given factor
-      kernel.setArg(2, 255);
+      kernel.setArg(2, 255.f);
       // OpenCL does not support size_t, so we cast it to unsigned long
       kernel.setArg(3, (cl_ulong) img.getSize());
 
       queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(img.getSize()), cl::NullRange);
-
       return res;
     }
 
@@ -81,7 +80,7 @@ namespace control::classifier {
 
         auto img = pipeline.loadAndTransform(file.path());
         auto cl_matrix = normalizeToDevice(img, wrapper);
-        res.push_back(cl_matrix);
+        res.push_back(std::move(cl_matrix));
       }
       return res;
     }
@@ -136,7 +135,7 @@ namespace control::classifier {
     TransformationPipeline pipeline({pre_process, resize, post_process});
 
     cl::Context context = wrapper.getContext();
-    cl::CommandQueue queue(context);
+    auto& queue = wrapper.getDefaultQueue();
 
     // Each class is a directory
     // inside the input path

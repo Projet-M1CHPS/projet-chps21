@@ -202,20 +202,26 @@ namespace math {
     return res;
   }
 
-  clFMatrix clFMatrix::iphadamard(const clFMatrix &other, utils::clWrapper &wrapper,
+  void clFMatrix::iphadamard(const clFMatrix &other, utils::clWrapper &wrapper,
                                   cl::CommandQueue &queue, bool blocking) const {
     if (rows != other.rows or cols != other.cols) {
       throw std::invalid_argument("Matrix dimensions do not match");
     }
 
-    clFMatrix res(rows, cols, wrapper);
-
-    if (size() == 0) return res;
-
     cl::Event evt;
-    clblast::Had<float>(rows * cols, 1.0f, data(), 0, 1, other.data(), 0, 1, 0.0f, res.data(), 0, 1,
+    clblast::Had<float>(rows * cols, 1.0f, data(), 0, 1, other.data(), 0, 1, 0.0f, data(), 0, 1,
                         &queue(), &evt());
     if (blocking) evt.wait();
+  }
+
+  clFMatrix clFMatrix::hadamard(const clFMatrix &other, utils::clWrapper &wrapper,
+                                cl::CommandQueue &queue, bool blocking) const {
+    if (rows != other.rows or cols != other.cols) {
+      throw std::invalid_argument("Matrix dimensions do not match");
+    }
+
+    clFMatrix res(other, wrapper);
+    res.iphadamard(*this, wrapper, queue, blocking);
     return res;
   }
 
@@ -259,7 +265,7 @@ namespace math {
     size_t n = (transpose_b ? B_rows : B_cols);
     size_t k = (transpose_a ? A_rows : A_cols);
 
-    clFMatrix res(C, wrapper);
+    clFMatrix res(C, wrapper, queue, blocking);
     cl::Event evt;
     clblast::Gemm<float>(clblast::Layout::kRowMajor, ta, tb, m, n, k, alpha, A.data(), 0, A_cols,
                          B.data(), 0, B_cols, beta, res.data(), 0, res.getCols(), &queue(), &evt());

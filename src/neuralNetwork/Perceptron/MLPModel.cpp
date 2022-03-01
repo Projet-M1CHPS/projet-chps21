@@ -6,8 +6,9 @@
 namespace nnet {
 
 
-  MLPModel::MLPModel(std::shared_ptr<utils::clWrapper> wrapper_ptr)
-      : Model(std::move(wrapper_ptr)) {}
+  MLPModel::MLPModel(std::shared_ptr<utils::clWrapper> wrapper_ptr) : Model(wrapper_ptr) {
+    perceptron = std::make_unique<MLPerceptron>(wrapper_ptr.get());
+  }
 
   MLPModel::MLPModel(std::shared_ptr<utils::clWrapper> wrapper_ptr,
                      std::unique_ptr<MLPerceptron> &&perceptron)
@@ -42,7 +43,7 @@ namespace nnet {
       mlp.setActivationFunction(af::ActivationFunctionType::sigmoid, i);
     }
     // The last layer should be a sigmoid for the result to be in [0;1]
-    mlp.setActivationFunction(af::ActivationFunctionType::sigmoid, topology.size() - 1);
+    mlp.setActivationFunction(af::ActivationFunctionType::sigmoid, topology.size() - 2);
 
     return res;
   }
@@ -50,7 +51,7 @@ namespace nnet {
 
   bool MLPModel::load(const std::filesystem::path &path) {
     try {
-      auto tmp = MLPModelSerializer::readFromFile(path);
+      auto tmp = MLPModelSerializer::readFromFile(path, cl_wrapper_ptr);
       *this = std::move(tmp);
       return true;
     } catch (std::exception &e) { return false; }

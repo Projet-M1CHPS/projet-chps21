@@ -3,15 +3,14 @@
 namespace nnet {
 
   namespace {
-    void applyAF(af::ActivationFunctionType type, math::clFMatrix& mat, utils::clWrapper& wrapper, cl::CommandQueue& queue) {
-
-      if (type == af::ActivationFunctionType::identity)
-        return;
+    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, utils::clWrapper &wrapper,
+                 cl::CommandQueue &queue) {
+      if (type == af::ActivationFunctionType::identity) return;
       auto afunc = af::getAFKernelFromType(type, wrapper).first;
       afunc.setArg(0, mat.getBuffer());
       queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
     }
-  }
+  }   // namespace
 
   MLPTopology MLPTopology::fromString(const std::string &str) {
     std::vector<size_t> layers;
@@ -34,7 +33,7 @@ namespace nnet {
       throw std::invalid_argument("Invalid number of input");
     }
 
-    cl::CommandQueue queue(wrapper->getDefaultDevice());
+    cl::CommandQueue queue(wrapper->getContext(), wrapper->getDefaultDevice());
 
     auto current_layer = math::clFMatrix::gemm(1.0f, false, weights[0], false, input, 1.0f,
                                                biases[0], *wrapper, queue);

@@ -4,6 +4,7 @@
 #include "clUtils/clFMatrix.hpp"
 #include "clUtils/clWrapper.hpp"
 #include <filesystem>
+#include <utility>
 
 namespace nnet {
   /**
@@ -11,7 +12,10 @@ namespace nnet {
    */
   class Model {
   public:
-    Model(std::shared_ptr<utils::clWrapper> wrapper_ptr);
+    Model(std::shared_ptr<utils::clWrapper> wrapper_ptr) : cl_wrapper_ptr(std::move(wrapper_ptr)) {
+
+    }
+
     virtual ~Model() = default;
 
     //

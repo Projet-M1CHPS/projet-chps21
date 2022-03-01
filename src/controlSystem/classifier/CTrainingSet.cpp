@@ -12,15 +12,15 @@ namespace control::classifier {
     set_labels.push_back(label);
   }
 
-  void CTrainingSet::append(size_t input_id, const ClassLabel *label, const math::clFMatrix &mat) {
+  void CTrainingSet::append(size_t input_id, const ClassLabel *label, const math::clFMatrix &mat,
+                            utils::clWrapper &wrapper, cl::CommandQueue &queue, bool blocking) {
     if (label == nullptr) {
       throw std::invalid_argument("ClassifierTrainingSet: label is nullptr");
     }
-    inputs.push_back(mat);
+    inputs.emplace_back(mat, wrapper, queue, blocking);
     inputs_id.push_back(input_id);
     set_labels.push_back(label);
   }
-
 
   void CTrainingSet::shuffle(size_t seed) {
     std::mt19937_64 rng(seed);
@@ -38,6 +38,7 @@ namespace control::classifier {
       os << "\tinput_id: " << inputs_id[i] << ", label: " << *set_labels[i] << std::endl;
     }
   }
+
   void CTrainingSet::clear() {
     InputSet::clear();
     inputs_id.clear();
