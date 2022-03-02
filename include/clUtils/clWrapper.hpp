@@ -19,8 +19,11 @@ namespace utils {
     clWrapper &operator=(clWrapper &&other);
     clWrapper(clWrapper &&other) noexcept;
 
-    explicit clWrapper(cl::Platform &platform,
+    explicit clWrapper(cl::Platform &platform, size_t device_id,
                        const std::filesystem::path &kernels_search_path = "kernels");
+
+    explicit clWrapper(cl::Platform &platform,
+                       const std::filesystem::path &kernels_search_path = "kernels") : clWrapper(platform, 0, kernels_search_path) {}
 
     static std::unique_ptr<clWrapper>
     makeDefault(const std::filesystem::path &kernels_search_path = "kernels");

@@ -1,5 +1,6 @@
 #include "clWrapper.hpp"
 #include <fstream>
+#include <ncurses.h>
 
 namespace utils {
 
@@ -52,7 +53,8 @@ namespace utils {
     }
   }   // namespace
 
-  clWrapper::clWrapper(cl::Platform &platform, const std::filesystem::path &kernels_search_path) {
+  clWrapper::clWrapper(cl::Platform &platform, size_t device_id,
+                       const std::filesystem::path &kernels_search_path) {
     this->platform = platform;
     platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
     std::cout << "Selected Platform: " << platform.getInfo<CL_PLATFORM_NAME>() << std::endl;
@@ -63,7 +65,7 @@ namespace utils {
         std::cout << "\t d" << i << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
     }
 
-    default_device = devices[0];
+    default_device = devices[device_id];
     context = cl::Context(devices);
     default_queue = cl::CommandQueue(context, default_device);
     // By default, we do not enable out-of-order execution for the queue handler
@@ -74,13 +76,20 @@ namespace utils {
   }
 
   clWrapper::clWrapper(const clWrapper &other) {
+    // Copy everything except the mutex
     platform = other.platform;
     context = other.context;
     default_device = other.default_device;
     default_queue = other.default_queue;
     default_queue_handler = other.default_queue_handler;
+    // No need to lock the mutex here, since we're just copying the pointers
     kernels = other.kernels;
   }
+
+  clQueueHandler clWrapper::makeQueueHandler(cl::QueueProperties properties) {
+    return clQueueHandler(context, devices, properties);
+  }
+
 
   std::unique_ptr<clWrapper>
   clWrapper::makeDefault(const std::filesystem::path &kernels_search_path) {
@@ -97,9 +106,4 @@ namespace utils {
       return std::make_unique<clWrapper>(cpu_platforms[0], kernels_search_path);
     }
   }
-
-  clQueueHandler clWrapper::makeQueueHandler(cl::QueueProperties properties) {
-    return clQueueHandler(context, devices, properties);
-  }
-
 }   // namespace utils
