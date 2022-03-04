@@ -6,6 +6,7 @@
 #include "CNNStorageBP.hpp"
 #include "Filter.hpp"
 #include "Matrix.hpp"
+#include "ActivationFunction.hpp"
 
 namespace cnnet {
 
@@ -60,6 +61,7 @@ namespace cnnet {
   private:
     Filter filter;
     const size_t padding;
+    af::ActivationFunctionType activation_function;
   };
 
 

@@ -18,7 +18,7 @@ namespace cnnet {
 
   class CNNModelOptimizer : public ModelOptimizer {
   public:
-    CNNModelOptimizer(CNNModel &model);   //, std::shared_ptr<OptimizationMethod> tm);
+    CNNModelOptimizer(CNNModel &model, std::shared_ptr<OptimizationMethod> tm);
     virtual ~CNNModelOptimizer() override = default;
 
     CNNModelOptimizer(const CNNModelOptimizer &other) = delete;
@@ -35,6 +35,8 @@ namespace cnnet {
 
     void update() override { opti_meth->update(); }
 
+    virtual void train(const math::FloatMatrix &input, const math::FloatMatrix &target) = 0;
+
     virtual void optimize(const std::vector<math::FloatMatrix> &inputs,
                           const std::vector<math::FloatMatrix> &targets) = 0;
 
@@ -45,7 +47,7 @@ namespace cnnet {
   protected:
     CNN *nn_cnn;
     FloatMatrix *flatten;
-    // MLPModelOptimizer mlpOpti;
+    MLPerceptron* nn_mlp;
 
     std::vector<std::vector<std::shared_ptr<CNNStorageBP>>> storage;
 
@@ -55,9 +57,9 @@ namespace cnnet {
 
   class CNNModelStochOptimizer final : public CNNModelOptimizer {
   public:
-    CNNModelStochOptimizer(CNNModel &model);
+    CNNModelStochOptimizer(CNNModel &model, std::shared_ptr<OptimizationMethod> tm);
 
-    void train(const math::FloatMatrix &input, const math::FloatMatrix &target);
+    void train(const math::FloatMatrix &input, const math::FloatMatrix &target) override;
 
     void optimize(const std::vector<math::FloatMatrix> &inputs,
                   const std::vector<math::FloatMatrix> &targets) override;
@@ -68,6 +70,7 @@ namespace cnnet {
     void backward(math::FloatMatrix const &target, math::FloatMatrix const &errorFlatten);
 
   private:
+    MLPModelStochOptimizer mlpOpti;
   };
 
 

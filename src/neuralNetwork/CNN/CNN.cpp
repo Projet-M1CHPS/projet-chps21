@@ -78,14 +78,13 @@ namespace cnnet {
       size_t l = 0;
       for (size_t j = 0; j < layers[i - 1].size(); j++) {
         for (size_t k = 0; k < topology(i)->getFeatures(); k++) {
-          std::cout << "(" << i - 1 << ", " << j << ") (" << i << ", " << l << ")" << std::endl;
+          //std::cout << "(" << i - 1 << ", " << j << ") (" << i << ", " << l << ")" << std::endl;
           layers[i][j]->compute(layerMatrix[i - 1][j], layerMatrix[i][l++]);
         }
       }
     }
 
     size_t index = 0;
-
     for (auto mat : layerMatrix.back()) {
       for (auto val : mat) {
         output(index, 0) = val;

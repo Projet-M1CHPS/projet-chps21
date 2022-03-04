@@ -8,10 +8,14 @@ namespace cnnet {
 
   CNNConvolutionLayer::CNNConvolutionLayer(std::pair<size_t, size_t> sizeFilter,
                                            const size_t stride, const size_t padding)
-      : filter(sizeFilter), CNNLayer(stride), padding(padding) {}
+      : filter(sizeFilter), CNNLayer(stride), padding(padding),
+        activation_function(af::ActivationFunctionType::sigmoid) {
+    filter.randomize(0.f, 1.f);
+  }
 
 
   void CNNConvolutionLayer::compute(const FloatMatrix &input, FloatMatrix &output) {
+    std::cout << "compute forward convolution" << std::endl;
     const FloatMatrix &matFiltre = filter.getMatrix();
 
     size_t rowsPos = 0;
@@ -31,6 +35,9 @@ namespace cnnet {
       rowsPos += stride;
       colsPos = 0;
     }
+
+    auto afunc = af::getAFFromType(activation_function).first;
+    std::transform(output.cbegin(), output.cend(), output.begin(), afunc);
   }
 
 
@@ -40,6 +47,7 @@ namespace cnnet {
 
 
   void CNNConvolutionLayer::computeBackward(FloatMatrix &input, CNNStorageBP &storage) {
+    std::cout << "compute backprop convolution" << std::endl;
     auto &convoStorage = static_cast<CNNStorageBPConvolution &>(storage);
 
     fillDilatedMatrix(convoStorage.output, convoStorage.dilated4Input, stride - 1,
@@ -54,7 +62,7 @@ namespace cnnet {
     std::cout << "filter: " << std::endl;
     std::cout << filter.getMatrix() << std::endl;
 
-    const FloatMatrix &matFiltre = filter.getMatrix();
+    FloatMatrix &matFiltre = filter.getMatrix();
 
 
     // compute filter error
@@ -78,7 +86,6 @@ namespace cnnet {
     std::cout << "error filter: " << std::endl;
     std::cout << convoStorage.errorFilter << std::endl;
 
-
     // compute input error
     rowsPos = 0;
     colsPos = 0;
@@ -98,6 +105,11 @@ namespace cnnet {
       rowsPos++;
       colsPos = 0;
     }
+
+    for(size_t i = 0; i < filter.getRows(); i++)
+      for(size_t j = 0; j < filter.getCols(); j++)
+        matFiltre(i, j) -= 0.2 * convoStorage.errorFilter(i, j);
+
   }
 
 
@@ -110,6 +122,7 @@ namespace cnnet {
       : CNNPoolingLayer(poolSize, stride) {}
 
   void CNNMaxPoolingLayer::compute(const FloatMatrix &input, FloatMatrix &output) {
+    std::cout << "compute forward max pooling" << std::endl;
     size_t rowsPos = 0, colsPos = 0;
 
     for (size_t i = 0; i < output.getRows(); i++) {
@@ -129,6 +142,7 @@ namespace cnnet {
   }
 
   void CNNMaxPoolingLayer::computeForward(FloatMatrix &input, CNNStorageBP &storage) {
+    std::cout << "compute forward max pooling" << std::endl;
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
     size_t rowsPos = 0, colsPos = 0;
 
@@ -155,8 +169,8 @@ namespace cnnet {
   }
 
   void CNNMaxPoolingLayer::computeBackward(FloatMatrix &input, CNNStorageBP &storage) {
-    auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
     std::cout << "compute backprop max pooling" << std::endl;
+    auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
 
     for (auto &i : input) { i = 0.f; }
 
@@ -173,6 +187,7 @@ namespace cnnet {
       : CNNPoolingLayer(poolSize, stride) {}
 
   void CNNAvgPoolingLayer::compute(const FloatMatrix &input, FloatMatrix &output) {
+    std::cout << "compute forward avg pooling" << std::endl;
     size_t rowsPos = 0, colsPos = 0;
 
     for (size_t i = 0; i < output.getRows(); i++) {
@@ -196,7 +211,7 @@ namespace cnnet {
   }
 
   void CNNAvgPoolingLayer::computeBackward(FloatMatrix &input, CNNStorageBP &storage) {
-    std::cout << "compute backprop max pooling" << std::endl;
+    std::cout << "compute backprop avg pooling" << std::endl;
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
 
     std::cout << storage.output << std::endl;

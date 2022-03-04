@@ -24,7 +24,7 @@ namespace cnnet {
 
     auto &cnn = res.getCnn();
     cnn.setTopology(topoCNN);
-    cnn.setActivationFunction(af::ActivationFunctionType::relu);
+    cnn.setActivationFunction(af::ActivationFunctionType::sigmoid);
     cnn.randomizeWeight();
 
     const size_t size = cnn.getOutputSize();
@@ -34,6 +34,7 @@ namespace cnnet {
     auto &mlp = res.getMlp();
     mlp.setTopology(topoMLP);
     mlp.setActivationFunction(af::ActivationFunctionType::sigmoid);
+    mlp.randomizeWeight();
 
     return std::move(res);
   }
