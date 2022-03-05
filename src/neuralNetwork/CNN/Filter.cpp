@@ -4,9 +4,7 @@
 namespace cnnet {
 
 
-  Filter::Filter(const size_t rows, const size_t cols) : filter(rows, cols) {
-    //randomize(0.f, 1.f);
-  }
+  Filter::Filter(const size_t rows, const size_t cols) : filter(rows, cols) {}
 
   Filter::Filter(const std::pair<size_t, size_t> &sizeFilter)
       : filter(sizeFilter.first, sizeFilter.second) {

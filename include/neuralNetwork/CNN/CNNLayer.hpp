@@ -42,7 +42,7 @@ namespace cnnet {
 
   class CNNConvolutionLayer : public CNNLayer {
   public:
-    CNNConvolutionLayer(std::pair<size_t, size_t> sizeFilter, const size_t stride,
+    CNNConvolutionLayer(const std::pair<size_t, size_t> sizeFilter, const af::ActivationFunctionType aFunction, const size_t stride,
                         const size_t padding = 0);
 
     ~CNNConvolutionLayer() = default;
@@ -61,7 +61,7 @@ namespace cnnet {
   private:
     Filter filter;
     const size_t padding;
-    af::ActivationFunctionType activation_function;
+    af::ActivationFunctionType activationFunction;
   };
 
 

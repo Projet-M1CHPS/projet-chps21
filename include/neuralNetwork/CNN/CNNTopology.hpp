@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 
+#include "ActivationFunction.hpp"
 #include "CNNLayer.hpp"
 #include "CNNStorageBP.hpp"
 
@@ -41,7 +42,8 @@ namespace cnnet {
   class CNNTopologyLayerConvolution final : public CNNTopologyLayer {
   public:
     CNNTopologyLayerConvolution(const size_t features, const std::pair<size_t, size_t> filter,
-                                const size_t stride, const size_t padding);
+                                const af::ActivationFunctionType aFunction, const size_t stride,
+                                const size_t padding);
     ~CNNTopologyLayerConvolution() = default;
 
     const size_t getFeatures() const override { return features; }
@@ -60,6 +62,7 @@ namespace cnnet {
   private:
     const size_t features;
     const size_t padding;
+    const af::ActivationFunctionType activationFunction;
   };
 
 
@@ -109,6 +112,7 @@ namespace cnnet {
   class CNNTopology {
     typedef typename std::vector<std::shared_ptr<CNNTopologyLayer>>::const_iterator const_iterator;
     friend std::ostream &operator<<(std::ostream &os, const CNNTopology &topology);
+    friend const CNNTopology stringToTopology(const std::string &str);
 
   public:
     CNNTopology();
@@ -127,23 +131,29 @@ namespace cnnet {
     const_iterator cend() const { return layers.end(); }
     const_iterator end() const { return layers.end(); }
 
-
     const std::shared_ptr<CNNTopologyLayer> &operator()(size_t index) const;
 
-
-    void addConvolution(const size_t features, const std::pair<size_t, size_t> &filterSize,
-                        const size_t stride, const size_t padding);
-
-    void addPooling(const PoolingType poolingType, const std::pair<size_t, size_t> &poolSize,
-                    const size_t stride);
+    void setActivationFunction(const af::ActivationFunctionType act_function) {
+      activationFunction = act_function;
+    }
+    const af::ActivationFunctionType getActivationFunction() const { return activationFunction; }
 
     const std::pair<size_t, size_t> &getInputSize() const { return inputSize; }
     const size_t getDeepth() const { return layers.size(); }
     const std::vector<std::shared_ptr<CNNTopologyLayer>> &getTopology() const { return layers; }
 
   private:
+    void addConvolution(const size_t features, const std::pair<size_t, size_t> &filterSize,
+                        const af::ActivationFunctionType aFunction, const size_t stride,
+                        const size_t padding);
+
+    void addPooling(const PoolingType poolingType, const std::pair<size_t, size_t> &poolSize,
+                    const size_t stride);
+
+  private:
     std::pair<size_t, size_t> inputSize;
     std::vector<std::shared_ptr<CNNTopologyLayer>> layers;
+    af::ActivationFunctionType activationFunction;
   };
 
   const LayerType stringToLayerType(const std::string &str);

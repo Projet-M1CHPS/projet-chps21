@@ -6,10 +6,10 @@ namespace cnnet {
   CNNLayer::CNNLayer(const size_t stride) : stride(stride) {}
 
 
-  CNNConvolutionLayer::CNNConvolutionLayer(std::pair<size_t, size_t> sizeFilter,
-                                           const size_t stride, const size_t padding)
-      : filter(sizeFilter), CNNLayer(stride), padding(padding),
-        activation_function(af::ActivationFunctionType::sigmoid) {
+  CNNConvolutionLayer::CNNConvolutionLayer(
+          const std::pair<size_t, size_t> sizeFilter, const af::ActivationFunctionType aFunction, const size_t stride,
+                        const size_t padding)
+      : filter(sizeFilter), CNNLayer(stride), padding(padding), activationFunction(aFunction) {
     filter.randomize(0.f, 1.f);
   }
 
@@ -36,7 +36,7 @@ namespace cnnet {
       colsPos = 0;
     }
 
-    auto afunc = af::getAFFromType(activation_function).first;
+    auto afunc = af::getAFFromType(activationFunction).first;
     std::transform(output.cbegin(), output.cend(), output.begin(), afunc);
   }
 
@@ -106,10 +106,9 @@ namespace cnnet {
       colsPos = 0;
     }
 
-    for(size_t i = 0; i < filter.getRows(); i++)
-      for(size_t j = 0; j < filter.getCols(); j++)
+    for (size_t i = 0; i < filter.getRows(); i++)
+      for (size_t j = 0; j < filter.getCols(); j++)
         matFiltre(i, j) -= 0.2 * convoStorage.errorFilter(i, j);
-
   }
 
 

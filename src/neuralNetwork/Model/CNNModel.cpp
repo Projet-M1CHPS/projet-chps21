@@ -24,7 +24,6 @@ namespace cnnet {
 
     auto &cnn = res.getCnn();
     cnn.setTopology(topoCNN);
-    cnn.setActivationFunction(af::ActivationFunctionType::sigmoid);
     cnn.randomizeWeight();
 
     const size_t size = cnn.getOutputSize();

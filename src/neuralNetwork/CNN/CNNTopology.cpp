@@ -6,14 +6,14 @@ namespace cnnet {
       : filter(filter), stride(stride) {}
 
 
-  CNNTopologyLayerConvolution::CNNTopologyLayerConvolution(const size_t features,
-                                                           const std::pair<size_t, size_t> filter,
-                                                           const size_t stride,
-                                                           const size_t padding)
-      : features(features), CNNTopologyLayer(filter, stride), padding(padding) {}
+  CNNTopologyLayerConvolution::CNNTopologyLayerConvolution(
+          const size_t features, const std::pair<size_t, size_t> filter,
+          const af::ActivationFunctionType aFunction, const size_t stride, const size_t padding)
+      : features(features), CNNTopologyLayer(filter, stride), padding(padding),
+        activationFunction(aFunction) {}
 
   std::shared_ptr<CNNLayer> CNNTopologyLayerConvolution::convertToLayer() const {
-    return std::make_shared<CNNConvolutionLayer>(filter, stride, padding);
+    return std::make_shared<CNNConvolutionLayer>(filter, activationFunction, stride, padding);
   }
 
   std::shared_ptr<CNNStorageBP>
@@ -99,10 +99,10 @@ namespace cnnet {
   }
 
 
-
-
-  CNNTopology::CNNTopology() : inputSize(0, 0) {}
-  CNNTopology::CNNTopology(const std::pair<size_t, size_t> &inputSize) : inputSize(inputSize) {}
+  CNNTopology::CNNTopology()
+      : inputSize(0, 0), activationFunction(af::ActivationFunctionType::sigmoid) {}
+  CNNTopology::CNNTopology(const std::pair<size_t, size_t> &inputSize)
+      : inputSize(inputSize), activationFunction(af::ActivationFunctionType::sigmoid) {}
 
   const std::shared_ptr<CNNTopologyLayer> &CNNTopology::operator()(size_t index) const {
     if (index >= layers.size()) throw std::out_of_range("Index out of range");
@@ -111,10 +111,11 @@ namespace cnnet {
   }
 
   void CNNTopology::addConvolution(const size_t features,
-                                   const std::pair<size_t, size_t> &filterSize, const size_t stride,
+                                   const std::pair<size_t, size_t> &filterSize,
+                                   const af::ActivationFunctionType aFunction, const size_t stride,
                                    const size_t padding) {
-    layers.push_back(
-            std::make_shared<CNNTopologyLayerConvolution>(features, filterSize, stride, padding));
+    layers.push_back(std::make_shared<CNNTopologyLayerConvolution>(features, filterSize, aFunction,
+                                                                   stride, padding));
   }
 
   void CNNTopology::addPooling(const PoolingType poolingType,
@@ -156,12 +157,18 @@ namespace cnnet {
     CNNTopology res(std::make_pair(inputRow, inputCol));
 
     std::string type;
+    // read activation function type and store it
+    // ss >> type;
+    res.activationFunction =
+            af::ActivationFunctionType::sigmoid;   // stringToActivationFunctionType(type);
+
     while (ss >> type) {
       LayerType layerType = stringToLayerType(type);
       if (layerType == LayerType::CONVOLUTION) {
         size_t features = 0, filterRow = 0, filterCol = 0, stride = 0, padding = 0;
         ss >> features >> filterRow >> filterCol >> stride >> padding;
-        res.addConvolution(features, {filterRow, filterCol}, stride, padding);
+        res.addConvolution(features, {filterRow, filterCol}, res.activationFunction, stride,
+                           padding);
       } else if (layerType == LayerType::POOLING) {
         std::string strPoolingType;
         size_t poolRow, poolCol, stride;
@@ -178,6 +185,7 @@ namespace cnnet {
 
   std::ostream &operator<<(std::ostream &os, const CNNTopology &nn) {
     os << "input : " << nn.inputSize.first << " " << nn.inputSize.second << "\n";
+    os << "activation function : " << /*af::AFTypeToStr(nn.activationFunction) <<*/ "\n";
     for (auto &i : nn.layers) { os << *i << "\n"; }
     return os;
   }

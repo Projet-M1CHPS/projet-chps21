@@ -30,6 +30,7 @@ namespace af {
   ActivationFunctionType strToAFType(const std::string &str);
   std::string AFTypeToStr(ActivationFunctionType type);
 
+
   /* We assume that every activation function should operate on FP values
    * Henceforth we add static assert at the beginning of every AF
    *

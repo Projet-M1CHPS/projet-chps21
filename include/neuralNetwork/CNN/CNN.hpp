@@ -18,9 +18,6 @@ namespace cnnet {
     void setTopology(CNNTopology const &topology);
     [[nodiscard]] CNNTopology const &getTopology() const { return topology; }
 
-    void setActivationFunction(af::ActivationFunctionType type) { activation_function = type; }
-    const af::ActivationFunctionType getActivationFunctions() const { return activation_function; }
-
     const size_t getOutputSize() const {
       return layerMatrix.back().size() * layerMatrix.back()[0].getCols() *
              layerMatrix.back()[0].getRows();
@@ -37,8 +34,6 @@ namespace cnnet {
 
     std::vector<std::vector<std::shared_ptr<CNNLayer>>> layers;
     std::vector<std::vector<FloatMatrix>> layerMatrix;
-
-    af::ActivationFunctionType activation_function;
   };
 
 }   // namespace cnnet

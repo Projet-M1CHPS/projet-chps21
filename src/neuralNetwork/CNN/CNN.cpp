@@ -6,14 +6,12 @@ namespace cnnet {
     this->topology = std::move(other.topology);
     this->layers = std::move(other.layers);
     this->layerMatrix = std::move(other.layerMatrix);
-    this->activation_function = std::move(other.activation_function);
   }
 
   CNN &CNN::operator=(CNN &&other) noexcept {
     this->topology = std::move(other.topology);
     this->layers = std::move(other.layers);
     this->layerMatrix = std::move(other.layerMatrix);
-    this->activation_function = std::move(other.activation_function);
     return *this;
   }
 
