@@ -28,9 +28,17 @@ namespace cnnet {
     createStorage(const std::pair<size_t, size_t> &inputSize) const = 0;
 
     virtual const std::pair<size_t, size_t>
-    calculateOutputSize(const std::pair<size_t, size_t> &inputSize) const = 0;
+    getOutputSize(const std::pair<size_t, size_t> &inputSize) const {
+      return std::make_pair(0, 0);
+    };
+
+    static const bool isValidParameters(const std::pair<size_t, size_t> inputSize,
+                                        const std::pair<size_t, size_t> filterSize,
+                                        const size_t stride, const size_t padding);
 
   protected:
+    virtual const std::pair<size_t, size_t>
+    computeOutputSize(const std::pair<size_t, size_t> &inputSize) const = 0;
     virtual std::ostream &printTo(std::ostream &) const = 0;
 
   protected:
@@ -41,7 +49,8 @@ namespace cnnet {
 
   class CNNTopologyLayerConvolution final : public CNNTopologyLayer {
   public:
-    CNNTopologyLayerConvolution(const size_t features, const std::pair<size_t, size_t> filter,
+    CNNTopologyLayerConvolution(const std::pair<size_t, size_t> inputSize, const size_t features,
+                                const std::pair<size_t, size_t> filter,
                                 const af::ActivationFunctionType aFunction, const size_t stride,
                                 const size_t padding);
     ~CNNTopologyLayerConvolution() = default;
@@ -54,21 +63,25 @@ namespace cnnet {
     createStorage(const std::pair<size_t, size_t> &inputSize) const override;
 
     const std::pair<size_t, size_t>
-    calculateOutputSize(const std::pair<size_t, size_t> &inputSize) const override;
+    getOutputSize(const std::pair<size_t, size_t> &inputSize) const override {return outputSize;};
 
   private:
+    const std::pair<size_t, size_t>
+    computeOutputSize(const std::pair<size_t, size_t> &inputSize) const override;
     std::ostream &printTo(std::ostream &) const override;
 
   private:
     const size_t features;
     const size_t padding;
     const af::ActivationFunctionType activationFunction;
+    const std::pair<size_t, size_t> outputSize;
   };
 
 
   class CNNTopologyLayerPooling : public CNNTopologyLayer {
   public:
-    CNNTopologyLayerPooling(const std::pair<size_t, size_t> filter, const size_t stride);
+    CNNTopologyLayerPooling(const std::pair<size_t, size_t> inputSize,
+                            const std::pair<size_t, size_t> filter, const size_t stride);
     ~CNNTopologyLayerPooling() = default;
 
     virtual std::shared_ptr<CNNLayer> convertToLayer() const = 0;
@@ -76,15 +89,21 @@ namespace cnnet {
     createStorage(const std::pair<size_t, size_t> &inputSize) const = 0;
 
     const std::pair<size_t, size_t>
-    calculateOutputSize(const std::pair<size_t, size_t> &inputSize) const override;
+    getOutputSize(const std::pair<size_t, size_t> &inputSize) const override {return outputSize;};
 
   private:
+    const std::pair<size_t, size_t>
+    computeOutputSize(const std::pair<size_t, size_t> &inputSize) const override;
     virtual std::ostream &printTo(std::ostream &) const = 0;
+
+  protected:
+    const std::pair<size_t, size_t> outputSize;
   };
 
   class CNNTopologyLayerMaxPooling final : public CNNTopologyLayerPooling {
   public:
-    CNNTopologyLayerMaxPooling(const std::pair<size_t, size_t> filter, const size_t stride);
+    CNNTopologyLayerMaxPooling(const std::pair<size_t, size_t> inputSize,
+                               const std::pair<size_t, size_t> filter, const size_t stride);
     ~CNNTopologyLayerMaxPooling() = default;
 
     std::shared_ptr<CNNLayer> convertToLayer() const override;
@@ -97,7 +116,8 @@ namespace cnnet {
 
   class CNNTopologyLayerAvgPooling final : public CNNTopologyLayerPooling {
   public:
-    CNNTopologyLayerAvgPooling(const std::pair<size_t, size_t> filter, const size_t stride);
+    CNNTopologyLayerAvgPooling(const std::pair<size_t, size_t> inputSize,
+                               const std::pair<size_t, size_t> filter, const size_t stride);
     ~CNNTopologyLayerAvgPooling() = default;
 
     std::shared_ptr<CNNLayer> convertToLayer() const override;
@@ -143,12 +163,13 @@ namespace cnnet {
     const std::vector<std::shared_ptr<CNNTopologyLayer>> &getTopology() const { return layers; }
 
   private:
-    void addConvolution(const size_t features, const std::pair<size_t, size_t> &filterSize,
+    void addConvolution(const std::pair<size_t, size_t> &inputSize, const size_t features,
+                        const std::pair<size_t, size_t> &filterSize,
                         const af::ActivationFunctionType aFunction, const size_t stride,
                         const size_t padding);
 
-    void addPooling(const PoolingType poolingType, const std::pair<size_t, size_t> &poolSize,
-                    const size_t stride);
+    void addPooling(const std::pair<size_t, size_t> &inputSize, const PoolingType poolingType,
+                    const std::pair<size_t, size_t> &poolSize, const size_t stride);
 
   private:
     std::pair<size_t, size_t> inputSize;

@@ -32,7 +32,7 @@ namespace cnnet {
     std::pair<size_t, size_t> inputSize(topology.getInputSize());
     for (size_t i = 0; i < topology(0)->getFeatures(); i++) {
       layers[0][i] = topology(0)->convertToLayer();
-      layerMatrix[0][i] = FloatMatrix(topology(0)->calculateOutputSize(inputSize));
+      layerMatrix[0][i] = FloatMatrix(topology(0)->getOutputSize(inputSize));
     }
 
     inputSize = std::make_pair(layerMatrix[0].front().getRows(), layerMatrix[0].front().getCols());
@@ -42,7 +42,7 @@ namespace cnnet {
                                  layerMatrix[i - 1].front().getCols());
       for (size_t j = 0; j < layers[i].size(); j++) {
         layers[i][j] = topology(i)->convertToLayer();
-        layerMatrix[i][j] = FloatMatrix(topology(i)->calculateOutputSize(inputSize));
+        layerMatrix[i][j] = FloatMatrix(topology(i)->getOutputSize(inputSize));
       }
     }
 
