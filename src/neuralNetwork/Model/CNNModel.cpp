@@ -24,7 +24,7 @@ namespace cnnet {
 
     auto &cnn = res.getCnn();
     cnn.setTopology(topoCNN);
-    cnn.randomizeWeight();
+    //cnn.randomizeWeight();
 
     const size_t size = cnn.getOutputSize();
     res.flatten = FloatMatrix(size, 1);

@@ -3,8 +3,7 @@
 
 namespace cnnet {
 
-  CNNModelOptimizer::CNNModelOptimizer(
-          CNNModel &model, std::shared_ptr<OptimizationMethod> tm)
+  CNNModelOptimizer::CNNModelOptimizer(CNNModel &model, std::shared_ptr<OptimizationMethod> tm)
       : nn_cnn(&model.getCnn()), flatten(&model.getFlatten()), opti_meth(tm) {
     // mlpOpti = MLPModelOptimizer(model.getMlp(), tm);
 
@@ -34,7 +33,8 @@ namespace cnnet {
     }
   }
 
-  CNNModelStochOptimizer::CNNModelStochOptimizer(CNNModel &model, std::shared_ptr<OptimizationMethod> tm)
+  CNNModelStochOptimizer::CNNModelStochOptimizer(CNNModel &model,
+                                                 std::shared_ptr<OptimizationMethod> tm)
       : CNNModelOptimizer(model, tm), mlpOpti(model.getMlp(), opti_meth) {}
 
   void CNNModelStochOptimizer::train(const math::FloatMatrix &input,
@@ -53,7 +53,7 @@ namespace cnnet {
       std::cout << std::endl;
     }*/
 
-    //for(auto& i : errorFlatten) i = 1.0f;
+    // for(auto& i : errorFlatten) i = 1.0f;
 
     std::cout << "error flatten \n" << errorFlatten << std::endl;
 
@@ -102,10 +102,12 @@ namespace cnnet {
     for (auto &storageElement : storage.back()) {
       for (auto &val : storageElement->output) {
         val = errorFlatten(index, 0);
+        std::cout << errorFlatten(index, 0) << std::endl;
         index++;
       }
     }
 
+    std::cout << "convert " << storage.back().size() << std::endl;
     std::cout << storage.back()[0]->output << std::endl;
 
     auto &layers = nn_cnn->getLayers();
@@ -114,22 +116,38 @@ namespace cnnet {
     for (long i = storage.size() - 2; i >= -1; i--) {
       size_t l = 0;
       for (size_t j = 0; j < storage[i].size(); j++) {
+        const size_t bufferL = l;
         for (size_t k = 0; k < topology(i + 1)->getFeatures(); k++) {
           std::cout << "\n[" << i << ", " << j << "] [" << i + 1 << ", " << l << "]" << std::endl;
           std::cout << storage[i + 1][l]->output << std::endl;
           layers[i + 1][j]->computeBackward(storage[i][j]->output, *storage[i + 1][l++]);
           std::cout << storage[i][j]->output << std::endl;
         }
+        l = bufferL;
+        for (auto &val : storage[i][j]->output) { val = 0.f; };
+        for (size_t k = 0; k < topology(i + 1)->getFeatures(); k++) {
+          storage[i][j]->output += storage[i + 1][l++]->errorInput;
+        }
+        if (topology(i + 1)->getFeatures() > 1) {
+          storage[i][j]->output *= 1.f / (float) topology(i + 1)->getFeatures();
+        }
       }
     }
 
     FloatMatrix bufferInput(input);
-    for (size_t i = 0; i < topology(0)->getFeatures(); i++)
-    {
-      std::cout << "\n[input] [" <<  0 << ", " << i << "]" << std::endl;
+    for (size_t i = 0; i < topology(0)->getFeatures(); i++) {
+      std::cout << "\n[input] [" << 0 << ", " << i << "]" << std::endl;
       layers[0][i]->computeBackward(bufferInput, *storage[0][i]);
+      std::cout << "lla" << std::endl;
     }
-
+    for (auto &val : bufferInput) { val = 0.f; };
+    for (size_t i = 0; i < topology(0)->getFeatures(); i++) {
+      bufferInput += storage[0][i]->errorInput;
+    }
+    if (topology(0)->getFeatures() > 1) {
+      bufferInput *= 1.f / (float) topology(0)->getFeatures();
+    }
+    std::cout << bufferInput << std::endl;
   }
 
 }   // namespace cnnet

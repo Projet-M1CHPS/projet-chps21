@@ -28,7 +28,7 @@ namespace cnnet {
 
   std::shared_ptr<CNNStorageBP>
   CNNTopologyLayerConvolution::createStorage(const std::pair<size_t, size_t> &inputSize) const {
-    return std::make_shared<CNNStorageBPConvolution>(getOutputSize(inputSize), filter, stride);
+    return std::make_shared<CNNStorageBPConvolution>(inputSize, getOutputSize(inputSize), filter, stride);
   }
 
   const std::pair<size_t, size_t>
@@ -81,7 +81,7 @@ namespace cnnet {
 
   std::shared_ptr<CNNStorageBP>
   CNNTopologyLayerMaxPooling::createStorage(const std::pair<size_t, size_t> &inputSize) const {
-    return std::make_shared<CNNStorageBPMaxPooling>(getOutputSize(inputSize));
+    return std::make_shared<CNNStorageBPMaxPooling>(inputSize, getOutputSize(inputSize));
   }
 
   std::ostream &CNNTopologyLayerMaxPooling::printTo(std::ostream &os) const {
@@ -102,7 +102,7 @@ namespace cnnet {
 
   std::shared_ptr<CNNStorageBP>
   CNNTopologyLayerAvgPooling::createStorage(const std::pair<size_t, size_t> &inputSize) const {
-    return std::make_shared<CNNStorageBPAvgPooling>(getOutputSize(inputSize));
+    return std::make_shared<CNNStorageBPAvgPooling>(inputSize, getOutputSize(inputSize));
   }
 
   std::ostream &CNNTopologyLayerAvgPooling::printTo(std::ostream &os) const {
@@ -175,7 +175,7 @@ namespace cnnet {
     // read activation function type and store it
     // ss >> type;
     res.activationFunction =
-            af::ActivationFunctionType::sigmoid;   // stringToActivationFunctionType(type);
+            af::ActivationFunctionType::relu;   // stringToActivationFunctionType(type);
 
     while (ss >> type) {
       LayerType layerType = stringToLayerType(type);

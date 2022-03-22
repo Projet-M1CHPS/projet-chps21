@@ -10,7 +10,7 @@ namespace cnnet {
           const std::pair<size_t, size_t> sizeFilter, const af::ActivationFunctionType aFunction, const size_t stride,
                         const size_t padding)
       : filter(sizeFilter), CNNLayer(stride), padding(padding), activationFunction(aFunction) {
-    filter.randomize(0.f, 1.f);
+    //filter.randomize(0.f, 1.f);
   }
 
 
@@ -99,7 +99,7 @@ namespace cnnet {
                              std::abs(l - (long) filter.getCols() + 1));
           }
         }
-        input(i, j) = sum;
+        storage.errorInput(i, j) = sum;
         colsPos++;
       }
       rowsPos++;

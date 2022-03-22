@@ -10,18 +10,20 @@ namespace cnnet {
 
   class CNNStorageBP {
   public:
-    CNNStorageBP(const std::pair<size_t, size_t> &outputSize);
+    CNNStorageBP(const std::pair<size_t, size_t> &inputSize,
+                 const std::pair<size_t, size_t> &outputSize);
     ~CNNStorageBP() = default;
 
     // protected:
+    FloatMatrix errorInput;
     FloatMatrix output;
   };
 
   class CNNStorageBPConvolution final : public CNNStorageBP {
   public:
-    CNNStorageBPConvolution(const std::pair<size_t, size_t> &outputSize,
-                            const std::pair<size_t, size_t> &filterSize,
-                            const size_t stride);
+    CNNStorageBPConvolution(const std::pair<size_t, size_t> &inputSize,
+                            const std::pair<size_t, size_t> &outputSize,
+                            const std::pair<size_t, size_t> &filterSize, const size_t stride);
     ~CNNStorageBPConvolution() = default;
 
     // private:
@@ -32,13 +34,15 @@ namespace cnnet {
 
   class CNNStorageBPPooling : public CNNStorageBP {
   public:
-    CNNStorageBPPooling(const std::pair<size_t, size_t> &outputSize);
+    CNNStorageBPPooling(const std::pair<size_t, size_t> &inputSize,
+                        const std::pair<size_t, size_t> &outputSize);
     ~CNNStorageBPPooling() = default;
   };
 
   class CNNStorageBPMaxPooling final : public CNNStorageBPPooling {
   public:
-    CNNStorageBPMaxPooling(const std::pair<size_t, size_t> &outputSize);
+    CNNStorageBPMaxPooling(const std::pair<size_t, size_t> &inputSize,
+                           const std::pair<size_t, size_t> &outputSize);
     ~CNNStorageBPMaxPooling() = default;
 
     // private:
@@ -47,7 +51,8 @@ namespace cnnet {
 
   class CNNStorageBPAvgPooling final : public CNNStorageBPPooling {
   public:
-    CNNStorageBPAvgPooling(const std::pair<size_t, size_t> &outputSize);
+    CNNStorageBPAvgPooling(const std::pair<size_t, size_t> &inputSize,
+                           const std::pair<size_t, size_t> &outputSize);
     ~CNNStorageBPAvgPooling() = default;
   };
 

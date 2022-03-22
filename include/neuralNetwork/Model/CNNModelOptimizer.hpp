@@ -7,7 +7,6 @@
 #include "neuralNetwork/CNN/CNN.hpp"
 #include "neuralNetwork/CNN/CNNStorageBP.hpp"
 #include "neuralNetwork/Perceptron/OptimizationMethod.hpp"
-//#include "neuralNetwork/CNN/OptimizationMethod.hpp"
 #include <iostream>
 #include <utility>
 
@@ -40,14 +39,15 @@ namespace cnnet {
     virtual void optimize(const std::vector<math::FloatMatrix> &inputs,
                           const std::vector<math::FloatMatrix> &targets) = 0;
 
-  protected:
+  public:
     virtual void forward(math::FloatMatrix const &input) = 0;
-    virtual void backward(math::FloatMatrix const &input, math::FloatMatrix const &errorFlatten) = 0;
+    virtual void backward(math::FloatMatrix const &input,
+                          math::FloatMatrix const &errorFlatten) = 0;
 
-  protected:
+  public:
     CNN *nn_cnn;
     FloatMatrix *flatten;
-    MLPerceptron* nn_mlp;
+    MLPerceptron *nn_mlp;
 
     std::vector<std::vector<std::shared_ptr<CNNStorageBP>>> storage;
 
@@ -64,7 +64,7 @@ namespace cnnet {
     void optimize(const std::vector<math::FloatMatrix> &inputs,
                   const std::vector<math::FloatMatrix> &targets) override;
 
-  private:
+  public:
     void forward(math::FloatMatrix const &input);
 
     void backward(math::FloatMatrix const &target, math::FloatMatrix const &errorFlatten);

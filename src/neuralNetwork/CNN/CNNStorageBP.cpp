@@ -3,13 +3,16 @@
 
 namespace cnnet {
 
-  CNNStorageBP::CNNStorageBP(const std::pair<size_t, size_t> &outputSize) : output(outputSize) {}
+  CNNStorageBP::CNNStorageBP(const std::pair<size_t, size_t> &inputSize,
+                             const std::pair<size_t, size_t> &outputSize)
+      : errorInput(inputSize), output(outputSize) {}
 
 
-  CNNStorageBPConvolution::CNNStorageBPConvolution(const std::pair<size_t, size_t> &outputSize,
+  CNNStorageBPConvolution::CNNStorageBPConvolution(const std::pair<size_t, size_t> &inputSize,
+                                                   const std::pair<size_t, size_t> &outputSize,
                                                    const std::pair<size_t, size_t> &filterSize,
                                                    const size_t stride)
-      : CNNStorageBP(outputSize), errorFilter(filterSize),
+      : CNNStorageBP(inputSize, outputSize), errorFilter(filterSize),
         dilated4Input(2 * (filterSize.first - 1) + outputSize.first +
                               (stride - 1) * (outputSize.first - 1),
                       2 * (filterSize.second - 1) + outputSize.second +
@@ -21,13 +24,16 @@ namespace cnnet {
   }
 
 
-  CNNStorageBPPooling::CNNStorageBPPooling(const std::pair<size_t, size_t> &outputSize)
-      : CNNStorageBP(outputSize) {}
+  CNNStorageBPPooling::CNNStorageBPPooling(const std::pair<size_t, size_t> &inputSize,
+                                           const std::pair<size_t, size_t> &outputSize)
+      : CNNStorageBP(inputSize, outputSize) {}
 
-  CNNStorageBPMaxPooling::CNNStorageBPMaxPooling(const std::pair<size_t, size_t> &outputSize)
-      : CNNStorageBPPooling(outputSize), maxIndex(outputSize) {}
+  CNNStorageBPMaxPooling::CNNStorageBPMaxPooling(const std::pair<size_t, size_t> &inputSize,
+                                                 const std::pair<size_t, size_t> &outputSize)
+      : CNNStorageBPPooling(inputSize, outputSize), maxIndex(outputSize) {}
 
-  CNNStorageBPAvgPooling::CNNStorageBPAvgPooling(const std::pair<size_t, size_t> &outputSize)
-      : CNNStorageBPPooling(outputSize) {}
+  CNNStorageBPAvgPooling::CNNStorageBPAvgPooling(const std::pair<size_t, size_t> &inputSize,
+                                                 const std::pair<size_t, size_t> &outputSize)
+      : CNNStorageBPPooling(inputSize, outputSize) {}
 
 }   // namespace cnnet
