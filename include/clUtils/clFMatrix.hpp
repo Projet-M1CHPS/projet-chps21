@@ -4,6 +4,7 @@
 #include "Matrix.hpp"
 #include "clWrapper.hpp"
 #include <CL/opencl.hpp>
+#include <utility>
 #include <clblast.h>
 
 namespace math {
@@ -33,6 +34,17 @@ namespace math {
      * @param wrapper Wrapper to be used for memory allocation
      */
     clFMatrix(size_t rows, size_t cols, utils::clWrapper &wrapper);
+
+    /**
+     * @brief Creates a new matrix from an existing OpenCL buffer
+     * The buffer is not copied, the new matrix is just a wrapper around the existing buffer
+     *
+     * @param subbuffer The OpenCL buffer to be used for the matrix
+     * @param rows The number of rows of the matrix
+     * @param cols The number of cols of the matrix
+     */
+    clFMatrix(cl::Buffer subbuffer, size_t rows, size_t cols)
+        : data(std::move(subbuffer)), rows(rows), cols(cols) {}
 
     /**
      * @brief Allocates a new matrix on the device, and copy the content of the host array to it
@@ -265,8 +277,8 @@ namespace math {
      * Note that if this operation is non-blocking, the user is responsible for ensuring that the
      * operation is finished before using the matrix
      */
-    void ipsub(float factor, const clFMatrix &other, utils::clWrapper &wrapper, cl::CommandQueue &queue,
-               bool blocking = false);
+    void ipsub(float factor, const clFMatrix &other, utils::clWrapper &wrapper,
+               cl::CommandQueue &queue, bool blocking = false);
 
     /**
      * @brief Inplace subtraction of two matrices. By default, this operation is non-blocking
@@ -337,15 +349,17 @@ namespace math {
     }
 
     void iphadamard(const clFMatrix &other, utils::clWrapper &wrapper, cl::CommandQueue &queue,
-                         bool blocking = false) const;
+                    bool blocking = false) const;
 
     void iphadamard(const clFMatrix &other, utils::clWrapper &wrapper,
-                         bool blocking = false) const {
+                    bool blocking = false) const {
       iphadamard(other, wrapper, wrapper.getDefaultQueue(), blocking);
     }
 
-    clFMatrix hadamard(const clFMatrix &other, utils::clWrapper &wrapper, cl::CommandQueue& queue, bool blocking = false) const;
-    clFMatrix hadamard(const clFMatrix &other, utils::clWrapper &wrapper, bool blocking = false) const {
+    clFMatrix hadamard(const clFMatrix &other, utils::clWrapper &wrapper, cl::CommandQueue &queue,
+                       bool blocking = false) const;
+    clFMatrix hadamard(const clFMatrix &other, utils::clWrapper &wrapper,
+                       bool blocking = false) const {
       return hadamard(other, wrapper, wrapper.getDefaultQueue(), blocking);
     }
 

@@ -15,5 +15,6 @@ target_link_libraries(Math INTERFACE BLAS::BLAS)
 
 add_subdirectory(image)
 add_subdirectory(controlSystem)
+add_subdirectory(controlSystem2)
 add_subdirectory(neuralNetwork)
 add_subdirectory(kernels)

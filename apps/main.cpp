@@ -17,7 +17,6 @@ void setupLogger() {
   auto &handler = logger.addHandler<StreamLogHandler>("term", std::cout);
   handler.tsType(tscl::timestamp_t::Partial);
   handler.minLvl(Log::Trace);
-  // handler.enable(false);
 
   auto &thandler = logger.addHandler<StreamLogHandler>("file", "logs.txt");
   thandler.minLvl(Log::Information);
@@ -27,37 +26,39 @@ bool createAndTrain(std::shared_ptr<utils::clWrapper> wrapper,
                     std::filesystem::path const &input_path,
                     std::filesystem::path const &output_path) {
   tscl::logger("Current version: " + tscl::Version::current.to_string(), tscl::Log::Debug);
-  tscl::logger("Fetching model from  " + input_path.string(), tscl::Log::Debug);
+  tscl::logger("Fetching input from  " + input_path.string(), tscl::Log::Debug);
   tscl::logger("Output path: " + output_path.string(), tscl::Log::Debug);
 
   if (not std::filesystem::exists(output_path)) std::filesystem::create_directories(output_path);
 
-  tscl::logger("Creating collection loader", tscl::Log::Debug);
-  CITCLoader loader(32, 32);
+  constexpr int kImageSize = 64;
+  // Ensure this is the same size as the batch size
+  constexpr int kTensorSize = 256;
+
+  tscl::logger("Loading dataset", tscl::Log::Debug);
+  TrainingCollectionLoader loader(input_path, kTensorSize, kImageSize, kImageSize, wrapper);
   auto &pre_engine = loader.getPreProcessEngine();
   // Add preprocessing transformations here
   pre_engine.addTransformation(std::make_shared<image::transform::Inversion>());
+
   auto &engine = loader.getPostProcessEngine();
   // Add postprocessing transformations here
   engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
 
-  tscl::logger("Loading collection", tscl::Log::Information);
-  auto training_collection = loader.load(input_path, *wrapper);
+  std::unique_ptr<TrainingCollection> training_collection = loader.load();
 
-
-  // Create a correctly-sized topology1
-  nnet::MLPTopology topology = {32 * 32, 64, 64, 32, 16};
+  // Create a correctly-sized topology
+  nnet::MLPTopology topology = {kImageSize * kImageSize, 1024, 512, 256, 128, 64, 64, 64, 16};
   topology.pushBack(training_collection->getClassCount());
 
   auto model = nnet::MLPModel::randomReluSigmoid(wrapper, topology);
 
-  auto optimizer = nnet::MLPStochOptimizer::make<nnet::SGDOptimization>(
-          *model, 0.1);
+  auto optimizer = nnet::MLPStochOptimizer::make<nnet::SGDOptimization>(*model, 0.0001);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
 
   TrainingControllerParameters parameters(input_path, output_path, 50, 1, false);
-  CTController controller(parameters, *model, *optimizer, *training_collection);
+  TrainingController controller(output_path, max_epoch, true);
   ControllerResult res = controller.run();
 
   if (not res) {
