@@ -18,56 +18,22 @@ namespace control {
      *
      * @param image
      */
-    void append(const math::FloatMatrix &image) { inputs.push_back(image); }
+    void append(const math::clFMatrix &image, cl::CommandQueue &queue, bool blocking = true) {
+      inputs.emplace_back(image, queue, blocking);
+    }
 
-    /** Move copy a single image to the set
-     *
-     * @param image
-     */
-    void append(math::FloatMatrix &&image) { inputs.push_back(image); }
+    void append(const math::clFMatrix &image, bool blocking = true) {
+      append(image, utils::cl_wrapper.getDefaultQueue(), blocking);
+    }
 
-    /** Appends a single image to the set, first convert it to a float matrix
-     *
-     * @param image
-     * @param normalization Divide every pixel by this value
-     */
-    void append(const image::GrayscaleImage &image, float normalization = 255.0f) {
-      inputs.push_back(image::imageToMatrix(image, normalization));
+    void append(math::clFMatrix &&image) { inputs.emplace_back(std::move(image)); }
+
+    static ImageInputSet load(const std::filesystem::path &source, utils::clWrapper &wrapper,
+                              cl::CommandQueue &queue, bool blocking = true);
+
+    static ImageInputSet load(const std::filesystem::path &directory, utils::clWrapper &wrapper,
+                              bool blocking = true) {
+      return load(directory, wrapper, wrapper.getDefaultQueue(), blocking);
     }
   };
-
-  /** @brief Helper class to load an ImageInputSet from a directory
-   *
-   */
-  class ImageInputSetLoader {
-  public:
-    /** Load a set of images from a directory or a single file
-     *  If path is a directory, images will be loaded recursively
-     *
-     * @param path
-     * @return
-     */
-    static ImageInputSet load(const std::filesystem::path &path);
-
-    /** Load a set of images from a directory or a single file, and records their paths in the
-     * process
-     * If path is a directory, images will be loaded recursively
-     *
-     * @param path
-     * @return
-     */
-    static std::pair<ImageInputSet, std::vector<std::filesystem::path>>
-    loadWithPaths(const std::filesystem::path &path);
-
-  private:
-    static ImageInputSet loadFile(const std::filesystem::path &path,
-                                  std::vector<std::filesystem::path> *paths);
-
-    static ImageInputSet loadDirectory(const std::filesystem::path &path,
-                                       std::vector<std::filesystem::path> *paths);
-
-    static void loadDirectory(const std::filesystem::path &path, ImageInputSet &set,
-                              std::vector<std::filesystem::path> *paths);
-  };
-
 }   // namespace control

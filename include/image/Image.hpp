@@ -126,17 +126,19 @@ namespace image {
 
     /**
      * @brief Getter for the image area
-     * 
+     *
      * @return Number of pixel in the image
      */
     [[nodiscard]] size_t getSize() const { return height * width; }
 
     /**
-     * @brief Change the images dimensions properties (width, height) and re-allocate the pixels array accordingly.
+     * @brief Change the images dimensions properties (width, height) and re-allocate the pixels
+     * array accordingly.
      */
     void setSize(size_t new_width, size_t new_height) {
-      if(new_width <= 0) throw std::invalid_argument("setSize needs a new_width > 0");
-      else if(new_height <= 0) throw std::invalid_argument("setSize needs a new_height > 0");
+      if (new_width <= 0) throw std::invalid_argument("setSize needs a new_width > 0");
+      else if (new_height <= 0)
+        throw std::invalid_argument("setSize needs a new_height > 0");
       std::tie(width, height) = {new_width, new_height};
       pixel_data = std::make_unique<grayscale_t[]>(width * height);
     }
@@ -189,13 +191,14 @@ namespace image {
 
     /** @brief Returns a vector containing all the png images located in the given directory
      *
-     * @param directory_path 
+     * @param directory_path
      */
-    static std::vector<image::GrayscaleImage> loadDirectory(std::filesystem::path const &directory_path);
+    static std::vector<image::GrayscaleImage>
+    loadDirectory(std::filesystem::path const &directory_path);
 
     /**
      * @brief Get basic informations about a file without loading it
-     * 
+     *
      * @param path Image path
      * @return (width, height, channels)
      */
@@ -203,16 +206,4 @@ namespace image {
 
   private:
   };
-
-  template<typename real>
-  math::Matrix<real> imageToMatrix(GrayscaleImage const &image, real normalize = 1.0) {
-    math::Matrix<real> res(image.getHeight() * image.getWidth(), 1);
-
-    auto data = res.getData();
-    auto image_data = image.getData();
-
-    for (size_t i = 0; i < image.getSize(); i++) { data[i] = (real) image_data[i] / normalize; }
-
-    return res;
-  }
 }   // namespace image
