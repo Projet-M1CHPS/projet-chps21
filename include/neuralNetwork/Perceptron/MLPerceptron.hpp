@@ -86,7 +86,7 @@ namespace nnet {
      * @brief Construct a new Neural Network object with no layer
      *
      */
-    explicit MLPerceptron(utils::clWrapper *wrapper, const MLPTopology &topology = {});
+    explicit MLPerceptron(const MLPTopology &topology = {});
 
     MLPerceptron(const MLPerceptron &other) { *this = other; }
     MLPerceptron &operator=(const MLPerceptron &);
@@ -138,14 +138,8 @@ namespace nnet {
     [[nodiscard]] std::vector<math::clFMatrix> &getBiases() { return biases; }
     [[nodiscard]] const std::vector<math::clFMatrix> &getBiases() const { return biases; }
 
-    [[nodiscard]] utils::clWrapper &getWrapper() { return *wrapper; }
-    [[nodiscard]] const utils::clWrapper &getWrapper() const { return *wrapper; }
-
   private:
     MLPTopology topology;
-
-    // Wrapper used for memory allocations and kernels
-    utils::clWrapper *wrapper;
 
     std::vector<math::clFMatrix> weights;
     std::vector<math::clFMatrix> biases;

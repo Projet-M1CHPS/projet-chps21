@@ -27,7 +27,7 @@ namespace nnet {
                                                        Args &&...args) {
       return std::make_unique<MLPMiniBatchOptimizer>(
               model,
-              std::make_unique<Optim>(model.getPerceptron(), model.getClWrapper(),
+              std::make_unique<Optim>(model.getPerceptron(),
                                       std::forward<Args>(args)...),
               batch_size);
     }

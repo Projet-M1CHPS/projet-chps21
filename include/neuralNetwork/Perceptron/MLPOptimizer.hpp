@@ -11,12 +11,12 @@ namespace nnet {
   class MLPOptimizer : public Optimizer {
   public:
     MLPOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm)
-        : Optimizer(&model.getClWrapper()), neural_network(&model.getPerceptron()),
+        : neural_network(&model.getPerceptron()),
           opti_meth(std::move(tm)) {}
 
-    MLPOptimizer(MLPerceptron &perceptron, utils::clWrapper *wrapper,
+    MLPOptimizer(MLPerceptron &perceptron,
                  std::unique_ptr<Optimization> tm)
-        : Optimizer(wrapper), neural_network(&perceptron), opti_meth(std::move(tm)) {}
+        : neural_network(&perceptron), opti_meth(std::move(tm)) {}
 
     MLPerceptron *gePerceptron() const { return neural_network; }
     Optimization *getOptimizationMethod() const { return opti_meth.get(); }

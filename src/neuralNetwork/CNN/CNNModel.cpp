@@ -20,9 +20,8 @@ namespace cnnet {
     return mlp->predict(tmp);
   }
 
-  std::unique_ptr<CNNModel> CNNModel::random(CNNTopology const &topology, MLPTopology &mlp_topology,
-                                             std::shared_ptr<utils::clWrapper> wrapper_ptr) {
-    auto res = std::make_unique<CNNModel>(wrapper_ptr);
+  std::unique_ptr<CNNModel> CNNModel::random(CNNTopology const &topology, MLPTopology &mlp_topology) {
+    auto res = std::make_unique<CNNModel>();
 
     auto &cnn = res->getCnn();
     cnn.setTopology(topology);

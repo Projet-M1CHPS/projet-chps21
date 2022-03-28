@@ -4,8 +4,8 @@
 namespace cnnet {
 
   CNNOptimizer::CNNOptimizer(CNNModel &model)
-      : Optimizer(&model.getClWrapper()), nn_cnn(&model.getCnn()), nn_mlp(&model.getMlp()) {
-    flatten = model.getFlatten().toFloatMatrix(model.getClWrapper(), true);
+      : nn_cnn(&model.getCnn()), nn_mlp(&model.getMlp()) {
+    flatten = model.getFlatten().toFloatMatrix(true);
 
     const auto &layers = nn_cnn->getLayers();
     const auto &topology = nn_cnn->getTopology();
@@ -35,15 +35,15 @@ namespace cnnet {
 
   void CNNStochOptimizer::optimize(const math::clFMatrix &input, const math::clFMatrix &target) {
     // TODO: Use clFMatrix instead
-    auto tmp_input = input.toFloatMatrix(*wrapper, true);
-    auto tmp_target = input.toFloatMatrix(*wrapper, true);
+    auto tmp_input = input.toFloatMatrix(true);
+    auto tmp_target = input.toFloatMatrix(true);
 
     forward(tmp_input);
 
     std::cout << "flatten \n" << flatten << std::endl;
-    clFMatrix tmp_flatten(flatten, *wrapper, true);
+    clFMatrix tmp_flatten(flatten, true);
 
-    FloatMatrix errorFlatten = mlp_opti.optimize(tmp_flatten, target).toFloatMatrix(*wrapper, true);
+    FloatMatrix errorFlatten = mlp_opti.optimize(tmp_flatten, target).toFloatMatrix(true);
 
 
     /*for (size_t i = 0; i < storage.size(); i++) {

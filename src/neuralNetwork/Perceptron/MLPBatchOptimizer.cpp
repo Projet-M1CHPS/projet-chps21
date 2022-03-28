@@ -2,18 +2,17 @@
 
 namespace nnet {
   namespace {
-    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, utils::clWrapper &wrapper,
+    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat,
                  cl::CommandQueue &queue) {
       if (type == af::ActivationFunctionType::identity) return;
-      auto afunc = af::getAFKernelFromType(type, wrapper).first;
+      auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
       afunc.setArg(0, mat.getBuffer());
       queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
     }
 
-    void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
-                           utils::clWrapper &wrapper, cl::CommandQueue &queue) {
+    void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue) {
       if (type == af::ActivationFunctionType::identity) return;
-      auto afunc = af::getAFKernelFromType(type, wrapper).second;
+      auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).second;
       afunc.setArg(0, mat.getBuffer());
       queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
     }
@@ -34,11 +33,11 @@ namespace nnet {
     for (size_t i = 0; i < perceptron.getWeights().size(); i++) {
       math::FloatMatrix buf1(topology[i], topology[i + 1]);
       buf1.fill(0.0);
-      avg_gradients.emplace_back(buf1, *wrapper);
+      avg_gradients.emplace_back(buf1);
 
       buf1 = math::FloatMatrix(topology[i + 1], 1);
       buf1.fill(0.0);
-      avg_errors.emplace_back(buf1, *wrapper);
+      avg_errors.emplace_back(buf1);
     }
   }
 
@@ -48,8 +47,8 @@ namespace nnet {
       throw std::runtime_error("MLPBatchOptimizer: Inputs and targets number doesn't match !");
 
     size_t n = inputs.size();
-    cl::CommandQueue queue(wrapper->getDefaultDevice());
-    cl::Kernel zero_out = wrapper->getKernels().getKernel("utils.cl", "zero_out");
+    cl::CommandQueue queue(utils::cl_wrapper.getDefaultDevice());
+    cl::Kernel zero_out = utils::cl_wrapper.getKernels().getKernel("utils.cl", "zero_out");
 
     auto zerol = [&](auto &mat) {
       zero_out.setArg(0, mat);
@@ -62,21 +61,21 @@ namespace nnet {
 
     for (long i = 0; i < n; i++) {
       forward(inputs[i], queue);
-      storage.getError() = layers_af[layers_af.size() - 1].sub(targets[i], *wrapper, queue);
+      storage.getError() = layers_af[layers_af.size() - 1].sub(1.f, targets[i], queue);
       computeGradient(queue);
     }
 
     queue.finish();
 
     for (auto &it : avg_gradients) {
-      it.ipscale(((float) 1.0 / static_cast<float>(n)), *wrapper, queue);
+      it.ipscale(((float) 1.0 / static_cast<float>(n)), queue);
     }
 
     for (long i = neural_network->getWeights().size() - 1; i >= 0; i--) {
       storage.setIndex(i);
       std::swap(storage.getGradient(), avg_gradients[i]);
       std::swap(storage.getError(), avg_errors[i]);
-      opti_meth->optimize(storage, *wrapper, queue);
+      opti_meth->optimize(storage, queue);
     }
     queue.finish();
   }
@@ -87,27 +86,27 @@ namespace nnet {
     auto &biases = this->neural_network->getBiases();
     auto &activation_functions = this->neural_network->getActivationFunctions();
 
-    layers[0] = math::clFMatrix(inputs, *wrapper, queue, false);
-    layers_af[0] = math::clFMatrix(inputs, *wrapper, queue, false);
+    layers[0] = math::clFMatrix(inputs, queue, false);
+    layers_af[0] = math::clFMatrix(inputs, queue, false);
 
     if (weights.empty()) return;
 
     math::clFMatrix current_layer = math::clFMatrix::gemm(1.0f, false, weights[0], false, inputs,
-                                                          1.0f, biases[0], *wrapper, queue);
-    layers[1] = math::clFMatrix(current_layer, *wrapper, queue, false);
-    applyAF(activation_functions[0], current_layer, *wrapper, queue);
+                                                          1.0f, biases[0], queue);
+    layers[1] = math::clFMatrix(current_layer, queue, false);
+    applyAF(activation_functions[0], current_layer, queue);
     auto afunc = af::getAFFromType(activation_functions[0]).first;
-    layers_af[1] = math::clFMatrix(current_layer, *wrapper, queue, false);
+    layers_af[1] = math::clFMatrix(current_layer, queue, false);
 
     for (size_t k = 1; k < weights.size(); k++) {
       // C = W * C + B
       current_layer = math::clFMatrix::gemm(1.0f, false, weights[k], false, current_layer, 1.0f,
-                                            biases[k], *wrapper, queue);
-      layers[k + 1] = math::clFMatrix(current_layer, *wrapper, queue, false);
+                                            biases[k], queue);
+      layers[k + 1] = math::clFMatrix(current_layer, queue, false);
 
       // Apply activation function on every element of the matrix
-      applyAF(activation_functions[k], current_layer, *wrapper, queue);
-      layers_af[k + 1] = math::clFMatrix(current_layer, *wrapper, queue, false);
+      applyAF(activation_functions[k], current_layer, queue);
+      layers_af[k + 1] = math::clFMatrix(current_layer, queue, false);
     }
   }
 
@@ -122,18 +121,18 @@ namespace nnet {
     for (long i = weights.size() - 1; i >= 0; i--) {
       storage.setIndex(i);
 
-      math::clFMatrix derivative(layers[i + 1], *wrapper, queue);
-      applyDerivativeAF(activation_functions[i], derivative, *wrapper, queue);
+      math::clFMatrix derivative(layers[i + 1], queue);
+      applyDerivativeAF(activation_functions[i], derivative, queue);
 
-      derivative.hadamard(storage.getError(), *wrapper, queue);
+      derivative.hadamard(storage.getError(), queue);
 
       storage.getError() =
-              math::clFMatrix::gemm(1.0f, true, weights[i], false, derivative, *wrapper, queue);
+              math::clFMatrix::gemm(1.0f, true, weights[i], false, derivative, queue);
 
       storage.getGradient() =
-              math::clFMatrix::gemm(1.0f, false, derivative, true, layers_af[i], *wrapper, queue);
+              math::clFMatrix::gemm(1.0f, false, derivative, true, layers_af[i], queue);
 
-      avg_gradients[i].ipadd(storage.getGradient(), *wrapper, queue);
+      avg_gradients[i].ipadd(1.0f, storage.getGradient(), queue);
     }
   }
 }   // namespace nnet
