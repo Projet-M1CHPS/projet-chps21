@@ -10,8 +10,13 @@ namespace utils {
   class clPlatformSelector {
   public:
 
-
     static std::unique_ptr<clWrapper> execute();
+
+    static std::unique_ptr<clWrapper> makeDefault() {
+      auto wrapper = execute();
+      clWrapper::setDefault(*wrapper);
+    }
+
     ~clPlatformSelector();
 
 
@@ -30,7 +35,7 @@ namespace utils {
     void loop();
 
     std::vector<cl::Platform> platforms;
-    std::map<cl::Platform*, std::vector<cl::Device>> devices_map;
+    std::map<cl::Platform *, std::vector<cl::Device>> devices_map;
 
     int selected_platform;
     int selected_default_device;

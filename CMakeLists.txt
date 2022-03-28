@@ -32,7 +32,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 # Comment one out to choose which mkl to use
 # Intel's mkl sequential implementation
-set(BLA_VENDOR "Intel10_64ilp_seq")
+# set(BLA_VENDOR "Intel10_64ilp_seq")
 # Intel's mkl parallel implementation
 # set(BLA_VENDOR "Intel10_64ilp")
 

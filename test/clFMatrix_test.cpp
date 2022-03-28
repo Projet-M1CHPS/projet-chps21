@@ -7,8 +7,7 @@ using namespace math;
 using namespace utils;
 
 TEST(clFMatrixTest, CanCreate) {
-  auto wrapper = clWrapper::makeDefault();
-  clFMatrix m(10, 11, *wrapper);
+  clFMatrix m(10, 11);
 
   ASSERT_EQ(10, m.getRows());
   ASSERT_EQ(11, m.getCols());
@@ -22,33 +21,41 @@ TEST(clFMatrixTest, CanCreate) {
 
 
 TEST(clFMatrixTest, CanCopy) {
-  auto wrapper = clWrapper::makeDefault();
+  // clWrapper::setDefault(*clWrapper::makeDefault());
   FloatMatrix n(10, 11);
 
   n(0, 0) = 1;
   n(0, 1) = 1;
   n(1, 0) = 1;
   n(1, 1) = 1;
+  printf("ici 1\n");
 
   // Should be able to copy from float matrix
-  clFMatrix m(n, *wrapper);
-  auto test = m.toFloatMatrix(*wrapper);
+  clFMatrix m(n);
+  printf("ici 2\n");
+
+  auto test = m.toFloatMatrix();
+  printf("ici 3\n");
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(1, test(i, j));
   }
 
   // Should be able to copy two clFMatrices
-  clFMatrix p(m, *wrapper);
-  auto test2 = p.toFloatMatrix(*wrapper);
+  printf("ici 4\n");
+  clFMatrix p = m;
+  printf("ici 5\n");
+  auto test2 = p.toFloatMatrix();
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(1, test(i, j));
   }
+  printf("ici 6\n");
 
   // Should be able to copy an empty matrix
   clFMatrix o;
-  m = clFMatrix(o, *wrapper);
+  printf("ici 7\n");
+  m = o;
 
   ASSERT_EQ(0, m.getRows());
   ASSERT_EQ(0, m.getCols());
@@ -63,8 +70,7 @@ TEST(clFMatrixTest, CanMoveCopy) {
   m(1, 0) = 1;
   m(1, 1) = 1;
 
-  auto wrapper = clWrapper::makeDefault();
-  clFMatrix n(m, *wrapper);
+  clFMatrix n = m;
 
   auto raw_ptr = n.getBuffer();
 
@@ -83,7 +89,7 @@ TEST(clFMatrixTest, CanMoveCopy) {
   ASSERT_EQ(0, c.getCols());
 
   // should be able to copy a right value matrix
-  clFMatrix m2(clFMatrix(3, 2, *wrapper), *wrapper);
+  clFMatrix m2(clFMatrix(3, 2));
 
   ASSERT_EQ(3, m2.getRows());
   ASSERT_EQ(2, m2.getCols());
@@ -91,6 +97,7 @@ TEST(clFMatrixTest, CanMoveCopy) {
 
 TEST(clFMatrixTest, CanAdd) {
   Matrix<float> m(2, 2), n(2, 2);
+  auto wrapper = clWrapper::makeDefault();
 
   m(0, 0) = 1;
   m(0, 1) = 1;
@@ -100,19 +107,18 @@ TEST(clFMatrixTest, CanAdd) {
   n = m;
   n(1, 1) = 3;
 
-  auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(m, *wrapper);
-  clFMatrix b(n, *wrapper);
-  auto buf = a.add(b, *wrapper);
-  auto c = buf.toFloatMatrix(*wrapper);
+  clFMatrix a = m;
+  clFMatrix b = n;
+  auto buf = a.add(1.0f, b);
+  auto c = buf.toFloatMatrix();
 
   for (size_t i = 0; i < 2; i++)
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) + n(i, j), c(i, j));
 
   // Check that we can add in place
-  buf = clFMatrix(m, *wrapper);
-  buf.ipadd(b, *wrapper);
-  c = buf.toFloatMatrix(*wrapper);
+  buf = m;
+  buf.ipadd(1.0f, b);
+  c = buf.toFloatMatrix();
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) + n(i, j), c(i, j));
@@ -120,13 +126,12 @@ TEST(clFMatrixTest, CanAdd) {
 }
 
 TEST(clFMatrixTest, ThrowOnInvalidAdd) {
-  auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(2, 2, *wrapper), b(2, 1, *wrapper), c;
+  clFMatrix a(2, 2), b(2, 1), c;
 
-  ASSERT_ANY_THROW(auto h = a.add(b, *wrapper));
-  ASSERT_ANY_THROW(a.ipadd(b, *wrapper));
-  ASSERT_ANY_THROW(auto d = a.add(c, *wrapper));
-  ASSERT_ANY_THROW(a.ipadd(c, *wrapper));
+  ASSERT_ANY_THROW(auto h = a.add(1.0f, b));
+  ASSERT_ANY_THROW(a.ipadd(1.0f, b));
+  ASSERT_ANY_THROW(auto d = a.add(1.0f, c));
+  ASSERT_ANY_THROW(a.ipadd(1.0f, c));
 }
 
 
@@ -141,19 +146,18 @@ TEST(clFMatrixTest, CanSubtract) {
   n = m;
   n(1, 1) = 3;
 
-  auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(m, *wrapper);
-  clFMatrix b(n, *wrapper);
-  auto buf = a.sub(b, *wrapper);
-  auto c = buf.toFloatMatrix(*wrapper);
+  clFMatrix a = m;
+  clFMatrix b = n;
+  auto buf = a.sub(1.0f, b);
+  auto c = buf.toFloatMatrix();
 
   for (size_t i = 0; i < 2; i++)
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) - n(i, j), c(i, j));
 
   // Check that we can add in place
-  buf = clFMatrix(m, *wrapper);
-  buf.ipsub(b, *wrapper);
-  c = buf.toFloatMatrix(*wrapper);
+  buf = clFMatrix(m);
+  buf.ipsub(1.0f, b);
+  c = buf.toFloatMatrix();
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) - n(i, j), c(i, j));
@@ -161,13 +165,12 @@ TEST(clFMatrixTest, CanSubtract) {
 }
 
 TEST(clFMatrixTest, ThrowOnInvalidSubtraction) {
-  auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(2, 2, *wrapper), b(2, 1, *wrapper), c;
+  clFMatrix a(2, 2), b(2, 1), c;
 
-  ASSERT_ANY_THROW(auto h = a.sub(b, *wrapper));
-  ASSERT_ANY_THROW(a.ipsub(b, *wrapper));
-  ASSERT_ANY_THROW(auto d = a.sub(c, *wrapper));
-  ASSERT_ANY_THROW(a.ipsub(c, *wrapper));
+  ASSERT_ANY_THROW(auto h = a.sub(1.0f, b));
+  ASSERT_ANY_THROW(a.ipsub(1.0f, b));
+  ASSERT_ANY_THROW(auto d = a.sub(1.0f, c));
+  ASSERT_ANY_THROW(a.ipsub(1.0f, c));
 }
 
 TEST(clFMatrixTest, CanScale) {
@@ -178,20 +181,19 @@ TEST(clFMatrixTest, CanScale) {
   m(0, 1) = 2;
   m(1, 0) = 3;
   m(1, 1) = 4;
-  auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(m, *wrapper);
+  clFMatrix a(m);
 
-  auto c = a.scale(scale, *wrapper);
-  auto n = c.toFloatMatrix(*wrapper);
+  auto c = a.scale(scale);
+  auto n = c.toFloatMatrix();
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) * scale, n(i, j));
   }
 
   // Check that we can scale in place
-  c = clFMatrix(a, *wrapper);
-  c.ipscale(scale, *wrapper);
-  n = c.toFloatMatrix(*wrapper);
+  c = clFMatrix(a);
+  c.ipscale(scale);
+  n = c.toFloatMatrix();
 
 
   for (size_t i = 0; i < 2; i++) {
@@ -200,20 +202,19 @@ TEST(clFMatrixTest, CanScale) {
 
   // Must be able to scale an empty matrix
   // without throwing error
-  clFMatrix v(0, 0, *wrapper);
-  auto x = v.scale(scale, *wrapper);
-  v.ipscale(scale, *wrapper);
+  clFMatrix v(0, 0);
+  auto x = v.scale(scale);
+  v.ipscale(scale);
 }
 
 TEST(clFMatrixTest, CanTranspose) {
   Matrix<float> n(3, 5);
 
   randomize(n, 0.f, 100.f);
-  auto wrapper = clWrapper::makeDefault();
-  clFMatrix m(n, *wrapper);
+  clFMatrix m = n;
 
-  auto w = m.transpose(*wrapper);
-  auto t = w.toFloatMatrix(*wrapper);
+  auto w = m.transpose();
+  auto t = w.toFloatMatrix();
 
   ASSERT_EQ(5, t.getRows());
   ASSERT_EQ(3, t.getCols());
@@ -223,10 +224,9 @@ TEST(clFMatrixTest, CanTranspose) {
   }
 
   // should be able to transpose an empty matrix without error
-  w = clFMatrix().transpose(*wrapper);
-  wrapper->getDefaultQueue().finish();
+  w = clFMatrix().transpose();
 
-  auto u = w.toFloatMatrix(*wrapper);
+  auto u = w.toFloatMatrix();
   ASSERT_EQ(0, u.getRows());
   ASSERT_EQ(0, u.getCols());
 }
@@ -240,19 +240,16 @@ TEST(clFMatrixTest, CanSumReduce) {
   m(1, 1) = 1;
 
   auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(m, *wrapper);
+  clFMatrix a = m;
 
-  auto c = a.sumReduce(*wrapper);
+  auto c = a.sumReduce();
   ASSERT_EQ(4, c);
 }
 
 TEST(clFMatrixTest, ThrowOnInvalidSumReduce) {
-  Matrix<float> m;
-  auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(m, *wrapper);
+  clFMatrix a;
 
-
-  ASSERT_ANY_THROW(a.sumReduce(*wrapper));
+  ASSERT_ANY_THROW(a.sumReduce());
 }
 
 
@@ -265,10 +262,9 @@ TEST(clFMatrixTest, CanSimpleGEMM) {
   m(1, 1) = 2;
 
   n = m;
-  auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(m, *wrapper), b(m, *wrapper);
+  clFMatrix a = m, b = m;
 
-  auto c = clFMatrix::gemm(1.0f, false, a, false, b, *wrapper, true);
+  auto c = clFMatrix::gemm(1.0f, false, a, false, b, true);
   Matrix<float> d(2, 2);
 
   for (size_t i = 0; i < 2; i++) {
@@ -278,7 +274,7 @@ TEST(clFMatrixTest, CanSimpleGEMM) {
       d(i, j) = dij;
     }
   }
-  auto w = c.toFloatMatrix(*wrapper);
+  auto w = c.toFloatMatrix();
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(w(i, j), d(i, j));
@@ -288,9 +284,9 @@ TEST(clFMatrixTest, CanSimpleGEMM) {
 TEST(clFMatrixTest, ThrowOnInvalidGEMM) {
   Matrix<float> m(2, 2), n(1, 3);
   auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(m, *wrapper), b(n, *wrapper);
+  clFMatrix a(m), b(n);
 
-  ASSERT_ANY_THROW(auto c = clFMatrix::gemm(1.0f, false, a, false, b, *wrapper));
+  ASSERT_ANY_THROW(auto c = clFMatrix::gemm(1.0f, false, a, false, b));
 }
 
 TEST(clFMatrixTest, CanHadamar) {
@@ -305,11 +301,11 @@ TEST(clFMatrixTest, CanHadamar) {
   m(1, 2) = 3;
 
   auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(m, *wrapper), b(m, *wrapper);
+  clFMatrix a = m, b = m;
 
-  auto c = a.hadamard(b, *wrapper);
+  auto c = a.hadamard(b);
   wrapper->getDefaultQueue().finish();
-  auto n = c.toFloatMatrix(*wrapper);
+  auto n = c.toFloatMatrix();
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(m(i, j) * m(i, j), n(i, j));
@@ -319,11 +315,11 @@ TEST(clFMatrixTest, CanHadamar) {
 TEST(clFMatrixTest, ThrowOnInvalidMatrixHadamardProd) {
   Matrix<float> m(2, 2), n(1, 3), o;
   auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(m, *wrapper), b(n, *wrapper), c(o, *wrapper);
+  clFMatrix a(m), b(n), c(o);
 
-  ASSERT_ANY_THROW(a.hadamard(b, *wrapper));
-  ASSERT_ANY_THROW(c.hadamard(a, *wrapper));
-  ASSERT_ANY_THROW(b.hadamard(c, *wrapper));
+  ASSERT_ANY_THROW(a.hadamard(b));
+  ASSERT_ANY_THROW(c.hadamard(a));
+  ASSERT_ANY_THROW(b.hadamard(c));
 }
 
 
@@ -350,10 +346,10 @@ TEST(clFMatrixTest, CanComplexGEMM) {
   D += C;
 
   auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(A, *wrapper), b(B, *wrapper), c(C, *wrapper);
+  clFMatrix a(A), b(B), c(C);
 
-  auto res = clFMatrix::gemm(1.0f, false, a, false, b, 1.0f, c, *wrapper);
-  auto l = res.toFloatMatrix(*wrapper);
+  auto res = clFMatrix::gemm(1.0f, false, a, false, b, 1.0f, c);
+  auto l = res.toFloatMatrix();
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 1; j++) ASSERT_EQ(D(i, j), l(i, j));
@@ -362,11 +358,11 @@ TEST(clFMatrixTest, CanComplexGEMM) {
 
 TEST(clFMatrixTest, ThrowOnInvalidMatMatProdMatAdd) {
   auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(2, 2, *wrapper), b(1, 3, *wrapper), c(2, 3, *wrapper), o;
+  clFMatrix a(2, 2), b(1, 3), c(2, 3), o;
 
-  ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, false, a, false, b, 1.0f, c, *wrapper));
-  ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, false, a, false, b, 1.0f, o, *wrapper));
-  ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, false, a, false, o, 1.0f, c, *wrapper));
+  ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, false, a, false, b, 1.0f, c));
+  ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, false, a, false, b, 1.0f, o));
+  ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, false, a, false, o, 1.0f, c));
 }
 
 
@@ -395,18 +391,18 @@ TEST(clFMatrixTest, CanGEMMWithTranspose) {
   C(2, 1) = 8;
 
   auto wrapper = clWrapper::makeDefault();
-  clFMatrix a(A, *wrapper), b(B, *wrapper), c(C, *wrapper);
+  clFMatrix a = A, b = B, c = C;
 
 
-  auto D = clFMatrix::gemm(2.f, false, a, false, b, *wrapper);
-  auto E = clFMatrix::gemm(3.f, true, a, true, b, *wrapper);
-  auto F = clFMatrix::gemm(4.f, true, a, false, c, *wrapper);
-  auto G = clFMatrix::gemm(1.0f, false, a, true, c, *wrapper);
+  auto D = clFMatrix::gemm(2.f, false, a, false, b);
+  auto E = clFMatrix::gemm(3.f, true, a, true, b);
+  auto F = clFMatrix::gemm(4.f, true, a, false, c);
+  auto G = clFMatrix::gemm(1.0f, false, a, true, c);
 
-  auto d_fmat = D.toFloatMatrix(*wrapper);
-  auto e_fmat = E.toFloatMatrix(*wrapper);
-  auto f_fmat = F.toFloatMatrix(*wrapper);
-  auto g_fmat = G.toFloatMatrix(*wrapper);
+  auto d_fmat = D.toFloatMatrix();
+  auto e_fmat = E.toFloatMatrix();
+  auto f_fmat = F.toFloatMatrix();
+  auto g_fmat = G.toFloatMatrix();
 
   Matrix<float> d = A * 2.f * B;
   Matrix<float> e = A.transpose() * 3.f * B.transpose();
@@ -432,11 +428,11 @@ TEST(clFMatrixTest, CanGEMMWithTranspose) {
 
 TEST(clFMatrixTest, ThrowOnInvalidGEMMWithTranspose) {
   auto wrapper = clWrapper::makeDefault();
-  clFMatrix A(3, 2, *wrapper), B(2, 3, *wrapper), C(3, 2, *wrapper), o;
+  clFMatrix A(3, 2), B(2, 3), C(3, 2), o;
 
-  ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, false, A, false, C, *wrapper));
-  ASSERT_ANY_THROW(clFMatrix::gemm(1.f, true, A, true, C, *wrapper));
-  ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, true, A, false, B, *wrapper));
-  ASSERT_ANY_THROW(clFMatrix::gemm(2.f, false, A, true, B, *wrapper));
-  ASSERT_ANY_THROW(clFMatrix::gemm(3.f, false, A, true, o, *wrapper));
+  ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, false, A, false, C));
+  ASSERT_ANY_THROW(clFMatrix::gemm(1.f, true, A, true, C));
+  ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, true, A, false, B));
+  ASSERT_ANY_THROW(clFMatrix::gemm(2.f, false, A, true, B));
+  ASSERT_ANY_THROW(clFMatrix::gemm(3.f, false, A, true, o));
 }

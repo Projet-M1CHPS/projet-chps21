@@ -11,22 +11,26 @@
 #include <tscl.hpp>
 
 namespace utils {
+
   class clWrapper {
   public:
-    clWrapper(const clWrapper &other);
-    clWrapper &operator=(const clWrapper &other);
+    clWrapper(const clWrapper &other) noexcept { *this = other; }
+    clWrapper &operator=(const clWrapper &other) noexcept;
 
-    clWrapper &operator=(clWrapper &&other);
-    clWrapper(clWrapper &&other) noexcept;
+    clWrapper(clWrapper &&other) noexcept { *this = std::move(other); }
+    clWrapper &operator=(clWrapper &&other) noexcept;
 
     explicit clWrapper(cl::Platform &platform, size_t device_id,
-                       const std::filesystem::path &kernels_search_path = "kernels");
+                       const std::filesystem::path &kernels_search_path = "kernels") noexcept;
 
     explicit clWrapper(cl::Platform &platform,
-                       const std::filesystem::path &kernels_search_path = "kernels") : clWrapper(platform, 0, kernels_search_path) {}
+                       const std::filesystem::path &kernels_search_path = "kernels") noexcept
+        : clWrapper(platform, 0, kernels_search_path) {}
 
     static std::unique_ptr<clWrapper>
-    makeDefault(const std::filesystem::path &kernels_search_path = "kernels");
+    makeDefault(const std::filesystem::path &kernels_search_path = "kernels") noexcept;
+
+    static clWrapper &setDefault(clWrapper &wrapper) noexcept;
 
     cl::Platform getPlatform() { return platform; }
     cl::Context getContext() { return context; }
@@ -61,4 +65,6 @@ namespace utils {
 
     std::shared_ptr<clKernelMap> kernels;
   };
+
+  extern clWrapper cl_wrapper;
 }   // namespace utils
