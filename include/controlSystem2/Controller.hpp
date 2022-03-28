@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <iostream>
+#include "clUtils/clWrapper.hpp"
 
 namespace control {
 
@@ -22,7 +23,7 @@ namespace control {
     explicit Controller(std::filesystem::path ouput_path);
 
     virtual ~Controller() = default;
-    virtual ControllerResult run() = 0;
+    virtual ControllerResult run(utils::clWrapper& wrapper) = 0;
 
     std::filesystem::path getOutputPath() const { return output_path; }
 

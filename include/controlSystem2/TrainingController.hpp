@@ -10,7 +10,7 @@ namespace control {
                        nnet::Optimizer *optimizer, TrainingCollection *trainingCollection,
                        size_t max_epoch = 10, bool output_stats = true);
 
-    ControllerResult run() override;
+    ControllerResult run(utils::clWrapper& wrapper) override;
 
   private:
 
