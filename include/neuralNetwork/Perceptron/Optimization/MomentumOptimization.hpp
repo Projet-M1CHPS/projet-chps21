@@ -8,10 +8,10 @@ namespace nnet {
    */
   class MomentumOptimization : public Optimization {
   public:
-    MomentumOptimization(const MLPerceptron &perceptron, utils::clWrapper &wrapper,
+    MomentumOptimization(const MLPerceptron &perceptron,
                          float learning_rate, float momentum);
 
-    void optimize(BackpropStorage &storage, utils::clWrapper &wrapper,
+    void optimize(BackpropStorage &storage,
                   cl::CommandQueue &queue) override;
 
   private:

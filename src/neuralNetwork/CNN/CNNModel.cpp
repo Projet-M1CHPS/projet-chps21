@@ -2,20 +2,20 @@
 
 namespace cnnet {
 
-  CNNModel::CNNModel(std::shared_ptr<utils::clWrapper> wrapper_ptr) : Model(wrapper_ptr) {
+  CNNModel::CNNModel() {
     cnn = std::make_unique<CNN>();
-    mlp = std::make_unique<MLPerceptron>(wrapper_ptr.get());
+    mlp = std::make_unique<MLPerceptron>();
   }
 
 
   math::clFMatrix CNNModel::predict(math::clFMatrix const &input) const {
     // TODO: Use clFMatrix everywhere
-    auto tmp_input = input.toFloatMatrix(*cl_wrapper_ptr, true);
-    auto tmp_flatten = flatten.toFloatMatrix(*cl_wrapper_ptr, true);
+    auto tmp_input = input.toFloatMatrix(true);
+    auto tmp_flatten = flatten.toFloatMatrix(true);
     cnn->predict(tmp_input, tmp_flatten);
 
     // TODO: Remove flatten object member and use a local variable instead
-    clFMatrix tmp(tmp_flatten, *cl_wrapper_ptr);
+    clFMatrix tmp(tmp_flatten);
 
     return mlp->predict(tmp);
   }
@@ -30,7 +30,7 @@ namespace cnnet {
     // cnn.randomizeWeight();
 
     const size_t size = cnn.getOutputSize();
-    res->flatten = clFMatrix(size, 1, *wrapper_ptr);
+    res->flatten = clFMatrix(size, 1);
     mlp_topology.push_front(size);
 
     auto &mlp = res->getMlp();

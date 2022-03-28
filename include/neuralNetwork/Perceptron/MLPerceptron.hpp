@@ -82,7 +82,6 @@ namespace nnet {
    */
   class MLPerceptron final {
   public:
-
     /**
      * @brief Construct a new Neural Network object with no layer
      *

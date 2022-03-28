@@ -50,9 +50,7 @@ namespace cnnet {
   }
 
 
-  void CNN::randomizeWeight() {
-    assert(false && "Not implemented");
-  }
+  void CNN::randomizeWeight() { assert(false && "Not implemented"); }
 
   void CNN::predict(math::FloatMatrix const &input, math::FloatMatrix &output) {
     if (input.getCols() != topology.getInputSize().first or
@@ -78,7 +76,7 @@ namespace cnnet {
       size_t l = 0;
       for (size_t j = 0; j < layers[i - 1].size(); j++) {
         for (size_t k = 0; k < topology(i)->getFeatures(); k++) {
-          //std::cout << "(" << i - 1 << ", " << j << ") (" << i << ", " << l << ")" << std::endl;
+          // std::cout << "(" << i - 1 << ", " << j << ") (" << i << ", " << l << ")" << std::endl;
           layers[i][j]->compute(layerMatrix[i - 1][j], layerMatrix[i][l++]);
         }
       }

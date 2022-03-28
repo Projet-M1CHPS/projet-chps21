@@ -12,7 +12,7 @@ namespace cnnet {
     friend class CNNModelFactory;
 
   public:
-    CNNModel(std::shared_ptr<utils::clWrapper> wrapper_ptr);
+    CNNModel();
 
     /**
      * @brief Builds a new CNN model with the given topology
@@ -21,8 +21,7 @@ namespace cnnet {
      * @param wrapper_ptr
      * @return
      */
-    static std::unique_ptr<CNNModel> random(CNNTopology const &topology, MLPTopology &mlp_topology,
-                                            std::shared_ptr<utils::clWrapper> wrapper_ptr);
+    static std::unique_ptr<CNNModel> random(CNNTopology const &topology, MLPTopology &mlp_topology);
 
     CNNModel(const CNNModel &) = delete;
     CNNModel(CNNModel &&other) noexcept : Model(std::move(other)) {

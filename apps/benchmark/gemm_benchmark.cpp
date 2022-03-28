@@ -1,7 +1,7 @@
 #include "Matrix.hpp"
 #include "clFMatrix.hpp"
-#include "clWrapper.hpp"
 #include "clPlatformSelector.hpp"
+#include "clWrapper.hpp"
 #include <chrono>
 #include <fstream>
 #include <iostream>

@@ -15,7 +15,7 @@ namespace nnet {
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure
      */
-    static MLPModel readFromFile(const std::filesystem::path &path, std::shared_ptr<utils::clWrapper> wrapper);
+    static MLPModel readFromFile(const std::filesystem::path &path);
 
     /**
      * @returns a new MLPModelSerializer, or nullptr on failure

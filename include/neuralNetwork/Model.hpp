@@ -12,10 +12,7 @@ namespace nnet {
    */
   class Model {
   public:
-    explicit Model(std::shared_ptr<utils::clWrapper> wrapper_ptr) : cl_wrapper_ptr(std::move(wrapper_ptr)) {
-
-    }
-
+    Model() = default;
     virtual ~Model() = default;
 
     //
@@ -50,12 +47,6 @@ namespace nnet {
      */
     virtual bool load(const std::filesystem::path &path) = 0;
 
-    utils::clWrapper& getClWrapper() const {
-      return *cl_wrapper_ptr;
-    }
-
-  protected:
-    std::shared_ptr<utils::clWrapper> cl_wrapper_ptr;
   };
 
 }   // namespace nnet

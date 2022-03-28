@@ -272,7 +272,7 @@ TEST(MatrixTest, CanMultiplyMatrixWithMatrix) {
   m(0, 1) = 2;
   m(1, 0) = 1;
   m(1, 1) = 2;
-  
+
   n = m;
 
   auto c = m * n;

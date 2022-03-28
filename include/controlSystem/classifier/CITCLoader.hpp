@@ -73,8 +73,7 @@ namespace control::classifier {
      */
     void loadClasses(std::filesystem::path const &input_path);
 
-    void loadSet(CTrainingSet &res, std::filesystem::path const &input_path,
-                 utils::clWrapper &wrapper);
+    void loadSet(CTrainingSet &res, std::filesystem::path const &input_path);
 
     image::transform::TransformEngine pre_process, post_process;
 

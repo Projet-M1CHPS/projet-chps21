@@ -42,8 +42,7 @@ namespace cnnet {
   class CNNStochOptimizer final : public CNNOptimizer {
   public:
     CNNStochOptimizer(CNNModel &model, std::unique_ptr<Optimization> mlp_optimization)
-        : CNNOptimizer(model),
-          mlp_opti(model.getMlp(), &model.getClWrapper(), std::move(mlp_optimization)) {}
+        : CNNOptimizer(model), mlp_opti(model.getMlp(), std::move(mlp_optimization)) {}
 
     void optimize(const math::clFMatrix &input, const math::clFMatrix &target);
 
@@ -56,8 +55,7 @@ namespace cnnet {
              typename = std::is_base_of<nnet::Optimization, Optimization>>
     std::unique_ptr<CNNStochOptimizer> make(CNNModel &model, Args &&...args) {
       return std::make_unique<CNNStochOptimizer>(
-              model, std::make_unique<Optimization>(model.getMlp(), model.getClWrapper(),
-                                                    std::forward<Args>(args)...));
+              model, std::make_unique<Optimization>(model.getMlp(), std::forward<Args>(args)...));
     }
 
   private:

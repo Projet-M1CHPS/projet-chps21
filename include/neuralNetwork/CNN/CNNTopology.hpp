@@ -63,7 +63,9 @@ namespace cnnet {
     createStorage(const std::pair<size_t, size_t> &inputSize) const override;
 
     const std::pair<size_t, size_t>
-    getOutputSize(const std::pair<size_t, size_t> &inputSize) const override {return outputSize;};
+    getOutputSize(const std::pair<size_t, size_t> &inputSize) const override {
+      return outputSize;
+    };
 
   private:
     const std::pair<size_t, size_t>
@@ -89,7 +91,9 @@ namespace cnnet {
     createStorage(const std::pair<size_t, size_t> &inputSize) const = 0;
 
     const std::pair<size_t, size_t>
-    getOutputSize(const std::pair<size_t, size_t> &inputSize) const override {return outputSize;};
+    getOutputSize(const std::pair<size_t, size_t> &inputSize) const override {
+      return outputSize;
+    };
 
   private:
     const std::pair<size_t, size_t>

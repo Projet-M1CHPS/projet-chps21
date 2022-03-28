@@ -22,8 +22,8 @@ namespace control::classifier {
 
   ControllerResult CTController::train() {
     if (not training_collection or not model or not optimizer) {
-      throw std::runtime_error(
-              "CTController: optimize called with missing training collection, model, or optimizer");
+      throw std::runtime_error("CTController: optimize called with missing training collection, "
+                               "model, or optimizer");
     }
 
     auto &classes = training_collection->getClasses();
@@ -59,7 +59,7 @@ namespace control::classifier {
     for (size_t i = 0; auto const &set : training_set) {
       target.fill(0);
       target(training_set.getLabel(i).getId(), 0) = 1.f;
-      training_targets.emplace_back(target, model->getClWrapper());
+      training_targets.emplace_back(target);
       i++;
     }
 
@@ -73,7 +73,7 @@ namespace control::classifier {
       for (int i = 0; i < training_set.size(); i++) {
         auto type = training_set.getLabel(i).getId();
         auto res = model->predict(training_set[i]);
-        auto buf = res.toFloatMatrix(model->getClWrapper());
+        auto buf = res.toFloatMatrix();
         auto res_type = std::distance(buf.begin(), std::max_element(buf.begin(), buf.end()));
 
         confusion(res_type, type)++;
@@ -91,7 +91,7 @@ namespace control::classifier {
       for (int i = 0; i < eval_set.size(); i++) {
         auto type = eval_set.getLabel(i).getId();
         auto res = model->predict(eval_set[i]);
-        auto buf = res.toFloatMatrix(model->getClWrapper());
+        auto buf = res.toFloatMatrix();
         auto res_type = std::distance(buf.begin(), std::max_element(buf.begin(), buf.end()));
 
         confusion(res_type, type)++;
@@ -121,7 +121,7 @@ namespace control::classifier {
     for (int i = 0; i < eval_set.size(); i++) {
       auto &type = eval_set.getLabel(i);
       auto res = model->predict(eval_set[i]);
-      auto buf = res.toFloatMatrix(model->getClWrapper());
+      auto buf = res.toFloatMatrix();
       auto res_type = std::distance(buf.begin(), std::max_element(buf.begin(), buf.end()));
 
 

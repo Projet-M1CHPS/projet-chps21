@@ -28,7 +28,8 @@ namespace cnnet {
 
   std::shared_ptr<CNNStorageBP>
   CNNTopologyLayerConvolution::createStorage(const std::pair<size_t, size_t> &inputSize) const {
-    return std::make_shared<CNNStorageBPConvolution>(inputSize, getOutputSize(inputSize), filter, stride);
+    return std::make_shared<CNNStorageBPConvolution>(inputSize, getOutputSize(inputSize), filter,
+                                                     stride);
   }
 
   const std::pair<size_t, size_t>

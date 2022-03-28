@@ -33,9 +33,9 @@ namespace utils {
       res.first->second.build();
     } catch (const cl::Error &e) {
       tscl::logger("Error building program " + program_name + ": " + e.what(), tscl::Log::Error);
-      tscl::logger("Build log:\n " +
-                   res.first->second.getBuildInfo<CL_PROGRAM_BUILD_LOG>(
-                           context.getInfo<CL_CONTEXT_DEVICES>()[0]), tscl::Log::Fatal);
+      tscl::logger("Build log:\n " + res.first->second.getBuildInfo<CL_PROGRAM_BUILD_LOG>(
+                                             context.getInfo<CL_CONTEXT_DEVICES>()[0]),
+                   tscl::Log::Fatal);
     }
     return res.first->second;
   }

@@ -88,7 +88,7 @@ namespace nnet {
     // Fill the matrices with the values from the stream
     // Matrices should already be allocated, and the size should match the topology
     void readMatrices(std::istream &stream, std::vector<math::clFMatrix> &matrices,
-                      utils::clWrapper &wrapper, const std::string &section_name) {
+                      const std::string &section_name) {
       std::string line = getNextNonEmptyLine(stream);
 
       if (line != "#" + section_name) {
@@ -105,33 +105,32 @@ namespace nnet {
           stream >> val;
           data[j] = val;
         }
-        m.fromFloatMatrix(buf, wrapper);
+        m = buf;
       }
     }
 
     void writeMatrices(std::ostream &stream, const std::vector<math::clFMatrix> &matrices,
-                       utils::clWrapper &wrapper, const std::string &section_name) {
+                       const std::string &section_name) {
       stream << "#" << section_name << std::endl;
       for (auto const &m : matrices) {
-        math::FloatMatrix buf = m.toFloatMatrix(wrapper);
+        math::FloatMatrix buf = m.toFloatMatrix();
         stream << buf << std::endl;
       }
     }
 
   }   // namespace
 
-  MLPerceptron MLPSerializer::readFromFile(utils::clWrapper &wrapper,
-                                           const std::filesystem::path &path) {
+  MLPerceptron MLPSerializer::readFromFile(const std::filesystem::path &path) {
     std::ifstream file(path);
     if (!file.is_open()) {
       throw std::runtime_error("MLPerceptronSerializer: Could not open file " + path.string() +
                                "for reading");
     }
-    return readFromStream(wrapper, file);
+    return readFromStream(file);
   }
 
-  MLPerceptron MLPSerializer::readFromStream(utils::clWrapper &wrapper, std::istream &stream) {
-    MLPerceptron res(&wrapper);
+  MLPerceptron MLPSerializer::readFromStream(std::istream &stream) {
+    MLPerceptron res;
     std::string line;
     auto topology = readTopology(stream);
     res.setTopology(topology);
@@ -144,8 +143,8 @@ namespace nnet {
 
     for (size_t i = 0; i < afs.size(); i++) { res.setActivationFunction(afs[i], i); }
 
-    readMatrices(stream, res.getWeights(), wrapper, "Weights");
-    readMatrices(stream, res.getBiases(), wrapper, "Biases");
+    readMatrices(stream, res.getWeights(), "Weights");
+    readMatrices(stream, res.getBiases(), "Biases");
 
     return res;
   }
@@ -167,12 +166,10 @@ namespace nnet {
     std::streamsize old_precision = stream.precision();
     stream << std::setprecision(std::numeric_limits<float>::max_digits10);
 
-    auto cl_wrapper = perceptron.getWrapper();
-
     writeTopology(stream, perceptron.getTopology());
     writeActivationFunctions(stream, perceptron.getActivationFunctions());
-    writeMatrices(stream, perceptron.getWeights(), cl_wrapper, "Weights");
-    writeMatrices(stream, perceptron.getBiases(), cl_wrapper, "Biases");
+    writeMatrices(stream, perceptron.getWeights(), "Weights");
+    writeMatrices(stream, perceptron.getBiases(), "Biases");
 
     stream << std::setprecision(old_precision);
     return true;

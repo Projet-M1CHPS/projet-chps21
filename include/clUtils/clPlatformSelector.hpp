@@ -9,10 +9,9 @@ namespace utils {
    */
   class clPlatformSelector {
   public:
-
     static std::unique_ptr<clWrapper> execute();
 
-    static std::unique_ptr<clWrapper> makeDefault() {
+    static void makeDefault() {
       auto wrapper = execute();
       clWrapper::setDefault(*wrapper);
     }

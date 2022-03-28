@@ -28,33 +28,26 @@ TEST(clFMatrixTest, CanCopy) {
   n(0, 1) = 1;
   n(1, 0) = 1;
   n(1, 1) = 1;
-  printf("ici 1\n");
 
   // Should be able to copy from float matrix
   clFMatrix m(n);
-  printf("ici 2\n");
 
   auto test = m.toFloatMatrix();
-  printf("ici 3\n");
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(1, test(i, j));
   }
 
   // Should be able to copy two clFMatrices
-  printf("ici 4\n");
   clFMatrix p = m;
-  printf("ici 5\n");
   auto test2 = p.toFloatMatrix();
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 2; j++) ASSERT_EQ(1, test(i, j));
   }
-  printf("ici 6\n");
 
   // Should be able to copy an empty matrix
   clFMatrix o;
-  printf("ici 7\n");
   m = o;
 
   ASSERT_EQ(0, m.getRows());

@@ -34,7 +34,9 @@ namespace nnet {
         computeGradient(queue);
       }
 
-      for (auto &it : avg_gradients) { it.ipscale(1.0f / static_cast<float>(curr_batch_size), *wrapper, queue); }
+      for (auto &it : avg_gradients) {
+        it.ipscale(1.0f / static_cast<float>(curr_batch_size), queue);
+      }
 
       // Update the weights and biases using the average of the current batch
       for (long j = neural_network->getWeights().size() - 1; j >= 0; j--) {

@@ -6,11 +6,11 @@ namespace cnnet {
   CNNLayer::CNNLayer(const size_t stride) : stride(stride) {}
 
 
-  CNNConvolutionLayer::CNNConvolutionLayer(
-          const std::pair<size_t, size_t> sizeFilter, const af::ActivationFunctionType aFunction, const size_t stride,
-                        const size_t padding)
+  CNNConvolutionLayer::CNNConvolutionLayer(const std::pair<size_t, size_t> sizeFilter,
+                                           const af::ActivationFunctionType aFunction,
+                                           const size_t stride, const size_t padding)
       : filter(sizeFilter), CNNLayer(stride), padding(padding), activationFunction(aFunction) {
-    //filter.randomize(0.f, 1.f);
+    // filter.randomize(0.f, 1.f);
   }
 
 

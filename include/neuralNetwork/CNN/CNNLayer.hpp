@@ -3,26 +3,19 @@
 
 #include <iostream>
 
+#include "ActivationFunction.hpp"
 #include "CNNStorageBP.hpp"
 #include "Filter.hpp"
 #include "Matrix.hpp"
-#include "ActivationFunction.hpp"
 
 namespace cnnet {
 
   using namespace math;
 
 
-  enum class LayerType {
-    CONVOLUTION,
-    POOLING
-  };
+  enum class LayerType { CONVOLUTION, POOLING };
 
-  enum class PoolingType {
-    MAX,
-    AVERAGE
-  };
-
+  enum class PoolingType { MAX, AVERAGE };
 
 
   class CNNLayer {
@@ -42,7 +35,8 @@ namespace cnnet {
 
   class CNNConvolutionLayer : public CNNLayer {
   public:
-    CNNConvolutionLayer(const std::pair<size_t, size_t> sizeFilter, const af::ActivationFunctionType aFunction, const size_t stride,
+    CNNConvolutionLayer(const std::pair<size_t, size_t> sizeFilter,
+                        const af::ActivationFunctionType aFunction, const size_t stride,
                         const size_t padding = 0);
 
     ~CNNConvolutionLayer() = default;

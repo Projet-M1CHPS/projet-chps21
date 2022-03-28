@@ -75,7 +75,8 @@ namespace math {
   /// Those are especially important since it is easier to manipulate matrices that are on the host
   /// and direct memory access is faster than through OpenCL read and write operations
   /// They may be used for matrix creations (e.g random matrix is created on the host then moved to
-  /// the device). As such, they should be considered primitives and not utility.
+  /// the device). As such, they should be considered pri
+  /// mitives and not utility.
 
   /// This operation is always blocking to prevent the host memory from being deallocated before the
   /// shift occurs
@@ -98,13 +99,8 @@ namespace math {
 
     rows = matrix.getRows();
     cols = matrix.getCols();
-    try {
-      queue.enqueueWriteBuffer(data, blocking, 0, rows * cols * sizeof(float),
-                               (void *) matrix.getData());
-    } catch (cl::Error &err) {
-      std::cerr << err.what() <<  err.err() << std::endl;
-      std::terminate();
-    }
+    queue.enqueueWriteBuffer(data, blocking, 0, rows * cols * sizeof(float),
+                             (void *) matrix.getData());
   }
 
   // This operation can be performed non-blocking since the device memory is not deallocated until
@@ -113,17 +109,10 @@ namespace math {
   FloatMatrix clFMatrix::toFloatMatrix(cl::CommandQueue &queue, bool blocking) const {
     FloatMatrix matrix(rows, cols);
 
-    printf("ici 18\n");
-    try {
-      if (size() != 0)
-        queue.enqueueReadBuffer(data, blocking, 0, rows * cols * sizeof(float),
-                                (void *) matrix.getData());
-    } catch (cl::Error &err) {
-      std::cerr << err.what() <<  err.err() << std::endl;
-      std::terminate();;
-    }
+    if (size() != 0)
+      queue.enqueueReadBuffer(data, blocking, 0, rows * cols * sizeof(float),
+                              (void *) matrix.getData());
 
-    printf("ici 19\n");
     return matrix;
   }
 
