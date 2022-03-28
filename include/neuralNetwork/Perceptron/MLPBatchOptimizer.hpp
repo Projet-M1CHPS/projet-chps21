@@ -5,7 +5,7 @@ namespace nnet {
 
   class MLPBatchOptimizer : public MLPOptimizer {
   public:
-    explicit MLPBatchOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm);
+    explicit MLPBatchOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm);
 
     void optimize(const std::vector<math::clFMatrix> &inputs,
                   const std::vector<math::clFMatrix> &targets) override;

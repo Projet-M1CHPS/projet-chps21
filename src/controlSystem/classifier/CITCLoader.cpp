@@ -96,7 +96,7 @@ namespace control::classifier {
       if (p.is_directory()) training_classes.push_back(p.path().filename());
     }
 
-    for (auto const &p : fs::directory_iterator(input_path / "train")) {
+    for (auto const &p : fs::directory_iterator(input_path / "optimize")) {
       if (p.is_directory()) eval_classes.push_back(p.path().filename());
     }
 
@@ -107,7 +107,7 @@ namespace control::classifier {
     // So we throw an exception if they don't match
     if (not std::equal(training_classes.begin(), training_classes.end(), eval_classes.begin())) {
       tscl::logger("Training and evaluation classes are not the same", tscl::Log::Error);
-      throw std::runtime_error("CITSLoader: train and eval classes are not the same");
+      throw std::runtime_error("CITSLoader: optimize and eval classes are not the same");
     }
 
     classes = std::make_shared<CClassLabelSet>();
@@ -160,7 +160,7 @@ namespace control::classifier {
   std::unique_ptr<CTCollection> CITCLoader::load(const std::filesystem::path &input_path,
                                                  utils::clWrapper &wrapper) {
     if (not fs::exists(input_path) or not fs::exists(input_path / "eval") or
-        not fs::exists(input_path / "train")) {
+        not fs::exists(input_path / "optimize")) {
       tscl::logger("CITCLoader: " + input_path.string() + " is not a valid CITC directory",
                    tscl::Log::Error);
       throw std::invalid_argument(
@@ -187,7 +187,7 @@ namespace control::classifier {
 
     // Load both sets
     loadSet(res->getEvalSet(), input_path / "eval", wrapper);
-    loadSet(res->getTrainingSet(), input_path / "train", wrapper);
+    loadSet(res->getTrainingSet(), input_path / "optimize", wrapper);
 
     tscl::logger("Loaded " + std::to_string(res->getTrainingSet().size()) + " inputs",
                  tscl::Log::Trace);

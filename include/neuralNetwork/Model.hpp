@@ -12,7 +12,7 @@ namespace nnet {
    */
   class Model {
   public:
-    Model(std::shared_ptr<utils::clWrapper> wrapper_ptr) : cl_wrapper_ptr(std::move(wrapper_ptr)) {
+    explicit Model(std::shared_ptr<utils::clWrapper> wrapper_ptr) : cl_wrapper_ptr(std::move(wrapper_ptr)) {
 
     }
 

@@ -11,6 +11,7 @@ namespace nnet {
    */
   class Optimizer {
   public:
+    Optimizer(utils::clWrapper *wrapper) : wrapper(wrapper) {}
     virtual ~Optimizer() = default;
 
     /**
@@ -27,6 +28,9 @@ namespace nnet {
      * Before updating
      */
     virtual void update() = 0;
+
+  protected:
+    utils::clWrapper *wrapper;
   };
 
 }   // namespace nnet

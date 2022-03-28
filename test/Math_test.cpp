@@ -1,6 +1,7 @@
 #include "Matrix.hpp"
 #include "Utils.hpp"
 #include <gtest/gtest.h>
+#include <utility>
 
 using namespace math;
 
@@ -10,6 +11,14 @@ TEST(MatrixTest, CanCreateMatrix) {
   ASSERT_TRUE(m.getData());
   ASSERT_EQ(10, m.getRows());
   ASSERT_EQ(11, m.getCols());
+
+
+  Matrix<float> o(std::pair<size_t, size_t>(10, 11));
+
+  ASSERT_TRUE(o.getData());
+  ASSERT_EQ(10, o.getRows());
+  ASSERT_EQ(11, o.getCols());
+
 
   // Should be able to create an empty matrix
   const Matrix<float> n;

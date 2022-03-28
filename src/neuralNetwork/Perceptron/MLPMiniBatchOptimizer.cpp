@@ -2,7 +2,7 @@
 
 namespace nnet {
 
-  MLPMiniBatchOptimizer::MLPMiniBatchOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm,
+  MLPMiniBatchOptimizer::MLPMiniBatchOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm,
                                                size_t batch_size)
       : MLPBatchOptimizer(model, std::move(tm)), batch_size(batch_size) {}
 

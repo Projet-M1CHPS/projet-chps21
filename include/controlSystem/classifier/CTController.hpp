@@ -11,13 +11,13 @@ namespace control::classifier {
    */
   class CTController : public RunController {
   public:
-    /** Constructs a controller to train a classifier model
+    /** Constructs a controller to optimize a classifier model
      * The controller doesn't assume ownership of any of anything besides its own parameters
      * Meaning the model, optimizer, and training collection must be kept alive for the lifetime of
      * the controller
      *
      * @param params The controller parameters
-     * @param model The model to train
+     * @param model The model to optimize
      * @param optimizer The optimizer used for training the model
      * @param collection The collection of input used for training
      */

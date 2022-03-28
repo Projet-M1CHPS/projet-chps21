@@ -23,7 +23,7 @@ namespace control::classifier {
   ControllerResult CTController::train() {
     if (not training_collection or not model or not optimizer) {
       throw std::runtime_error(
-              "CTController: train called with missing training collection, model, or optimizer");
+              "CTController: optimize called with missing training collection, model, or optimizer");
     }
 
     auto &classes = training_collection->getClasses();
@@ -46,7 +46,7 @@ namespace control::classifier {
 
     // Used for computing stats
     size_t nclass = classes.size();
-    CStatTracker training_tracker(params.getOutputPath() / "train", classes);
+    CStatTracker training_tracker(params.getOutputPath() / "optimize", classes);
     math::Matrix<size_t> confusion(nclass, nclass);
     math::FloatMatrix target(nclass, 1);
 

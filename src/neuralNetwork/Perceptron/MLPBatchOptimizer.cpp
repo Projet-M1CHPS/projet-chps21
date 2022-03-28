@@ -19,8 +19,8 @@ namespace nnet {
     }
   }   // namespace
 
-  MLPBatchOptimizer::MLPBatchOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm)
-      : MLPOptimizer(model, tm) {
+  MLPBatchOptimizer::MLPBatchOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm)
+      : MLPOptimizer(model, std::move(tm)) {
     auto &mlp_model = model;
 
     auto &perceptron = mlp_model.getPerceptron();

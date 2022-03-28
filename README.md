@@ -59,7 +59,7 @@ cd build
 ./bin/main <path todataset> <output path>
 ```
 
-Raw data will be outputted to <output path>/(eval or train).
+Raw data will be outputted to <output path>/(eval or optimize).
 
 # About this project
 
