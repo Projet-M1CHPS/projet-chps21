@@ -7,9 +7,9 @@ add_executable(
 
 target_link_libraries(
         NeuralNetwork_test PUBLIC
-        NeuralNetwork
         Utils
         gtest_main
+        NeuralNetwork
         BLAS::BLAS
 )
 gtest_discover_tests(NeuralNetwork_test)

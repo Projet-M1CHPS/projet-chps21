@@ -1,5 +1,5 @@
 #pragma once
-#include "Matrix.hpp"
+#include "clFMatrix.hpp"
 #include <filesystem>
 #include <iostream>
 #include <set>
@@ -22,6 +22,7 @@ namespace control {
 
   public:
     InputSet() = default;
+    virtual ~InputSet() = default;
 
     /** Sets can get really huge, so we destroy the copy constructor by precaution
      * FIXME: Add a copy() method
@@ -40,7 +41,7 @@ namespace control {
      * @param index
      * @return
      */
-    math::FloatMatrix const &operator[](size_t index) const {
+    math::clFMatrix const &operator[](size_t index) const {
       if (index >= inputs.size()) {
         throw std::out_of_range("InputSet::operator[] Index out of range");
       }
@@ -53,10 +54,10 @@ namespace control {
      *
      * @return
      */
-    [[nodiscard]] const std::vector<math::FloatMatrix> &getVector() const { return inputs; }
+    [[nodiscard]] const std::vector<math::clFMatrix> &getVector() const { return inputs; }
 
-    using Iterator = typename std::vector<math::FloatMatrix>::iterator;
-    using ConstIterator = typename std::vector<math::FloatMatrix>::const_iterator;
+    using Iterator = typename std::vector<math::clFMatrix>::iterator;
+    using ConstIterator = typename std::vector<math::clFMatrix>::const_iterator;
 
     /** Returns an iterator to the first input matrix
      *
@@ -101,7 +102,7 @@ namespace control {
   protected:
     virtual void print(std::ostream &os) const;
 
-    std::vector<math::FloatMatrix> inputs;
+    std::vector<math::clFMatrix> inputs;
   };
 
 }   // namespace control

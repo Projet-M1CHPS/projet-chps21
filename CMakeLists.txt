@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(projet-chps21 VERSION 0.5.0.2 DESCRIPTION "Cancer detection using deep learning" LANGUAGES CXX C)
+project(projet-chps21 VERSION 1.1.0.0 DESCRIPTION "Cancer detection using deep learning" LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -11,15 +11,15 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 # Setup compiler specific flags
 include(CheckCXXCompilerFlag)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fast -O3 -qmkl -lm")
-  # Intel compilers are not supported for coverage tests
-  set(CODE_COVERAGE OFF)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fast -O3 -qmkl -lm")
+    # Intel compilers are not supported for coverage tests
+    set(CODE_COVERAGE OFF)
 else ()
-  CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+    CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
 
-  if (COMPILER_SUPPORTS_MARCH_NATIVE)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
-  endif ()
+    if (COMPILER_SUPPORTS_MARCH_NATIVE)
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
+    endif ()
 endif ()
 
 include(check_coverage)
@@ -29,15 +29,17 @@ maybe_enable_coverage()
 configure_file(include/ProjectConstant.hpp.in include/ProjectVersion.hpp)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
-find_package(Threads REQUIRED)
 
-if (CMAKE_COMPILER_IS_INTELCXX)
-  # Comment one out to choose which mkl to use
-  # Intel's mkl sequential implementation
-  # set(BLA_VENDOR "Intel10_64ilp_seq")
-  # Intel's mkl parallel implementation
-  set(BLA_VENDOR "Intel10_64ilp")
-endif ()
+# Comment one out to choose which mkl to use
+# Intel's mkl sequential implementation
+# set(BLA_VENDOR "Intel10_64ilp_seq")
+# Intel's mkl parallel implementation
+# set(BLA_VENDOR "Intel10_64ilp")
+
+
+find_package(Threads REQUIRED)
+find_package(OpenCL REQUIRED)
+find_package(CLBlast REQUIRED)
 
 find_package(BLAS REQUIRED)
 

@@ -1,5 +1,5 @@
 
-#include "Network.hpp"
+#include "NeuralNetwork.hpp"
 #include "ProjectVersion.hpp"
 #include "tscl.hpp"
 
@@ -18,9 +18,9 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
 
   auto &w1 = nn1.getWeights();
 
-  auto tmStandard = std::make_shared<nnet::SGDOptimization>(0.2f);
+  auto tmStandard = std::make_shared<nnet::SGDOptimization>(nn1, 0.2f);
 
-  nnet::MLPModelStochOptimizer opt1(model, tmStandard);
+  nnet::MLPStochOptimizer opt1(model, tmStandard);
 
   std::vector<math::FloatMatrix> input(4);
   std::vector<math::FloatMatrix> target(4);
@@ -50,7 +50,7 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
   std::cout << std::setprecision(8);
   while (error > error_limit && count < 600) {
     for (int i = 0; i < bach_size; i++) {
-      for (int j = 0; j < 4; j++) { opt1.train(input[j], target[j]); }
+      for (int j = 0; j < 4; j++) { opt1.optimize(input[j], target[j]); }
     }
 
     error = 0.0;
