@@ -9,7 +9,9 @@ namespace nnet {
    */
   class MLPStochOptimizer final : public MLPOptimizer {
   public:
-    MLPStochOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm);
+    MLPStochOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm);
+    MLPStochOptimizer(MLPerceptron &perceptron,
+                      std::unique_ptr<Optimization> tm);
 
     math::clFMatrix optimize(const math::clFMatrix &input, const math::clFMatrix &target);
 
@@ -28,8 +30,7 @@ namespace nnet {
     template<class Optim, typename... Args, typename = std::is_base_of<nnet::Optimization, Optim>>
     static std::unique_ptr<MLPStochOptimizer> make(MLPModel &model, Args &&...args) {
       return std::make_unique<MLPStochOptimizer>(
-              model, std::make_unique<Optim>(model.getPerceptron(), model.getClWrapper(),
-                                             std::forward<Args>(args)...));
+              model, std::make_unique<Optim>(model.getPerceptron(), std::forward<Args>(args)...));
     }
 
   private:

@@ -6,7 +6,7 @@ namespace nnet {
 
   class MLPMiniBatchOptimizer : public MLPBatchOptimizer {
   public:
-    explicit MLPMiniBatchOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm,
+    explicit MLPMiniBatchOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm,
                                    size_t batch_size = 8);
 
     void optimize(const std::vector<math::clFMatrix> &inputs,
@@ -27,7 +27,7 @@ namespace nnet {
                                                        Args &&...args) {
       return std::make_unique<MLPMiniBatchOptimizer>(
               model,
-              std::make_unique<Optim>(model.getPerceptron(), model.getClWrapper(),
+              std::make_unique<Optim>(model.getPerceptron(),
                                       std::forward<Args>(args)...),
               batch_size);
     }

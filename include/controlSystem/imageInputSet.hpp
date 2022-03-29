@@ -18,25 +18,21 @@ namespace control {
      *
      * @param image
      */
-    void append(const math::clFMatrix &image, utils::clWrapper &wrapper, cl::CommandQueue &queue,
-                bool blocking = true) {
-      inputs.emplace_back(image, wrapper, queue, blocking);
+    void append(const math::clFMatrix &image, cl::CommandQueue &queue, bool blocking = true) {
+      inputs.emplace_back(image, queue, blocking);
     }
 
-    void append(const math::clFMatrix &image, utils::clWrapper &wrapper, bool blocking = true) {
-      append(image, wrapper, wrapper.getDefaultQueue(), blocking);
+    void append(const math::clFMatrix &image, bool blocking = true) {
+      append(image, utils::cl_wrapper.getDefaultQueue(), blocking);
     }
 
-    void append(math::clFMatrix&& image) {
-      inputs.emplace_back(std::move(image));
-    }
+    void append(math::clFMatrix &&image) { inputs.emplace_back(std::move(image)); }
 
-    static ImageInputSet load(const std::filesystem::path &source,
-                                           utils::clWrapper &wrapper, cl::CommandQueue &queue,
-                                           bool blocking = true);
+    static ImageInputSet load(const std::filesystem::path &source, utils::clWrapper &wrapper,
+                              cl::CommandQueue &queue, bool blocking = true);
 
-    static ImageInputSet load(const std::filesystem::path &directory,
-                                           utils::clWrapper &wrapper, bool blocking = true) {
+    static ImageInputSet load(const std::filesystem::path &directory, utils::clWrapper &wrapper,
+                              bool blocking = true) {
       return load(directory, wrapper, wrapper.getDefaultQueue(), blocking);
     }
   };

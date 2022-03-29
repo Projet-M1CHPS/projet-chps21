@@ -22,7 +22,7 @@ __kernel void rprop_update(__global float *weights, __global float *gradient,
     float delta = fmin(weights_update[i] * eta_plus, update_max);
     weight_change = delta * sign(gradient[i]);
     weights_update[i] = delta;
-    old_gradient[i]= gradient[i];
+    old_gradient[i] = gradient[i];
   }
   // The gradient as changed direction
   // Rollback and reduce the delta to converge slower

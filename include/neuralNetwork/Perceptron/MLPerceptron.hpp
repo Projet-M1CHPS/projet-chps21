@@ -18,6 +18,8 @@ namespace nnet {
    * @brief Wrapper around an std::vector used to describe the layers of an MLP
    */
   class MLPTopology {
+    friend std::ostream &operator<<(std::ostream &os, const MLPTopology &topology);
+
   public:
     MLPTopology() = default;
     MLPTopology(std::initializer_list<size_t> list) : layers(list) {}
@@ -25,8 +27,15 @@ namespace nnet {
     explicit MLPTopology(std::vector<size_t> sizes) : layers(std::move(sizes)) {}
     explicit MLPTopology(std::vector<size_t> &&sizes) : layers(std::move(sizes)) {}
 
-    size_t &operator[](size_t i) { return layers[i]; }
-    size_t const &operator[](size_t i) const { return layers[i]; }
+    size_t &operator[](size_t i) {
+      if (i > layers.size()) { throw std::out_of_range("Index out of range"); }
+      return layers[i];
+    }
+
+    size_t const &operator[](size_t i) const {
+      if (i > layers.size()) { throw std::out_of_range("Index out of range"); }
+      return layers[i];
+    }
 
     [[nodiscard]] size_t getInputSize() const { return layers.empty() ? 0 : layers.front(); }
     void setInputSize(size_t i) {
@@ -46,6 +55,7 @@ namespace nnet {
       }
     }
 
+    void push_front(size_t i) { layers.insert(layers.begin(), i); }
     void pushBack(size_t i) { layers.push_back(i); }
 
     [[nodiscard]] bool empty() const { return layers.empty(); }
@@ -76,7 +86,7 @@ namespace nnet {
      * @brief Construct a new Neural Network object with no layer
      *
      */
-    explicit MLPerceptron(utils::clWrapper *wrapper, const MLPTopology &topology = {});
+    explicit MLPerceptron(const MLPTopology &topology = {});
 
     MLPerceptron(const MLPerceptron &other) { *this = other; }
     MLPerceptron &operator=(const MLPerceptron &);
@@ -128,14 +138,8 @@ namespace nnet {
     [[nodiscard]] std::vector<math::clFMatrix> &getBiases() { return biases; }
     [[nodiscard]] const std::vector<math::clFMatrix> &getBiases() const { return biases; }
 
-    [[nodiscard]] utils::clWrapper &getWrapper() { return *wrapper; }
-    [[nodiscard]] const utils::clWrapper &getWrapper() const { return *wrapper; }
-
   private:
     MLPTopology topology;
-
-    // Wrapper used for memory allocations and kernels
-    utils::clWrapper *wrapper;
 
     std::vector<math::clFMatrix> weights;
     std::vector<math::clFMatrix> biases;
@@ -144,6 +148,7 @@ namespace nnet {
     std::vector<af::ActivationFunctionType> activation_functions;
   };
 
+  // std::ostream& operator<<(std::ostream& os, const Pair<T, U>& p)
   std::ostream &operator<<(std::ostream &os, const MLPerceptron &nn);
 
 }   // namespace nnet

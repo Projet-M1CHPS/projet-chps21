@@ -10,8 +10,8 @@ namespace nnet {
    */
   class MLPModel : public Model {
   public:
-    explicit MLPModel(std::shared_ptr<utils::clWrapper> wrapper);
-    MLPModel(std::shared_ptr<utils::clWrapper> wrapper, std::unique_ptr<MLPerceptron> &&perceptron);
+    MLPModel();
+    MLPModel(std::unique_ptr<MLPerceptron> &&perceptron);
 
     [[nodiscard]] MLPerceptron &getPerceptron() { return *perceptron; }
     [[nodiscard]] MLPerceptron const &getPerceptron() const { return *perceptron; }
@@ -34,7 +34,7 @@ namespace nnet {
      * @return a random model
      */
     static std::unique_ptr<MLPModel>
-    random(const std::shared_ptr<utils::clWrapper> &wrapper_ptr, MLPTopology const &topology,
+    random(MLPTopology const &topology,
            af::ActivationFunctionType af = af::ActivationFunctionType::sigmoid);
 
     /**
@@ -46,8 +46,7 @@ namespace nnet {
      * @return
      */
     static std::unique_ptr<MLPModel>
-    randomReluSigmoid(const std::shared_ptr<utils::clWrapper> &wrapper_ptr,
-                      MLPTopology const &topology);
+    randomReluSigmoid(MLPTopology const &topology);
 
   private:
     std::unique_ptr<MLPerceptron> perceptron;

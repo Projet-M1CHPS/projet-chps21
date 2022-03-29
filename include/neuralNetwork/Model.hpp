@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Matrix.hpp"
-#include "clUtils/clFTensor.hpp"
 #include "clUtils/clFMatrix.hpp"
 #include "clUtils/clWrapper.hpp"
 #include <filesystem>
@@ -13,8 +12,7 @@ namespace nnet {
    */
   class Model {
   public:
-    Model(std::shared_ptr<utils::clWrapper> wrapper_ptr) : cl_wrapper_ptr(std::move(wrapper_ptr)) {}
-
+    Model() = default;
     virtual ~Model() = default;
 
     //
@@ -51,10 +49,6 @@ namespace nnet {
      */
     virtual bool load(const std::filesystem::path &path) = 0;
 
-    utils::clWrapper &getClWrapper() const { return *cl_wrapper_ptr; }
-
-  protected:
-    std::shared_ptr<utils::clWrapper> cl_wrapper_ptr;
   };
 
 }   // namespace nnet

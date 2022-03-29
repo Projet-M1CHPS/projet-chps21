@@ -9,6 +9,7 @@ extern "C" {
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <utility>
 
 #define USE_BLAS
 
@@ -25,6 +26,12 @@ namespace math {
     Matrix() = default;
 
     Matrix(size_t rows, size_t cols) : rows(rows), cols(cols) {
+      if (rows == 0 || cols == 0) { return; }
+
+      data = utils::make_aligned_unique<T>(64, rows * cols);
+    }
+
+    Matrix(const std::pair<size_t, size_t> size) : rows(size.first), cols(size.second) {
       if (rows == 0 || cols == 0) { return; }
 
       data = utils::make_aligned_unique<T>(64, rows * cols);
@@ -450,6 +457,7 @@ namespace math {
     return os;
   }
 
+
   template<typename T, typename = std::enable_if<std::is_floating_point_v<T>>>
   void randomize(math::Matrix<T> &matrix, T min, T max) {
     std::mt19937 gen(std::random_device{}());
@@ -461,6 +469,50 @@ namespace math {
     } else if constexpr (std::is_integral_v<T>) {
       std::uniform_int_distribution<> dis(min, max);
       for (auto &elem : matrix) elem = dis(gen);
+    }
+  }
+
+
+  template<typename T, typename = std::enable_if<std::is_floating_point_v<T>>>
+  void randomize(math::Matrix<T> &matrix, T min, T max, const size_t padding) {
+    if (not padding) {
+      randomize(matrix, min, max);
+      return;
+    } else if ((matrix.getRows() < (2 * padding)) or (matrix.getCols() < (2 * padding))) {
+      throw std::invalid_argument("Matrix too small for padding");
+    }
+
+    std::mt19937 gen(std::random_device{}());
+
+    auto vec = matrix.getData();
+    const size_t offset = matrix.getCols() * padding;
+
+    if constexpr (std::is_floating_point_v<T>) {
+      std::uniform_real_distribution<> dis(min, max);
+
+      for (size_t i = 0; i < offset; i++) { vec[i] = vec[matrix.getSize() - i - 1] = 0.0; }
+      for (size_t i = 0; i < matrix.getRows() - 2 * padding; i++) {
+        for (size_t j = 0; j < padding; j++) {
+          vec[offset + i * matrix.getRows() + j] =
+                  vec[offset + (i + 1) * matrix.getRows() - (j + 1)] = 0.0;
+        }
+        for (size_t j = 0; j < matrix.getCols() - 2 * padding; j++) {
+          vec[offset + padding + i * matrix.getRows() + j] = dis(gen);
+        }
+      }
+    } else if constexpr (std::is_integral_v<T>) {
+      std::uniform_int_distribution<> dis(min, max);
+
+      for (size_t i = 0; i < offset; i++) { vec[i] = vec[matrix.getSize() - i - 1] = 0; }
+      for (size_t i = 0; i < matrix.getRows() - 2 * padding; i++) {
+        for (size_t j = 0; j < padding; j++) {
+          vec[offset + i * matrix.getRows() + j] =
+                  vec[offset + (i + 1) * matrix.getRows() - (j + 1)] = 0;
+        }
+        for (size_t j = 0; j < matrix.getCols() - 2 * padding; j++) {
+          vec[offset + padding + i * matrix.getRows() + j] = dis(gen);
+        }
+      }
     }
   }
 

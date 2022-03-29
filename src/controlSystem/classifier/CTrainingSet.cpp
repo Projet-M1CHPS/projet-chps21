@@ -17,7 +17,7 @@ namespace control::classifier {
     if (label == nullptr) {
       throw std::invalid_argument("ClassifierTrainingSet: label is nullptr");
     }
-    inputs.emplace_back(mat, wrapper, queue, blocking);
+    inputs.emplace_back(mat, queue, blocking);
     inputs_id.push_back(input_id);
     set_labels.push_back(label);
   }

@@ -2,7 +2,7 @@
 
 namespace nnet {
 
-  MLPMiniBatchOptimizer::MLPMiniBatchOptimizer(MLPModel &model, std::shared_ptr<Optimization> tm,
+  MLPMiniBatchOptimizer::MLPMiniBatchOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm,
                                                size_t batch_size)
       : MLPBatchOptimizer(model, std::move(tm)), batch_size(batch_size) {}
 
@@ -11,8 +11,8 @@ namespace nnet {
                                        const std::vector<math::clFMatrix> &targets) {
     size_t n = inputs.size();
 
-    cl::CommandQueue queue(wrapper->getDefaultDevice());
-    cl::Kernel zero_out = wrapper->getKernels().getKernel("utils.cl", "zero_out");
+    cl::CommandQueue queue(utils::cl_wrapper.getDefaultDevice());
+    cl::Kernel zero_out = utils::cl_wrapper.getKernels().getKernel("utils.cl", "zero_out");
 
     auto zerol = [&](auto &mat) {
       zero_out.setArg(0, mat);
@@ -30,18 +30,20 @@ namespace nnet {
       // Compute the average gradient and error for the current batch
       for (size_t j = 0; j < curr_batch_size; j++) {
         forward(inputs[i + j], queue);
-        storage.getError() = layers_af[layers_af.size() - 1].sub(targets[i + j], *wrapper, queue);
+        storage.getError() = layers_af[layers_af.size() - 1].sub(1.0f, targets[i + j], queue);
         computeGradient(queue);
       }
 
-      for (auto &it : avg_gradients) { it.ipscale(1.0f / static_cast<float>(curr_batch_size), *wrapper, queue); }
+      for (auto &it : avg_gradients) {
+        it.ipscale(1.0f / static_cast<float>(curr_batch_size), queue);
+      }
 
       // Update the weights and biases using the average of the current batch
       for (long j = neural_network->getWeights().size() - 1; j >= 0; j--) {
         storage.setIndex(j);
         std::swap(storage.getGradient(), avg_gradients[j]);
         std::swap(storage.getError(), avg_errors[j]);
-        this->opti_meth->optimize(storage, *wrapper, queue);
+        this->opti_meth->optimize(storage, queue);
       }
       // We wait for the last batch to be processed before starting the next one
       // to avoid overfilling the queue

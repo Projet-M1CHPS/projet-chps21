@@ -8,10 +8,9 @@ namespace nnet {
    */
   class SGDOptimization : public Optimization {
   public:
-    explicit SGDOptimization(const MLPerceptron &perceptron, utils::clWrapper &wrapper, float lr);
+    explicit SGDOptimization(const MLPerceptron &perceptron, float lr);
 
-    void optimize(BackpropStorage &storage, utils::clWrapper &wrapper,
-                  cl::CommandQueue &queue) override;
+    void optimize(BackpropStorage &storage, cl::CommandQueue &queue) override;
 
   private:
     const float learning_r;

@@ -41,22 +41,20 @@ namespace control::classifier {
 
     // Takes a grayscale image and load it to a clFMatrix
     // The image is normalized using a given factor
-    math::clFMatrix normalizeToDevice(const image::GrayscaleImage &img, utils::clWrapper &wrapper) {
+    math::clFMatrix normalizeToDevice(const image::GrayscaleImage &img) {
       // Load the conversion kernel
       cl::Kernel kernel =
-              wrapper.getKernels().getKernel("NormalizeCharToFloat.cl", "normalizeCharToFloat");
+              utils::cl_wrapper.getKernels().getKernel("NormalizeCharToFloat.cl", "normalizeCharToFloat");
 
       // Allocate a new cl matrix
-      math::clFMatrix res(img.getSize(), 1, wrapper);
+      math::clFMatrix res(img.getSize(), 1);
 
       // We need to load the image to the cl device before applying the kernel
-      cl::Buffer img_buffer(wrapper.getContext(), CL_MEM_READ_WRITE,
-                            img.getSize());
+      cl::Buffer img_buffer(utils::cl_wrapper.getContext(), CL_MEM_READ_WRITE, img.getSize());
 
-      auto &queue = wrapper.getDefaultQueue();
+      auto &queue = utils::cl_wrapper.getDefaultQueue();
 
-      queue.enqueueWriteBuffer(img_buffer, CL_TRUE, 0, img.getSize(),
-                               img.getData());
+      queue.enqueueWriteBuffer(img_buffer, CL_TRUE, 0, img.getSize(), img.getData());
 
       kernel.setArg(0, img_buffer);
       kernel.setArg(1, res.getBuffer());
@@ -72,14 +70,14 @@ namespace control::classifier {
 
     std::vector<math::clFMatrix> loadDirectory(const fs::path &directory,
                                                const TransformationPipeline &pipeline,
-                                               utils::clWrapper &wrapper, cl::CommandQueue &queue) {
+                                               cl::CommandQueue &queue) {
       std::vector<math::clFMatrix> res;
       // We iterate on the directory, creating an OpenCL buffer for each image
       for (auto &file : fs::directory_iterator(directory)) {
         if (not file.is_regular_file()) continue;
 
         auto img = pipeline.loadAndTransform(file.path());
-        auto cl_matrix = normalizeToDevice(img, wrapper);
+        auto cl_matrix = normalizeToDevice(img);
         res.push_back(std::move(cl_matrix));
       }
       return res;
@@ -107,7 +105,7 @@ namespace control::classifier {
     // So we throw an exception if they don't match
     if (not std::equal(training_classes.begin(), training_classes.end(), eval_classes.begin())) {
       tscl::logger("Training and evaluation classes are not the same", tscl::Log::Error);
-      throw std::runtime_error("CITSLoader: train and eval classes are not the same");
+      throw std::runtime_error("CITSLoader: optimize and eval classes are not the same");
     }
 
     classes = std::make_shared<CClassLabelSet>();
@@ -126,16 +124,15 @@ namespace control::classifier {
   //
   // During the openCL conversion, matrices are normalized by a given factor (255 so values are
   // contained between 0 and 1). This prevents exploding gradient during the training process
-  void CITCLoader::loadSet(CTrainingSet &res, const std::filesystem::path &input_path,
-                           utils::clWrapper &wrapper) {
+  void CITCLoader::loadSet(CTrainingSet &res, const std::filesystem::path &input_path) {
     // Create an engine for the resize transformation
     tr::TransformEngine resize;
     resize.addTransformation(std::make_shared<tr::Resize>(target_width, target_height));
     // Instantiates the  pipeline
     TransformationPipeline pipeline({pre_process, resize, post_process});
 
-    cl::Context context = wrapper.getContext();
-    auto& queue = wrapper.getDefaultQueue();
+    cl::Context context = utils::cl_wrapper.getContext();
+    auto &queue = utils::cl_wrapper.getDefaultQueue();
 
     // Each class is a directory
     // inside the input path
@@ -149,7 +146,7 @@ namespace control::classifier {
         throw std::runtime_error("CITSLoader: " + input_path.string() + " is missing class id: " +
                                  std::to_string(c.first) + " (\"" + c_name + "\")");
       }
-      auto inputs = loadDirectory(target_path, pipeline, wrapper, queue);
+      auto inputs = loadDirectory(target_path, pipeline, queue);
       for (auto &i : inputs) { res.append(0, &c.second, std::move(i)); }
     }
 
@@ -186,8 +183,8 @@ namespace control::classifier {
     auto res = std::make_unique<CTCollection>(classes);
 
     // Load both sets
-    loadSet(res->getEvalSet(), input_path / "eval", wrapper);
-    loadSet(res->getTrainingSet(), input_path / "train", wrapper);
+    loadSet(res->getEvalSet(), input_path / "eval");
+    loadSet(res->getTrainingSet(), input_path / "train");
 
     tscl::logger("Loaded " + std::to_string(res->getTrainingSet().size()) + " inputs",
                  tscl::Log::Trace);
