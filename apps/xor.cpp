@@ -6,10 +6,11 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
+#include "CNNLayer.hpp"
 
 
 void runXor(const size_t bach_size, const float learning_rate, const float error_limit) {
-  nnet::MLPModel model;
+  /*nnet::MLPModel model;
   auto &nn1 = model.getPerceptron();
   nnet::MLPTopology topology = {2, 3, 3, 1};
   nn1.setTopology(topology);
@@ -18,32 +19,39 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
 
   auto &w1 = nn1.getWeights();
 
-  auto tmStandard = std::make_shared<nnet::SGDOptimization>(nn1, 0.2f);
+  auto tmStandard = std::make_unique<nnet::SGDOptimization>(nn1, 0.2f);
 
   nnet::MLPStochOptimizer opt1(model, tmStandard);
 
-  std::vector<math::FloatMatrix> input(4);
-  std::vector<math::FloatMatrix> target(4);
+  std::vector<math::FloatMatrix> input_buffer(4);
+  std::vector<math::FloatMatrix> target_buffer(4);
   for (size_t i = 0; i < 4; i++) {
-    input[i] = math::FloatMatrix(2, 1);
-    target[i] = math::FloatMatrix(1, 1);
+    input_buffer[i] = math::FloatMatrix(2, 1);
+    target_buffer[i] = math::FloatMatrix(1, 1);
   }
 
   // Xor truth table
   // Yes, this is ugly, but who cares ?
-  input[0](0, 0) = 0.f;
-  input[0](1, 0) = 0.f;
-  input[1](0, 0) = 1.f;
-  input[1](1, 0) = 0.f;
-  input[2](0, 0) = 0.f;
-  input[2](1, 0) = 1.f;
-  input[3](0, 0) = 1.f;
-  input[3](1, 0) = 1.f;
+  input_buffer[0](0, 0) = 0.f;
+  input_buffer[0](1, 0) = 0.f;
+  input_buffer[1](0, 0) = 1.f;
+  input_buffer[1](1, 0) = 0.f;
+  input_buffer[2](0, 0) = 0.f;
+  input_buffer[2](1, 0) = 1.f;
+  input_buffer[3](0, 0) = 1.f;
+  input_buffer[3](1, 0) = 1.f;
 
-  target[0](0, 0) = 0.f;
-  target[1](0, 0) = 1.f;
-  target[2](0, 0) = 1.f;
-  target[3](0, 0) = 0.f;
+  target_buffer[0](0, 0) = 0.f;
+  target_buffer[1](0, 0) = 1.f;
+  target_buffer[2](0, 0) = 1.f;
+  target_buffer[3](0, 0) = 0.f;
+
+  std::vector<math::clFMatrix> input(4);
+  std::vector<math::clFMatrix> target(4);
+  for (size_t i = 0; i < 4; i++) {
+    input[i] = input_buffer[i];
+    target[i] = target_buffer[i];
+  }
 
   float error = 1.0;
   size_t count = 0;
@@ -57,7 +65,7 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
     for (int i = 0; i < input.size(); i++) {
       error += std::fabs(nn1.predict(input[i])(0, 0) - target[i](0, 0));
     }
-    error /= input.size();
+    error /= (float)input.size();
     std::cout << error << std::endl;
     count++;
   }
@@ -68,8 +76,14 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
   for (int i = 0; i < input.size(); i++) {
     std::cout << input[i](0, 0) << "|" << input[i](1, 0) << " = " << nn1.predict(input[i]) << "("
               << target[i](0, 0) << ")" << std::endl;
-  }
+  }*/
 }
+
+
+void testConvolutionalLayer() {
+
+}
+
 
 int main() {
   runXor(100, 0.1, 0.001);
