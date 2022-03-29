@@ -11,11 +11,9 @@ namespace nnet {
   class MLPOptimizer : public Optimizer {
   public:
     MLPOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm)
-        : neural_network(&model.getPerceptron()),
-          opti_meth(std::move(tm)) {}
+        : neural_network(&model.getPerceptron()), opti_meth(std::move(tm)) {}
 
-    MLPOptimizer(MLPerceptron &perceptron,
-                 std::unique_ptr<Optimization> tm)
+    MLPOptimizer(MLPerceptron &perceptron, std::unique_ptr<Optimization> tm)
         : neural_network(&perceptron), opti_meth(std::move(tm)) {}
 
     MLPerceptron *gePerceptron() const { return neural_network; }

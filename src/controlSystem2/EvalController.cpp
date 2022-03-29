@@ -8,10 +8,7 @@ namespace control {
 
 
   ControllerResult EvalController::run(utils::clWrapper &wrapper) {
-
-    if (input_set->getTensorCount() == 0) {
-      return {1, "No input data found"};
-    }
+    if (input_set->getTensorCount() == 0) { return {1, "No input data found"}; }
 
     size_t count = 0;
     // Start an async job on the first tensor
@@ -38,6 +35,6 @@ namespace control {
         (*input_set)[count].setClass(class_id);
       }
     }
-    return { 0, "Evaluation Success" };
+    return {0, "Evaluation Success"};
   }
 }   // namespace control

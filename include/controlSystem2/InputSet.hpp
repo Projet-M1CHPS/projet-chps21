@@ -18,7 +18,7 @@ namespace control {
      * @param class_id The id of the class of this sample
      * @param data The raw data of the sample
      */
-    Sample(size_t id, size_t class_id, math::clFMatrix &&data)
+    Sample(size_t id, long class_id, math::clFMatrix &&data)
         : id(id), class_id(class_id), data(std::move(data)) {}
 
     size_t getId() const { return id; }
@@ -36,7 +36,7 @@ namespace control {
 
   private:
     size_t id;
-    size_t class_id;
+    long class_id;
     math::clFMatrix data;
   };
 
@@ -51,6 +51,9 @@ namespace control {
   public:
     friend InputSetIterator;
 
+    InputSet(size_t input_width, size_t input_height)
+        : input_width(input_width), input_height(input_height) {}
+
     /**
      * @brief Append the given samples and their associated tensor to the input set
      * No check is done to ensure the samples are contained in the tensor, beware that this may
@@ -62,8 +65,8 @@ namespace control {
      * this vector is smaller than the size of the ids vector, the class id is ignored. This allow
      * one to create an InputSet where the classes are not known
      */
-    void append(math::clFTensor &&tensor, std::vector<size_t> ids,
-                std::vector<size_t> class_id = {});
+    void append(math::clFTensor &&tensor, const std::vector<size_t> &ids,
+                const std::vector<long> &class_id = {});
 
     /**
      * @brief Alter the tensors size and reorder the samples (Maintaining the same ordering) to
@@ -72,12 +75,15 @@ namespace control {
      * Note that this methods is costly, and should be used with care.
      *
      * @param new_tensor_size The new size  of the tensors. If the tensor size is not a multiple of
-     * the number of samples, the last tensor will be truncated. Tensor that already are at the
-     * right size are left untouched
+     * the number of samples, the last tensor will be truncated.
      */
     void alterTensors(size_t new_tensor_size);
+    void shuffle(size_t random_seed);
 
     size_t getSize() const { return size; }
+
+    size_t getInputWidth() const { return input_width; }
+    size_t getInputHeight() const { return input_height; }
 
     Sample operator[](size_t index) {
       if (index > size) throw std::out_of_range("Sample index out of range");
@@ -166,10 +172,11 @@ namespace control {
     const std::vector<math::clFTensor> &getTensors() const { return tensors; }
 
   private:
-    std::vector<math::clFTensor> tensors;
     size_t size = 0;
+    size_t input_width = 0, input_height = 0;
+    std::vector<math::clFTensor> tensors;
     std::vector<size_t> ids;
-    std::vector<size_t> class_ids;
+    std::vector<long> class_ids;
   };
 
   /**

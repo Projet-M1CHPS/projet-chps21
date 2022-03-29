@@ -45,8 +45,7 @@ namespace nnet {
      * @param topology The topology to be used for the model
      * @return
      */
-    static std::unique_ptr<MLPModel>
-    randomReluSigmoid(MLPTopology const &topology);
+    static std::unique_ptr<MLPModel> randomReluSigmoid(MLPTopology const &topology);
 
   private:
     std::unique_ptr<MLPerceptron> perceptron;

@@ -11,7 +11,7 @@ namespace math {
    */
   class clFTensor {
   public:
-    clFTensor(size_t x, size_t y, size_t z, utils::clWrapper &cl);
+    clFTensor(size_t x, size_t y, size_t z);
 
     /**
      * @brief Returns the submatrix at the given index.

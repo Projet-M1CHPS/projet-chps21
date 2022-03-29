@@ -22,8 +22,7 @@ namespace nnet {
     template<class Optim, typename... Args, typename = std::is_base_of<nnet::Optimization, Optim>>
     static std::unique_ptr<MLPBatchOptimizer> make(MLPModel &model, Args &&...args) {
       return std::make_unique<MLPBatchOptimizer>(
-              model, std::make_unique<Optim>(model.getPerceptron(),
-                                             std::forward<Args>(args)...));
+              model, std::make_unique<Optim>(model.getPerceptron(), std::forward<Args>(args)...));
     }
 
 

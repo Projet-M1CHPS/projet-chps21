@@ -29,8 +29,8 @@ namespace image {
     /**
      * @brief Construct a new GrayscaleImage object
      *
-     * @param width width of the image
-     * @param height height of the image
+     * @param width input_width of the image
+     * @param height input_height of the image
      * @param ptr Ptr to the raw data
      * The image assume the ownership of the ptr
      */
@@ -118,7 +118,7 @@ namespace image {
     /**
      * @brief Returns the dimensions of the image as a pair
      *
-     * @return std::pair<width, height>
+     * @return std::pair<input_width, input_height>
      */
     [[nodiscard]] std::pair<size_t, size_t> getDimension() const {
       return std::make_pair(width, height);
@@ -132,7 +132,7 @@ namespace image {
     [[nodiscard]] size_t getSize() const { return height * width; }
 
     /**
-     * @brief Change the images dimensions properties (width, height) and re-allocate the pixels
+     * @brief Change the images dimensions properties (input_width, input_height) and re-allocate the pixels
      * array accordingly.
      */
     void setSize(size_t new_width, size_t new_height) {
@@ -200,7 +200,7 @@ namespace image {
      * @brief Get basic informations about a file without loading it
      *
      * @param path Image path
-     * @return (width, height, channels)
+     * @return (input_width, input_height, channels)
      */
     static std::tuple<int, int, int> loadInfo(std::filesystem::path const &path);
 

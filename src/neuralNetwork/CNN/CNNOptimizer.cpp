@@ -3,8 +3,7 @@
 
 namespace cnnet {
 
-  CNNOptimizer::CNNOptimizer(CNNModel &model)
-      : nn_cnn(&model.getCnn()), nn_mlp(&model.getMlp()) {
+  CNNOptimizer::CNNOptimizer(CNNModel &model) : nn_cnn(&model.getCnn()), nn_mlp(&model.getMlp()) {
     flatten = model.getFlatten().toFloatMatrix(true);
 
     const auto &layers = nn_cnn->getLayers();

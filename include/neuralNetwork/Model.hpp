@@ -48,7 +48,6 @@ namespace nnet {
      * @return True if the model was loaded successfully, false otherwise
      */
     virtual bool load(const std::filesystem::path &path) = 0;
-
   };
 
 }   // namespace nnet

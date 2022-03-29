@@ -4,8 +4,8 @@
 #include "Matrix.hpp"
 #include "clWrapper.hpp"
 #include <CL/opencl.hpp>
-#include <utility>
 #include <clblast.h>
+#include <utility>
 
 namespace math {
 

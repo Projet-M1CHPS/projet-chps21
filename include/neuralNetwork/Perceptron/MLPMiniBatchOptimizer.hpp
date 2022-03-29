@@ -26,9 +26,7 @@ namespace nnet {
     static std::unique_ptr<MLPMiniBatchOptimizer> make(MLPModel &model, size_t batch_size,
                                                        Args &&...args) {
       return std::make_unique<MLPMiniBatchOptimizer>(
-              model,
-              std::make_unique<Optim>(model.getPerceptron(),
-                                      std::forward<Args>(args)...),
+              model, std::make_unique<Optim>(model.getPerceptron(), std::forward<Args>(args)...),
               batch_size);
     }
 

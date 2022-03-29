@@ -10,8 +10,7 @@ namespace nnet {
   class MLPStochOptimizer final : public MLPOptimizer {
   public:
     MLPStochOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm);
-    MLPStochOptimizer(MLPerceptron &perceptron,
-                      std::unique_ptr<Optimization> tm);
+    MLPStochOptimizer(MLPerceptron &perceptron, std::unique_ptr<Optimization> tm);
 
     math::clFMatrix optimize(const math::clFMatrix &input, const math::clFMatrix &target);
 

@@ -2,15 +2,15 @@
 
 namespace nnet {
   namespace {
-    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat,
-                 cl::CommandQueue &queue) {
+    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue) {
       if (type == af::ActivationFunctionType::identity) return;
       auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
       afunc.setArg(0, mat.getBuffer());
       queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
     }
 
-    void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue) {
+    void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
+                           cl::CommandQueue &queue) {
       if (type == af::ActivationFunctionType::identity) return;
       auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).second;
       afunc.setArg(0, mat.getBuffer());
@@ -67,9 +67,7 @@ namespace nnet {
 
     queue.finish();
 
-    for (auto &it : avg_gradients) {
-      it.ipscale(((float) 1.0 / static_cast<float>(n)), queue);
-    }
+    for (auto &it : avg_gradients) { it.ipscale(((float) 1.0 / static_cast<float>(n)), queue); }
 
     for (long i = neural_network->getWeights().size() - 1; i >= 0; i--) {
       storage.setIndex(i);
@@ -91,8 +89,8 @@ namespace nnet {
 
     if (weights.empty()) return;
 
-    math::clFMatrix current_layer = math::clFMatrix::gemm(1.0f, false, weights[0], false, inputs,
-                                                          1.0f, biases[0], queue);
+    math::clFMatrix current_layer =
+            math::clFMatrix::gemm(1.0f, false, weights[0], false, inputs, 1.0f, biases[0], queue);
     layers[1] = math::clFMatrix(current_layer, queue, false);
     applyAF(activation_functions[0], current_layer, queue);
     auto afunc = af::getAFFromType(activation_functions[0]).first;
@@ -126,8 +124,7 @@ namespace nnet {
 
       derivative.hadamard(storage.getError(), queue);
 
-      storage.getError() =
-              math::clFMatrix::gemm(1.0f, true, weights[i], false, derivative, queue);
+      storage.getError() = math::clFMatrix::gemm(1.0f, true, weights[i], false, derivative, queue);
 
       storage.getGradient() =
               math::clFMatrix::gemm(1.0f, false, derivative, true, layers_af[i], queue);
