@@ -29,6 +29,15 @@ jobs:
       
     - name: install blas
       run: sudo apt-get install -y libopenblas-dev
+
+    - name: install opencl
+      run: sudo apt-get install -y libopencl-dev
+
+    - name: install clblast
+      run: sudo apt-get install -y libclblast-dev
+
+    - name: install doxygen
+      run: sudo apt-get install -y doxygen
       
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
