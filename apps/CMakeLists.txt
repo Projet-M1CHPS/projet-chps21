@@ -9,7 +9,7 @@ target_link_libraries(main PRIVATE Classifier ControlSystem Image NeuralNetwork 
 add_executable(xor xor.cpp)
 set_target_properties(xor PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(main PUBLIC "${INCLUDE_DIR}")
-target_link_libraries(xor PRIVATE NeuralNetwork Threads::Threads tscl::tscl BLAS::BLAS)
+target_link_libraries(xor PRIVATE NeuralNetwork Threads::Threads tscl::tscl BLAS::BLAS clUtils)
 
 add_executable(gemm_benchmark benchmark/gemm_benchmark.cpp)
 set_target_properties(gemm_benchmark PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

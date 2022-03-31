@@ -3,8 +3,10 @@
 #include "ActivationFunction.hpp"
 #include "CNNTopology.hpp"
 #include "Matrix.hpp"
+#include "clUtils/clFMatrix.hpp"
+#include "clUtils/clWrapper.hpp"
 
-namespace cnnet {
+namespace nnet {
 
   class CNN {
   public:
@@ -18,16 +20,16 @@ namespace cnnet {
     void setTopology(CNNTopology const &topology);
     [[nodiscard]] CNNTopology const &getTopology() const { return topology; }
 
-    size_t getOutputSize() const {
+    [[nodiscard]] size_t getOutputSize() const {
       return layerMatrix.back().size() * layerMatrix.back()[0].getCols() *
              layerMatrix.back()[0].getRows();
     }
 
-    const std::vector<std::vector<std::shared_ptr<CNNLayer>>> &getLayers() const { return layers; }
+    [[nodiscard]] const std::vector<std::vector<std::shared_ptr<CNNLayer>>> &getLayers() const { return layers; }
 
     void randomizeWeight();
 
-    void predict(math::FloatMatrix const &input, math::FloatMatrix &output);
+    void predict(math::clFMatrix const &input, math::clFMatrix &output);
 
   private:
     CNNTopology topology;

@@ -1,6 +1,6 @@
 #include "neuralNetwork/CNN/CNNModel.hpp"
 
-namespace cnnet {
+namespace nnet {
 
   CNNModel::CNNModel() {
     cnn = std::make_unique<CNN>();
@@ -9,15 +9,12 @@ namespace cnnet {
 
 
   math::clFMatrix CNNModel::predict(math::clFMatrix const &input) const {
-    // TODO: Use clFMatrix everywhere
-    auto tmp_input = input.toFloatMatrix(true);
-    auto tmp_flatten = flatten.toFloatMatrix(true);
-    cnn->predict(tmp_input, tmp_flatten);
-
     // TODO: Remove flatten object member and use a local variable instead
-    clFMatrix tmp(tmp_flatten);
+    math::clFMatrix _flatten = clFMatrix(cnn->getOutputSize(), 1);
 
-    return mlp->predict(tmp);
+    cnn->predict(input, _flatten);
+
+    return mlp->predict(_flatten);
   }
 
   std::unique_ptr<CNNModel> CNNModel::random(CNNTopology const &topology, MLPTopology &mlp_topology) {

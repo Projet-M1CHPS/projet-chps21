@@ -10,7 +10,7 @@
 #include "CNNLayer.hpp"
 #include "CNNStorageBP.hpp"
 
-namespace cnnet {
+namespace nnet {
 
   class CNNTopologyLayer {
     friend std::ostream &operator<<(std::ostream &os, const CNNTopologyLayer &layer);
@@ -180,8 +180,6 @@ namespace cnnet {
     af::ActivationFunctionType activationFunction;
   };
 
-  const LayerType stringToLayerType(const std::string &str);
-  const PoolingType stringToPoolingType(const std::string &str);
   const CNNTopology stringToTopology(const std::string &str);
 
   std::ostream &operator<<(std::ostream &os, const CNNTopologyLayer &nn);

@@ -4,13 +4,11 @@
 #include "neuralNetwork/CNN/CNN.hpp"
 #include "neuralNetwork/Perceptron/MLPerceptron.hpp"
 
-namespace cnnet {
+namespace nnet {
   using namespace nnet;
   using namespace math;
 
   class CNNModel : public Model {
-    friend class CNNModelFactory;
-
   public:
     CNNModel();
 
@@ -52,7 +50,7 @@ namespace cnnet {
       return false;
     }
 
-    math::clFMatrix predict(math::clFMatrix const &input) const override;
+    [[nodiscard]] math::clFMatrix predict(math::clFMatrix const &input) const override;
 
     [[nodiscard]] CNN &getCnn() { return *cnn; }
     [[nodiscard]] CNN const &getCnn() const { return *cnn; }

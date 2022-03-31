@@ -1,7 +1,7 @@
 #include "neuralNetwork/CNN/CNNOptimizer.hpp"
 
 
-namespace cnnet {
+namespace nnet {
 
   CNNOptimizer::CNNOptimizer(CNNModel &model)
       : nn_cnn(&model.getCnn()), nn_mlp(&model.getMlp()) {
@@ -72,8 +72,11 @@ namespace cnnet {
     auto &layers = nn_cnn->getLayers();
     auto &topology = nn_cnn->getTopology();
 
-    for (size_t i = 0; i < topology(0)->getFeatures(); i++)
-      layers[0][i]->compute(input, storage[0][i]->output);
+    for (size_t i = 0; i < topology(0)->getFeatures(); i++) {
+      clFMatrix tmp = storage[0][i]->output;
+      layers[0][i]->compute(input, tmp);
+      storage[0][i]->output = tmp.toFloatMatrix(true);
+    }
 
     for (size_t i = 1; i < topology.getDeepth(); i++) {
       size_t l = 0;
@@ -138,7 +141,6 @@ namespace cnnet {
     for (size_t i = 0; i < topology(0)->getFeatures(); i++) {
       std::cout << "\n[input] [" << 0 << ", " << i << "]" << std::endl;
       layers[0][i]->computeBackward(bufferInput, *storage[0][i]);
-      std::cout << "lla" << std::endl;
     }
     for (auto &val : bufferInput) { val = 0.f; };
     for (size_t i = 0; i < topology(0)->getFeatures(); i++) {

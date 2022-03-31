@@ -1,7 +1,7 @@
 #include "CNNStorageBP.hpp"
 
 
-namespace cnnet {
+namespace nnet {
 
   CNNStorageBP::CNNStorageBP(const std::pair<size_t, size_t> &inputSize,
                              const std::pair<size_t, size_t> &outputSize)

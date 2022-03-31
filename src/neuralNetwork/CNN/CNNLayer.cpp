@@ -1,7 +1,7 @@
 #include "CNNLayer.hpp"
 
 
-namespace cnnet {
+namespace nnet {
 
   CNNLayer::CNNLayer(const size_t stride) : stride(stride) {}
 
@@ -14,8 +14,10 @@ namespace cnnet {
   }
 
 
-  void CNNConvolutionLayer::compute(const FloatMatrix &input, FloatMatrix &output) {
-    std::cout << "compute forward convolution" << std::endl;
+  void CNNConvolutionLayer::compute(const clFMatrix &_input, clFMatrix &_output) {
+    FloatMatrix input = _input.toFloatMatrix(true);
+    FloatMatrix output = _output.toFloatMatrix(true);
+
     const FloatMatrix &matFiltre = filter.getMatrix();
 
     size_t rowsPos = 0;
@@ -38,16 +40,21 @@ namespace cnnet {
 
     auto afunc = af::getAFFromType(activationFunction).first;
     std::transform(output.cbegin(), output.cend(), output.begin(), afunc);
+
+    _output = output;
   }
 
 
-  void CNNConvolutionLayer::computeForward(FloatMatrix &input, CNNStorageBP &storage) {
-    compute(input, storage.output);
+  void CNNConvolutionLayer::computeForward(const clFMatrix &input, CNNStorageBP &storage) {
+    clFMatrix tmp = storage.output;
+    compute(input, tmp);
+    storage.output = tmp.toFloatMatrix(true);
   }
 
 
-  void CNNConvolutionLayer::computeBackward(FloatMatrix &input, CNNStorageBP &storage) {
-    std::cout << "compute backprop convolution" << std::endl;
+  void CNNConvolutionLayer::computeBackward(const clFMatrix &_input, CNNStorageBP &storage) {
+    FloatMatrix input = _input.toFloatMatrix(true);
+
     auto &convoStorage = static_cast<CNNStorageBPConvolution &>(storage);
 
     fillDilatedMatrix(convoStorage.output, convoStorage.dilated4Input, stride - 1,
@@ -55,15 +62,12 @@ namespace cnnet {
     fillDilatedMatrix(convoStorage.output, convoStorage.dilated4Filter, stride - 1,
                       std::make_pair(0, 0));
 
-    std::cout << "dilated out for input: " << std::endl;
-    std::cout << convoStorage.dilated4Input << std::endl;
-    std::cout << "dilated out for filter: " << std::endl;
-    std::cout << convoStorage.dilated4Filter << std::endl;
-    std::cout << "filter: " << std::endl;
-    std::cout << filter.getMatrix() << std::endl;
+    // std::cout << "dilated out for input: " << std::endl;
+    // std::cout << convoStorage.dilated4Input << std::endl;
+    // std::cout << "dilated out for filter: " << std::endl;
+    // std::cout << convoStorage.dilated4Filter << std::endl;
 
-    FloatMatrix &matFiltre = filter.getMatrix();
-
+    FloatMatrix &mat_filter = filter.getMatrix();
 
     // compute filter error
     size_t rowsPos = 0;
@@ -83,9 +87,6 @@ namespace cnnet {
       colsPos = 0;
     }
 
-    std::cout << "error filter: " << std::endl;
-    std::cout << convoStorage.errorFilter << std::endl;
-
     // compute input error
     rowsPos = 0;
     colsPos = 0;
@@ -95,8 +96,8 @@ namespace cnnet {
         for (long k = 0; k < filter.getRows(); k++) {
           for (long l = 0; l < filter.getCols(); l++) {
             sum += convoStorage.dilated4Input(k + rowsPos, l + colsPos) *
-                   matFiltre(std::abs(k - (long) filter.getRows() + 1),
-                             std::abs(l - (long) filter.getCols() + 1));
+                   mat_filter(std::abs(k - (long) filter.getRows() + 1),
+                              std::abs(l - (long) filter.getCols() + 1));
           }
         }
         storage.errorInput(i, j) = sum;
@@ -108,7 +109,7 @@ namespace cnnet {
 
     for (size_t i = 0; i < filter.getRows(); i++)
       for (size_t j = 0; j < filter.getCols(); j++)
-        matFiltre(i, j) -= 0.2 * convoStorage.errorFilter(i, j);
+        mat_filter(i, j) -= 0.2f * convoStorage.errorFilter(i, j);
   }
 
 
@@ -120,8 +121,10 @@ namespace cnnet {
                                          const size_t stride)
       : CNNPoolingLayer(poolSize, stride) {}
 
-  void CNNMaxPoolingLayer::compute(const FloatMatrix &input, FloatMatrix &output) {
-    std::cout << "compute forward max pooling" << std::endl;
+  void CNNMaxPoolingLayer::compute(const clFMatrix &_input, clFMatrix &_output) {
+    FloatMatrix input = _input.toFloatMatrix(true);
+    FloatMatrix output = _output.toFloatMatrix(true);
+
     size_t rowsPos = 0, colsPos = 0;
 
     for (size_t i = 0; i < output.getRows(); i++) {
@@ -138,10 +141,13 @@ namespace cnnet {
       colsPos = 0;
       rowsPos += stride;
     }
+
+    _output = output;
   }
 
-  void CNNMaxPoolingLayer::computeForward(FloatMatrix &input, CNNStorageBP &storage) {
-    std::cout << "compute forward max pooling" << std::endl;
+  void CNNMaxPoolingLayer::computeForward(const clFMatrix &_input, CNNStorageBP &storage) {
+    FloatMatrix input = _input.toFloatMatrix(true);
+
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
     size_t rowsPos = 0, colsPos = 0;
 
@@ -167,15 +173,18 @@ namespace cnnet {
     }
   }
 
-  void CNNMaxPoolingLayer::computeBackward(FloatMatrix &input, CNNStorageBP &storage) {
+  void CNNMaxPoolingLayer::computeBackward(const clFMatrix &_input, CNNStorageBP &storage) {
+    FloatMatrix input = _input.toFloatMatrix(true);
+
     std::cout << "compute backprop max pooling" << std::endl;
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
 
-    for (auto &i : input) { i = 0.f; }
+    for (auto &i : poolingStorage.errorInput) { i = 0.f; }
 
     for (size_t i = 0; i < poolingStorage.output.getRows(); i++) {
       for (size_t j = 0; j < poolingStorage.output.getCols(); j++) {
-        input(poolingStorage.maxIndex(i, j).first, poolingStorage.maxIndex(i, j).second) +=
+        poolingStorage.errorInput(poolingStorage.maxIndex(i, j).first,
+                                  poolingStorage.maxIndex(i, j).second) +=
                 poolingStorage.output(i, j);
       }
     }
@@ -185,8 +194,10 @@ namespace cnnet {
                                          const size_t stride)
       : CNNPoolingLayer(poolSize, stride) {}
 
-  void CNNAvgPoolingLayer::compute(const FloatMatrix &input, FloatMatrix &output) {
-    std::cout << "compute forward avg pooling" << std::endl;
+  void CNNAvgPoolingLayer::compute(const clFMatrix &_input, clFMatrix &_output) {
+    FloatMatrix input = _input.toFloatMatrix(true);
+    FloatMatrix output = _output.toFloatMatrix(true);
+
     size_t rowsPos = 0, colsPos = 0;
 
     for (size_t i = 0; i < output.getRows(); i++) {
@@ -197,32 +208,37 @@ namespace cnnet {
             sum += input(k + rowsPos, l + colsPos);
           }
         }
-        output(i, j) = sum / (poolingSize.first * poolingSize.second);
+        output(i, j) = sum / (float) (poolingSize.first * poolingSize.second);
         colsPos += stride;
       }
       colsPos = 0;
       rowsPos += stride;
     }
+
+    _output = output;
   }
 
-  void CNNAvgPoolingLayer::computeForward(FloatMatrix &input, CNNStorageBP &storage) {
-    compute(input, storage.output);
+  void CNNAvgPoolingLayer::computeForward(const clFMatrix &input, CNNStorageBP &storage) {
+    clFMatrix tmp = storage.output;
+    compute(input, tmp);
+    storage.output = tmp.toFloatMatrix(true);
   }
 
-  void CNNAvgPoolingLayer::computeBackward(FloatMatrix &input, CNNStorageBP &storage) {
-    std::cout << "compute backprop avg pooling" << std::endl;
+  void CNNAvgPoolingLayer::computeBackward(const clFMatrix &_input, CNNStorageBP &storage) {
+    FloatMatrix input = _input.toFloatMatrix(true);
+
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
 
-    std::cout << storage.output << std::endl;
-    for (auto &i : input) { i = 0.f; }
+    for (auto &i : poolingStorage.errorInput) { i = 0.f; }
 
+    const float factor = 1.f / (float) (poolingSize.first * poolingSize.second);
     size_t rowsPos = 0, colsPos = 0;
     for (size_t i = 0; i < poolingStorage.output.getRows(); i++) {
       for (size_t j = 0; j < poolingStorage.output.getCols(); j++) {
-        const float factor = 1.f / (float) (poolingSize.first * poolingSize.second);
         for (size_t k = 0; k < poolingSize.first; k++) {
           for (size_t l = 0; l < poolingSize.second; l++) {
-            input(k + rowsPos, l + colsPos) += poolingStorage.output(i, j) * factor;
+            poolingStorage.errorInput(k + rowsPos, l + colsPos) +=
+                    poolingStorage.output(i, j) * factor;
           }
         }
         colsPos += stride;
@@ -242,4 +258,4 @@ namespace cnnet {
     }
   }
 
-}   // namespace cnnet
+}   // namespace nnet

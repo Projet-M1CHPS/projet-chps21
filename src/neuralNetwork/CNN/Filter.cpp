@@ -1,7 +1,7 @@
 #include "Filter.hpp"
 
 
-namespace cnnet {
+namespace nnet {
 
 
   Filter::Filter(const size_t rows, const size_t cols) : filter(rows, cols) {}

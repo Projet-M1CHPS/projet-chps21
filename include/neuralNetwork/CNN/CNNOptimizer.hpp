@@ -12,7 +12,7 @@
 #include <utility>
 
 
-namespace cnnet {
+namespace nnet {
   using namespace nnet;
   using namespace math;
 

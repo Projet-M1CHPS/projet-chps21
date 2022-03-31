@@ -1,6 +1,6 @@
 #include "CNN.hpp"
 
-namespace cnnet {
+namespace nnet {
 
   CNN::CNN(CNN &&other) noexcept {
     this->topology = std::move(other.topology);
@@ -52,7 +52,11 @@ namespace cnnet {
 
   void CNN::randomizeWeight() { assert(false && "Not implemented"); }
 
-  void CNN::predict(math::FloatMatrix const &input, math::FloatMatrix &output) {
+  // TODO : CHANGE NAME AND REMOVE FloatMatrix
+  void CNN::predict(math::clFMatrix const &_input, math::clFMatrix &_output) {
+    math::FloatMatrix input = _input.toFloatMatrix(true);
+    math::FloatMatrix output = _output.toFloatMatrix(true);
+
     if (input.getCols() != topology.getInputSize().first or
         input.getRows() != topology.getInputSize().second) {
       throw std::runtime_error("Input size does not match topology input size");
@@ -60,42 +64,33 @@ namespace cnnet {
       throw std::runtime_error("Output size does not match topology output size");
     }
 
-    std::cout << "forward \n" << std::endl;
-    std::cout << input << std::endl;
-
-    for (size_t i = 0; i < layers.size(); i++) {
-      std::cout << "------------------------------------------" << std::endl;
-      for (size_t j = 0; j < layers[i].size(); j++)
-        std::cout << layerMatrix[i][j] << "\n" << std::endl;
+    for (size_t i = 0; i < topology(0)->getFeatures(); i++) {
+      clFMatrix tmp = layerMatrix[0][i];
+      layers[0][i]->compute(input, tmp);
+      layerMatrix[0][i] = tmp.toFloatMatrix(true);
     }
-
-    for (size_t i = 0; i < topology(0)->getFeatures(); i++)
-      layers[0][i]->compute(input, layerMatrix[0][i]);
 
     for (size_t i = 1; i < topology.getDeepth(); i++) {
       size_t l = 0;
       for (size_t j = 0; j < layers[i - 1].size(); j++) {
         for (size_t k = 0; k < topology(i)->getFeatures(); k++) {
-          // std::cout << "(" << i - 1 << ", " << j << ") (" << i << ", " << l << ")" << std::endl;
-          layers[i][j]->compute(layerMatrix[i - 1][j], layerMatrix[i][l++]);
+          clFMatrix tmp1 = layerMatrix[i - 1][j];
+          clFMatrix tmp2 = layerMatrix[i][l];
+          layers[i][j]->compute(tmp1, tmp2);
+          layerMatrix[i][l++] = tmp2.toFloatMatrix(true);
         }
       }
     }
 
     size_t index = 0;
-    for (auto mat : layerMatrix.back()) {
+    for (auto &mat : layerMatrix.back()) {
       for (auto val : mat) {
         output(index, 0) = val;
         index++;
       }
     }
 
-    std::cout << "////////////////////////////////////////////" << std::endl;
-    for (size_t i = 0; i < layers.size(); i++) {
-      std::cout << "------------------------------------------" << std::endl;
-      for (size_t j = 0; j < layers[i].size(); j++)
-        std::cout << layerMatrix[i][j] << "\n" << std::endl;
-    }
+    _output = output;
   }
 
-}   // namespace cnnet
+}   // namespace nnet

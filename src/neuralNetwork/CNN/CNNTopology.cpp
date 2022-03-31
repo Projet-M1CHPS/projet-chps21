@@ -1,6 +1,6 @@
 #include "CNNTopology.hpp"
 
-namespace cnnet {
+namespace nnet {
 
   CNNTopologyLayer::CNNTopologyLayer(const std::pair<size_t, size_t> filter, const size_t stride)
       : filter(filter), stride(stride) {}
@@ -173,10 +173,8 @@ namespace cnnet {
     CNNTopology res(inputSize);
 
     std::string type;
-    // read activation function type and store it
-    // ss >> type;
-    res.activationFunction =
-            af::ActivationFunctionType::relu;   // stringToActivationFunctionType(type);
+    ss >> type;
+    res.activationFunction = af::strToAFType(type);
 
     while (ss >> type) {
       LayerType layerType = stringToLayerType(type);
@@ -190,8 +188,8 @@ namespace cnnet {
                            padding);
       } else if (layerType == LayerType::POOLING) {
         std::string strPoolingType;
-        size_t stride;
         std::pair<size_t, size_t> poolSize;
+        size_t stride;
         ss >> strPoolingType >> poolSize.first >> poolSize.second >> stride;
         if (not CNNTopologyLayer::isValidParameters(inputSize, poolSize, stride, 0))
           throw std::runtime_error("Invalid parameters for pooling layer");
@@ -208,7 +206,7 @@ namespace cnnet {
 
   std::ostream &operator<<(std::ostream &os, const CNNTopology &nn) {
     os << "input : " << nn.inputSize.first << " " << nn.inputSize.second << "\n";
-    os << "activation function : " << /*af::AFTypeToStr(nn.activationFunction) <<*/ "\n";
+    os << "activation function : " << af::AFTypeToStr(nn.activationFunction) << "\n";
     for (auto &i : nn.layers) { os << *i << "\n"; }
     return os;
   }
