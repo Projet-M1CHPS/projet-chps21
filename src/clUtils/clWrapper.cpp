@@ -81,6 +81,7 @@ namespace utils {
     }
 
     default_device = devices[device_id];
+
     context = cl::Context(devices);
     default_queue = cl::CommandQueue(context, default_device);
     // By default, we do not enable out-of-order execution for the queue handler

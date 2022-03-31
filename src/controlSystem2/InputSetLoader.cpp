@@ -61,11 +61,12 @@ namespace control {
       // We may be left with a small number of images, so we need to resize the tensor
       // This can happen if the number of images is not a multiple of the tensor size
       size_t count = std::min(tensor_size, files.size() - index);
-      math::clFTensor tensor(res.getInputWidth(), res.getInputHeight(), count);
+      math::clFTensor tensor(res.getInputWidth() * res.getInputHeight(), 1, count);
 
       // Create an out-of-order queue to transform the images in parallel
-      cl::CommandQueue queue = cl::CommandQueue(utils::cl_wrapper.getContext(),
-                                                utils::cl_wrapper.getDefaultDevice());
+      cl::CommandQueue queue =
+              cl::CommandQueue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice(),
+                               CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE);
 
       // Fetch the normalizing kernel
       // This kernel convert a char array to a float array, and scale every element by a given
@@ -84,7 +85,7 @@ namespace control {
 
         // Copy the image to the Device
         // We need to load the image to the cl device before applying the kernel
-        cl::Buffer img_buffer(CL_MEM_READ_ONLY, image.getSize());
+        cl::Buffer img_buffer(CL_MEM_READ_WRITE, image.getSize());
         queue.enqueueWriteBuffer(img_buffer, CL_TRUE, 0, image.getSize(), image.getData());
 
         kernel.setArg(0, img_buffer);
@@ -92,7 +93,7 @@ namespace control {
         kernel.setArg(1, matrix.getBuffer());
 
         // We also normalize the matrix by a given factor
-        kernel.setArg(2, 1.f);
+        kernel.setArg(2, 255.f);
         // OpenCL does not support size_t, so we cast it to unsigned long
         kernel.setArg(3, (cl_ulong) image.getWidth());
         kernel.setArg(4, (cl_ulong) image.getHeight());
@@ -100,7 +101,7 @@ namespace control {
         // Convert the image to float and normalize it by 255
         queue.enqueueNDRangeKernel(kernel, cl::NullRange,
                                    cl::NDRange(image.getWidth() * image.getHeight()),
-                                   cl::NDRange(32, 32));
+                                   cl::NullRange);
         ids.push_back(file.input_id);
         classes.push_back(file.class_id);
       }
@@ -121,9 +122,11 @@ namespace control {
 
       // Create the transformation pipeline
       tr::TransformEngine resize_engine;
+      /* resize_engine.addTransformation(
+              std::make_shared<tr::Resize>(res.getInputWidth(), res.getInputHeight())); */
       resize_engine.addTransformation(
-              std::make_shared<tr::Resize>(res.getInputWidth(), res.getInputHeight()));
-      TransformationPipeline pipeline({resize_engine});   //, pre_engine, post_engine});
+              std::make_shared<tr::Resize>(32, 32));
+      TransformationPipeline pipeline({resize_engine, pre_engine, post_engine});
 
 
       // Asynchronously load the tensors
@@ -139,7 +142,7 @@ namespace control {
                                            bool shuffle_samples) const {
     if (not fs::exists(path))
       throw std::runtime_error("InputSetLoader::loadWithClasses: The input path does not exist");
-    InputSet res(input_width, input_height);
+    InputSet res(input_width * input_height, 1);
 
     std::vector<InputFileMetadata> files;
     std::vector<std::string> classes;
@@ -176,7 +179,7 @@ namespace control {
 
   InputSet InputSetLoader::loadWithoutClasses(const std::filesystem::path &path,
                                               bool shuffle_samples) const {
-    InputSet res(input_width, input_height);
+    InputSet res(input_width * input_height, 1);
 
     std::vector<InputFileMetadata> files;
 

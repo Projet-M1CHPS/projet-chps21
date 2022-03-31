@@ -11,7 +11,7 @@ namespace control {
                        nnet::Optimizer *optimizer, TrainingCollection *trainingCollection,
                        size_t max_epoch = 10, bool output_stats = true);
 
-    ControllerResult run(utils::clWrapper &wrapper) override;
+    ControllerResult run() override;
 
   private:
     nnet::Model *model;

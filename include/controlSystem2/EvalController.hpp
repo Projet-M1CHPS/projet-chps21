@@ -21,7 +21,7 @@ namespace control {
      * @param wrapper
      * @return
      */
-    ControllerResult run(utils::clWrapper &wrapper) override;
+    ControllerResult run() override;
 
   private:
     nnet::Model *model;

@@ -1,8 +1,10 @@
-#include "controlSystem2/TrainingCollection.hpp"
-#include "controlSystem2/TrainingCollectionLoader.hpp"
-
+#include "EvalController.hpp"
 #include "NeuralNetwork.hpp"
 #include "ProjectVersion.hpp"
+#include "TrainingController.hpp"
+#include "clUtils/clPlatformSelector.hpp"
+#include "controlSystem2/TrainingCollection.hpp"
+#include "controlSystem2/TrainingCollectionLoader.hpp"
 #include "tscl.hpp"
 
 #include <iomanip>
@@ -23,8 +25,7 @@ void setupLogger() {
   thandler.minLvl(Log::Information);
 }
 
-bool createAndTrain(std::shared_ptr<utils::clWrapper> wrapper,
-                    std::filesystem::path const &input_path,
+bool createAndTrain(std::filesystem::path const &input_path,
                     std::filesystem::path const &output_path) {
   tscl::logger("Current version: " + tscl::Version::current.to_string(), tscl::Log::Debug);
   tscl::logger("Fetching input from  " + input_path.string(), tscl::Log::Debug);
@@ -32,7 +33,7 @@ bool createAndTrain(std::shared_ptr<utils::clWrapper> wrapper,
 
   if (not std::filesystem::exists(output_path)) std::filesystem::create_directories(output_path);
 
-  constexpr int kImageSize = 32;
+  constexpr int kImageSize = 64;
   // Ensure this is the same size as the batch size
   constexpr int kTensorSize = 256;
 
@@ -62,17 +63,20 @@ bool createAndTrain(std::shared_ptr<utils::clWrapper> wrapper,
                        training_collection.getTrainingSet().getSize()
             << std::endl;
 
-  /**
-  TrainingController controller(output_path, max_epoch, true);
-  ControllerResult res = controller.run();
 
+  size_t i = 0;
+  std::cin >> i;
+  EvalController controller(output_path, model.get(), &training_collection.getEvaluationSet());
+  ControllerResult res = controller.run();
+  std::cin >> i;
+
+  /*
   if (not res) {
     tscl::logger("Controller failed with an exception", tscl::Log::Error);
     tscl::logger(res.getMessage(), tscl::Log::Error);
     return false;
-  }
+  }*/
   nnet::MLPModelSerializer::writeToFile(output_path / "model.nnet", *model);
-   */
 
   /*
   std::filesystem::create_directories(output_path / "image");
@@ -98,6 +102,7 @@ int main(int argc, char **argv) {
   Version::setCurrent(Version(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TWEAK));
   setupLogger();
 
+
   if (argc < 2) {
     tscl::logger("Usage: " + std::string(argv[0]) + " <input_path> (<output_path>)",
                  tscl::Log::Information);
@@ -105,11 +110,12 @@ int main(int argc, char **argv) {
   }
 
   tscl::logger("Initializing OpenCL...", tscl::Log::Debug);
-  std::shared_ptr<utils::clWrapper> wrapper = utils::clWrapper::makeDefault();
+  // utils::clPlatformSelector::makeDefault();
+  // std::shared_ptr<utils::clWrapper> wrapper = utils::clWrapper::makeDefault();
 
   std::vector<std::string> args;
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);
 
 
-  return createAndTrain(wrapper, args[1], args.size() == 3 ? args[2] : "runs/test");
+  return createAndTrain(args[1], args.size() == 3 ? args[2] : "runs/test");
 }

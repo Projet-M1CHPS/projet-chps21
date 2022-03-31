@@ -7,14 +7,22 @@ namespace control {
       : Controller(output_path), model(model), input_set(input_set) {}
 
 
-  ControllerResult EvalController::run(utils::clWrapper &wrapper) {
+  ControllerResult EvalController::run() {
     if (input_set->getTensorCount() == 0) { return {1, "No input data found"}; }
 
     size_t count = 0;
+
+    for (auto it : *input_set) {
+      auto res = model->predict(it.getData()).toFloatMatrix();
+      auto class_id = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
+      (*input_set)[count].setClass(class_id);
+      std::cout << "Sample " << it.getId() << " is of class " <<class_id << std::endl;
+    }
+
     /*
     // Start an async job on the first tensor
-    std::future<math::clFTensor> future = std::async(
-            std::launch::async, [this]() { return model->predict(*input_set->beginTensor()); });
+    std::future<math::clFTensor> future = std::async([this]() { return
+    model->predict(*input_set->beginTensor()); });
 
     // Iterate over the rest of the tensors
     for (auto input = input_set->beginTensor()++; input != input_set->endTensor(); input++) {
@@ -35,7 +43,7 @@ namespace control {
                 std::distance(matrix.begin(), std::max_element(matrix.begin(), matrix.end()));
         (*input_set)[count].setClass(class_id);
       }
-    }*/
+    } */
     return {0, "Evaluation Success"};
   }
 }   // namespace control

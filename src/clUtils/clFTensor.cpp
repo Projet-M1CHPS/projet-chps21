@@ -4,7 +4,13 @@ namespace math {
 
   clFTensor::clFTensor(size_t x, size_t y, size_t z) : x_dim(x), y_dim(y), z_dim(z) {
     size_t size = x * y * z;
-    data = cl::Buffer(utils::cl_wrapper.getContext(), CL_MEM_READ_WRITE, size * sizeof(float));
+    data = cl::Buffer(CL_MEM_READ_WRITE, size * sizeof(float));
+
+    // By default, OpenCL only migrates data to the device when it is needed.
+    // Since we only use sub-buffers, we need to explicitly migrate the data
+    // to the device, otherwise the data will remain in the host memory.
+    auto queue = cl::CommandQueue::getDefault();
+    queue.enqueueMigrateMemObjects({data}, 0);
   }
 
   clFMatrix clFTensor::getMatrix(size_t z) {
