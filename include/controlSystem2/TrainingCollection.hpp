@@ -1,7 +1,6 @@
 #pragma once
 #include "InputSet.hpp"
 
-
 namespace control {
 
   /**
@@ -12,12 +11,17 @@ namespace control {
   public:
     friend class TrainingCollectionLoader;
 
+
+    TrainingCollection(size_t input_width, size_t input_height)
+        : eval_set(input_width, input_height), training_set(input_width, input_height) {}
+
     // Since copying the collection might be costly, we delete the default copy constructor and
     // assignment operator to prevent misuse
     TrainingCollection(const TrainingCollection &other) = delete;
     TrainingCollection &operator=(const TrainingCollection &other) = delete;
 
-    TrainingCollection &operator=(TrainingCollection &&other) = default;
+    TrainingCollection(TrainingCollection &&other) noexcept = default;
+    TrainingCollection &operator=(TrainingCollection &&other) noexcept = default;
 
     InputSet &getTrainingSet() { return training_set; }
 
@@ -27,18 +31,14 @@ namespace control {
 
     const InputSet &getEvaluationSet() const { return eval_set; }
 
-    size_t getClassCount() const { return class_names.size(); }
+    size_t getClassCount() const { return eval_set.getClasses().size(); }
 
-    void updateClassNames(const std::vector<std::string> &class_names);
-
-    std::string getClassName(size_t class_index) const {
-      if (class_index >= class_names.size()) {
-        throw std::out_of_range("class index out of range");
-      }
-      return class_names[class_index];
+    void updateClasses(const std::vector<std::string> &class_names) {
+      training_set.updateClasses(class_names);
+      eval_set.updateClasses(class_names);
     }
 
-    const std::vector<std::string> &getClassNames() const { return class_names; }
+    const std::vector<std::string> &getClassNames() const { return eval_set.getClasses(); }
 
     /**
      * @brief Alter the location of every input in both sets to create new tensors of the given
@@ -50,9 +50,11 @@ namespace control {
      * tensor might be smaller if the number of inputs is not a multiple of the new size.
      *
      * @param new_tensor_size The new size for the tensors
-     * @return
      */
-    size_t alterTensors(size_t new_tensor_size);
+    void alterTensors(size_t new_tensor_size) {
+      training_set.alterTensors(new_tensor_size);
+      eval_set.alterTensors(new_tensor_size);
+    }
 
     /**
      * @brief Shuffle the inputs in both sets. Since moving each image individually
@@ -61,18 +63,23 @@ namespace control {
      * @param training_seed The random seed to be used for the training set
      * @param eval_seed The random seed to be used for the evaluation set
      */
-    void shuffle(size_t training_seed, size_t eval_seed);
+    void shuffle(size_t training_seed, size_t eval_seed) {
+      training_set.shuffle(training_seed);
+      eval_set.shuffle(eval_seed);
+    }
 
     /**
      * @brief Shuffle the inputs in both sets. Since moving each image individually
      * would be costly, this operation only shuffle the tensors.
      */
-    void shuffle();
+    void shuffle() {
+      training_set.shuffle();
+      eval_set.shuffle();
+    }
 
   private:
     InputSet training_set;
     InputSet eval_set;
-    std::vector<std::string> class_names;
   };
 
 }   // namespace control

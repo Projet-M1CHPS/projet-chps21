@@ -11,6 +11,7 @@ namespace control {
     if (input_set->getTensorCount() == 0) { return {1, "No input data found"}; }
 
     size_t count = 0;
+    /*
     // Start an async job on the first tensor
     std::future<math::clFTensor> future = std::async(
             std::launch::async, [this]() { return model->predict(*input_set->beginTensor()); });
@@ -34,7 +35,7 @@ namespace control {
                 std::distance(matrix.begin(), std::max_element(matrix.begin(), matrix.end()));
         (*input_set)[count].setClass(class_id);
       }
-    }
+    }*/
     return {0, "Evaluation Success"};
   }
 }   // namespace control

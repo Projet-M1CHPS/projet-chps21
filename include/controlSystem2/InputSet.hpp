@@ -58,6 +58,13 @@ namespace control {
     InputSet(size_t input_width, size_t input_height)
         : input_width(input_width), input_height(input_height) {}
 
+    InputSet(const InputSet &) = delete;
+    InputSet &operator=(const InputSet &) = delete;
+
+    InputSet(InputSet &&other) noexcept { *this = std::move(other); }
+
+    InputSet &operator=(InputSet &&other) noexcept;
+
     /**
      * @brief Append the given samples and their associated tensor to the input set. Samples are
      * added at the end of the set.
@@ -206,10 +213,32 @@ namespace control {
      * @return The class id of the sample, -1 if it is undefined
      * Throw on out of range
      */
-    long getClass(size_t global_index) const {
+    long getClassOf(size_t global_index) const {
       std::shared_lock lock(mutex);
       if (global_index > size) throw std::out_of_range("Sample index out of range");
       return class_ids[global_index];
+    }
+
+    /**
+     * @brief Return the class id of the sample at the given index
+     * @param global_index The index of the sample in the input set
+     * @return The class id of the sample, -1 if it is undefined
+     * Throw on out of range
+     */
+    std::vector<std::string> &getClasses() {
+      std::shared_lock lock(mutex);
+      return class_names;
+    }
+
+    /**
+     * @brief Return the class id of the sample at the given index
+     * @param global_index The index of the sample in the input set
+     * @return The class id of the sample, -1 if it is undefined
+     * Throw on out of range
+     */
+    const std::vector<std::string> &getClasses() const {
+      std::shared_lock lock(mutex);
+      return class_names;
     }
 
     /**
@@ -226,6 +255,7 @@ namespace control {
 
   private:
     size_t size = 0;
+    // rows and cols dimension of the matrices/tensors
     size_t input_width = 0, input_height = 0;
 
     std::vector<size_t> ids;
@@ -252,6 +282,9 @@ namespace control {
     InputSetIterator(InputSet &parent, size_t global_index)
         : parent(&parent), global_index(global_index) {
       // Find the tensor containing the sample
+      local_index = 0;
+      tensor_index = parent.getTensorCount();
+
       for (size_t i = 0; i < parent.getTensorCount(); i++) {
         if (global_index < parent.getTensor(i).getZ()) {
           tensor_index = i;

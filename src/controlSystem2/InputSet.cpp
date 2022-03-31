@@ -30,6 +30,21 @@ namespace control {
     }
   }   // namespace
 
+  InputSet &InputSet::operator=(InputSet &&other) noexcept {
+    std::shared_lock<std::shared_mutex> lock(other.mutex);
+    std::unique_lock<std::shared_mutex> lock2(mutex);
+
+    tensors = std::move(other.tensors);
+    ids = std::move(other.ids);
+    class_ids = std::move(other.class_ids);
+    size = other.size;
+    class_names = std::move(other.class_names);
+
+    other.size = 0;
+
+    return *this;
+  }
+
   void InputSet::append(math::clFTensor &&tensor, const std::vector<size_t> &new_ids,
                         const std::vector<long> &class_id) {
     std::scoped_lock lock(mutex);
@@ -44,7 +59,7 @@ namespace control {
       throw std::runtime_error(
               "InputSet::append: tensor must have same size as input_width and input_height");
     }
-
+    std::cout << "Appending " << tensor.getZ() << " samples" << std::endl;
 
     ids.insert(ids.end(), new_ids.begin(), new_ids.end());
 
@@ -150,5 +165,9 @@ namespace control {
 
 
   void InputSet::shuffle() { shuffle(std::random_device{}()); }
+
+  InputSetIterator InputSet::begin() { return InputSetIterator(*this, 0); }
+
+  InputSetIterator InputSet::end() { return InputSetIterator(*this, size); }
 
 }   // namespace control

@@ -4,7 +4,7 @@ namespace math {
 
   clFTensor::clFTensor(size_t x, size_t y, size_t z) : x_dim(x), y_dim(y), z_dim(z) {
     size_t size = x * y * z;
-    data = cl::Buffer(CL_MEM_READ_WRITE, size * sizeof(float));
+    data = cl::Buffer(utils::cl_wrapper.getContext(), CL_MEM_READ_WRITE, size * sizeof(float));
   }
 
   clFMatrix clFTensor::getMatrix(size_t z) {

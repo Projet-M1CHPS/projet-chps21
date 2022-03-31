@@ -1,6 +1,7 @@
 #pragma once
 #include "Controller.hpp"
 #include "NeuralNetwork.hpp"
+#include "TrainingCollection.hpp"
 
 namespace control {
 

@@ -38,6 +38,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 
 find_package(Threads REQUIRED)
+find_package(TBB REQUIRED)
 find_package(OpenCL REQUIRED)
 find_package(CLBlast REQUIRED)
 

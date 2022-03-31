@@ -1,4 +1,6 @@
-#include "Control.hpp"
+#include "controlSystem2/TrainingCollection.hpp"
+#include "controlSystem2/TrainingCollectionLoader.hpp"
+
 #include "NeuralNetwork.hpp"
 #include "ProjectVersion.hpp"
 #include "tscl.hpp"
@@ -10,7 +12,6 @@
 #include <CL/opencl.hpp>
 
 using namespace control;
-using namespace control::classifier;
 using namespace tscl;
 
 void setupLogger() {
@@ -31,12 +32,12 @@ bool createAndTrain(std::shared_ptr<utils::clWrapper> wrapper,
 
   if (not std::filesystem::exists(output_path)) std::filesystem::create_directories(output_path);
 
-  constexpr int kImageSize = 64;
+  constexpr int kImageSize = 32;
   // Ensure this is the same size as the batch size
   constexpr int kTensorSize = 256;
 
   tscl::logger("Loading dataset", tscl::Log::Debug);
-  TrainingCollectionLoader loader(input_path, kTensorSize, kImageSize, kImageSize, wrapper);
+  TrainingCollectionLoader loader(kTensorSize, kImageSize, kImageSize);
   auto &pre_engine = loader.getPreProcessEngine();
   // Add preprocessing transformations here
   pre_engine.addTransformation(std::make_shared<image::transform::Inversion>());
@@ -45,19 +46,23 @@ bool createAndTrain(std::shared_ptr<utils::clWrapper> wrapper,
   // Add postprocessing transformations here
   engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
 
-  std::unique_ptr<TrainingCollection> training_collection = loader.load();
+  TrainingCollection training_collection = loader.load(input_path);
 
   // Create a correctly-sized topology
   nnet::MLPTopology topology = {kImageSize * kImageSize, 1024, 512, 256, 128, 64, 64, 64, 16};
-  topology.pushBack(training_collection->getClassCount());
+  topology.pushBack(training_collection.getClassCount());
 
   auto model = nnet::MLPModel::randomReluSigmoid(topology);
 
   auto optimizer = nnet::MLPStochOptimizer::make<nnet::SGDOptimization>(*model, 0.03);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
+  std::cout << "Number of images : "
+            << training_collection.getEvaluationSet().getSize() +
+                       training_collection.getTrainingSet().getSize()
+            << std::endl;
 
-  TrainingControllerParameters parameters(input_path, output_path, 50, 1, false);
+  /**
   TrainingController controller(output_path, max_epoch, true);
   ControllerResult res = controller.run();
 
@@ -67,6 +72,25 @@ bool createAndTrain(std::shared_ptr<utils::clWrapper> wrapper,
     return false;
   }
   nnet::MLPModelSerializer::writeToFile(output_path / "model.nnet", *model);
+   */
+
+  /*
+  std::filesystem::create_directories(output_path / "image");
+  for (auto it : training_collection.getTrainingSet()) {
+    auto matrix = it.getData().toFloatMatrix();
+    std::unique_ptr<image::grayscale_t[]> buffer =
+            std::make_unique<image::grayscale_t[]>(matrix.getSize() * sizeof(char));
+    for (int i = 0; i < matrix.getSize(); i++) {
+      buffer[i] = static_cast<char>(matrix.getData()[i]);
+    }
+
+    image::GrayscaleImage image(64, 64, std::move(buffer));
+
+    std::cout << "saving to " << output_path / "image" / (std::to_string(it.getId()) + ".png") <<
+  std::endl; image::ImageSerializer::save(output_path / "image" / (std::to_string(it.getId()) +
+  ".png"), image);
+  } */
+
   return true;
 }
 
