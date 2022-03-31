@@ -86,5 +86,6 @@ int main(int argc, char **argv) {
   std::vector<std::string> args;
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);
 
+
   return createAndTrain(wrapper, args[1], args.size() == 3 ? args[2] : "runs/test");
 }

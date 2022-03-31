@@ -32,6 +32,8 @@ namespace control {
 
   void InputSet::append(math::clFTensor &&tensor, const std::vector<size_t> &new_ids,
                         const std::vector<long> &class_id) {
+    std::scoped_lock lock(mutex);
+
     // Each sample must have its own id
     if (tensor.getZ() != new_ids.size()) {
       throw std::runtime_error("InputSet::append: tensor and new_ids must have same size");
@@ -55,10 +57,38 @@ namespace control {
       throw std::runtime_error("InputSet::append: class_id.size() != new_ids.size()");
     }
 
+    size += tensor.getZ();
     tensors.push_back(std::move(tensor));
   }
 
+  Sample InputSet::operator[](size_t index) {
+    std::shared_lock<std::shared_mutex> lock(mutex);
+    if (index > size) throw std::out_of_range("Sample index out of range");
+
+    size_t tensor_index = index;
+    size_t local_index = index;
+
+    // Since the tensors may not be of the same size, we need to iterate through them to find the
+    // right one
+    for (size_t i = 0; i < tensors.size(); i++) {
+      // If the tensors contains the sample, break
+      if (local_index < tensors[i].getZ()) {
+        tensor_index = i;
+        break;
+      }
+      // Otherwise, update the local index
+      // And move to the next tensor
+      local_index -= tensors[i].getZ();
+    }
+    // Fetch the matrix from the tensor
+    auto matrix = tensors[tensor_index].getMatrix(local_index);
+    // Fetch the sample id/class_id using the index, and return the matrix
+    return {ids[index], class_ids[index], std::move(matrix)};
+  }
+
   void InputSet::alterTensors(size_t new_tensor_size) {
+    std::scoped_lock lock(mutex);
+
     std::vector<math::clFTensor> new_tensors;
     size_t new_tensor_count = size / new_tensor_size;
     size_t new_tensor_remainder = size % new_tensor_size;
@@ -80,7 +110,34 @@ namespace control {
     queue.finish();
   }
 
+  void InputSet::removeTensors(size_t start, size_t end) {
+    std::scoped_lock lock(mutex);
+
+    if (start >= end) {
+      throw std::runtime_error("InputSet::removeTensors: start must be smaller than end");
+    }
+
+    if (end > tensors.size()) {
+      throw std::runtime_error("InputSet::removeTensors: end must be smaller than tensors.size()");
+    }
+
+    size_t first_global_index = 0;
+    size_t last_global_index = 0;
+
+    for (size_t i = 0; i < end; i++) {
+      if (i < start) { first_global_index += tensors[i].getZ(); }
+      last_global_index += tensors[i].getZ();
+    }
+    // Erase the ids and class ids using the computed global indices
+    ids.erase(ids.begin() + first_global_index, ids.begin() + last_global_index);
+    class_ids.erase(class_ids.begin() + first_global_index, class_ids.begin() + last_global_index);
+
+    // Remove the tensors from the vector
+    tensors.erase(tensors.begin() + start, tensors.begin() + end);
+  }
+
   void InputSet::shuffle(size_t random_seed) {
+    std::scoped_lock lock(mutex);
     // Shuffle each vectors with the same seed to maintain the same order
     std::mt19937 generator(random_seed);
     auto gen2 = generator;
@@ -90,5 +147,8 @@ namespace control {
     std::shuffle(class_ids.begin(), class_ids.end(), gen2);
     std::shuffle(tensors.begin(), tensors.end(), gen3);
   }
+
+
+  void InputSet::shuffle() { shuffle(std::random_device{}()); }
 
 }   // namespace control

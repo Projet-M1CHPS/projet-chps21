@@ -6,7 +6,7 @@ add_library(controlSystem2
         TrainingController.cpp ${CURRENT_INCLUDE_DIR}/TrainingController.hpp
         EvalController.cpp ${CURRENT_INCLUDE_DIR}/EvalController.hpp
         InputSet.cpp ${CURRENT_INCLUDE_DIR}/InputSet.hpp
-        TrainingCollection.cpp ../../include/controlSystem2/TrainingCollection.hpp)
+        TrainingCollection.cpp ../../include/controlSystem2/TrainingCollection.hpp TrainingCollectionLoader.cpp ../../include/controlSystem2/TrainingCollectionLoader.hpp InputSetLoader.cpp ../../include/controlSystem2/InputSetLoader.hpp)
 
 target_link_libraries(controlSystem2 PUBLIC NeuralNetwork)
 target_include_directories(controlSystem2 PUBLIC ${CURRENT_INCLUDE_DIR})

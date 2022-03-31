@@ -25,7 +25,7 @@ namespace control {
 
     size_t getClass() const { return class_id; }
 
-    void setClass(size_t class_id) { this->class_id = class_id; }
+    void setClass(long new_id) { class_id = new_id; }
 
     /**
      * @brief Returns the opencl buffer containing the data of this sample
@@ -43,11 +43,15 @@ namespace control {
   class InputSetIterator;
 
   /**
-   * @brief A set of samples that can be used to feed a neural network model
+   * @brief Thread-safe set of samples that can be used to feed a neural network model
    * Note that the samples are grouped in Tensors of heterogeneous size, which can be used for
    * batched operations.
+   *
+   * Does not support removing random samples from the set (Really complex operation since this
+   * would require tensors to be rearranged, and barely needed). However, supports removal of entire
+   * tensors.
    */
-  class InputSet {
+  class InputSet final {
   public:
     friend InputSetIterator;
 
@@ -55,9 +59,8 @@ namespace control {
         : input_width(input_width), input_height(input_height) {}
 
     /**
-     * @brief Append the given samples and their associated tensor to the input set
-     * No check is done to ensure the samples are contained in the tensor, beware that this may
-     * leads to undefined behavior.
+     * @brief Append the given samples and their associated tensor to the input set. Samples are
+     * added at the end of the set.
      *
      * @param tensor The tensor containing the samples
      * @param ids A vector containing the ids of the samples to append
@@ -78,36 +81,37 @@ namespace control {
      * the number of samples, the last tensor will be truncated.
      */
     void alterTensors(size_t new_tensor_size);
+
+    /**
+     * @brief Remove tensors in [start, end[. This operation is thread-safe, but invalidates any
+     * iterators.
+     * @param start The index of the first tensor to remove
+     * @param end The index of the last tensor (not included) to remove
+     */
+    void removeTensors(size_t start, size_t end);
+
+    /**
+     * @brief Shuffle the samples in the set. This operation is thread-safe, but invalidates any
+     * iterators
+     * @param random_seed
+     */
     void shuffle(size_t random_seed);
 
-    size_t getSize() const { return size; }
+    /**
+     * @brief Shuffle the samples in the set using a random seed. This operation is thread-safe, but
+     * invalidates any iterators
+     */
+    void shuffle();
+
+    size_t getSize() const {
+      std::shared_lock<std::shared_mutex> lock(mutex);
+      return size;
+    }
 
     size_t getInputWidth() const { return input_width; }
     size_t getInputHeight() const { return input_height; }
 
-    Sample operator[](size_t index) {
-      if (index > size) throw std::out_of_range("Sample index out of range");
-
-      size_t tensor_index = index;
-      size_t local_index = index;
-
-      // Since the tensors may not be of the same size, we need to iterate through them to find the
-      // right one
-      for (size_t i = 0; i < tensors.size(); i++) {
-        // If the tensors contains the sample, break
-        if (local_index < tensors[i].getZ()) {
-          tensor_index = i;
-          break;
-        }
-        // Otherwise, update the local index
-        // And move to the next tensor
-        local_index -= tensors[i].getZ();
-      }
-      // Fetch the matrix from the tensor
-      auto matrix = tensors[tensor_index].getMatrix(local_index);
-      // Fetch the sample id/class_id using the index, and return the matrix
-      return {ids[index], class_ids[index], std::move(matrix)};
-    }
+    Sample operator[](size_t index);
 
     using SampleIterator = InputSetIterator;
 
@@ -120,7 +124,10 @@ namespace control {
      * Use getSize() to get the number of samples
      * @return The number of tensors
      */
-    size_t getTensorCount() const { return tensors.size(); }
+    size_t getTensorCount() const {
+      std::shared_lock<std::shared_mutex> lock(mutex);
+      return tensors.size();
+    }
 
     /**
      * @brief Return the tensor at the given index
@@ -128,6 +135,7 @@ namespace control {
      * @return The tensor at the given index
      */
     math::clFTensor &getTensor(size_t index) {
+      std::shared_lock<std::shared_mutex> lock(mutex);
       if (index > tensors.size()) throw std::out_of_range("Tensor index out of range");
       return tensors[index];
     }
@@ -138,6 +146,7 @@ namespace control {
      * @return The tensor at the given index
      */
     const math::clFTensor &getTensor(size_t index) const {
+      std::shared_lock<std::shared_mutex> lock(mutex);
       if (index > tensors.size()) throw std::out_of_range("Tensor index out of range");
       return tensors[index];
     }
@@ -149,34 +158,83 @@ namespace control {
      * @brief Return an iterator to the tensors contained in this set
      * @return
      */
-    TensorIterator beginTensor() { return tensors.begin(); }
-    TensorConstIterator beginTensor() const { return tensors.begin(); }
+    TensorIterator beginTensor() {
+      std::shared_lock<std::shared_mutex> lock(mutex);
+      return tensors.begin();
+    }
+
+    TensorConstIterator beginTensor() const {
+      std::shared_lock<std::shared_mutex> lock(mutex);
+      return tensors.begin();
+    }
 
     /**
      * @brief Return an iterator to the end of the tensors contained in this set
      * @return
      */
-    TensorIterator endTensor() { return tensors.end(); }
-    TensorConstIterator endTensor() const { return tensors.end(); }
+    TensorIterator endTensor() {
+      std::shared_lock<std::shared_mutex> lock(mutex);
+      return tensors.end();
+    }
+
+    TensorConstIterator endTensor() const {
+      std::shared_lock<std::shared_mutex> lock(mutex);
+      return tensors.end();
+    }
 
     /**
      * @brief Return the vector containing all the tensors
      * @return
      */
-    std::vector<math::clFTensor> &getTensors() { return tensors; }
+    std::vector<math::clFTensor> &getTensors() {
+      std::shared_lock<std::shared_mutex> lock(mutex);
+      return tensors;
+    }
 
     /**
      * @brief Return the vector containing all the tensors
      * @return
      */
-    const std::vector<math::clFTensor> &getTensors() const { return tensors; }
+    const std::vector<math::clFTensor> &getTensors() const {
+      std::shared_lock<std::shared_mutex> lock(mutex);
+      return tensors;
+    }
+
+    /**
+     * @brief Return the class id of the sample at the given index
+     * @param global_index The index of the sample in the input set
+     * @return The class id of the sample, -1 if it is undefined
+     * Throw on out of range
+     */
+    long getClass(size_t global_index) const {
+      std::shared_lock lock(mutex);
+      if (global_index > size) throw std::out_of_range("Sample index out of range");
+      return class_ids[global_index];
+    }
+
+    /**
+     * TODO: Improve class / label handling
+     * @brief Update the classes of the samples in the input set. Note that this method only update
+     * the names of the classes, and doesn't handle the case where there are fewer classes than
+     * referenced by the samples.
+     * @param classes
+     */
+    void updateClasses(std::vector<std::string> classes) {
+      std::scoped_lock lock(mutex);
+      class_names = std::move(classes);
+    }
 
   private:
     size_t size = 0;
     size_t input_width = 0, input_height = 0;
-    std::vector<math::clFTensor> tensors;
+
     std::vector<size_t> ids;
+    std::vector<math::clFTensor> tensors;
+
     std::vector<long> class_ids;
+    std::vector<std::string> class_names;
+
+    mutable std::shared_mutex mutex;
   };
 
   /**
