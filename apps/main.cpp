@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
   }
 
   tscl::logger("Initializing OpenCL...", tscl::Log::Debug);
-  // utils::clPlatformSelector::makeDefault();
+  utils::clPlatformSelector::makeDefault();
   // std::shared_ptr<utils::clWrapper> wrapper = utils::clWrapper::makeDefault();
 
   std::vector<std::string> args;

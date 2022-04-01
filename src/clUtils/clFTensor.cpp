@@ -18,8 +18,10 @@ namespace math {
 
     size_t size = x_dim * y_dim;
     cl_buffer_region region = {z * size * sizeof(float), size * sizeof(float)};
-    cl::Buffer subbuffer =
-            data.createSubBuffer(CL_MEM_READ_WRITE, CL_BUFFER_CREATE_TYPE_REGION, &region);
+    cl::Buffer subbuffer;
+    if (z == 0) subbuffer = data;
+    else
+      subbuffer = data.createSubBuffer(CL_MEM_READ_WRITE, CL_BUFFER_CREATE_TYPE_REGION, &region);
 
     return {subbuffer, x_dim, y_dim};
   }
