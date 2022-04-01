@@ -21,6 +21,7 @@ add_library(Perceptron STATIC
         MLPStochOptimizer.cpp ${CURRENT_INCLUDE_DIR}/MLPStochOptimizer.hpp
         MLPBatchOptimizer.cpp ${CURRENT_INCLUDE_DIR}/MLPBatchOptimizer.hpp
         MLPMiniBatchOptimizer.cpp ${CURRENT_INCLUDE_DIR}/MLPMiniBatchOptimizer.hpp
+        ActivationFunction.cpp ${CURRENT_INCLUDE_DIR}/ActivationFunction.hpp
         )
 
 target_include_directories(Perceptron

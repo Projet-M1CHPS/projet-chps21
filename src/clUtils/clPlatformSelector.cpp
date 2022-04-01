@@ -146,8 +146,14 @@ namespace utils {
 
   void clPlatformSelector::displayDetails() {
     wmove(device_details_win, 0, 0);
+
     auto &devices = devices_map[&platforms[current_platform]];
+
+    if (devices.empty())
+      return;
+
     auto &device = devices[current_device];
+
 
     std::string name = device.getInfo<CL_DEVICE_NAME>();
     wprintw(device_details_win, "Name: %s\n", name.c_str());

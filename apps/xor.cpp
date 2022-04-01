@@ -607,7 +607,7 @@ int main() {
   // testConvolutionalLayer();
   // testMaxPoolingLayer();
   // testAvgPoolingLayer();
-  testPredictionOneBranch();
+  //testPredictionOneBranch();
   // testPredictionMultiBranch();
   // testCNNModel();
 

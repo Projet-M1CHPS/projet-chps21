@@ -11,7 +11,6 @@ add_library(CNN STATIC
         CNNStorageBP.cpp ${CURRENT_INCLUDE_DIR}/CNNStorageBP.hpp
 
         CNNOptimizer.cpp ${CURRENT_INCLUDE_DIR}/CNNOptimizer.hpp
-        ../ActivationFunction.cpp ${INCLUDE_DIR}/neuralNetwork/ActivationFunction.hpp
         )
 
 target_include_directories(CNN PUBLIC ${INCLUDE_DIR} ${CURRENT_INCLUDE_DIR} ${INCLUDE_DIR}/neuralNetwork)
