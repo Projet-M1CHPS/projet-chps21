@@ -61,7 +61,7 @@ namespace control {
       // We may be left with a small number of images, so we need to resize the tensor
       // This can happen if the number of images is not a multiple of the tensor size
       size_t count = std::min(tensor_size, files.size() - index);
-      math::clFTensor tensor(res.getInputWidth() * res.getInputHeight(), 1, count);
+      math::clFTensor tensor(res.getInputWidth(), res.getInputHeight(), count);
 
       // Create an out-of-order queue to transform the images in parallel
       cl::CommandQueue queue =
@@ -100,7 +100,7 @@ namespace control {
 
         // Convert the image to float and normalize it by 255
         queue.enqueueNDRangeKernel(kernel, cl::NullRange,
-                                   cl::NDRange(image.getWidth() * image.getHeight()),
+                                   cl::NDRange(image.getWidth(), image.getHeight()),
                                    cl::NullRange);
         ids.push_back(file.input_id);
         classes.push_back(file.class_id);
@@ -124,9 +124,8 @@ namespace control {
       tr::TransformEngine resize_engine;
       /* resize_engine.addTransformation(
               std::make_shared<tr::Resize>(res.getInputWidth(), res.getInputHeight())); */
-      resize_engine.addTransformation(
-              std::make_shared<tr::Resize>(32, 32));
-      TransformationPipeline pipeline({resize_engine}); // , pre_engine, post_engine});
+      resize_engine.addTransformation(std::make_shared<tr::Resize>(32, 32));
+      TransformationPipeline pipeline({resize_engine});   // , pre_engine, post_engine});
 
 
       // Asynchronously load the tensors
@@ -142,7 +141,7 @@ namespace control {
                                            bool shuffle_samples) const {
     if (not fs::exists(path))
       throw std::runtime_error("InputSetLoader::loadWithClasses: The input path does not exist");
-    InputSet res(input_width * input_height, 1);
+    InputSet res(input_width, input_height);
 
     std::vector<InputFileMetadata> files;
     std::vector<std::string> classes;

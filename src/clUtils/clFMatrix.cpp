@@ -71,6 +71,24 @@ namespace math {
     if (blocking) evt.wait();
   }
 
+  clFMatrix clFMatrix::fromSubbuffer(cl::Buffer subbuffer, size_t rows, size_t cols) {
+    clFMatrix res;
+    res.data = std::move(subbuffer);
+    res.rows = rows;
+    res.cols = cols;
+
+    return res;
+  }
+
+  clFMatrix clFMatrix::flatten() const {
+    clFMatrix res;
+    res.data = data;
+    res.rows = rows * cols;
+    res.cols = 1;
+    return res;
+  }
+
+
   /// Conversion functions
   /// Those are especially important since it is easier to manipulate matrices that are on the host
   /// and direct memory access is faster than through OpenCL read and write operations

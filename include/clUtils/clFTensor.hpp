@@ -11,7 +11,27 @@ namespace math {
    */
   class clFTensor {
   public:
+
+    clFTensor() : x_dim(0), y_dim(0), z_dim(0) {}
+
     clFTensor(size_t x, size_t y, size_t z);
+
+    /**
+     * @brief Returns a clFTensor wheres matrices are flattened (x * y, 1)
+     * Beware that this operation does not copy the matrices, and any change to the matrices will be
+     * reflected in the original clFTensor.
+     *
+     * @param tensor
+     * @return
+     */
+    static clFTensor flatten(const clFTensor &tensor) {
+      clFTensor res;
+      res.data = tensor.data;
+      res.x_dim = tensor.x_dim * tensor.y_dim;
+      res.y_dim = 1;
+      res.z_dim = tensor.z_dim;
+      return res;
+    }
 
     /**
      * @brief Returns the submatrix at the given index.

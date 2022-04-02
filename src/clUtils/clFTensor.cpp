@@ -22,7 +22,7 @@ namespace math {
     else
       subbuffer = data.createSubBuffer(CL_MEM_READ_WRITE, CL_BUFFER_CREATE_TYPE_REGION, &region);
 
-    return {subbuffer, x_dim, y_dim};
+    return clFMatrix::fromSubbuffer(subbuffer, x_dim, y_dim);
   }
 
   std::vector<clFMatrix> clFTensor::getMatrices() {
