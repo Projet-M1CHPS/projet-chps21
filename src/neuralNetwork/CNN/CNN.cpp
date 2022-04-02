@@ -4,93 +4,43 @@ namespace nnet {
 
   CNN::CNN(CNN &&other) noexcept {
     this->topology = std::move(other.topology);
-    this->layers = std::move(other.layers);
-    this->layerMatrix = std::move(other.layerMatrix);
+    this->tree = std::move(other.tree);
   }
 
   CNN &CNN::operator=(CNN &&other) noexcept {
     this->topology = std::move(other.topology);
-    this->layers = std::move(other.layers);
-    this->layerMatrix = std::move(other.layerMatrix);
+    this->tree = std::move(other.tree);
     return *this;
   }
 
-  void CNN::setTopology(CNNTopology const &topology) {
-    const size_t deepth = topology.getDeepth();
+  void CNN::setTopology(CNNTopology const &cnn_topology) {
+    tree.build(cnn_topology);
 
-    layers.resize(deepth);
-    layerMatrix.resize(deepth);
-
-    layers[0].resize(topology(0)->getFeatures());
-    layerMatrix[0].resize(topology(0)->getFeatures());
-
-    for (size_t i = 1; i < deepth; i++) {
-      layers[i].resize(topology(i)->getFeatures() * layers[i - 1].size());
-      layerMatrix[i].resize(topology(i)->getFeatures() * layerMatrix[i - 1].size());
-    }
-
-    std::pair<size_t, size_t> inputSize(topology.getInputSize());
-    for (size_t i = 0; i < topology(0)->getFeatures(); i++) {
-      layers[0][i] = topology(0)->convertToLayer();
-      layerMatrix[0][i] = FloatMatrix(topology(0)->getOutputSize(inputSize));
-    }
-
-    inputSize = std::make_pair(layerMatrix[0].front().getRows(), layerMatrix[0].front().getCols());
-
-    for (size_t i = 1; i < deepth; i++) {
-      inputSize = std::make_pair(layerMatrix[i - 1].front().getRows(),
-                                 layerMatrix[i - 1].front().getCols());
-      for (size_t j = 0; j < layers[i].size(); j++) {
-        layers[i][j] = topology(i)->convertToLayer();
-        layerMatrix[i][j] = FloatMatrix(topology(i)->getOutputSize(inputSize));
-      }
-    }
-
-    this->topology = topology;
+    this->topology = cnn_topology;
   }
 
 
   void CNN::randomizeWeight() { assert(false && "Not implemented"); }
 
-  // TODO : CHANGE NAME AND REMOVE FloatMatrix
-  void CNN::predict(math::clFMatrix const &_input, math::clFMatrix &_output) {
-    math::FloatMatrix input = _input.toFloatMatrix(true);
-    math::FloatMatrix output = _output.toFloatMatrix(true);
 
-    if (input.getCols() != topology.getInputSize().first or
-        input.getRows() != topology.getInputSize().second) {
-      throw std::runtime_error("Input size does not match topology input size");
-    } else if (output.getCols() != 1 or output.getRows() != getOutputSize()) {
-      throw std::runtime_error("Output size does not match topology output size");
+  void CNN::predict(math::clFMatrix const &input, math::clFMatrix &output) {
+    // TODO : Implement this
+
+    if (not tree.getRoot()) { throw std::runtime_error("Root node is not set"); }
+
+    std::stack<std::shared_ptr<CNNNode>> stack;
+
+    tree.getRoot()->getLayer()->compute(input);
+    for (auto &i : tree.getRoot()->getChildren()) { stack.push(std::make_shared<CNNNode>(i)); }
+
+    while (not stack.empty()) {
+      std::shared_ptr<CNNNode> node = stack.top();
+      stack.pop();
+
+      node->getLayer()->compute(node->getFather()->getLayer()->getOutput(node->getId()));
+      for (auto &i : node->getChildren()) { stack.push(std::make_shared<CNNNode>(i)); }
     }
-
-    for (size_t i = 0; i < topology(0)->getFeatures(); i++) {
-      clFMatrix tmp = layerMatrix[0][i];
-      layers[0][i]->compute(input, tmp);
-      layerMatrix[0][i] = tmp.toFloatMatrix(true);
-    }
-
-    for (size_t i = 1; i < topology.getDeepth(); i++) {
-      size_t l = 0;
-      for (size_t j = 0; j < layers[i - 1].size(); j++) {
-        for (size_t k = 0; k < topology(i)->getFeatures(); k++) {
-          clFMatrix tmp1 = layerMatrix[i - 1][j];
-          clFMatrix tmp2 = layerMatrix[i][l];
-          layers[i][j]->compute(tmp1, tmp2);
-          layerMatrix[i][l++] = tmp2.toFloatMatrix(true);
-        }
-      }
-    }
-
-    size_t index = 0;
-    for (auto &mat : layerMatrix.back()) {
-      for (auto val : mat) {
-        output(index, 0) = val;
-        index++;
-      }
-    }
-
-    _output = output;
+    utils::cl_wrapper.getDefaultQueue().finish();
   }
 
 }   // namespace nnet

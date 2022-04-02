@@ -83,7 +83,7 @@ namespace nnet {
     CNNTopologyLayerPooling(const std::pair<size_t, size_t> inputSize,
                             const std::pair<size_t, size_t> filter, const size_t stride);
     ~CNNTopologyLayerPooling() = default;
-    
+
 
     [[nodiscard]] const std::pair<size_t, size_t>
     getOutputSize(const std::pair<size_t, size_t> &inputSize) const override {
@@ -127,55 +127,4 @@ namespace nnet {
     std::ostream &printTo(std::ostream &) const override;
   };
 
-
-  class CNNTopology {
-    typedef typename std::vector<std::shared_ptr<CNNTopologyLayer>>::const_iterator const_iterator;
-    friend std::ostream &operator<<(std::ostream &os, const CNNTopology &topology);
-    friend const CNNTopology stringToTopology(const std::string &str);
-
-  public:
-    CNNTopology();
-    explicit CNNTopology(const std::pair<size_t, size_t> &inputSize);
-
-    CNNTopology(const CNNTopology &) = default;
-    CNNTopology(CNNTopology &&) = default;
-
-    CNNTopology &operator=(const CNNTopology &) = default;
-    CNNTopology &operator=(CNNTopology &&) = default;
-
-    const_iterator cbegin() const { return layers.begin(); }
-    const_iterator begin() const { return layers.begin(); }
-
-    const_iterator cend() const { return layers.end(); }
-    const_iterator end() const { return layers.end(); }
-
-    const std::shared_ptr<CNNTopologyLayer> &operator()(size_t index) const;
-
-    void setActivationFunction(const af::ActivationFunctionType act_function) {
-      activationFunction = act_function;
-    }
-    const af::ActivationFunctionType getActivationFunction() const { return activationFunction; }
-
-    const std::pair<size_t, size_t> &getInputSize() const { return inputSize; }
-    const size_t getDeepth() const { return layers.size(); }
-    const std::vector<std::shared_ptr<CNNTopologyLayer>> &getTopology() const { return layers; }
-
-  private:
-    void addConvolution(const std::pair<size_t, size_t> &inputSize, const size_t features,
-                        const std::pair<size_t, size_t> &filterSize,
-                        const af::ActivationFunctionType aFunction, const size_t stride,
-                        const size_t padding);
-
-    void addPooling(const std::pair<size_t, size_t> &inputSize, const PoolingType poolingType,
-                    const std::pair<size_t, size_t> &poolSize, const size_t stride);
-
-  private:
-    std::pair<size_t, size_t> inputSize;
-    std::vector<std::shared_ptr<CNNTopologyLayer>> layers;
-    af::ActivationFunctionType activationFunction;
-  };
-
-  const CNNTopology stringToTopology(const std::string &str);
-
-  std::ostream &operator<<(std::ostream &os, const CNNTopologyLayer &nn);
 }   // namespace nnet

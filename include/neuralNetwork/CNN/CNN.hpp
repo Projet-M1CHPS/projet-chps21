@@ -5,6 +5,8 @@
 #include "Matrix.hpp"
 #include "clUtils/clFMatrix.hpp"
 #include "clUtils/clWrapper.hpp"
+#include "CNNDependencyTree.hpp"
+#include <stack>
 
 namespace nnet {
 
@@ -21,11 +23,9 @@ namespace nnet {
     [[nodiscard]] CNNTopology const &getTopology() const { return topology; }
 
     [[nodiscard]] size_t getOutputSize() const {
-      return layerMatrix.back().size() * layerMatrix.back()[0].getCols() *
-             layerMatrix.back()[0].getRows();
+      // TODO: check if this is correct
+      return 0;
     }
-
-    [[nodiscard]] const std::vector<std::vector<std::shared_ptr<CNNLayer>>> &getLayers() const { return layers; }
 
     void randomizeWeight();
 
@@ -34,8 +34,7 @@ namespace nnet {
   private:
     CNNTopology topology;
 
-    std::vector<std::vector<std::shared_ptr<CNNLayer>>> layers;
-    std::vector<std::vector<FloatMatrix>> layerMatrix;
+    CNNDependencyTree tree;
   };
 
 }   // namespace cnnet

@@ -1,12 +1,13 @@
 #include "Matrix.hpp"
 #include "clUtils/clFMatrix.hpp"
 #include <iostream>
+#include "CNNTopology.hpp"
+#include "CNNLayer.hpp"
 
 using namespace math;
-using namespace std;
 
 
-int main() {
+void testConvo() {
   math::FloatMatrix A(6, 6);
   A.fill(1.f);
   {
@@ -57,10 +58,6 @@ int main() {
     B(0, 1) = 1.f;
     B(0, 2) = 0.5f;
     B(0, 3) = 1.5f;
-    //B(0, 4) = 0.f;
-    //B(0, 5) = 0.f;
-    //B(0, 6) = 0.f;
-    //B(0, 7) = 0.f;
   }
   std::cout << "B = \n" << B << std::endl;
   auto b = clFMatrix(B, true);
@@ -77,9 +74,113 @@ int main() {
                            1, 1, a.getBuffer()(), 0, b.getBuffer()(), 0, out.getBuffer()(), 0,
                            &queue(), nullptr);
 
+  queue.finish();
 
   FloatMatrix tmp = out.toFloatMatrix(true);
-  cout << "output\n" << tmp << endl;
+  std::cout << "output\n" << tmp << std::endl;
+}
+
+void testConvolutionalLayer() {
+  nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, af::ActivationFunctionType::relu, 1, 0);
+
+  auto &filter = layer.getFilter();
+  std::cout << "filter : \n" << filter.getMatrix() << std::endl;
+
+  math::FloatMatrix input(6, 6);
+  {
+    input(0, 0) = 1.f;
+    input(0, 1) = 2.f;
+    input(0, 2) = 1.f;
+    input(0, 3) = 1.f;
+    input(0, 4) = 4.f;
+    input(0, 5) = 1.f;
+    input(1, 0) = 2.f;
+    input(1, 1) = 1.f;
+    input(1, 2) = 1.f;
+    input(1, 3) = 2.f;
+    input(1, 4) = 2.f;
+    input(1, 5) = 1.f;
+    input(2, 0) = 4.f;
+    input(2, 1) = 3.f;
+    input(2, 2) = 2.f;
+    input(2, 3) = 1.f;
+    input(2, 4) = 2.f;
+    input(2, 5) = 1.f;
+    input(3, 0) = 1.f;
+    input(3, 1) = 5.f;
+    input(3, 2) = 1.f;
+    input(3, 3) = 1.f;
+    input(3, 4) = 2.f;
+    input(3, 5) = 1.f;
+    input(4, 0) = 2.f;
+    input(4, 1) = 1.f;
+    input(4, 2) = 1.f;
+    input(4, 3) = 4.f;
+    input(4, 4) = 1.f;
+    input(4, 5) = 1.f;
+    input(5, 0) = 2.f;
+    input(5, 1) = 1.f;
+    input(5, 2) = 4.f;
+    input(5, 3) = 2.f;
+    input(5, 4) = 4.f;
+    input(5, 5) = 1.f;
+  }
+  std::cout << "input : \n" << input << std::endl;
+
+  layer.compute(input);
+
+  math::FloatMatrix tmp_output = layer.getOutput(0).toFloatMatrix(true);
+  std::cout << "output : \n" << tmp_output << std::endl;
+
+  /* input
+   * 1 2 1 1 4 1
+   * 2 1 1 2 2 1
+   * 4 3 2 1 2 1
+   * 1 5 1 1 2 1
+   * 2 1 1 4 1 1
+   * 2 1 4 2 4 1
+   *
+   * filter
+   * 2   1
+   * 0.5 1.5
+   *
+   * error input
+   * 6.5  7   6.5 10  11.5
+   * 11.5 7.5 6.5 9.5 7.5
+   * 19   12  7   7.5 7.5
+   * 9.5  13  9.5 7.5 7
+   * 7.5 9.5 11 16 6.5
+   * */
+
+  /*nnet::CNNStorageBPConvolution storage({6, 6}, {5, 5}, {2, 2}, 1);
+
+  layer.computeForward(input, storage);
+  std::cout << "compute forward : \n" << storage.output << std::endl;
+  for (auto &i : storage.output) { i = 1.f; }
+  layer.computeBackward(input, storage);
+  std::cout << "error input : \n" << storage.errorInput << std::endl;
+  std::cout << "error filter : \n" << storage.errorFilter << std::endl;*/
+
+  /* error input
+   *
+   * 2 3 3 3 3 1
+   * 2.5 5 5 5 5 2.5
+   * 2.5 5 5 5 5 2.5
+   * 2.5 5 5 5 5 2.5
+   * 2.5 5 5 5 5 2.5
+   * 0.5 2 2 2 2 1.5
+   *
+   * error filter
+   * 48 43
+   * 52 46
+   * */
+}
+
+
+int main() {
+  //testConvo();
+
+  testConvolutionalLayer();
 
   return 0;
 }
