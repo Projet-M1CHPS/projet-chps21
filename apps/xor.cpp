@@ -6,10 +6,12 @@
 #include "CNN.hpp"
 #include "CNNLayer.hpp"
 #include "CNNModel.hpp"
+#include "CNNOptimizer.hpp"
 #include "CNNStorageBP.hpp"
 #include <curses.h>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 
@@ -601,15 +603,49 @@ void testCNNModel() {
   std::cout << "output :\n" << output_buffer << std::endl;
 }
 
+
+void foo8() {
+  std::string str("50 50 sigmoid convolution 1 3 3 1 0");
+  nnet::CNNTopology topoCNN = nnet::stringToTopology(str);
+  topoCNN.setActivationFunction(af::ActivationFunctionType::relu);
+  std::cout << topoCNN << std::endl;
+
+  nnet::MLPTopology topoMLP = {30, 10, 5, 2};
+
+  auto cnn = nnet::CNNModel::random(topoCNN, topoMLP);
+
+  math::FloatMatrix input(50, 50);
+
+  math::randomize(input, 0.f, 1.f);
+
+  math::FloatMatrix target(2, 1);
+  {
+    target(0, 0) = 1;
+    target(1, 0) = 0;
+  }
+
+  auto optimiser = nnet::CNNStochOptimizer::make<nnet::SGDOptimization>(*cnn, 0.2);
+
+  for (int i = 0; i < 1000; i++) {
+    math::clFMatrix tmp = input;
+    math::clFMatrix output = cnn->predict(tmp);
+    std::cout << "prediction\n" << output.toFloatMatrix(true) << std::endl;
+
+    optimiser->optimize(input, target);
+  }
+}
+
+
 int main() {
   // runXor(100, 0.1, 0.001);
 
   // testConvolutionalLayer();
   // testMaxPoolingLayer();
   // testAvgPoolingLayer();
-  //testPredictionOneBranch();
+  // testPredictionOneBranch();
   // testPredictionMultiBranch();
   // testCNNModel();
+  foo8();
 
   return 0;
 }

@@ -53,7 +53,7 @@ namespace nnet {
 
     template<typename Optimization, typename... Args,
              typename = std::is_base_of<nnet::Optimization, Optimization>>
-    std::unique_ptr<CNNStochOptimizer> make(CNNModel &model, Args &&...args) {
+    static std::unique_ptr<CNNStochOptimizer> make(CNNModel &model, Args &&...args) {
       return std::make_unique<CNNStochOptimizer>(
               model, std::make_unique<Optimization>(model.getMlp(), std::forward<Args>(args)...));
     }

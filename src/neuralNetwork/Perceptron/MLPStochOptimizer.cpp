@@ -35,7 +35,11 @@ namespace nnet {
   }
 
   MLPStochOptimizer::MLPStochOptimizer(MLPerceptron &perceptron, std::unique_ptr<Optimization> tm)
-      : MLPOptimizer(perceptron, std::move(tm)) {}
+      : MLPOptimizer(perceptron, std::move(tm)) {
+    storage = BackpropStorage(perceptron.getWeights());
+    layers.resize(perceptron.getWeights().size() + 1);
+    layers_af.resize(perceptron.getWeights().size() + 1);
+  }
 
   math::clFMatrix MLPStochOptimizer::optimize(const math::clFMatrix &input,
                                               const math::clFMatrix &target) {

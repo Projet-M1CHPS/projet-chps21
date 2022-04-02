@@ -40,7 +40,6 @@ namespace nnet {
 
     forward(tmp_input);
 
-    std::cout << "flatten \n" << flatten << std::endl;
     clFMatrix tmp_flatten(flatten, true);
 
     FloatMatrix errorFlatten = mlp_opti.optimize(tmp_flatten, target).toFloatMatrix(true);
