@@ -10,7 +10,6 @@ namespace math {
     // Since we only use sub-buffers, we need to explicitly migrate the data
     // to the device, otherwise the data will remain in the host memory.
     auto queue = cl::CommandQueue::getDefault();
-    queue.enqueueMigrateMemObjects({data}, 0);
   }
 
   clFMatrix clFTensor::getMatrix(size_t z) {

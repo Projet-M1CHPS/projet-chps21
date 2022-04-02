@@ -64,11 +64,8 @@ bool createAndTrain(std::filesystem::path const &input_path,
             << std::endl;
 
 
-  size_t i = 0;
-  std::cin >> i;
   EvalController controller(output_path, model.get(), &training_collection.getEvaluationSet());
   ControllerResult res = controller.run();
-  std::cin >> i;
 
   /*
   if (not res) {
@@ -76,7 +73,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
     tscl::logger(res.getMessage(), tscl::Log::Error);
     return false;
   }*/
-  nnet::MLPModelSerializer::writeToFile(output_path / "model.nnet", *model);
+  // nnet::MLPModelSerializer::writeToFile(output_path / "model.nnet", *model);
 
   /*
   std::filesystem::create_directories(output_path / "image");
@@ -110,8 +107,7 @@ int main(int argc, char **argv) {
   }
 
   tscl::logger("Initializing OpenCL...", tscl::Log::Debug);
-  utils::clPlatformSelector::makeDefault();
-  // std::shared_ptr<utils::clWrapper> wrapper = utils::clWrapper::makeDefault();
+  utils::clPlatformSelector::initOpenCL();
 
   std::vector<std::string> args;
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);

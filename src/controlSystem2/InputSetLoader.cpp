@@ -126,7 +126,7 @@ namespace control {
               std::make_shared<tr::Resize>(res.getInputWidth(), res.getInputHeight())); */
       resize_engine.addTransformation(
               std::make_shared<tr::Resize>(32, 32));
-      TransformationPipeline pipeline({resize_engine, pre_engine, post_engine});
+      TransformationPipeline pipeline({resize_engine}); // , pre_engine, post_engine});
 
 
       // Asynchronously load the tensors

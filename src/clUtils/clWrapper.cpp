@@ -2,6 +2,8 @@
 #include <fstream>
 #include <ncurses.h>
 
+namespace fs = std::filesystem;
+
 namespace utils {
 
   namespace {
@@ -52,34 +54,25 @@ namespace utils {
       return res;
     }
 
-
-    clWrapper initDefault() {
-      auto default_ptr = clWrapper::makeDefault();
-
-      cl::Platform::setDefault(default_ptr->getPlatform());
-      cl::Context::setDefault(default_ptr->getContext());
-      cl::Device::setDefault(default_ptr->getDefaultDevice());
-      cl::CommandQueue::setDefault(default_ptr->getDefaultQueue());
-
-      return *default_ptr;
-    }
-
   }   // namespace
 
-  clWrapper cl_wrapper = initDefault();
+  clWrapper cl_wrapper;
 
   clWrapper::clWrapper(cl::Platform &platform, size_t device_id,
                        const std::filesystem::path &kernels_search_path) noexcept {
-    this->platform = platform;
-    platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
-    std::cout << "Selected Platform: " << platform.getInfo<CL_PLATFORM_NAME>() << std::endl;
-    for (size_t i = 0; i < devices.size(); i++) {
-      if (i == 0)
-        std::cout << "Default Device d0: " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
-      else
-        std::cout << "\t d" << i << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
+    fs::path absolute_kernel_path = kernels_search_path;
+
+    if (kernels_search_path.is_relative()) {
+      absolute_kernel_path =
+              boost::dll::program_location().remove_filename().string() / kernels_search_path;
     }
 
+    if (not fs::exists(absolute_kernel_path)) {
+      throw std::runtime_error("Kernel path does not exist: " + absolute_kernel_path.string());
+    }
+
+    this->platform = platform;
+    platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
     default_device = devices[device_id];
 
     context = cl::Context(devices);
@@ -88,7 +81,7 @@ namespace utils {
     // The user is free to create queues with out-of-order execution enabled
     default_queue_handler = clQueueHandler(context, devices);
 
-    kernels = std::make_shared<clKernelMap>(context, kernels_search_path);
+    kernels = std::make_shared<clKernelMap>(context, absolute_kernel_path);
   }
 
   clWrapper &clWrapper::operator=(const clWrapper &other) noexcept {
@@ -98,6 +91,7 @@ namespace utils {
     platform = other.platform;
     context = other.context;
     default_device = other.default_device;
+    devices = other.devices;
     default_queue = other.default_queue;
     default_queue_handler = other.default_queue_handler;
     // No need to lock the mutex here, since we're just copying the pointers
@@ -112,6 +106,7 @@ namespace utils {
     platform = other.platform;
     context = other.context;
     default_device = other.default_device;
+    devices = std::move(other.devices);
     default_queue = other.default_queue;
     default_queue_handler = other.default_queue_handler;
     // No need to lock the mutex here, since we're just copying the pointers
@@ -137,13 +132,46 @@ namespace utils {
     }
   }
 
-  clWrapper &clWrapper::setDefault(clWrapper &wrapper) noexcept {
-    cl::Platform::setDefault(wrapper.platform);
-    cl::Context::setDefault(wrapper.context);
-    cl::Device::setDefault(wrapper.default_device);
-    cl::CommandQueue::setDefault(cl::CommandQueue(wrapper.context, wrapper.default_device));
+  clWrapper &clWrapper::initOpenCL(clWrapper &wrapper) noexcept {
+    static std::atomic<bool> is_init = false;
+    static std::mutex init_mutex;
+
+    std::scoped_lock<std::mutex> lock(init_mutex);
+
+    if (is_init) {
+      std::cerr << "clWrapper::initOpenCL() has already been called.\n";
+      std::terminate();
+    }
+
+    tscl::logger("Initializing OpenCL environnement...", tscl::Log::Information);
 
     cl_wrapper = wrapper;
+
+    cl::Platform::setDefault(cl_wrapper.platform);
+    cl::Context::setDefault(cl_wrapper.context);
+    cl::Device::setDefault(cl_wrapper.default_device);
+    cl::CommandQueue::setDefault(cl::CommandQueue(cl_wrapper.context, cl_wrapper.default_device));
+
+    std::string platform_name = cl_wrapper.platform.getInfo<CL_PLATFORM_NAME>();
+    std::string platform_version = cl_wrapper.platform.getInfo<CL_PLATFORM_VERSION>();
+    std::string platform_vendor = cl_wrapper.platform.getInfo<CL_PLATFORM_VENDOR>();
+    tscl::logger("Platform: " + platform_name + " " + platform_version + " (" + platform_vendor +
+                         ")",
+                 tscl::Log::Information);
+
+    for (size_t i = 0; auto &dev : cl_wrapper.devices) {
+      std::string device_name = dev.getInfo<CL_DEVICE_NAME>();
+      std::string device_version = dev.getInfo<CL_DEVICE_VERSION>();
+      std::string device_vendor = dev.getInfo<CL_DEVICE_VENDOR>();
+      std::stringstream ss;
+      ss << "Device " << i << ": " << device_name << " " << device_version;
+      tscl::logger(ss.str(), tscl::Log::Information);
+      i++;
+    }
+
+    tscl::logger("OpenCL environnement initialized.", tscl::Log::Information);
+
+    is_init = true;
 
     return cl_wrapper;
   }

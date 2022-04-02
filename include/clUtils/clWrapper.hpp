@@ -9,11 +9,14 @@
 #include <shared_mutex>
 #include <thread>
 #include <tscl.hpp>
+#include <boost/dll.hpp>
 
 namespace utils {
 
   class clWrapper {
   public:
+    clWrapper() noexcept = default;
+
     clWrapper(const clWrapper &other) noexcept { *this = other; }
     clWrapper &operator=(const clWrapper &other) noexcept;
 
@@ -27,10 +30,26 @@ namespace utils {
                        const std::filesystem::path &kernels_search_path = "kernels") noexcept
         : clWrapper(platform, 0, kernels_search_path) {}
 
+    /**
+     * @brief Create a default wrapper using the first available platform, prioritizing GPU devices.
+     * @param kernels_search_path
+     * @return
+     */
     static std::unique_ptr<clWrapper>
     makeDefault(const std::filesystem::path &kernels_search_path = "kernels") noexcept;
 
-    static clWrapper &setDefault(clWrapper &wrapper) noexcept;
+    /**
+     * @brief Initializes the openCL environment before use, setting up default platform/device, and
+     * setting up the global wrapper This function must explicitly be called once (and only once)
+     * before any call to OpenCL functions to ensure coherency.  This function is thread-safe.
+     *
+     * If this function is called twice, the program will terminate with an error, and no exception
+     * shall be raised.
+     *
+     * @param wrapper
+     * @return
+     */
+    static clWrapper &initOpenCL(clWrapper &wrapper) noexcept;
 
     cl::Platform getPlatform() { return platform; }
     cl::Context getContext() { return context; }

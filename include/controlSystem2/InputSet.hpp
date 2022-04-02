@@ -320,7 +320,7 @@ namespace control {
     InputSetIterator &operator+=(long int n) {
       global_index += n;
       local_index += n;
-      while (local_index >= parent->tensors[tensor_index].getZ()) {
+      while (local_index != 0 and local_index >= parent->tensors[tensor_index].getZ()) {
         local_index -= parent->tensors[tensor_index].getZ();
         tensor_index++;
       }
@@ -330,7 +330,7 @@ namespace control {
     InputSetIterator &operator-=(long int n) {
       global_index -= n;
       local_index -= n;
-      while (local_index < 0) {
+      while (parent->getTensorCount() and local_index < 0) {
         tensor_index--;
         local_index += parent->tensors[tensor_index].getZ();
       }

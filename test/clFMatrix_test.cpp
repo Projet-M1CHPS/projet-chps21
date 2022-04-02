@@ -21,7 +21,7 @@ TEST(clFMatrixTest, CanCreate) {
 
 
 TEST(clFMatrixTest, CanCopy) {
-  // clWrapper::setDefault(*clWrapper::makeDefault());
+  // clWrapper::initOpenCL(*clWrapper::initOpenCL());
   FloatMatrix n(10, 11);
 
   n(0, 0) = 1;

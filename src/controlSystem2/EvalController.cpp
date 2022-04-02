@@ -12,11 +12,13 @@ namespace control {
 
     size_t count = 0;
 
-    for (auto it : *input_set) {
-      auto res = model->predict(it.getData()).toFloatMatrix();
-      auto class_id = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
-      (*input_set)[count].setClass(class_id);
-      std::cout << "Sample " << it.getId() << " is of class " <<class_id << std::endl;
+    while (true) {
+      for (auto it : *input_set) {
+        auto res = model->predict(it.getData()).toFloatMatrix();
+        auto class_id = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
+        (*input_set)[count].setClass(class_id);
+        std::cout << "Sample " << it.getId() << " is of class " <<class_id << std::endl;
+      }
     }
 
     /*
