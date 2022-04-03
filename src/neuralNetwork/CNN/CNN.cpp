@@ -37,10 +37,31 @@ namespace nnet {
       std::shared_ptr<CNNNode> node = stack.top();
       stack.pop();
 
-      node->getLayer()->compute(node->getFather()->getLayer()->getOutput(node->getId()));
+      node->getLayer()->compute(node->getFather()->getLayer()->getOutput(node->getLocalId()));
       for (auto &i : node->getChildren()) { stack.push(std::make_shared<CNNNode>(i)); }
     }
     utils::cl_wrapper.getDefaultQueue().finish();
+
+    // TODO : Remove this
+    FloatMatrix tmp_out = output.toFloatMatrix(true);
+    size_t index = 0;
+    if (tree.getRoot()->getChildren().empty()) {
+      FloatMatrix tmp = tree.getRoot()->getLayer()->getOutput(0).toFloatMatrix(true);
+      for (auto val : tmp) {
+        tmp_out(index, 0) = val;
+        index++;
+      }
+    } else {
+      for (auto &i : tree.getLeaves()) {
+        FloatMatrix tmp = i->getLayer()->getOutput(0).toFloatMatrix(true);
+        for (auto val : tmp) {
+          tmp_out(index, 0) = val;
+          index++;
+        }
+      }
+    }
+    std::cout << tree << std::endl;
+    output = tmp_out;
   }
 
 }   // namespace nnet

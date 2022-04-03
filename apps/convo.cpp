@@ -1,8 +1,9 @@
+#include "CNN.hpp"
+#include "CNNLayer.hpp"
+#include "CNNTopology.hpp"
 #include "Matrix.hpp"
 #include "clUtils/clFMatrix.hpp"
 #include <iostream>
-#include "CNNTopology.hpp"
-#include "CNNLayer.hpp"
 
 using namespace math;
 
@@ -79,6 +80,7 @@ void testConvo() {
   FloatMatrix tmp = out.toFloatMatrix(true);
   std::cout << "output\n" << tmp << std::endl;
 }
+
 
 void testConvolutionalLayer() {
   nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, af::ActivationFunctionType::relu, 1, 0);
@@ -176,11 +178,272 @@ void testConvolutionalLayer() {
    * */
 }
 
+void testMaxPoolingLayer() {
+  nnet::CNNMaxPoolingLayer layer({4, 4}, {3, 3}, 1);
+
+  math::FloatMatrix input(6, 6);
+  {
+    input(0, 0) = 1.f;
+    input(0, 1) = 2.f;
+    input(0, 2) = 1.f;
+    input(0, 3) = 1.f;
+    input(0, 4) = 4.f;
+    input(0, 5) = 1.f;
+    input(1, 0) = 2.f;
+    input(1, 1) = 1.f;
+    input(1, 2) = 1.f;
+    input(1, 3) = 2.f;
+    input(1, 4) = 2.f;
+    input(1, 5) = 1.f;
+    input(2, 0) = 4.f;
+    input(2, 1) = 3.f;
+    input(2, 2) = 2.f;
+    input(2, 3) = 1.f;
+    input(2, 4) = 2.f;
+    input(2, 5) = 1.f;
+    input(3, 0) = 1.f;
+    input(3, 1) = 5.f;
+    input(3, 2) = 1.f;
+    input(3, 3) = 1.f;
+    input(3, 4) = 2.f;
+    input(3, 5) = 1.f;
+    input(4, 0) = 2.f;
+    input(4, 1) = 1.f;
+    input(4, 2) = 1.f;
+    input(4, 3) = 4.f;
+    input(4, 4) = 1.f;
+    input(4, 5) = 1.f;
+    input(5, 0) = 2.f;
+    input(5, 1) = 1.f;
+    input(5, 2) = 4.f;
+    input(5, 3) = 2.f;
+    input(5, 4) = 4.f;
+    input(5, 5) = 1.f;
+  }
+  std::cout << input << std::endl;
+
+  math::clFMatrix output(4, 4);
+
+  layer.compute(input);
+
+  math::FloatMatrix tmp_output = layer.getOutput(0).toFloatMatrix(true);
+  std::cout << "output : \n" << tmp_output << std::endl;
+
+  /* input
+   * 1 2 1 1 4 1
+   * 2 1 1 2 2 1
+   * 4 3 2 1 2 1
+   * 1 5 1 1 2 1
+   * 2 1 1 4 1 1
+   * 2 1 4 2 4 1
+   *
+   * output
+   * 4 3 4 4
+   * 5 5 2 2
+   * 5 5 4 4
+   * 5 5 4 4
+   * */
+
+  /*nnet::CNNStorageBPMaxPooling storage({6, 6}, {4, 4});
+
+  layer.computeForward(input, storage);
+  std::cout << "compute forward : \n" << storage.output << std::endl;
+  for (auto &i : storage.output) { i = 1.f; }
+  for (auto &i : storage.errorInput) { i = 0.f; }
+  layer.computeBackward(input, storage);
+  std::cout << "error input : \n" << storage.errorInput << std::endl;*/
+
+  /* error input
+   * 0 0 0 0 2 0
+   * 0 0 0 2 0 0
+   * 1 1 0 0 0 0
+   * 0 6 0 0 0 0
+   * 0 0 0 4 0 0
+   * 0 0 0 0 0 0
+   * */
+}
+
+void testAvgPoolingLayer() {
+  nnet::CNNAvgPoolingLayer layer({4, 4}, {3, 3}, 1);
+
+  math::FloatMatrix input(6, 6);
+  {
+    input(0, 0) = 1.f;
+    input(0, 1) = 2.f;
+    input(0, 2) = 1.f;
+    input(0, 3) = 1.f;
+    input(0, 4) = 4.f;
+    input(0, 5) = 1.f;
+    input(1, 0) = 2.f;
+    input(1, 1) = 1.f;
+    input(1, 2) = 1.f;
+    input(1, 3) = 2.f;
+    input(1, 4) = 2.f;
+    input(1, 5) = 1.f;
+    input(2, 0) = 4.f;
+    input(2, 1) = 3.f;
+    input(2, 2) = 2.f;
+    input(2, 3) = 1.f;
+    input(2, 4) = 2.f;
+    input(2, 5) = 1.f;
+    input(3, 0) = 1.f;
+    input(3, 1) = 5.f;
+    input(3, 2) = 1.f;
+    input(3, 3) = 1.f;
+    input(3, 4) = 2.f;
+    input(3, 5) = 1.f;
+    input(4, 0) = 2.f;
+    input(4, 1) = 1.f;
+    input(4, 2) = 1.f;
+    input(4, 3) = 4.f;
+    input(4, 4) = 1.f;
+    input(4, 5) = 1.f;
+    input(5, 0) = 2.f;
+    input(5, 1) = 1.f;
+    input(5, 2) = 4.f;
+    input(5, 3) = 2.f;
+    input(5, 4) = 4.f;
+    input(5, 5) = 1.f;
+  }
+  std::cout << "input :\n" << input << std::endl;
+
+  math::clFMatrix output(4, 4);
+
+  layer.compute(input);
+
+  math::FloatMatrix tmp_output = layer.getOutput(0).toFloatMatrix(true);
+  std::cout << "output : \n" << tmp_output << std::endl;
+
+  /* input
+   * 1 2 1 1 4 1
+   * 2 1 1 2 2 1
+   * 4 3 2 1 2 1
+   * 1 5 1 1 2 1
+   * 2 1 1 4 1 1
+   * 2 1 4 2 4 1
+   *
+   * output
+   * 1.8 1.5 1.7 1.6
+   * 2.2 1.8 1.5 1.4
+   * 2.2 2.1 1.6 1.5
+   * 2   2.2 2.2 1.8
+   * */
+
+  /*nnet::CNNStorageBPAvgPooling storage({6, 6}, {4, 4});
+
+  layer.computeForward(input, storage);
+  std::cout << "compute forward : \n" << storage.output << std::endl;
+  for (auto &i : storage.output) { i = 1.f; }
+  layer.computeBackward(input, storage);
+  std::cout << "error input : \n" << storage.errorInput << std::endl;*/
+
+  /* error input
+   * 0.11 0.22 0.33 0.33 0.22 0.11
+   * 0.22 0.44 0.66 0.66 0.44 0.22
+   * 0.33 0.66 1    1    0.66 0.33
+   * 0.33 0.66 1    1    0.66 0.33
+   * 0.22 0.44 0.66 0.66 0.44 0.22
+   * 0.11 0.22 0.33 0.33 0.22 0.11
+   * */
+}
+
+void testPredictionOneBranch() {
+  std::string str_topo("6 6 relu convolution 1 2 2 1 0 pooling max 2 2 1");
+  auto topo = nnet::stringToTopology(str_topo);
+  std::cout << topo << std::endl;
+
+  nnet::CNN cnn;
+  cnn.setTopology(topo);
+
+  math::FloatMatrix input(6, 6);
+  {
+    input(0, 0) = 1.f;
+    input(0, 1) = 2.f;
+    input(0, 2) = 1.f;
+    input(0, 3) = 1.f;
+    input(0, 4) = 4.f;
+    input(0, 5) = 1.f;
+    input(1, 0) = 2.f;
+    input(1, 1) = 1.f;
+    input(1, 2) = 1.f;
+    input(1, 3) = 2.f;
+    input(1, 4) = 2.f;
+    input(1, 5) = 1.f;
+    input(2, 0) = 4.f;
+    input(2, 1) = 3.f;
+    input(2, 2) = 2.f;
+    input(2, 3) = 1.f;
+    input(2, 4) = 2.f;
+    input(2, 5) = 1.f;
+    input(3, 0) = 1.f;
+    input(3, 1) = 5.f;
+    input(3, 2) = 1.f;
+    input(3, 3) = 1.f;
+    input(3, 4) = 2.f;
+    input(3, 5) = 1.f;
+    input(4, 0) = 2.f;
+    input(4, 1) = 1.f;
+    input(4, 2) = 1.f;
+    input(4, 3) = 4.f;
+    input(4, 4) = 1.f;
+    input(4, 5) = 1.f;
+    input(5, 0) = 2.f;
+    input(5, 1) = 1.f;
+    input(5, 2) = 4.f;
+    input(5, 3) = 2.f;
+    input(5, 4) = 4.f;
+    input(5, 5) = 1.f;
+  }
+  math::clFMatrix output(16, 1);
+
+  std::cout << input << std::endl;
+
+  math::clFMatrix tmp_input = input;
+  cnn.predict(tmp_input, output);
+
+  math::FloatMatrix tmp_output = output.toFloatMatrix(true);
+  std::cout << "output :\n" << tmp_output << std::endl;
+
+  /* input
+   * 1 2 1 1 4 1
+   * 2 1 1 2 2 1
+   * 4 3 2 1 2 1
+   * 1 5 1 1 2 1
+   * 2 1 1 4 1 1
+   * 2 1 4 2 4 1
+   *
+   * filter
+   * 2   1
+   * 0.5 1.5
+   *
+   * output
+   * 11.5
+   * 7.5
+   * 10
+   * 11.5
+   * 19
+   * 12
+   * 9.5
+   * 9.5
+   * 19
+   * 13
+   * 9.5
+   * 7.5
+   * 13
+   * 13
+   * 16
+   * 16
+   * */
+}
 
 int main() {
-  //testConvo();
+  // testConvo();
 
-  testConvolutionalLayer();
+  // testConvolutionalLayer();
+  // testMaxPoolingLayer();
+  testAvgPoolingLayer();
+
+  // testPredictionOneBranch();
 
   return 0;
 }

@@ -29,7 +29,8 @@ namespace nnet {
 
 
   void CNNConvolutionLayer::compute(const clFMatrix &_input) {
-    math::clFMatrix mat_filtre = filter.getMatrix();
+    std::cout << "call" << std::endl;
+    /*math::clFMatrix mat_filtre = filter.getMatrix();
 
     cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
@@ -39,9 +40,9 @@ namespace nnet {
                              mat_filtre.getBuffer()(), 0, output.getBuffer()(), 0, &queue(),
                              nullptr);
 
-    applyAF(activationFunction, output, queue);
+    applyAF(activationFunction, output, queue);*/
 
-    /*FloatMatrix input = _input.toFloatMatrix(true);
+    FloatMatrix input = _input.toFloatMatrix(true);
     FloatMatrix _output = output.toFloatMatrix(true);
 
     const FloatMatrix &mat_filtre = filter.getMatrix();
@@ -62,13 +63,11 @@ namespace nnet {
       }
       rowsPos += stride;
       colsPos = 0;
-
-      output = _output;
     }
 
     auto afunc = af::getAFFromType(activationFunction).first;
     std::transform(_output.cbegin(), _output.cend(), _output.begin(), afunc);
-    output = _output;*/
+    output = _output;
   }
 
 
