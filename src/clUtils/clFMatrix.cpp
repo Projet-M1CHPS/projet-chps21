@@ -158,6 +158,19 @@ namespace math {
     return res;
   }
 
+  size_t clFMatrix::imax(cl::CommandQueue &queue) const {
+    if (size() == 0) throw std::runtime_error("Cannot imax an empty matrix");
+
+    // Perform the imax on the platform
+    cl::Buffer res_buf(CL_MEM_READ_WRITE, sizeof(cl_uint));
+    clblast::Amax<float>(size(), res_buf(), 0, data(), 0, 1, &queue());
+
+    // Shift the result to the host
+    cl_uint res_long = 0;
+    queue.enqueueReadBuffer(res_buf, true, 0, sizeof(cl_uint), &res_long);
+    return res_long;
+  }
+
   clFMatrix clFMatrix::transpose(cl::CommandQueue &queue, bool blocking) const {
     clFMatrix res(cols, rows);
 

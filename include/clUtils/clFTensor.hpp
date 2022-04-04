@@ -11,7 +11,6 @@ namespace math {
    */
   class clFTensor {
   public:
-
     clFTensor() : x_dim(0), y_dim(0), z_dim(0) {}
 
     clFTensor(size_t x, size_t y, size_t z);
@@ -24,12 +23,12 @@ namespace math {
      * @param tensor
      * @return
      */
-    static clFTensor flatten(const clFTensor &tensor) {
+    clFTensor flatten() const {
       clFTensor res;
-      res.data = tensor.data;
-      res.x_dim = tensor.x_dim * tensor.y_dim;
+      res.data = data;
+      res.x_dim = x_dim * y_dim;
       res.y_dim = 1;
-      res.z_dim = tensor.z_dim;
+      res.z_dim = z_dim;
       return res;
     }
 
@@ -45,6 +44,19 @@ namespace math {
      * @return A submatrix inside the tensor, throws on error
      */
     clFMatrix getMatrix(size_t z);
+
+    /**
+     * @brief Returns the submatrix at the given index.
+     * Note that the returned matrix is a view of the internal matrix, and any change made to it
+     * will be reflected in the tensor
+     *
+     * Submatrices created this way remains valid even if the tensor is destroyed, since openCl
+     * keeps track of buffers and subbuffers.
+     *
+     * @param z The index of the submatrix.
+     * @return A submatrix inside the tensor, throws on error
+     */
+    clFMatrix getMatrix(size_t z) const;
 
     /**
      * @brief Returns an array of submatrices.

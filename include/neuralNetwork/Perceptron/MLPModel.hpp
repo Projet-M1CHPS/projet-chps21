@@ -23,7 +23,6 @@ namespace nnet {
      */
     math::clFMatrix predict(math::clFMatrix const &input) const override;
 
-
     bool load(const std::filesystem::path &path) override;
     bool save(const std::filesystem::path &path) const override;
 

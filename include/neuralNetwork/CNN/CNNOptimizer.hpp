@@ -46,8 +46,8 @@ namespace cnnet {
 
     void optimize(const math::clFMatrix &input, const math::clFMatrix &target);
 
-    void optimize(const std::vector<math::clFMatrix> &inputs,
-                  const std::vector<math::clFMatrix> &targets) override;
+    void optimize(const std::vector<math::clFTensor> &inputs,
+                  const std::vector<math::clFTensor> &targets) override;
 
     void update() override { mlp_opti.update(); }
 

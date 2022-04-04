@@ -12,13 +12,12 @@ namespace control {
 
     size_t count = 0;
 
-    while (true) {
-      for (auto it : *input_set) {
-        auto res = model->predict(it.getData()).toFloatMatrix();
-        auto class_id = std::distance(res.begin(), std::max_element(res.begin(), res.end()));
-        (*input_set)[count].setClass(class_id);
-        std::cout << "Sample " << it.getId() << " is of class " <<class_id << std::endl;
-      }
+    // Temporary implementation that treat each matrix individually and not tensor-wise
+    for (auto it : *input_set) {
+      auto res = model->predict(it.getData());
+      auto class_id = res.imax();
+      (*input_set)[count].setClass(class_id);
+      std::cout << "Sample " << it.getId() << " is of class " << class_id << std::endl;
     }
 
     /*

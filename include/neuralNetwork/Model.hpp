@@ -2,6 +2,7 @@
 
 #include "Matrix.hpp"
 #include "clUtils/clFMatrix.hpp"
+#include "clUtils/clFTensor.hpp"
 #include "clUtils/clWrapper.hpp"
 #include <filesystem>
 #include <utility>

@@ -195,6 +195,19 @@ namespace math {
      */
     [[nodiscard]] float l2norm() const { return l2norm(utils::cl_wrapper.getDefaultQueue()); }
 
+
+    /**
+     * @brief Return the index of the maximum element of the matrix
+     * Note that this operation is blocking
+     * @param queue The queue to use for this operation
+     * @return
+     */
+    size_t imax(cl::CommandQueue &queue) const;
+
+    size_t imax() const {
+      return imax(utils::cl_wrapper.getDefaultQueue());
+    }
+
     [[nodiscard]] clFMatrix transpose(cl::CommandQueue &queue, bool blocking = false) const;
 
     [[nodiscard]] clFMatrix transpose(bool blocking = false) const {

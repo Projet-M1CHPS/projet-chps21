@@ -31,7 +31,7 @@ namespace cnnet {
 
     const size_t size = cnn.getOutputSize();
     res->flatten = clFMatrix(size, 1);
-    mlp_topology.push_front(size);
+    mlp_topology.pushFront(size);
 
     auto &mlp = res->getMlp();
     mlp.setTopology(mlp_topology);

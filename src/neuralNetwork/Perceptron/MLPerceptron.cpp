@@ -49,7 +49,6 @@ namespace nnet {
     return current_layer;
   }
 
-
   void MLPerceptron::setTopology(MLPTopology const &topology) {
     if (topology.empty()) return;
     if (topology.size() < 2) { throw std::invalid_argument("Requires atleast 2 layers"); }

@@ -7,8 +7,8 @@ namespace control {
 
   class TrainingController : Controller {
   public:
-    TrainingController(std::filesystem::path const &output_path, nnet::Model *model,
-                       nnet::Optimizer *optimizer, TrainingCollection *trainingCollection,
+    TrainingController(std::filesystem::path const &output_path, nnet::Model &model,
+                       nnet::Optimizer &optimizer, TrainingCollection &trainingCollection,
                        size_t max_epoch = 10, bool output_stats = true);
 
     ControllerResult run() override;

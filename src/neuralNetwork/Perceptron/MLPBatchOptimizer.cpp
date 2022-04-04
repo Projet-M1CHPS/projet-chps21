@@ -41,28 +41,28 @@ namespace nnet {
     }
   }
 
-  void MLPBatchOptimizer::optimize(const std::vector<math::clFMatrix> &inputs,
-                                   const std::vector<math::clFMatrix> &targets) {
+  void MLPBatchOptimizer::optimize(const std::vector<math::clFTensor> &inputs,
+                                   const std::vector<math::clFTensor> &targets) {
     if (inputs.size() != targets.size())
       throw std::runtime_error("MLPBatchOptimizer: Inputs and targets number doesn't match !");
 
     size_t n = inputs.size();
-    cl::CommandQueue queue(utils::cl_wrapper.getDefaultDevice());
-    cl::Kernel zero_out = utils::cl_wrapper.getKernels().getKernel("utils.cl", "zero_out");
+    cl::CommandQueue queue =
+            cl::CommandQueue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
 
-    auto zerol = [&](auto &mat) {
-      zero_out.setArg(0, mat);
-      queue.enqueueNDRangeKernel(zero_out, cl::NullRange,
-                                 cl::NDRange(mat.getRows(), mat.getCols()));
-    };
+    auto zerol = [&](auto &mat) { queue.enqueueFillBuffer(mat.getBuffer(), 0.0f, 0, mat.size()); };
     std::for_each(avg_gradients.begin(), avg_gradients.end(), zerol);
     std::for_each(avg_errors.begin(), avg_errors.end(), zerol);
 
 
     for (long i = 0; i < n; i++) {
-      forward(inputs[i], queue);
-      storage.getError() = layers_af[layers_af.size() - 1].sub(1.f, targets[i], queue);
-      computeGradient(queue);
+      auto &input = inputs[i];
+      auto &target = targets[i];
+      for (size_t j = 0; j < input.getZ(); j++) {
+        forward(input.getMatrix(j), queue);
+        storage.getError() = layers_af[layers_af.size() - 1].sub(1.f, target.getMatrix(j), queue);
+        computeGradient(queue);
+      }
     }
 
     queue.finish();

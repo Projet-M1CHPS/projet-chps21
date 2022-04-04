@@ -59,7 +59,7 @@ namespace utils {
   clWrapper cl_wrapper;
 
   clWrapper::clWrapper(cl::Platform &platform, size_t device_id,
-                       const std::filesystem::path &kernels_search_path) noexcept {
+                       const std::filesystem::path &kernels_search_path) {
     fs::path absolute_kernel_path = kernels_search_path;
 
     if (kernels_search_path.is_relative()) {
@@ -84,7 +84,7 @@ namespace utils {
     kernels = std::make_shared<clKernelMap>(context, absolute_kernel_path);
   }
 
-  clWrapper &clWrapper::operator=(const clWrapper &other) noexcept {
+  clWrapper &clWrapper::operator=(const clWrapper &other) {
     if (this == &other) return *this;
 
     // Copy everything except the mutex
@@ -119,7 +119,7 @@ namespace utils {
   }
 
   std::unique_ptr<clWrapper>
-  clWrapper::makeDefault(const std::filesystem::path &kernels_search_path) noexcept {
+  clWrapper::makeDefault(const std::filesystem::path &kernels_search_path) {
     auto cpu_platforms = findCPUPlatform();
     auto gpu_platforms = findGPUPlatform();
 
