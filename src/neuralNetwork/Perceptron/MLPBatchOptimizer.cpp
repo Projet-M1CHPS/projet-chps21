@@ -56,8 +56,8 @@ namespace nnet {
 
 
     for (long i = 0; i < n; i++) {
-      auto &input = inputs[i];
-      auto &target = targets[i];
+      auto input = inputs[i].flatten();
+      auto target = targets[i].flatten();
       for (size_t j = 0; j < input.getZ(); j++) {
         forward(input.getMatrix(j), queue);
         storage.getError() = layers_af[layers_af.size() - 1].sub(1.f, target.getMatrix(j), queue);

@@ -57,8 +57,8 @@ namespace nnet {
     }
 
     for (size_t i = 0; i < inputs.size(); ++i) {
-      auto &tensor = inputs[i];
-      auto &target = targets[i];
+      auto tensor = inputs[i].flatten();
+      auto target = targets[i].flatten();
       for (size_t j = 0; j < inputs[i].getZ(); ++j) {
         optimize(tensor.getMatrix(j), target.getMatrix(j));
       }

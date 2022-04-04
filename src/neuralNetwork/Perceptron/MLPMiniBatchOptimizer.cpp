@@ -17,8 +17,8 @@ namespace nnet {
       std::for_each(avg_gradients.begin(), avg_gradients.end(), zerol);
       std::for_each(avg_errors.begin(), avg_errors.end(), zerol);
 
-      math::clFTensor batch_input = inputs[i];
-      math::clFTensor batch_target = targets[i];
+      math::clFTensor batch_input = inputs[i].flatten();
+      math::clFTensor batch_target = targets[i].flatten();
 
       if (batch_input.getZ() != batch_target.getZ()) {
         throw std::runtime_error(

@@ -55,7 +55,8 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   auto model = nnet::MLPModel::randomReluSigmoid(topology);
 
-  auto optimizer = nnet::MLPStochOptimizer::make<nnet::SGDOptimization>(*model, 0.03);
+  auto optimizer = nnet::MLPBatchOptimizer::make<nnet::SGDOptimization>(*model, 0.03);
+  // auto optimizer = nnet::MLPBatchOptimizer::make<nnet::SGDOptimization>(*model, 0.03);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
   std::cout << "Number of images : "
@@ -64,7 +65,8 @@ bool createAndTrain(std::filesystem::path const &input_path,
             << std::endl;
 
 
-  EvalController controller(output_path, model.get(), &training_collection.getEvaluationSet());
+  // EvalController controller(output_path, model.get(), &training_collection.getEvaluationSet());
+  TrainingController controller(output_path, *model, *optimizer, training_collection);
   ControllerResult res = controller.run();
 
   /*
