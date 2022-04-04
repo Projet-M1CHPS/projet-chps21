@@ -50,12 +50,12 @@ bool createAndTrain(std::filesystem::path const &input_path,
   TrainingCollection training_collection = loader.load(input_path);
 
   // Create a correctly-sized topology
-  nnet::MLPTopology topology = {kImageSize * kImageSize, 1024, 512, 256, 128, 64, 64, 64, 16};
+  nnet::MLPTopology topology = {kImageSize * kImageSize, 512, 256, 128, 64, 16};
   topology.pushBack(training_collection.getClassCount());
 
   auto model = nnet::MLPModel::randomReluSigmoid(topology);
 
-  auto optimizer = nnet::MLPBatchOptimizer::make<nnet::SGDOptimization>(*model, 0.03);
+  auto optimizer = nnet::MLPStochOptimizer::make<nnet::SGDOptimization>(*model, 0.03);
   // auto optimizer = nnet::MLPBatchOptimizer::make<nnet::SGDOptimization>(*model, 0.03);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
@@ -109,7 +109,8 @@ int main(int argc, char **argv) {
   }
 
   tscl::logger("Initializing OpenCL...", tscl::Log::Debug);
-  utils::clPlatformSelector::initOpenCL();
+  // utils::clPlatformSelector::initOpenCL();
+  utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault());
 
   std::vector<std::string> args;
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);
