@@ -15,34 +15,38 @@ namespace nnet {
   }   // namespace
 
 
-  CNNLayer::CNNLayer(const size_t stride) : stride(stride) {}
+  CNNLayer::CNNLayer(const std::pair<size_t, size_t> output, const size_t stride) : outputSize(output), stride(stride) {}
 
 
   CNNConvolutionLayer::CNNConvolutionLayer(const std::pair<size_t, size_t> outputSize,
                                            const std::pair<size_t, size_t> sizeFilter,
                                            const af::ActivationFunctionType aFunction,
                                            const size_t stride, const size_t padding)
-      : output(outputSize.first, outputSize.second), filter(sizeFilter), CNNLayer(stride),
+      : filter(sizeFilter), CNNLayer(outputSize, stride),
         padding(padding), activationFunction(aFunction) {
     // filter.randomize(0.f, 1.f);
   }
 
 
-  void CNNConvolutionLayer::compute(const clFMatrix &_input) {
+  clFMatrix CNNConvolutionLayer::compute(const clFMatrix &_input) {
     std::cout << "call" << std::endl;
-    /*math::clFMatrix mat_filtre = filter.getMatrix();
+
+    clFMatrix res(outputSize.first, outputSize.second);
+
+    math::clFMatrix mat_filter = filter.getMatrix();
 
     cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
     clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, _input.getCols(),
-                             _input.getRows(), mat_filtre.getCols(), mat_filtre.getRows(), padding,
+                             _input.getRows(), mat_filter.getCols(), mat_filter.getRows(), padding,
                              padding, stride, stride, 1, 1, 1, 1, _input.getBuffer()(), 0,
-                             mat_filtre.getBuffer()(), 0, output.getBuffer()(), 0, &queue(),
+                             mat_filter.getBuffer()(), 0, res.getBuffer()(), 0, &queue(),
                              nullptr);
 
-    applyAF(activationFunction, output, queue);*/
+    applyAF(activationFunction, res, queue);
+    return res;
 
-    FloatMatrix input = _input.toFloatMatrix(true);
+    /*FloatMatrix input = _input.toFloatMatrix(true);
     FloatMatrix _output = output.toFloatMatrix(true);
 
     const FloatMatrix &mat_filtre = filter.getMatrix();
@@ -68,6 +72,7 @@ namespace nnet {
     auto afunc = af::getAFFromType(activationFunction).first;
     std::transform(_output.cbegin(), _output.cend(), _output.begin(), afunc);
     output = _output;
+    return res;*/
   }
 
 
@@ -139,7 +144,7 @@ namespace nnet {
 
   CNNPoolingLayer::CNNPoolingLayer(const std::pair<size_t, size_t> outputSize,
                                    const std::pair<size_t, size_t> poolSize, const size_t stride)
-      : output(outputSize.first, outputSize.second), poolingSize(poolSize), CNNLayer(stride) {}
+      : poolingSize(poolSize), CNNLayer(outputSize, stride) {}
 
 
   CNNMaxPoolingLayer::CNNMaxPoolingLayer(const std::pair<size_t, size_t> outputSize,
@@ -147,28 +152,28 @@ namespace nnet {
                                          const size_t stride)
       : CNNPoolingLayer(outputSize, poolSize, stride) {}
 
-  void CNNMaxPoolingLayer::compute(const clFMatrix &_input) {
+  clFMatrix CNNMaxPoolingLayer::compute(const clFMatrix &_input) {
     FloatMatrix input = _input.toFloatMatrix(true);
-    FloatMatrix _output = output.toFloatMatrix(true);
+    FloatMatrix output(outputSize.first, outputSize.second);
 
     size_t rowsPos = 0, colsPos = 0;
 
-    for (size_t i = 0; i < _output.getRows(); i++) {
-      for (size_t j = 0; j < _output.getCols(); j++) {
+    for (size_t i = 0; i < output.getRows(); i++) {
+      for (size_t j = 0; j < output.getCols(); j++) {
         float max = input(rowsPos, colsPos);
         for (size_t k = 0; k < poolingSize.first; k++) {
           for (size_t l = 0; l < poolingSize.second; l++) {
             max = std::max(max, input(k + rowsPos, l + colsPos));
           }
         }
-        _output(i, j) = max;
+        output(i, j) = max;
         colsPos += stride;
       }
       colsPos = 0;
       rowsPos += stride;
     }
 
-    output = _output;
+    return {output, true};
   }
 
   void CNNMaxPoolingLayer::computeForward(const clFMatrix &_input, CNNStorageBP &storage) {
@@ -221,28 +226,28 @@ namespace nnet {
                                          const size_t stride)
       : CNNPoolingLayer(outputSize, poolSize, stride) {}
 
-  void CNNAvgPoolingLayer::compute(const clFMatrix &_input) {
+  clFMatrix CNNAvgPoolingLayer::compute(const clFMatrix &_input) {
     FloatMatrix input = _input.toFloatMatrix(true);
-    FloatMatrix _output = output.toFloatMatrix(true);
+    FloatMatrix output(outputSize.first, outputSize.second);
 
     size_t rowsPos = 0, colsPos = 0;
 
-    for (size_t i = 0; i < _output.getRows(); i++) {
-      for (size_t j = 0; j < _output.getCols(); j++) {
+    for (size_t i = 0; i < outputSize.first; i++) {
+      for (size_t j = 0; j < outputSize.second; j++) {
         float sum = 0.f;
         for (size_t k = 0; k < poolingSize.first; k++) {
           for (size_t l = 0; l < poolingSize.second; l++) {
             sum += input(k + rowsPos, l + colsPos);
           }
         }
-        _output(i, j) = sum / (float) (poolingSize.first * poolingSize.second);
+        output(i, j) = sum / (float) (poolingSize.first * poolingSize.second);
         colsPos += stride;
       }
       colsPos = 0;
       rowsPos += stride;
     }
 
-    output = _output;
+    return {output, true};
   }
 
   void CNNAvgPoolingLayer::computeForward(const clFMatrix &input, CNNStorageBP &storage) {

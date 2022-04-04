@@ -7,6 +7,7 @@
 #include "clUtils/clWrapper.hpp"
 #include "CNNDependencyTree.hpp"
 #include <stack>
+#include <utility>
 
 namespace nnet {
 

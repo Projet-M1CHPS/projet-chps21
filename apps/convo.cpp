@@ -53,17 +53,21 @@ void testConvo() {
   auto a = clFMatrix(A, true);
 
 
-  math::FloatMatrix B(4, 1);
+  math::FloatMatrix B(1, 8);
   {
     B(0, 0) = 2.f;
     B(0, 1) = 1.f;
     B(0, 2) = 0.5f;
     B(0, 3) = 1.5f;
+    B(0, 4) = 0.f;
+    B(0, 5) = 0.f;
+    B(0, 6) = 0.f;
+    B(0, 7) = 0.f;
   }
   std::cout << "B = \n" << B << std::endl;
   auto b = clFMatrix(B, true);
 
-  math::FloatMatrix O(5, 5);
+  math::FloatMatrix O(50, 4);
   O.fill(100.f);
   clFMatrix out(O, true);
 
@@ -71,8 +75,8 @@ void testConvo() {
   cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
 
-  clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, 6, 6, 2, 2, 0, 0, 1, 1, 1, 1,
-                           1, 1, a.getBuffer()(), 0, b.getBuffer()(), 0, out.getBuffer()(), 0,
+  clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, 3, 6, 2, 2, 0, 0, 1, 1, 1, 1,
+                           2, 2, a.getBuffer()(), 0, b.getBuffer()(), 0, out.getBuffer()(), 0,
                            &queue(), nullptr);
 
   queue.finish();
@@ -129,9 +133,9 @@ void testConvolutionalLayer() {
   }
   std::cout << "input : \n" << input << std::endl;
 
-  layer.compute(input);
+  clFMatrix output = layer.compute(input);
 
-  math::FloatMatrix tmp_output = layer.getOutput(0).toFloatMatrix(true);
+  math::FloatMatrix tmp_output = output.toFloatMatrix(true);
   std::cout << "output : \n" << tmp_output << std::endl;
 
   /* input
@@ -222,11 +226,9 @@ void testMaxPoolingLayer() {
   }
   std::cout << input << std::endl;
 
-  math::clFMatrix output(4, 4);
+  clFMatrix output = layer.compute(input);
 
-  layer.compute(input);
-
-  math::FloatMatrix tmp_output = layer.getOutput(0).toFloatMatrix(true);
+  math::FloatMatrix tmp_output = output.toFloatMatrix(true);
   std::cout << "output : \n" << tmp_output << std::endl;
 
   /* input
@@ -307,11 +309,9 @@ void testAvgPoolingLayer() {
   }
   std::cout << "input :\n" << input << std::endl;
 
-  math::clFMatrix output(4, 4);
+  clFMatrix output = layer.compute(input);
 
-  layer.compute(input);
-
-  math::FloatMatrix tmp_output = layer.getOutput(0).toFloatMatrix(true);
+  math::FloatMatrix tmp_output = output.toFloatMatrix(true);
   std::cout << "output : \n" << tmp_output << std::endl;
 
   /* input
@@ -441,9 +441,9 @@ int main() {
 
   // testConvolutionalLayer();
   // testMaxPoolingLayer();
-  testAvgPoolingLayer();
+  // testAvgPoolingLayer();
 
-  // testPredictionOneBranch();
+  testPredictionOneBranch();
 
   return 0;
 }

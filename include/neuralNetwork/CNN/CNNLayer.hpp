@@ -17,17 +17,16 @@ namespace nnet {
 
   class CNNLayer {
   public:
-    explicit CNNLayer(const size_t stride);
+    explicit CNNLayer(const std::pair<size_t, size_t> outputSize, const size_t stride);
 
     [[nodiscard]] const size_t getStride() const { return stride; };
-    virtual void compute(const clFMatrix &input) = 0;
+    virtual clFMatrix compute(const clFMatrix &input) = 0;
     virtual void computeForward(const clFMatrix &input, CNNStorageBP &storage) = 0;
     virtual void computeBackward(const clFMatrix &input, CNNStorageBP &storage) = 0;
 
-    [[nodiscard]] virtual const math::clFMatrix &getOutput(const size_t index) const = 0;
-
   protected:
     const size_t stride;
+    const std::pair<size_t, size_t> outputSize;
   };
 
 
@@ -41,13 +40,9 @@ namespace nnet {
     [[nodiscard]] const size_t getPadding() const { return padding; };
     [[nodiscard]] const Filter &getFilter() const { return filter; }
 
-    void compute(const clFMatrix &input) override;
+    clFMatrix compute(const clFMatrix &input) override;
     void computeForward(const clFMatrix &input, CNNStorageBP &storage) override;
     void computeBackward(const clFMatrix &input, CNNStorageBP &storage) override;
-
-    [[nodiscard]] const math::clFMatrix &getOutput(const size_t index) const override {
-      return output;
-    };
 
   private:
     const size_t padding;
@@ -55,7 +50,6 @@ namespace nnet {
 
     // TODO : Replace filter class with tensor of filters and tensor of output
     Filter filter;
-    clFMatrix output;
   };
 
 
@@ -64,13 +58,8 @@ namespace nnet {
     CNNPoolingLayer(const std::pair<size_t, size_t> outputSize,
                     const std::pair<size_t, size_t> PoolSize, const size_t stride);
 
-    [[nodiscard]] const math::clFMatrix &getOutput(const size_t index) const override {
-      return output;
-    };
-
   protected:
     const std::pair<size_t, size_t> poolingSize;
-    clFMatrix output;
   };
 
 
@@ -79,7 +68,7 @@ namespace nnet {
     CNNMaxPoolingLayer(const std::pair<size_t, size_t> outputSize,
                        const std::pair<size_t, size_t> PoolSize, const size_t stride);
 
-    void compute(const clFMatrix &input) override;
+    clFMatrix compute(const clFMatrix &input) override;
     void computeForward(const clFMatrix &input, CNNStorageBP &storage) override;
     void computeBackward(const clFMatrix &input, CNNStorageBP &storage) override;
   };
@@ -90,7 +79,7 @@ namespace nnet {
     CNNAvgPoolingLayer(const std::pair<size_t, size_t> outputSize,
                        const std::pair<size_t, size_t> PoolSize, const size_t stride);
 
-    void compute(const clFMatrix &input) override;
+    clFMatrix compute(const clFMatrix &input) override;
     void computeForward(const clFMatrix &input, CNNStorageBP &storage) override;
     void computeBackward(const clFMatrix &input, CNNStorageBP &storage) override;
   };

@@ -26,38 +26,36 @@ namespace nnet {
   void CNN::predict(math::clFMatrix const &input, math::clFMatrix &output) {
     // TODO : Implement this
 
+    std::vector<clFMatrix> output_tensor(topology.getDepth());
+
     if (not tree.getRoot()) { throw std::runtime_error("Root node is not set"); }
 
-    std::stack<std::shared_ptr<CNNNode>> stack;
+    std::stack<CNNNode *> stack;
 
-    tree.getRoot()->getLayer()->compute(input);
-    for (auto &i : tree.getRoot()->getChildren()) { stack.push(std::make_shared<CNNNode>(i)); }
+    output_tensor[0] = tree.getRoot()->getLayer()->compute(input);
+    for (auto &i : tree.getRoot()->getChildren()) { stack.push(&i); }
 
     while (not stack.empty()) {
-      std::shared_ptr<CNNNode> node = stack.top();
+      CNNNode *node = stack.top();
       stack.pop();
 
-      node->getLayer()->compute(node->getFather()->getLayer()->getOutput(node->getLocalId()));
-      for (auto &i : node->getChildren()) { stack.push(std::make_shared<CNNNode>(i)); }
+      // TODO : recuperer le node->getLocalId() eme element du future tensor
+      std::cout << "call" << std::endl;
+      output_tensor[node->getGlobalId()] = node->getLayer()->compute(output_tensor[node->getFather()->getGlobalId()]);
+      for (auto &i : node->getChildren()) { stack.push(&i); }
     }
     utils::cl_wrapper.getDefaultQueue().finish();
+
 
     // TODO : Remove this
     FloatMatrix tmp_out = output.toFloatMatrix(true);
     size_t index = 0;
-    if (tree.getRoot()->getChildren().empty()) {
-      FloatMatrix tmp = tree.getRoot()->getLayer()->getOutput(0).toFloatMatrix(true);
-      for (auto val : tmp) {
+    for(auto &leave : tree.getLeaves())
+    {
+      FloatMatrix tmp = output_tensor[leave->getGlobalId()].toFloatMatrix(true);
+      for (auto &val : tmp) {
         tmp_out(index, 0) = val;
         index++;
-      }
-    } else {
-      for (auto &i : tree.getLeaves()) {
-        FloatMatrix tmp = i->getLayer()->getOutput(0).toFloatMatrix(true);
-        for (auto val : tmp) {
-          tmp_out(index, 0) = val;
-          index++;
-        }
       }
     }
     std::cout << tree << std::endl;
