@@ -31,7 +31,7 @@ namespace nnet {
     layers_af.resize(perceptron.getWeights().size() + 1);
 
     for (size_t i = 0; i < perceptron.getWeights().size(); i++) {
-      math::FloatMatrix buf1(topology[i], topology[i + 1]);
+      math::FloatMatrix buf1(topology[i + 1], topology[i]);
       buf1.fill(0.0);
       avg_gradients.emplace_back(buf1);
 
@@ -74,6 +74,9 @@ namespace nnet {
       std::swap(storage.getGradient(), avg_gradients[i]);
       std::swap(storage.getError(), avg_errors[i]);
       opti_meth->optimize(storage, queue);
+      // Placeholder until we remove the backprop storage
+      std::swap(avg_gradients[i], storage.getGradient());
+      std::swap(avg_errors[i], storage.getError());
     }
     queue.finish();
   }
