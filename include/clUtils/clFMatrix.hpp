@@ -78,7 +78,7 @@ namespace math {
      * @param matrix The matrix to copy
      * @param blocking  True if the operation is blocking, false otherwise
      */
-    explicit clFMatrix(const math::FloatMatrix &matrix, bool blocking = true)
+    clFMatrix(const math::FloatMatrix &matrix, bool blocking = true)
         : clFMatrix(matrix, utils::cl_wrapper.getDefaultQueue(), blocking) {}
 
 

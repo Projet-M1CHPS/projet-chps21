@@ -21,9 +21,9 @@ void warmup(utils::clWrapper &wrapper) {
 
   // clblast warmup
   auto C = FloatMatrix::mul(false, A, false, B);
-  clFMatrix a(A, wrapper);
-  clFMatrix b(B, wrapper);
-  auto c = clFMatrix::gemm(1.0f, false, a, false, b, wrapper, true);
+  clFMatrix a = A;
+  clFMatrix b = B;
+  auto c = clFMatrix::gemm(1.0f, false, a, false, b, true);
   std::cout << " done" << std::endl;
 }
 
@@ -72,12 +72,10 @@ std::vector<double> benchmarkCLBlast(int n_start, int n_end, int step, utils::cl
   auto &queue = wrapper.getDefaultQueue();
 
   for (int n = n_start; n <= n_end; n += step) {
-    clFMatrix A(n, n, wrapper);
-    clFMatrix B(n, n, wrapper);
+    clFMatrix A(n, n);
+    clFMatrix B(n, n);
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 20; i++) {
-      clFMatrix C = clFMatrix::gemm(1.0f, false, A, false, B, wrapper, queue);
-    }
+    for (int i = 0; i < 20; i++) { clFMatrix C = clFMatrix::gemm(1.0f, false, A, false, B, queue); }
     queue.finish();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);

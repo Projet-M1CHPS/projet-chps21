@@ -59,7 +59,6 @@ namespace control {
       throw std::runtime_error(
               "InputSet::append: tensor must have same size as input_width and input_height");
     }
-    std::cout << "Appending " << tensor.getZ() << " samples" << std::endl;
 
     ids.insert(ids.end(), new_ids.begin(), new_ids.end());
 

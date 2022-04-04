@@ -49,6 +49,14 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   TrainingCollection training_collection = loader.load(input_path);
 
+  tscl::logger("Training set size: " +
+                       std::to_string(training_collection.getTrainingSet().getSize()),
+               tscl::Log::Trace);
+  tscl::logger("Testing set size: " +
+                       std::to_string(training_collection.getEvaluationSet().getSize()),
+               tscl::Log::Trace);
+
+
   // Create a correctly-sized topology
   nnet::MLPTopology topology = {kImageSize * kImageSize, 64, 64, 32, 16};
   topology.pushBack(training_collection.getClassCount());
@@ -59,12 +67,6 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // auto optimizer = nnet::MLPBatchOptimizer::make<nnet::SGDOptimization>(*model, 0.03);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
-  std::cout << "Number of images : "
-            << training_collection.getEvaluationSet().getSize() +
-                       training_collection.getTrainingSet().getSize()
-            << std::endl;
-
-
   // EvalController controller(output_path, model.get(), &training_collection.getEvaluationSet());
   TrainingController controller(output_path, *model, *optimizer, training_collection);
   ControllerResult res = controller.run();
