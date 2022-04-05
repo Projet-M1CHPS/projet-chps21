@@ -36,7 +36,8 @@ jobs:
     - name: install clblast
       run: git clone https://github.com/CNugteren/CLBlast ./clblast
            cd ./clblast && mkdir build
-           cmake .. -DCMAKE_BUILD_TYPE=RELEASE && make -j 
+           cmake .. -DCMAKE_BUILD_TYPE=RELEASE
+           make -j
            sudo make install
 
     - name: install doxygen
