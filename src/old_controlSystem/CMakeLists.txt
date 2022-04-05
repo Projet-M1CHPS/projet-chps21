@@ -1,6 +1,6 @@
 
 
-set(CURRENT_INCLUDE_DIR ${INCLUDE_DIR}/controlSystem)
+set(CURRENT_INCLUDE_DIR ${INCLUDE_DIR}/old_controlSystem)
 
 add_subdirectory(classifier)
 

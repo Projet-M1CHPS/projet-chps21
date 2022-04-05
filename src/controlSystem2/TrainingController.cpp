@@ -19,8 +19,8 @@ namespace control {
           mat.fill(0.0f);
           mat(input_set.getClassOf(sample_index), 0) = 1.0f;
           buf.getMatrix(j) = mat;
+          sample_index++;
         }
-        sample_index++;
         res.push_back(buf);
       }
       return res;
@@ -59,8 +59,8 @@ namespace control {
     for (size_t curr_epoch = 0; curr_epoch < max_epoch; curr_epoch++) {
       auto epoch_duration = runEpoch(*optimizer, training_set, targets);
 
-      //printEvaluation(evaluation_future.get());
-      // Async evaluation to avoid downtime
+      // printEvaluation(evaluation_future.get());
+      //  Async evaluation to avoid downtime
       tscl::logger("Epoch took " + std::to_string(epoch_duration.count()) + "ms",
                    tscl::Log::Information);
       /*evaluation_future =

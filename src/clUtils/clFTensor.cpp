@@ -5,11 +5,6 @@ namespace math {
   clFTensor::clFTensor(size_t x, size_t y, size_t z) : x_dim(x), y_dim(y), z_dim(z) {
     size_t size = x * y * z;
     data = cl::Buffer(CL_MEM_READ_WRITE, size * sizeof(float));
-
-    // By default, OpenCL only migrates data to the device when it is needed.
-    // Since we only use sub-buffers, we need to explicitly migrate the data
-    // to the device, otherwise the data will remain in the host memory.
-    auto queue = cl::CommandQueue::getDefault();
   }
 
   clFMatrix clFTensor::getMatrix(size_t z) {
@@ -19,8 +14,15 @@ namespace math {
     cl_buffer_region region = {z * size * sizeof(float), size * sizeof(float)};
     cl::Buffer subbuffer;
     if (z == 0) subbuffer = data;
-    else
-      subbuffer = data.createSubBuffer(CL_MEM_READ_WRITE, CL_BUFFER_CREATE_TYPE_REGION, &region);
+    else {
+      try {
+        subbuffer = data.createSubBuffer(CL_MEM_READ_WRITE, CL_BUFFER_CREATE_TYPE_REGION, &region);
+
+      } catch (cl::Error &e) {
+        std::cerr << "Error: " << e.what() << "(" << e.err() << ")" << std::endl;
+        throw;
+      }
+    }
 
     return clFMatrix::fromSubbuffer(subbuffer, x_dim, y_dim);
   }
