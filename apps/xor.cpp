@@ -52,12 +52,14 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
   std::cout << std::setprecision(8);
   while (error > error_limit && count < 600) {
     for (int i = 0; i < bach_size; i++) {
-      for (int j = 0; j < 4; j++) { optimizer->optimize(input[j], target[j]); }
+      for (int j = 0; j < 4; j++) {
+        optimizer->optimize((math::clFMatrix) input[j], (math::clFMatrix) target[j]);
+      }
     }
 
     error = 0.0;
     for (int i = 0; i < input.size(); i++) {
-      auto cl_matrix = nn1.predict(input[i]);
+      auto cl_matrix = nn1.predict((math::clFMatrix) input[i]);
       auto fmatrix = cl_matrix.toFloatMatrix();
       error += std::fabs(fmatrix(0, 0) - target[i](0, 0));
     }
@@ -70,7 +72,7 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
   std::cout << "Result"
             << "---> " << count << " iterations" << std::endl;
   for (int i = 0; i < input.size(); i++) {
-    auto cl_matrix = nn1.predict(input[i]);
+    auto cl_matrix = nn1.predict((math::clFMatrix) input[i]);
     auto fmatrix = cl_matrix.toFloatMatrix();
     std::cout << input[i](0, 0) << "|" << input[i](1, 0) << " = " << fmatrix << "("
               << target[i](0, 0) << ")" << std::endl;

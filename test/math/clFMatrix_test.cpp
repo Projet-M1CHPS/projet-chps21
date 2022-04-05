@@ -62,7 +62,7 @@ TEST(clFMatrixTest, CanMoveCopy) {
   m(1, 0) = 1;
   m(1, 1) = 1;
 
-  clFMatrix n = m;
+  clFMatrix n(m);
 
   auto raw_ptr = n.getBuffer();
 
@@ -98,8 +98,8 @@ TEST(clFMatrixTest, CanAdd) {
   n = m;
   n(1, 1) = 3;
 
-  clFMatrix a = m;
-  clFMatrix b = n;
+  clFMatrix a(m);
+  clFMatrix b(n);
   auto buf = a.add(1.0f, b);
   auto c = buf.toFloatMatrix();
 
@@ -137,8 +137,8 @@ TEST(clFMatrixTest, CanSubtract) {
   n = m;
   n(1, 1) = 3;
 
-  clFMatrix a = m;
-  clFMatrix b = n;
+  clFMatrix a(m);
+  clFMatrix b(n);
   auto buf = a.sub(1.0f, b);
   auto c = buf.toFloatMatrix();
 
@@ -202,7 +202,7 @@ TEST(clFMatrixTest, CanTranspose) {
   Matrix<float> n(3, 5);
 
   randomize(n, 0.f, 100.f);
-  clFMatrix m = n;
+  clFMatrix m(n);
 
   auto w = m.transpose();
   auto t = w.toFloatMatrix();
@@ -230,7 +230,7 @@ TEST(clFMatrixTest, CanSumReduce) {
   m(1, 0) = 1;
   m(1, 1) = 1;
 
-  clFMatrix a = m;
+  clFMatrix a(m);
 
   auto c = a.sumReduce();
   ASSERT_EQ(4, c);
@@ -252,7 +252,7 @@ TEST(clFMatrixTest, CanSimpleGEMM) {
   m(1, 1) = 2;
 
   n = m;
-  clFMatrix a = m, b = m;
+  clFMatrix a(m), b(m);
 
   auto c = clFMatrix::gemm(1.0f, false, a, false, b, true);
   Matrix<float> d(2, 2);
@@ -289,7 +289,7 @@ TEST(clFMatrixTest, CanHadamar) {
   m(1, 1) = 2;
   m(1, 2) = 3;
 
-  clFMatrix a = m, b = m;
+  clFMatrix a(m), b(m);
 
   auto c = a.hadamard(b);
   auto n = c.toFloatMatrix();
@@ -373,7 +373,7 @@ TEST(clFMatrixTest, CanGEMMWithTranspose) {
   C(2, 0) = 12;
   C(2, 1) = 8;
 
-  clFMatrix a = A, b = B, c = C;
+  clFMatrix a(A), b(B), c(C);
 
 
   auto D = clFMatrix::gemm(2.f, false, a, false, b);
