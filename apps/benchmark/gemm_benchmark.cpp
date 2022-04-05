@@ -21,8 +21,8 @@ void warmup(utils::clWrapper &wrapper) {
 
   // clblast warmup
   auto C = FloatMatrix::mul(false, A, false, B);
-  clFMatrix a = A;
-  clFMatrix b = B;
+  clFMatrix a(A);
+  clFMatrix b(B);
   auto c = clFMatrix::gemm(1.0f, false, a, false, b, true);
   std::cout << " done" << std::endl;
 }

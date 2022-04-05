@@ -1,5 +1,5 @@
 #pragma once
-#define CL_HPP_TARGET_OPENCL_VERSION 200
+#define CL_HPP_TARGET_OPENCL_VERSION 120
 #define CL_HPP_ENABLE_EXCEPTIONS 1
 #include "Matrix.hpp"
 #include "clWrapper.hpp"
@@ -26,7 +26,20 @@ namespace math {
      */
     clFMatrix() = default;
 
+
+    /**
+     * @brief Copy another matrix using the default queue, and block until the copy is done.
+     * @param other The matrix to copy
+     * @return The matrix itself after the copy
+     */
     clFMatrix &operator=(const clFMatrix &other);
+
+    /**
+     * @brief Convert a FloatMatrix to a clFMatrix, using the default queue, and block until the
+     * copy is done.
+     * @param other The matrix to convert
+     * @return The matrix itself after the copy
+     */
     clFMatrix &operator=(const FloatMatrix &other);
 
     clFMatrix(clFMatrix &&) = default;
@@ -59,6 +72,9 @@ namespace math {
      * @param source Source ptr to copy from
      * @param rows Numbers of rows of the new matrix
      * @param cols Numbers of columns of the new matrix
+     * @param blocking True if the operation is blocking, false otherwise
+     * Note that if the operation is non-blocking, the user is responsible for ensuring that the
+     * matrix remains valid until the operation is finished
      */
     clFMatrix(const float *source, size_t rows, size_t cols, bool blocking = true)
         : clFMatrix(source, rows, cols, utils::cl_wrapper.getDefaultQueue(), blocking) {}
@@ -78,7 +94,7 @@ namespace math {
      * @param matrix The matrix to copy
      * @param blocking  True if the operation is blocking, false otherwise
      */
-    clFMatrix(const math::FloatMatrix &matrix, bool blocking = true)
+    explicit clFMatrix(const math::FloatMatrix &matrix, bool blocking = true)
         : clFMatrix(matrix, utils::cl_wrapper.getDefaultQueue(), blocking) {}
 
 
@@ -105,6 +121,7 @@ namespace math {
      * @param subbuffer The OpenCL buffer to be used for the matrix
      * @param rows The number of rows of the matrix
      * @param cols The number of cols of the matrix
+     * @param offset The offset in elements (float), starting from the beginning of the buffer
      */
     static clFMatrix fromSubbuffer(cl::Buffer subbuffer, size_t rows, size_t cols,
                                    size_t offset = 0);
@@ -220,13 +237,16 @@ namespace math {
     }
 
     /**
-     * @brief Inplace addition of two matrices. By default, this operation is non-blocking
-     * @param other The other matrix to add
-     * @param queue The queue to use for this operation
-     * @param blocking True if the operation is blocking, false otherwise
-     * Note that if this operation is non-blocking, the user is responsible for ensuring that the
+     * @brief inplace addition of two matrices. by default, this operation is non-blocking.
+     * a = a + factor * b
+     *
+     * @param factor the factor to multiply the operand with
+     * @param other the other matrix to add
+     * @param queue the queue to use for this operation
+     * @param blocking true if the operation is blocking, false otherwise
+     * note that if this operation is non-blocking, the user is responsible for ensuring that the
      * operation is finished before using the matrix
-     * @return This matrix after the addition
+     * @return this matrix after the addition
      */
     void ipadd(float factor, const clFMatrix &other, cl::CommandQueue &queue,
                bool blocking = false);
@@ -234,6 +254,9 @@ namespace math {
     /**
      * @brief Inplace addition of two matrices. By default, this operation is non-blocking, and uses
      the default queue.
+     * A = A + factor * B
+     *
+     * @param factor The factor to multiply the operand with
      * @param other The other matrix to add
      * @param blocking True if the operation is blocking, false otherwise
      * Note that if this operation is non-blocking, the user is responsible for ensuring that the
@@ -246,6 +269,8 @@ namespace math {
 
     /**
      * @brief Adds two matrices. By default, this operation is non-blocking
+     * C = A + factor * B
+     * @param factor The factor to multiply the operand with
      * @param other The other matrix to add
      * @param queue The queue to use for this operation
      * @param blocking True if the operation is blocking, false otherwise
@@ -259,6 +284,9 @@ namespace math {
     /**
      * @brief Adds two matrices. By default, this operation is non-blocking, and uses the default
      * queue
+     * C = A + factor * B
+     *
+     * @param factor The factor to multiply the operand with
      * @param other The other matrix to add
      * @param blocking True if the operation is blocking, false otherwise
      * Note that if this operation is non-blocking, the user is responsible for ensuring that the
@@ -271,6 +299,9 @@ namespace math {
 
     /**
      * @brief Inplace subtraction of two matrices. By default, this operation is non-blocking
+     * A = A - factor * B
+     *
+     * @param factor The factor to multiply the operand with
      * @param other The other matrix to subtract
      * @param queue The queue to use for this operation
      * @param blocking True if the operation is blocking, false otherwise
@@ -283,6 +314,9 @@ namespace math {
     /**
      * @brief Inplace subtraction of two matrices. By default, this operation is non-blocking and
      * uses the default queue
+     * A = A - factor * B
+     *
+     * @param factor The factor to multiply the operand with
      * @param other The other matrix to subtract
      * @param blocking True if the operation is blocking, false otherwise
      * Note that if this operation is non-blocking, the user is responsible for ensuring that the
@@ -294,6 +328,9 @@ namespace math {
 
     /**
      * @brief Subtracts two matrices. By default, this operation is non-blocking
+     * C = A - factor * B
+     *
+     * @param factor The factor to multiply the operand with
      * @param other The other matrix to subtract
      * @param queue The queue to use for this operation
      * @param blocking True if the operation is blocking, false otherwise
@@ -307,6 +344,9 @@ namespace math {
     /**
      * @brief Subtracts two matrices. By default, this operation is non-blocking and uses the
      * default queue
+     * C = A - factor * B
+     *
+     * @param factor The factor to multiply the operand with
      * @param other The other matrix to subtract
      * @param blocking True if the operation is blocking, false otherwise
      * Note that if this operation is non-blocking, the user is responsible for ensuring that the
@@ -317,27 +357,99 @@ namespace math {
       return sub(factor, other, utils::cl_wrapper.getDefaultQueue(), blocking);
     }
 
+    /**
+     * @brief Inplace Scale every element of the matrix by a factor.
+     *
+     * @param scale The factor to scale the matrix with
+     * @param queue The queue to use for this operation
+     * @param blocking True if the operation is blocking, false otherwise
+     */
     void ipscale(float scale, cl::CommandQueue &queue, bool blocking = false);
 
+    /**
+     * @brief Inplace Scale every element of the matrix by a factor, using the default queue.
+     *
+     * @param scale The factor to scale the matrix with
+     * @param blocking True if the operation is blocking, false otherwise
+     */
     void ipscale(float scale, bool blocking = false) {
       ipscale(scale, utils::cl_wrapper.getDefaultQueue(), blocking);
     }
 
+    /**
+     * @brief Scales every element of the matrix by a factor.
+     *
+     * @param scale The factor to scale the matrix with
+     * @param queue The queue to use for this operation
+     * @param blocking True if the operation is blocking, false otherwise
+     * @return this * scale
+     */
     [[nodiscard]] clFMatrix scale(float scale, cl::CommandQueue &queue,
                                   bool blocking = false) const;
 
+    /**
+     * @brief Scales every element of the matrix by a factor, using the default queue.
+     *
+     * @param scale The factor to scale the matrix with
+     * @param blocking True if the operation is blocking, false otherwise
+     * @return this * scale
+     */
     [[nodiscard]] clFMatrix scale(float s, bool blocking = false) const {
       return scale(s, utils::cl_wrapper.getDefaultQueue(), blocking);
     }
 
+    /**
+     * @brief Inplace element-wise multiplication of two matrices. By default, this operation is
+     * non-blocking and uses the default queue
+     * A = A * B
+     *
+     * @param other The other matrix to multiply
+     * @param queue The queue to use for this operation
+     * @param blocking True if the operation is blocking, false otherwise
+     * Note that if this operation is non-blocking, the user is responsible for ensuring that the
+     * operation is finished before using the matrix
+     */
     void iphadamard(const clFMatrix &other, cl::CommandQueue &queue, bool blocking = false) const;
 
+    /**
+     * @brief Inplace element-wise multiplication of two matrices. By default, this operation is
+     * non-blocking and uses the default queue
+     * A = A * B
+     *
+     * @param other The other matrix to multiply
+     * @param blocking True if the operation is blocking, false otherwise
+     * Note that if this operation is non-blocking, the user is responsible for ensuring that the
+     * operation is finished before using the matrix
+     */
     void iphadamard(const clFMatrix &other, bool blocking = false) const {
       iphadamard(other, utils::cl_wrapper.getDefaultQueue(), blocking);
     }
 
-    clFMatrix hadamard(const clFMatrix &other, cl::CommandQueue &queue,
-                       bool blocking = false) const;
+    /**
+     * @brief Element-wise multiplication of two matrices. By default, this operation is
+     * non-blocking and uses the default queue
+     * C = A * B
+     *
+     * @param other The other matrix to multiply
+     * @param queue The queue to use for this operation
+     * @param blocking True if the operation is blocking, false otherwise
+     * Note that if this operation is non-blocking, the user is responsible for ensuring that the
+     * operation is finished before using the matrix
+     * @return this * other
+     */
+    [[nodiscard]] clFMatrix hadamard(const clFMatrix &other, cl::CommandQueue &queue,
+                                     bool blocking = false) const;
+
+    /** @brief Element-wise multiplication of two matrices. By default, this operation is
+     * non-blocking and uses the default queue
+     * C = A * B
+     *
+     * @param other The other matrix to multiply
+     * @param blocking True if the operation is blocking, false otherwise
+     * Note that if this operation is non-blocking, the user is responsible for ensuring that the
+     * operation is finished before using the matrix
+     * @return this * other
+     */
     clFMatrix hadamard(const clFMatrix &other, bool blocking = false) const {
       return hadamard(other, utils::cl_wrapper.getDefaultQueue(), blocking);
     }
@@ -369,6 +481,12 @@ namespace math {
   private:
     cl::Buffer data;
     size_t rows = 0, cols = 0;
+
+    // Offset in elements from the beginning of the buffer
+    // This may be used when the matrix is part of a larger structure
+    // For clblast calls, the offset must be specified in elements.
+    // For OpenCL calls, the offset must be specified in bytes
+    // This is why you may see this value multiplied by sizeof(float)
     size_t offset = 0;
   };
 }   // namespace math

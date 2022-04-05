@@ -71,30 +71,12 @@ bool createAndTrain(std::filesystem::path const &input_path,
   TrainingController controller(output_path, *model, *optimizer, training_collection);
   ControllerResult res = controller.run();
 
-  /*
   if (not res) {
     tscl::logger("Controller failed with an exception", tscl::Log::Error);
     tscl::logger(res.getMessage(), tscl::Log::Error);
     return false;
-  }*/
+  }
   // nnet::MLPModelSerializer::writeToFile(output_path / "model.nnet", *model);
-
-  /*
-  std::filesystem::create_directories(output_path / "image");
-  for (auto it : training_collection.getTrainingSet()) {
-    auto matrix = it.getData().toFloatMatrix();
-    std::unique_ptr<image::grayscale_t[]> buffer =
-            std::make_unique<image::grayscale_t[]>(matrix.getSize() * sizeof(char));
-    for (int i = 0; i < matrix.getSize(); i++) {
-      buffer[i] = static_cast<char>(matrix.getData()[i]);
-    }
-
-    image::GrayscaleImage image(64, 64, std::move(buffer));
-
-    std::cout << "saving to " << output_path / "image" / (std::to_string(it.getId()) + ".png") <<
-  std::endl; image::ImageSerializer::save(output_path / "image" / (std::to_string(it.getId()) +
-  ".png"), image);
-  } */
 
   return true;
 }

@@ -26,17 +26,19 @@ namespace math {
 
   clFMatrix &clFMatrix::operator=(const clFMatrix &other) {
     // We need to return if the size is 0 else OpenCL will throw
-    if (other.size() == 0) return *this;
 
     // Realloc a buffer if the current one is not big enough
     if (size() != other.size()) data = cl::Buffer(CL_MEM_READ_WRITE, rows * cols * sizeof(float));
-    cl::Event evt;
-    enqueueCopyBuffer(other.data, data, other.offset, offset, rows * cols * sizeof(float), nullptr,
-                      &evt);
-    evt.wait();
 
     rows = other.rows;
     cols = other.cols;
+
+    if (other.size() == 0) return *this;
+    cl::Event evt;
+    enqueueCopyBuffer(other.data, data, other.offset * sizeof(float), offset * sizeof(float),
+                      rows * cols * sizeof(float), nullptr, &evt);
+    evt.wait();
+
     return *this;
   }
 
@@ -55,10 +57,11 @@ namespace math {
     if (size() != other.getSize()) {
       data = cl::Buffer(CL_MEM_READ_WRITE, other.getRows() * other.getCols() * sizeof(float));
     }
-
-    enqueueWriteBuffer(data, true, offset, rows * cols * sizeof(float), (void *) other.getData());
     rows = other.getRows();
     cols = other.getCols();
+
+    enqueueWriteBuffer(data, true, offset * sizeof(float), rows * cols * sizeof(float),
+                       (void *) other.getData());
     return *this;
   }
 
@@ -70,8 +73,8 @@ namespace math {
 
     data = cl::Buffer(CL_MEM_READ_WRITE, rows * cols * sizeof(float));
     cl::Event evt;
-    queue.enqueueCopyBuffer(other.data, data, other.offset, offset, rows * cols * sizeof(float),
-                            nullptr, &evt);
+    queue.enqueueCopyBuffer(other.data, data, other.offset * sizeof(float), offset * sizeof(float),
+                            rows * cols * sizeof(float), nullptr, &evt);
     if (blocking) evt.wait();
   }
 
@@ -122,7 +125,7 @@ namespace math {
 
     rows = matrix.getRows();
     cols = matrix.getCols();
-    queue.enqueueWriteBuffer(data, blocking, offset, rows * cols * sizeof(float),
+    queue.enqueueWriteBuffer(data, blocking, offset * sizeof(float), rows * cols * sizeof(float),
                              (void *) matrix.getData());
   }
 
@@ -133,7 +136,7 @@ namespace math {
     FloatMatrix matrix(rows, cols);
 
     if (size() != 0)
-      queue.enqueueReadBuffer(data, blocking, offset, rows * cols * sizeof(float),
+      queue.enqueueReadBuffer(data, blocking, offset * sizeof(float), rows * cols * sizeof(float),
                               (void *) matrix.getData());
 
     return matrix;
@@ -143,7 +146,8 @@ namespace math {
     if (size() == 0) return *this;
 
     cl::Event evt;
-    queue.enqueueFillBuffer(data, value, offset, rows * cols * sizeof(float), nullptr, &evt);
+    queue.enqueueFillBuffer(data, value, offset * sizeof(float), rows * cols * sizeof(float),
+                            nullptr, &evt);
     if (blocking) evt.wait();
     return *this;
   }

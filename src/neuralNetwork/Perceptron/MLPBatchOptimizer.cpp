@@ -125,7 +125,7 @@ namespace nnet {
       math::clFMatrix derivative(layers[i + 1], queue);
       applyDerivativeAF(activation_functions[i], derivative, queue);
 
-      derivative.hadamard(storage.getError(), queue);
+      derivative.iphadamard(storage.getError(), queue);
 
       storage.getError() = math::clFMatrix::gemm(1.0f, true, weights[i], false, derivative, queue);
 

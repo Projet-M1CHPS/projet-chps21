@@ -8,6 +8,10 @@
 #include <vector>
 
 
+// Really simple XOR example
+// This example uses a Stochastic Gradient Descent algorithm to train a neural network to solve a
+// XOR problem. This example serves as a crash test for the neural network, to be used when
+// everything else fails and for the most desperate times.
 void runXor(const size_t bach_size, const float learning_rate, const float error_limit) {
   nnet::MLPModel model;
   auto &nn1 = model.getPerceptron();
@@ -18,9 +22,7 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
 
   auto &w1 = nn1.getWeights();
 
-  auto tmStandard = std::make_shared<nnet::SGDOptimization>(nn1, 0.2f);
-
-  nnet::MLPStochOptimizer opt1(model, tmStandard);
+  auto optimizer = nnet::MLPStochOptimizer::make<nnet::SGDOptimization>(model, learning_rate);
 
   std::vector<math::FloatMatrix> input(4);
   std::vector<math::FloatMatrix> target(4);
@@ -50,12 +52,16 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
   std::cout << std::setprecision(8);
   while (error > error_limit && count < 600) {
     for (int i = 0; i < bach_size; i++) {
-      for (int j = 0; j < 4; j++) { opt1.optimize(input[j], target[j]); }
+      for (int j = 0; j < 4; j++) {
+        optimizer->optimize((math::clFMatrix) input[j], (math::clFMatrix) target[j]);
+      }
     }
 
     error = 0.0;
     for (int i = 0; i < input.size(); i++) {
-      error += std::fabs(nn1.predict(input[i])(0, 0) - target[i](0, 0));
+      auto cl_matrix = nn1.predict((math::clFMatrix) input[i]);
+      auto fmatrix = cl_matrix.toFloatMatrix();
+      error += std::fabs(fmatrix(0, 0) - target[i](0, 0));
     }
     error /= input.size();
     std::cout << error << std::endl;
@@ -66,12 +72,15 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
   std::cout << "Result"
             << "---> " << count << " iterations" << std::endl;
   for (int i = 0; i < input.size(); i++) {
-    std::cout << input[i](0, 0) << "|" << input[i](1, 0) << " = " << nn1.predict(input[i]) << "("
+    auto cl_matrix = nn1.predict((math::clFMatrix) input[i]);
+    auto fmatrix = cl_matrix.toFloatMatrix();
+    std::cout << input[i](0, 0) << "|" << input[i](1, 0) << " = " << fmatrix << "("
               << target[i](0, 0) << ")" << std::endl;
   }
 }
 
 int main() {
-  runXor(100, 0.1, 0.001);
+  utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault());
+  runXor(100, 0.1, 0.01);
   return 0;
 }

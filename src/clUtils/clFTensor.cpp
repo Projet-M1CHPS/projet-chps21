@@ -7,28 +7,27 @@ namespace math {
     data = cl::Buffer(CL_MEM_READ_WRITE, size * sizeof(float));
   }
 
+  clFTensor clFTensor::deepCopy(cl::CommandQueue &queue, bool blocking) const {
+    clFTensor res(x_dim, y_dim, z_dim);
+    size_t size = x_dim * y_dim;
+    queue.enqueueCopyBuffer(res.data, data, offset * size, 0, data.getInfo<CL_MEM_SIZE>());
+    return res;
+  }
+
   clFMatrix clFTensor::getMatrix(size_t z) {
     if (z > z_dim) { throw std::out_of_range("z index out of range"); }
 
     size_t size = x_dim * y_dim;
-    size_t offset = z * size * sizeof(float);
-    return clFMatrix::fromSubbuffer(data, x_dim, y_dim, offset);
+    size_t mat_offset = (z + offset) * size;
+    return clFMatrix::fromSubbuffer(data, x_dim, y_dim, mat_offset);
   }
 
   clFMatrix clFTensor::getMatrix(size_t z) const {
     if (z > z_dim) { throw std::out_of_range("z index out of range"); }
 
     size_t size = x_dim * y_dim;
-    cl_buffer_region region = {z * size * sizeof(float), size * sizeof(float)};
-    cl::Buffer subbuffer;
-
-    // Unfornately, OpenCL does not allow to create a readonly subbuffers from a const buffer
-    // We have to const_Cast the buffer and create a readonly subbuffer from it
-    auto &nonconst_data = const_cast<cl::Buffer &>(data);
-    subbuffer =
-            nonconst_data.createSubBuffer(CL_MEM_READ_WRITE, CL_BUFFER_CREATE_TYPE_REGION, &region);
-
-    return clFMatrix::fromSubbuffer(subbuffer, x_dim, y_dim);
+    size_t mat_offset = (z + offset) * size;
+    return clFMatrix::fromSubbuffer(data, x_dim, y_dim, mat_offset);
   }
 
   std::vector<clFMatrix> clFTensor::getMatrices() {
