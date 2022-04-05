@@ -26,17 +26,19 @@ namespace math {
 
   clFMatrix &clFMatrix::operator=(const clFMatrix &other) {
     // We need to return if the size is 0 else OpenCL will throw
-    if (other.size() == 0) return *this;
 
     // Realloc a buffer if the current one is not big enough
     if (size() != other.size()) data = cl::Buffer(CL_MEM_READ_WRITE, rows * cols * sizeof(float));
+
+    rows = other.rows;
+    cols = other.cols;
+
+    if (other.size() == 0) return *this;
     cl::Event evt;
     enqueueCopyBuffer(other.data, data, other.offset, offset, rows * cols * sizeof(float), nullptr,
                       &evt);
     evt.wait();
 
-    rows = other.rows;
-    cols = other.cols;
     return *this;
   }
 

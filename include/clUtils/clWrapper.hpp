@@ -3,7 +3,7 @@
 #define CL_HPP_ENABLE_EXCEPTIONS 1
 #include "clKernelMap.hpp"
 #include "clQueueHandler.hpp"
-#include <CL/opencl.hpp>
+#include <CL/cl.hpp>
 #include <boost/dll.hpp>
 #include <iostream>
 #include <map>

@@ -3,7 +3,7 @@
 #define CL_HPP_ENABLE_EXCEPTIONS 1
 #include "Matrix.hpp"
 #include "clWrapper.hpp"
-#include <CL/opencl.hpp>
+#include <CL/cl.hpp>
 #include <clblast.h>
 #include <utility>
 

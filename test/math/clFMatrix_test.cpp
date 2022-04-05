@@ -21,7 +21,6 @@ TEST(clFMatrixTest, CanCreate) {
 
 
 TEST(clFMatrixTest, CanCopy) {
-  // clWrapper::initOpenCL(*clWrapper::initOpenCL());
   FloatMatrix n(10, 11);
 
   n(0, 0) = 1;
@@ -90,7 +89,6 @@ TEST(clFMatrixTest, CanMoveCopy) {
 
 TEST(clFMatrixTest, CanAdd) {
   Matrix<float> m(2, 2), n(2, 2);
-  auto wrapper = clWrapper::makeDefault();
 
   m(0, 0) = 1;
   m(0, 1) = 1;
@@ -232,7 +230,6 @@ TEST(clFMatrixTest, CanSumReduce) {
   m(1, 0) = 1;
   m(1, 1) = 1;
 
-  auto wrapper = clWrapper::makeDefault();
   clFMatrix a = m;
 
   auto c = a.sumReduce();
@@ -276,7 +273,6 @@ TEST(clFMatrixTest, CanSimpleGEMM) {
 
 TEST(clFMatrixTest, ThrowOnInvalidGEMM) {
   Matrix<float> m(2, 2), n(1, 3);
-  auto wrapper = clWrapper::makeDefault();
   clFMatrix a(m), b(n);
 
   ASSERT_ANY_THROW(auto c = clFMatrix::gemm(1.0f, false, a, false, b));
@@ -293,11 +289,9 @@ TEST(clFMatrixTest, CanHadamar) {
   m(1, 1) = 2;
   m(1, 2) = 3;
 
-  auto wrapper = clWrapper::makeDefault();
   clFMatrix a = m, b = m;
 
   auto c = a.hadamard(b);
-  wrapper->getDefaultQueue().finish();
   auto n = c.toFloatMatrix();
 
   for (size_t i = 0; i < 2; i++) {
@@ -307,14 +301,12 @@ TEST(clFMatrixTest, CanHadamar) {
 
 TEST(clFMatrixTest, ThrowOnInvalidMatrixHadamardProd) {
   Matrix<float> m(2, 2), n(1, 3), o;
-  auto wrapper = clWrapper::makeDefault();
   clFMatrix a(m), b(n), c(o);
 
   ASSERT_ANY_THROW(a.hadamard(b));
   ASSERT_ANY_THROW(c.hadamard(a));
   ASSERT_ANY_THROW(b.hadamard(c));
 }
-
 
 TEST(clFMatrixTest, CanComplexGEMM) {
   Matrix<float> A(2, 3), B(3, 1), C(2, 1);
@@ -338,7 +330,6 @@ TEST(clFMatrixTest, CanComplexGEMM) {
   D = A * B;
   D += C;
 
-  auto wrapper = clWrapper::makeDefault();
   clFMatrix a(A), b(B), c(C);
 
   auto res = clFMatrix::gemm(1.0f, false, a, false, b, 1.0f, c);
@@ -350,7 +341,6 @@ TEST(clFMatrixTest, CanComplexGEMM) {
 }
 
 TEST(clFMatrixTest, ThrowOnInvalidMatMatProdMatAdd) {
-  auto wrapper = clWrapper::makeDefault();
   clFMatrix a(2, 2), b(1, 3), c(2, 3), o;
 
   ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, false, a, false, b, 1.0f, c));
@@ -383,7 +373,6 @@ TEST(clFMatrixTest, CanGEMMWithTranspose) {
   C(2, 0) = 12;
   C(2, 1) = 8;
 
-  auto wrapper = clWrapper::makeDefault();
   clFMatrix a = A, b = B, c = C;
 
 
@@ -420,7 +409,6 @@ TEST(clFMatrixTest, CanGEMMWithTranspose) {
 }
 
 TEST(clFMatrixTest, ThrowOnInvalidGEMMWithTranspose) {
-  auto wrapper = clWrapper::makeDefault();
   clFMatrix A(3, 2), B(2, 3), C(3, 2), o;
 
   ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, false, A, false, C));
@@ -428,4 +416,11 @@ TEST(clFMatrixTest, ThrowOnInvalidGEMMWithTranspose) {
   ASSERT_ANY_THROW(clFMatrix::gemm(1.0f, true, A, false, B));
   ASSERT_ANY_THROW(clFMatrix::gemm(2.f, false, A, true, B));
   ASSERT_ANY_THROW(clFMatrix::gemm(3.f, false, A, true, o));
+}
+
+int main(int argc, char **argv) {
+  utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault("../kernels"));
+  ::testing::InitGoogleTest(&argc, argv);
+
+  return RUN_ALL_TESTS();
 }

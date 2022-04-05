@@ -13,6 +13,12 @@ namespace math {
   public:
     clFTensor() : x_dim(0), y_dim(0), z_dim(0) {}
 
+    clFTensor(const clFTensor &other) { *this = other; }
+    clFTensor &operator=(const clFTensor &other) = default;
+
+    clFTensor(clFTensor &&other) { *this = std::move(other); }
+    clFTensor &operator=(clFTensor &&other) = default;
+
     clFTensor(size_t x, size_t y, size_t z);
 
     /**
@@ -27,7 +33,7 @@ namespace math {
       clFTensor res;
       res.data = data;
       res.x_dim = x_dim * y_dim;
-      res.y_dim = 1;
+      res.y_dim = y_dim > 0 ? 1 : 0;
       res.z_dim = z_dim;
       return res;
     }
@@ -86,11 +92,13 @@ namespace math {
      */
     size_t getZ() const { return z_dim; }
 
+    cl::Buffer getBuffer() const { return data; }
+
   private:
     cl::Buffer data;
-    size_t x_dim;
-    size_t y_dim;
-    size_t z_dim;
+    size_t x_dim = 0;
+    size_t y_dim = 0;
+    size_t z_dim = 0;
   };
 
 }   // namespace math
