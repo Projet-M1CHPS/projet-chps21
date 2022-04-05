@@ -11,20 +11,8 @@ namespace math {
     if (z > z_dim) { throw std::out_of_range("z index out of range"); }
 
     size_t size = x_dim * y_dim;
-    cl_buffer_region region = {z * size * sizeof(float), size * sizeof(float)};
-    cl::Buffer subbuffer;
-    if (z == 0) subbuffer = data;
-    else {
-      try {
-        subbuffer = data.createSubBuffer(CL_MEM_READ_WRITE, CL_BUFFER_CREATE_TYPE_REGION, &region);
-
-      } catch (cl::Error &e) {
-        std::cerr << "Error: " << e.what() << "(" << e.err() << ")" << std::endl;
-        throw;
-      }
-    }
-
-    return clFMatrix::fromSubbuffer(subbuffer, x_dim, y_dim);
+    size_t offset = z * size * sizeof(float);
+    return clFMatrix::fromSubbuffer(data, x_dim, y_dim, offset);
   }
 
   clFMatrix clFTensor::getMatrix(size_t z) const {

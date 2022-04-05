@@ -22,8 +22,9 @@ namespace utils {
         platform.getDevices(CL_DEVICE_TYPE_CPU, &devices);
         if (devices.empty()) continue;
         std::cout << "Platform: " << platform.getInfo<CL_PLATFORM_NAME>() << std::endl;
-        for (size_t i = 0; i < devices.size(); i++)
+        for (size_t i = 0; i < devices.size(); i++) {
           std::cout << "\t d" << i << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
+        }
         if (!devices.empty()) { cpu_platforms.push_back(platform); }
       }
       return cpu_platforms;
@@ -39,8 +40,11 @@ namespace utils {
         platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
         if (devices.empty()) continue;
         std::cout << "Platform: " << platform.getInfo<CL_PLATFORM_NAME>() << std::endl;
-        for (size_t i = 0; i < devices.size(); i++)
+        for (size_t i = 0; i < devices.size(); i++) {
           std::cout << "\t d" << i << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
+          std::cout << "\t Memory alignment" << devices[i].getInfo<CL_DEVICE_MEM_BASE_ADDR_ALIGN>()
+                    << std::endl;
+        }
         if (!devices.empty()) { gpu_platforms.push_back(platform); }
       }
       return gpu_platforms;

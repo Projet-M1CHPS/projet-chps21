@@ -7,5 +7,5 @@ namespace control {
   ControllerResult::ControllerResult(int code, const std::runtime_error &exception)
       : return_code(code), message(exception.what()) {}
 
-  Controller::Controller(std::filesystem::path ouput_path) : output_path(output_path) {}
+  Controller::Controller(std::filesystem::path output_path) : output_path(std::move(output_path)) {}
 }   // namespace control

@@ -50,7 +50,7 @@ namespace nnet {
     cl::CommandQueue queue =
             cl::CommandQueue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
 
-    auto zerol = [&](auto &mat) { queue.enqueueFillBuffer(mat.getBuffer(), 0.0f, 0, mat.size()); };
+    auto zerol = [&](auto &mat) { mat.fill(0.0f, queue); };
     std::for_each(avg_gradients.begin(), avg_gradients.end(), zerol);
     std::for_each(avg_errors.begin(), avg_errors.end(), zerol);
 

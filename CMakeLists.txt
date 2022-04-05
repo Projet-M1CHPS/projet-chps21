@@ -11,15 +11,15 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 # Setup compiler specific flags
 include(CheckCXXCompilerFlag)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fast -O3 -qmkl -lm")
-    # Intel compilers are not supported for coverage tests
-    set(CODE_COVERAGE OFF)
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fast -O3 -qmkl -lm")
+  # Intel compilers are not supported for coverage tests
+  set(CODE_COVERAGE OFF)
 else ()
-    CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+  CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
 
-    if (COMPILER_SUPPORTS_MARCH_NATIVE)
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
-    endif ()
+  if (COMPILER_SUPPORTS_MARCH_NATIVE)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
+  endif ()
 endif ()
 
 include(check_coverage)
@@ -38,7 +38,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 
 find_package(Threads REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system filesystem)
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 find_package(TBB REQUIRED)
 find_package(OpenCL REQUIRED)
 find_package(CLBlast REQUIRED)

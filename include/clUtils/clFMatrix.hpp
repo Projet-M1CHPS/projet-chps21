@@ -106,7 +106,8 @@ namespace math {
      * @param rows The number of rows of the matrix
      * @param cols The number of cols of the matrix
      */
-    static clFMatrix fromSubbuffer(cl::Buffer subbuffer, size_t rows, size_t cols);
+    static clFMatrix fromSubbuffer(cl::Buffer subbuffer, size_t rows, size_t cols,
+                                   size_t offset = 0);
 
     /**
      * @brief Reinterpret the matrix as a flat vector, without copying the data
@@ -121,6 +122,7 @@ namespace math {
 
     [[nodiscard]] size_t getRows() const { return rows; }
     [[nodiscard]] size_t getCols() const { return cols; }
+    [[nodiscard]] size_t getOffset() const { return offset; }
     [[nodiscard]] size_t size() const { return rows * cols; }
 
     /**
@@ -175,6 +177,11 @@ namespace math {
     [[nodiscard]] float sumReduce(cl::CommandQueue &queue) const;
 
     /**
+     * @brief Fill the matrix with a constant value
+     */
+    clFMatrix &fill(float value, cl::CommandQueue &queue, bool blocking = true);
+
+    /**
      * @brief Sum the element of the matrix an return the result. This operation is always blocking,
      * and uses the default queue
      * @return The sum of the elements of the matrix
@@ -204,9 +211,7 @@ namespace math {
      */
     size_t imax(cl::CommandQueue &queue) const;
 
-    size_t imax() const {
-      return imax(utils::cl_wrapper.getDefaultQueue());
-    }
+    size_t imax() const { return imax(utils::cl_wrapper.getDefaultQueue()); }
 
     [[nodiscard]] clFMatrix transpose(cl::CommandQueue &queue, bool blocking = false) const;
 
@@ -364,5 +369,6 @@ namespace math {
   private:
     cl::Buffer data;
     size_t rows = 0, cols = 0;
+    size_t offset = 0;
   };
 }   // namespace math

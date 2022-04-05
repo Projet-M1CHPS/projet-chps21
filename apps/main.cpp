@@ -33,7 +33,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   if (not std::filesystem::exists(output_path)) std::filesystem::create_directories(output_path);
 
-  constexpr int kImageSize = 64;
+  constexpr int kImageSize = 32;
   // Ensure this is the same size as the batch size
   constexpr int kTensorSize = 256;
 
