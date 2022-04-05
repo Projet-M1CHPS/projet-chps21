@@ -13,6 +13,8 @@ namespace control {
     const std::string &getMessage() const { return message; }
     int getCode() const { return return_code; }
 
+    operator bool() const { return return_code == 0; }
+
   private:
     std::string message;
     int return_code;

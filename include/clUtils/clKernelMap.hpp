@@ -1,9 +1,9 @@
 #pragma once
 #include "clKernelMap.hpp"
 #define CL_HPP_MINIMUM_OPENCL_VERSION 120
-#define CL_HPP_TARGET_OPENCL_VERSION 200
+#define CL_HPP_TARGET_OPENCL_VERSION 120
 #define CL_HPP_ENABLE_EXCEPTIONS 1
-#include <CL/cl.hpp>
+#include <CL/opencl.hpp>
 #include <filesystem>
 #include <mutex>
 #include <shared_mutex>
