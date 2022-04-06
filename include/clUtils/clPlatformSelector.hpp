@@ -11,9 +11,9 @@ namespace utils {
   public:
     static std::unique_ptr<clWrapper> execute();
 
-    static void makeDefault() {
+    static void initOpenCL() {
       auto wrapper = execute();
-      clWrapper::setDefault(*wrapper);
+      clWrapper::initOpenCL(*wrapper);
     }
 
     ~clPlatformSelector();

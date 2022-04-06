@@ -25,15 +25,20 @@ namespace math {
   }
 
   clFMatrix &clFMatrix::operator=(const clFMatrix &other) {
+    // We need to return if the size is 0 else OpenCL will throw
+
+    // Realloc a buffer if the current one is not big enough
+    if (size() != other.size()) data = cl::Buffer(CL_MEM_READ_WRITE, rows * cols * sizeof(float));
+
     rows = other.rows;
     cols = other.cols;
-    // We need to return if the size is 0 else OpenCL will throw
-    if (size() == 0) return *this;
 
-    data = cl::Buffer(CL_MEM_READ_WRITE, rows * cols * sizeof(float));
+    if (other.size() == 0) return *this;
     cl::Event evt;
-    enqueueCopyBuffer(other.data, data, 0, 0, rows * cols * sizeof(float), nullptr, &evt);
+    enqueueCopyBuffer(other.data, data, other.offset * sizeof(float), offset * sizeof(float),
+                      rows * cols * sizeof(float), nullptr, &evt);
     evt.wait();
+
     return *this;
   }
 
@@ -49,13 +54,14 @@ namespace math {
     // If a buffer is already allocated, and not big enough to store the new matrix, create a new
     // buffer. Else, keep the same buffer
     // Since matrices rarely changes size, this check is worth it
-    if (rows * cols != other.getRows() * other.getCols()) {
+    if (size() != other.getSize()) {
       data = cl::Buffer(CL_MEM_READ_WRITE, other.getRows() * other.getCols() * sizeof(float));
     }
-
     rows = other.getRows();
     cols = other.getCols();
-    enqueueWriteBuffer(data, true, 0, rows * cols * sizeof(float), (void *) other.getData());
+
+    enqueueWriteBuffer(data, true, offset * sizeof(float), rows * cols * sizeof(float),
+                       (void *) other.getData());
     return *this;
   }
 
@@ -67,19 +73,39 @@ namespace math {
 
     data = cl::Buffer(CL_MEM_READ_WRITE, rows * cols * sizeof(float));
     cl::Event evt;
-    enqueueCopyBuffer(other.data, data, 0, 0, rows * cols * sizeof(float), nullptr, &evt);
+    queue.enqueueCopyBuffer(other.data, data, other.offset * sizeof(float), offset * sizeof(float),
+                            rows * cols * sizeof(float), nullptr, &evt);
     if (blocking) evt.wait();
   }
 
-  /// Conversion functions
-  /// Those are especially important since it is easier to manipulate matrices that are on the host
-  /// and direct memory access is faster than through OpenCL read and write operations
-  /// They may be used for matrix creations (e.g random matrix is created on the host then moved to
-  /// the device). As such, they should be considered pri
-  /// mitives and not utility.
+  clFMatrix clFMatrix::fromSubbuffer(cl::Buffer subbuffer, size_t rows, size_t cols,
+                                     size_t offset) {
+    clFMatrix res;
+    res.data = std::move(subbuffer);
+    res.rows = rows;
+    res.cols = cols;
+    res.offset = offset;
 
-  /// This operation is always blocking to prevent the host memory from being deallocated before the
-  /// shift occurs
+    return res;
+  }
+
+  clFMatrix clFMatrix::flatten() const {
+    clFMatrix res;
+    res.data = data;
+    res.rows = rows * cols;
+    res.cols = 1;
+    return res;
+  }
+
+
+  /// Conversion functions
+  /// Those are especially important since it is easier to manipulate matrices that are on the
+  /// host and direct memory access is faster than through OpenCL read and write operations They
+  /// may be used for matrix creations (e.g random matrix is created on the host then moved to the
+  /// device). As such, they should be considered pri mitives and not utility.
+
+  /// This operation is always blocking to prevent the host memory from being deallocated before
+  /// the shift occurs
   void clFMatrix::fromFloatMatrix(const math::FloatMatrix &matrix, cl::CommandQueue &queue,
                                   bool blocking) {
     // If the matrix is empty, deallocate the buffer if there is one and return immediately
@@ -99,7 +125,7 @@ namespace math {
 
     rows = matrix.getRows();
     cols = matrix.getCols();
-    queue.enqueueWriteBuffer(data, blocking, 0, rows * cols * sizeof(float),
+    queue.enqueueWriteBuffer(data, blocking, offset * sizeof(float), rows * cols * sizeof(float),
                              (void *) matrix.getData());
   }
 
@@ -110,10 +136,20 @@ namespace math {
     FloatMatrix matrix(rows, cols);
 
     if (size() != 0)
-      queue.enqueueReadBuffer(data, blocking, 0, rows * cols * sizeof(float),
+      queue.enqueueReadBuffer(data, blocking, offset * sizeof(float), rows * cols * sizeof(float),
                               (void *) matrix.getData());
 
     return matrix;
+  }
+
+  clFMatrix &clFMatrix::fill(float value, cl::CommandQueue &queue, bool blocking) {
+    if (size() == 0) return *this;
+
+    cl::Event evt;
+    queue.enqueueFillBuffer(data, value, offset * sizeof(float), rows * cols * sizeof(float),
+                            nullptr, &evt);
+    if (blocking) evt.wait();
+    return *this;
   }
 
   float clFMatrix::sumReduce(cl::CommandQueue &queue) const {
@@ -121,7 +157,7 @@ namespace math {
 
     // Perform the sum on the platform
     cl::Buffer res_buf(CL_MEM_READ_WRITE, sizeof(float));
-    clblast::Asum<float>(size(), res_buf(), 0, data(), 0, 1, &queue());
+    clblast::Asum<float>(size(), res_buf(), 0, data(), offset, 1, &queue());
 
     // Shift the result to the host
     float res = 0;
@@ -132,7 +168,7 @@ namespace math {
   float clFMatrix::l2norm(cl::CommandQueue &queue) const {
     // Perform the l2norm on the platform
     cl::Buffer res_buf(CL_MEM_READ_WRITE, sizeof(float));
-    clblast::Nrm2<float>(size(), res_buf(), 0, data(), 0, 1, &queue());
+    clblast::Nrm2<float>(size(), res_buf(), 0, data(), offset, 1, &queue());
 
     // Shift the result to the host
     float res = 0;
@@ -140,15 +176,29 @@ namespace math {
     return res;
   }
 
+  size_t clFMatrix::imax(cl::CommandQueue &queue) const {
+    if (size() == 0) throw std::runtime_error("Cannot imax an empty matrix");
+
+    // Perform the imax on the platform
+    cl::Buffer res_buf(CL_MEM_READ_WRITE, sizeof(cl_uint));
+    clblast::Amax<float>(size(), res_buf(), 0, data(), offset, 1, &queue());
+
+    // Shift the result to the host
+    cl_uint res_long = 0;
+    queue.enqueueReadBuffer(res_buf, true, 0, sizeof(cl_uint), &res_long);
+    return res_long;
+  }
+
   clFMatrix clFMatrix::transpose(cl::CommandQueue &queue, bool blocking) const {
     clFMatrix res(cols, rows);
 
-    // clblast throws if the size is 0 (and we don't want to spend time enqueuing a useless kernel)
+    // clblast throws if the size is 0 (and we don't want to spend time enqueuing a useless
+    // kernel)
     if (size() == 0) return res;
 
     cl::Event evt;
     clblast::Omatcopy<float>(clblast::Layout::kRowMajor, clblast::Transpose::kYes, rows, cols, 1.0f,
-                             data(), 0, cols, res.data(), 0, rows, &queue(), &evt());
+                             data(), offset, cols, res.data(), 0, rows, &queue(), &evt());
     if (blocking) evt.wait();
     return res;
   }
@@ -159,7 +209,8 @@ namespace math {
       throw std::invalid_argument("Matrix dimensions do not match");
     }
     cl::Event evt;
-    clblast::Axpy<float>(size(), factor, other.data(), 0, 1, data(), 0, 1, &queue(), &evt());
+    clblast::Axpy<float>(size(), factor, other.data(), other.offset, 1, data(), offset, 1, &queue(),
+                         &evt());
     if (blocking) evt.wait();
   }
 
@@ -174,9 +225,9 @@ namespace math {
       throw std::invalid_argument("Matrix dimensions do not match");
     }
 
-    clFMatrix res(other, queue);
+    clFMatrix res(other, queue, false);
     cl::Event evt;
-    clblast::Axpy<float>(size(), factor, data(), 0, 1, res.data(), 0, 1, &queue(), &evt());
+    clblast::Axpy<float>(size(), factor, data(), offset, 1, res.data(), 0, 1, &queue(), &evt());
     if (blocking) evt.wait();
     return res;
   }
@@ -188,7 +239,8 @@ namespace math {
     }
 
     cl::Event evt;
-    clblast::Axpy<float>(size(), -factor, other.data(), 0, 1, data(), 0, 1, &queue(), &evt());
+    clblast::Axpy<float>(size(), -factor, other.data(), other.offset, 1, data(), offset, 1,
+                         &queue(), &evt());
     if (blocking) evt.wait();
   }
 
@@ -203,9 +255,10 @@ namespace math {
       throw std::invalid_argument("Matrix dimensions do not match");
     }
 
-    clFMatrix res(*this, queue);
+    clFMatrix res(*this, queue, false);
     cl::Event evt;
-    clblast::Axpy<float>(size(), -factor, other.data(), 0, 1, res.data(), 0, 1, &queue(), &evt());
+    clblast::Axpy<float>(size(), -factor, other.data(), other.offset, 1, res.data(), 0, 1, &queue(),
+                         &evt());
     if (blocking) evt.wait();
     return res;
   }
@@ -214,12 +267,12 @@ namespace math {
     if (size() == 0) return;
 
     cl::Event evt;
-    clblast::Scal<float>(rows * cols, scale, data(), 0, 1, &queue(), &evt());
+    clblast::Scal<float>(rows * cols, scale, data(), offset, 1, &queue(), &evt());
     if (blocking) evt.wait();
   }
 
   clFMatrix clFMatrix::scale(float scale, cl::CommandQueue &queue, bool blocking) const {
-    clFMatrix res(*this, queue);
+    clFMatrix res(*this, queue, false);
 
     if (size() == 0) return res;
 
@@ -235,8 +288,8 @@ namespace math {
     }
 
     cl::Event evt;
-    clblast::Had<float>(rows * cols, 1.0f, data(), 0, 1, other.data(), 0, 1, 0.0f, data(), 0, 1,
-                        &queue(), &evt());
+    clblast::Had<float>(rows * cols, 1.0f, data(), offset, 1, other.data(), other.offset, 1, 0.0f,
+                        data(), offset, 1, &queue(), &evt());
     if (blocking) evt.wait();
   }
 
@@ -246,7 +299,7 @@ namespace math {
       throw std::invalid_argument("Matrix dimensions do not match");
     }
 
-    clFMatrix res(other, queue);
+    clFMatrix res(other, queue, false);
     res.iphadamard(*this, queue, blocking);
     return res;
   }
@@ -267,8 +320,9 @@ namespace math {
 
     clFMatrix res((transpose_a ? A_cols : A_rows), (transpose_b ? B_rows : B_cols));
     cl::Event evt;
-    clblast::Gemm<float>(clblast::Layout::kRowMajor, ta, tb, m, n, k, alpha, A.data(), 0, A_cols,
-                         B.data(), 0, B_cols, 0.f, res.data(), 0, res.getCols(), &queue(), &evt());
+    clblast::Gemm<float>(clblast::Layout::kRowMajor, ta, tb, m, n, k, alpha, A.data(), A.offset,
+                         A_cols, B.data(), B.offset, B_cols, 0.f, res.data(), 0, res.getCols(),
+                         &queue(), &evt());
     if (blocking) evt.wait();
 
     return res;
@@ -290,10 +344,11 @@ namespace math {
     size_t n = (transpose_b ? B_rows : B_cols);
     size_t k = (transpose_a ? A_rows : A_cols);
 
-    clFMatrix res(C, queue);
+    clFMatrix res(C, queue, false);
     cl::Event evt;
-    clblast::Gemm<float>(clblast::Layout::kRowMajor, ta, tb, m, n, k, alpha, A.data(), 0, A_cols,
-                         B.data(), 0, B_cols, beta, res.data(), 0, res.getCols(), &queue(), &evt());
+    clblast::Gemm<float>(clblast::Layout::kRowMajor, ta, tb, m, n, k, alpha, A.data(), A.offset,
+                         A_cols, B.data(), B.offset, B_cols, beta, res.data(), 0, res.getCols(),
+                         &queue(), &evt());
     if (blocking) evt.wait();
     return res;
   }

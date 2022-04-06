@@ -28,13 +28,13 @@ namespace math {
     Matrix(size_t rows, size_t cols) : rows(rows), cols(cols) {
       if (rows == 0 || cols == 0) { return; }
 
-      data = utils::make_aligned_unique<T>(64, rows * cols);
+      data = std::make_unique<T[]>(rows * cols);
     }
 
     Matrix(const std::pair<size_t, size_t> size) : rows(size.first), cols(size.second) {
       if (rows == 0 || cols == 0) { return; }
 
-      data = utils::make_aligned_unique<T>(64, rows * cols);
+      data = std::make_unique<T[]>(rows * cols);
     }
 
     Matrix(std::initializer_list<T> l) : Matrix(l.size(), 1) {
@@ -93,7 +93,7 @@ namespace math {
       if (other.data) {
         // If data is unallocated or different size, allocate new memory
         if (not data or (data and (rows * cols) != (other.rows * other.cols))) {
-          data = utils::make_aligned_unique<T>(64, other.rows * other.cols);
+          data = std::make_unique<T[]>(other.rows * other.cols);
         }
         rows = other.rows;
         cols = other.cols;
@@ -439,7 +439,7 @@ namespace math {
     }
 
   private:
-    utils::unique_aligned_ptr<T> data;
+    std::unique_ptr<T[]> data;
     size_t rows = 0, cols = 0;
   };
 

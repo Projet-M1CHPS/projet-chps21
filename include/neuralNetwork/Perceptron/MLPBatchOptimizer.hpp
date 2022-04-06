@@ -7,8 +7,8 @@ namespace nnet {
   public:
     explicit MLPBatchOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm);
 
-    void optimize(const std::vector<math::clFMatrix> &inputs,
-                  const std::vector<math::clFMatrix> &targets) override;
+    void optimize(const std::vector<math::clFTensor> &inputs,
+                  const std::vector<math::clFTensor> &targets) override;
 
     /**
      * @brief Builds a new optimization algorithm, forwarding parameters, and returns an
@@ -22,8 +22,7 @@ namespace nnet {
     template<class Optim, typename... Args, typename = std::is_base_of<nnet::Optimization, Optim>>
     static std::unique_ptr<MLPBatchOptimizer> make(MLPModel &model, Args &&...args) {
       return std::make_unique<MLPBatchOptimizer>(
-              model, std::make_unique<Optim>(model.getPerceptron(),
-                                             std::forward<Args>(args)...));
+              model, std::make_unique<Optim>(model.getPerceptron(), std::forward<Args>(args)...));
     }
 
 

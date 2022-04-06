@@ -2,6 +2,7 @@
 
 #include "Matrix.hpp"
 #include "clUtils/clFMatrix.hpp"
+#include "clUtils/clFTensor.hpp"
 #include "clUtils/clWrapper.hpp"
 #include <filesystem>
 #include <utility>
@@ -31,6 +32,8 @@ namespace nnet {
      */
     virtual math::clFMatrix predict(math::clFMatrix const &input) const = 0;
 
+    // virtual math::clFTensor predict(math::clFTensor const &input) const = 0;
+
     /**
      * @brief Save the model to the given path
      * @param path The path where the model should be saved
@@ -46,7 +49,6 @@ namespace nnet {
      * @return True if the model was loaded successfully, false otherwise
      */
     virtual bool load(const std::filesystem::path &path) = 0;
-
   };
 
 }   // namespace nnet

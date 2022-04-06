@@ -33,7 +33,7 @@ namespace nnet {
 
     clFMatrix res(outputSize.first, outputSize.second);
 
-    math::clFMatrix mat_filter = filter.getMatrix();
+    math::clFMatrix mat_filter(filter.getMatrix());
 
     cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
@@ -173,7 +173,7 @@ namespace nnet {
       rowsPos += stride;
     }
 
-    return {output, true};
+    return clFMatrix(output, true);
   }
 
   void CNNMaxPoolingLayer::computeForward(const clFMatrix &_input, CNNStorageBP &storage) {
@@ -247,7 +247,7 @@ namespace nnet {
       rowsPos += stride;
     }
 
-    return {output, true};
+    return clFMatrix(output, true);
   }
 
   void CNNAvgPoolingLayer::computeForward(const clFMatrix &input, CNNStorageBP &storage) {

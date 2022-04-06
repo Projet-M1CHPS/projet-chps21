@@ -62,7 +62,7 @@ namespace image::transform {
    * @brief Sub-function for resizing (stable on both up-scaling and down-scaling, but not really
    * efficient on up-scaling)
    *
-   * @param factors Pair: (source.width-1)/(dest.width-1) ; (source.height-1)/(dest.height-1)
+   * @param factors Pair: (source.input_width-1)/(dest.input_width-1) ; (source.input_height-1)/(dest.input_height-1)
    * @param source source image
    * @param dest destination image
    */
@@ -110,9 +110,9 @@ namespace image::transform {
               "Crop can not be applied on this image: new origin needs to be greater or equal than "
               "(0,0) and new dimensions needs to be strictly greater than (0,0)");
     } else if (orig_x + width > image.getWidth()) {
-      throw std::invalid_argument("Crop::transform: orig_x + width > image.getWidth()");
+      throw std::invalid_argument("Crop::transform: orig_x + input_width > image.getWidth()");
     } else if (orig_y + height > image.getHeight()) {
-      throw std::invalid_argument("Crop::transform: orig_y + height > image.getHeight()");
+      throw std::invalid_argument("Crop::transform: orig_y + input_height > image.getHeight()");
     }
     const image::GrayscaleImage source =
             image;   // In order to modify the image ref, we first need to copy it.

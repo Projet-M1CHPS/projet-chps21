@@ -3,8 +3,7 @@
 namespace nnet {
 
   namespace {
-    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat,
-                 cl::CommandQueue &queue) {
+    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue) {
       if (type == af::ActivationFunctionType::identity) return;
       auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
       afunc.setArg(0, mat.getBuffer());
@@ -26,7 +25,8 @@ namespace nnet {
   }
 
   math::clFMatrix MLPerceptron::predict(math::clFMatrix const &input) const {
-    const size_t nbInput = input.getRows();
+    auto flattened_input = input.flatten();
+    const size_t nbInput = flattened_input.getRows();
 
     if (nbInput != weights.front().getCols()) {
       throw std::invalid_argument("Invalid number of input");
@@ -34,8 +34,8 @@ namespace nnet {
 
     cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
 
-    auto current_layer = math::clFMatrix::gemm(1.0f, false, weights[0], false, input, 1.0f,
-                                               biases[0], queue);
+    auto current_layer =
+            math::clFMatrix::gemm(1.0f, false, weights[0], false, flattened_input, 1.0f, biases[0], queue);
 
     applyAF(activation_functions[0], current_layer, queue);
 
@@ -48,7 +48,6 @@ namespace nnet {
     queue.finish();
     return current_layer;
   }
-
 
   void MLPerceptron::setTopology(MLPTopology const &topology) {
     if (topology.empty()) return;

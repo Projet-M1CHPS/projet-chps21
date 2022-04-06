@@ -54,13 +54,19 @@ namespace nnet {
     return {storage.getError()};
   }
 
-  void MLPStochOptimizer::optimize(const std::vector<math::clFMatrix> &inputs,
-                                   const std::vector<math::clFMatrix> &targets) {
+  void MLPStochOptimizer::optimize(const std::vector<math::clFTensor> &inputs,
+                                   const std::vector<math::clFTensor> &targets) {
     if (inputs.size() != targets.size()) {
       throw std::runtime_error("MLPModelStochOptimizer: Inputs and targets number doesn't match !");
     }
 
-    for (size_t i = 0; i < inputs.size(); ++i) { optimize(inputs[i], targets[i]); }
+    for (size_t i = 0; i < inputs.size(); ++i) {
+      auto tensor = inputs[i].flatten();
+      auto target = targets[i].flatten();
+      for (size_t j = 0; j < inputs[i].getZ(); ++j) {
+        optimize(tensor.getMatrix(j), target.getMatrix(j));
+      }
+    }
     utils::cl_wrapper.getDefaultQueue().finish();
   }
 

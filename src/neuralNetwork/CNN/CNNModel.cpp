@@ -17,7 +17,8 @@ namespace nnet {
     return mlp->predict(_flatten);
   }
 
-  std::unique_ptr<CNNModel> CNNModel::random(CNNTopology const &topology, MLPTopology &mlp_topology) {
+  std::unique_ptr<CNNModel> CNNModel::random(CNNTopology const &topology,
+                                             MLPTopology &mlp_topology) {
     auto res = std::make_unique<CNNModel>();
 
     auto &cnn = res->getCnn();
@@ -27,7 +28,7 @@ namespace nnet {
 
     const size_t size = cnn.getOutputSize();
     res->flatten = clFMatrix(size, 1);
-    mlp_topology.push_front(size);
+    mlp_topology.pushFront(size);
 
     auto &mlp = res->getMlp();
     mlp.setTopology(mlp_topology);

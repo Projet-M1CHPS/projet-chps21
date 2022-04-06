@@ -133,7 +133,9 @@ void testConvolutionalLayer() {
   }
   std::cout << "input : \n" << input << std::endl;
 
-  clFMatrix output = layer.compute(input);
+  clFMatrix _input(input, true);
+
+  clFMatrix output = layer.compute(_input);
 
   math::FloatMatrix tmp_output = output.toFloatMatrix(true);
   std::cout << "output : \n" << tmp_output << std::endl;
@@ -226,7 +228,9 @@ void testMaxPoolingLayer() {
   }
   std::cout << input << std::endl;
 
-  clFMatrix output = layer.compute(input);
+  clFMatrix _input(input, true);
+
+  clFMatrix output = layer.compute(_input);
 
   math::FloatMatrix tmp_output = output.toFloatMatrix(true);
   std::cout << "output : \n" << tmp_output << std::endl;
@@ -309,7 +313,9 @@ void testAvgPoolingLayer() {
   }
   std::cout << "input :\n" << input << std::endl;
 
-  clFMatrix output = layer.compute(input);
+  clFMatrix _input(input, true);
+
+  clFMatrix output = layer.compute(_input);
 
   math::FloatMatrix tmp_output = output.toFloatMatrix(true);
   std::cout << "output : \n" << tmp_output << std::endl;
@@ -398,7 +404,7 @@ void testPredictionOneBranch() {
 
   std::cout << input << std::endl;
 
-  math::clFMatrix tmp_input = input;
+  math::clFMatrix tmp_input(input);
   cnn.predict(tmp_input, output);
 
   math::FloatMatrix tmp_output = output.toFloatMatrix(true);
@@ -437,6 +443,7 @@ void testPredictionOneBranch() {
 }
 
 int main() {
+  utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault());
   // testConvo();
 
   // testConvolutionalLayer();

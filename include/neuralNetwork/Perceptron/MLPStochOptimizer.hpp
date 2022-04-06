@@ -10,13 +10,12 @@ namespace nnet {
   class MLPStochOptimizer final : public MLPOptimizer {
   public:
     MLPStochOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm);
-    MLPStochOptimizer(MLPerceptron &perceptron,
-                      std::unique_ptr<Optimization> tm);
+    MLPStochOptimizer(MLPerceptron &perceptron, std::unique_ptr<Optimization> tm);
 
     math::clFMatrix optimize(const math::clFMatrix &input, const math::clFMatrix &target);
 
-    void optimize(const std::vector<math::clFMatrix> &inputs,
-                  const std::vector<math::clFMatrix> &targets) override;
+    void optimize(const std::vector<math::clFTensor> &inputs,
+                  const std::vector<math::clFTensor> &targets) override;
 
     /**
      * @brief Builds a new optimization algorithm, forwarding parameters, and returns an

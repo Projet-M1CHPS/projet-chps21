@@ -144,7 +144,14 @@ namespace image {
 
     if (img_data == nullptr) throw std::runtime_error("ImageSerializer::load: stbi_load failed");
 
-    std::unique_ptr<grayscale_t[]> ptr(reinterpret_cast<grayscale_t *>(img_data));
+
+    // We reallocate an array using a unique_ptr
+    // Since stbi_load returns a pointer that must be freed by stbi_image_free
+    // This is inefficient but atleast we can leave the memory management to the c++ standard
+    std::unique_ptr<grayscale_t[]> ptr = std::make_unique<grayscale_t[]>(width * height);
+    std::memcpy(ptr.get(), img_data, sizeof(grayscale_t) * width * height);
+    stbi_image_free(img_data);
+
     GrayscaleImage res(width, height, std::move(ptr));
 
     return res;

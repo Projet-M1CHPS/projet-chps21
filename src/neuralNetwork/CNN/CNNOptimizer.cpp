@@ -13,12 +13,24 @@ namespace nnet {
     backward(input, errorFlatten);
   }
 
-  void CNNStochOptimizer::optimize(const std::vector<math::clFMatrix> &inputs,
-                                   const std::vector<math::clFMatrix> &targets) {
+  void CNNStochOptimizer::optimize(const std::vector<math::clFTensor> &inputs,
+                                   const std::vector<math::clFTensor> &targets) {
     if (inputs.size() != targets.size()) {
       throw std::runtime_error("Invalid number of inputs or targets");
     }
-    for (size_t i = 0; i < inputs.size(); ++i) { optimize(inputs[i], targets[i]); }
+    for (size_t i = 0; i < inputs.size(); ++i) {
+      math::clFTensor tensor = inputs[i];
+      math::clFTensor target = targets[i];
+
+      if (tensor.getZ() != target.getZ()) {
+        throw std::runtime_error(
+                "CNNStochOptimizer::optimize: Target and input tensor size mismatch");
+      }
+
+      for (size_t j = 0; j < inputs[i].getZ(); ++j) {
+        optimize(tensor.getMatrix(j), tensor.getMatrix(j));
+      }
+    }
   }
 
   clFMatrix CNNStochOptimizer::forward(const clFMatrix &input) {}

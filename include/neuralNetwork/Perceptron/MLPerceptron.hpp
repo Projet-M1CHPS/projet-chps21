@@ -4,6 +4,7 @@
 #include "Matrix.hpp"
 #include "Utils.hpp"
 #include "clUtils/clFMatrix.hpp"
+#include "clUtils/clFTensor.hpp"
 #include "clUtils/clWrapper.hpp"
 #include <cmath>
 #include <functional>
@@ -55,7 +56,7 @@ namespace nnet {
       }
     }
 
-    void push_front(size_t i) { layers.insert(layers.begin(), i); }
+    void pushFront(size_t i) { layers.insert(layers.begin(), i); }
     void pushBack(size_t i) { layers.push_back(i); }
 
     [[nodiscard]] bool empty() const { return layers.empty(); }
@@ -102,6 +103,7 @@ namespace nnet {
      * @return
      */
     math::clFMatrix predict(math::clFMatrix const &input) const;
+
     [[nodiscard]] MLPTopology const &getTopology() const { return topology; }
 
     /**

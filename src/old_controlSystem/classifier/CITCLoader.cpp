@@ -43,8 +43,8 @@ namespace control::classifier {
     // The image is normalized using a given factor
     math::clFMatrix normalizeToDevice(const image::GrayscaleImage &img) {
       // Load the conversion kernel
-      cl::Kernel kernel =
-              utils::cl_wrapper.getKernels().getKernel("NormalizeCharToFloat.cl", "normalizeCharToFloat");
+      cl::Kernel kernel = utils::cl_wrapper.getKernels().getKernel("NormalizeCharToFloat.cl",
+                                                                   "normalizeCharToFloat");
 
       // Allocate a new cl matrix
       math::clFMatrix res(img.getSize(), 1);

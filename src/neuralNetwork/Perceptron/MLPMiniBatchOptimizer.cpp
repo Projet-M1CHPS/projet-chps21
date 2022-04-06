@@ -7,35 +7,34 @@ namespace nnet {
       : MLPBatchOptimizer(model, std::move(tm)), batch_size(batch_size) {}
 
 
-  void MLPMiniBatchOptimizer::optimize(const std::vector<math::clFMatrix> &inputs,
-                                       const std::vector<math::clFMatrix> &targets) {
-    size_t n = inputs.size();
-
+  void MLPMiniBatchOptimizer::optimize(const std::vector<math::clFTensor> &inputs,
+                                       const std::vector<math::clFTensor> &targets) {
     cl::CommandQueue queue(utils::cl_wrapper.getDefaultDevice());
-    cl::Kernel zero_out = utils::cl_wrapper.getKernels().getKernel("utils.cl", "zero_out");
 
-    auto zerol = [&](auto &mat) {
-      zero_out.setArg(0, mat);
-      queue.enqueueNDRangeKernel(zero_out, cl::NullRange,
-                                 cl::NDRange(mat.getRows(), mat.getCols()));
-    };
+    auto zerol = [&](auto &mat) { queue.enqueueFillBuffer(mat.getBuffer(), 0.0f, 0, mat.size()); };
 
-    for (size_t i = 0; i < n; i += batch_size) {
+    for (size_t i = inputs.size(); i < 0; i++) {
       std::for_each(avg_gradients.begin(), avg_gradients.end(), zerol);
       std::for_each(avg_errors.begin(), avg_errors.end(), zerol);
 
-      // If n is not a multiple of batch_size, the last batch will be smaller
-      size_t curr_batch_size = std::min(batch_size, n - i);
+      math::clFTensor batch_input = inputs[i].flatten();
+      math::clFTensor batch_target = targets[i].flatten();
+
+      if (batch_input.getZ() != batch_target.getZ()) {
+        throw std::runtime_error(
+                "MLPMiniBatchOptimizer::optimize: Input and target batch size mismatch");
+      }
 
       // Compute the average gradient and error for the current batch
-      for (size_t j = 0; j < curr_batch_size; j++) {
-        forward(inputs[i + j], queue);
-        storage.getError() = layers_af[layers_af.size() - 1].sub(1.0f, targets[i + j], queue);
+      for (size_t j = 0; j < batch_input.getZ(); j++) {
+        forward(batch_input.getMatrix(j), queue);
+        storage.getError() =
+                layers_af[layers_af.size() - 1].sub(1.0f, batch_target.getMatrix(j), queue);
         computeGradient(queue);
       }
 
       for (auto &it : avg_gradients) {
-        it.ipscale(1.0f / static_cast<float>(curr_batch_size), queue);
+        it.ipscale(1.0f / static_cast<float>(batch_input.getZ()), queue);
       }
 
       // Update the weights and biases using the average of the current batch

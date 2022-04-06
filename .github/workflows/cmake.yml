@@ -29,12 +29,20 @@ jobs:
       
     - name: install blas
       run: sudo apt-get install -y libopenblas-dev
+      
+    - name: install boost
+      run: sudo apt-get install -y libboost-all-dev
 
     - name: install opencl
       run: sudo apt-get install -y ocl-icd-opencl-dev libopenblas-dev
 
     - name: install clblast
-      run: sudo apt-get install -y libclblast-dev
+      run: | 
+           git clone https://github.com/CNugteren/CLBlast ./clblast
+           cd ./clblast && mkdir build
+           cmake .. -DCMAKE_BUILD_TYPE=RELEASE
+           make -j
+           sudo make install
 
     - name: install doxygen
       run: sudo apt-get install -y doxygen

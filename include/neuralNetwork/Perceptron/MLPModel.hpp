@@ -23,7 +23,6 @@ namespace nnet {
      */
     math::clFMatrix predict(math::clFMatrix const &input) const override;
 
-
     bool load(const std::filesystem::path &path) override;
     bool save(const std::filesystem::path &path) const override;
 
@@ -45,8 +44,7 @@ namespace nnet {
      * @param topology The topology to be used for the model
      * @return
      */
-    static std::unique_ptr<MLPModel>
-    randomReluSigmoid(MLPTopology const &topology);
+    static std::unique_ptr<MLPModel> randomReluSigmoid(MLPTopology const &topology);
 
   private:
     std::unique_ptr<MLPerceptron> perceptron;

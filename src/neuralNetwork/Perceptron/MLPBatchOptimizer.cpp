@@ -2,15 +2,15 @@
 
 namespace nnet {
   namespace {
-    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat,
-                 cl::CommandQueue &queue) {
+    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue) {
       if (type == af::ActivationFunctionType::identity) return;
       auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
       afunc.setArg(0, mat.getBuffer());
       queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
     }
 
-    void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue) {
+    void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
+                           cl::CommandQueue &queue) {
       if (type == af::ActivationFunctionType::identity) return;
       auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).second;
       afunc.setArg(0, mat.getBuffer());
@@ -31,7 +31,7 @@ namespace nnet {
     layers_af.resize(perceptron.getWeights().size() + 1);
 
     for (size_t i = 0; i < perceptron.getWeights().size(); i++) {
-      math::FloatMatrix buf1(topology[i], topology[i + 1]);
+      math::FloatMatrix buf1(topology[i + 1], topology[i]);
       buf1.fill(0.0);
       avg_gradients.emplace_back(buf1);
 
@@ -41,41 +41,42 @@ namespace nnet {
     }
   }
 
-  void MLPBatchOptimizer::optimize(const std::vector<math::clFMatrix> &inputs,
-                                   const std::vector<math::clFMatrix> &targets) {
+  void MLPBatchOptimizer::optimize(const std::vector<math::clFTensor> &inputs,
+                                   const std::vector<math::clFTensor> &targets) {
     if (inputs.size() != targets.size())
       throw std::runtime_error("MLPBatchOptimizer: Inputs and targets number doesn't match !");
 
     size_t n = inputs.size();
-    cl::CommandQueue queue(utils::cl_wrapper.getDefaultDevice());
-    cl::Kernel zero_out = utils::cl_wrapper.getKernels().getKernel("utils.cl", "zero_out");
+    cl::CommandQueue queue =
+            cl::CommandQueue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
 
-    auto zerol = [&](auto &mat) {
-      zero_out.setArg(0, mat);
-      queue.enqueueNDRangeKernel(zero_out, cl::NullRange,
-                                 cl::NDRange(mat.getRows(), mat.getCols()));
-    };
+    auto zerol = [&](auto &mat) { mat.fill(0.0f, queue); };
     std::for_each(avg_gradients.begin(), avg_gradients.end(), zerol);
     std::for_each(avg_errors.begin(), avg_errors.end(), zerol);
 
 
     for (long i = 0; i < n; i++) {
-      forward(inputs[i], queue);
-      storage.getError() = layers_af[layers_af.size() - 1].sub(1.f, targets[i], queue);
-      computeGradient(queue);
+      auto input = inputs[i].flatten();
+      auto target = targets[i].flatten();
+      for (size_t j = 0; j < input.getZ(); j++) {
+        forward(input.getMatrix(j), queue);
+        storage.getError() = layers_af[layers_af.size() - 1].sub(1.f, target.getMatrix(j), queue);
+        computeGradient(queue);
+      }
     }
 
     queue.finish();
 
-    for (auto &it : avg_gradients) {
-      it.ipscale(((float) 1.0 / static_cast<float>(n)), queue);
-    }
+    for (auto &it : avg_gradients) { it.ipscale(((float) 1.0 / static_cast<float>(n)), queue); }
 
     for (long i = neural_network->getWeights().size() - 1; i >= 0; i--) {
       storage.setIndex(i);
       std::swap(storage.getGradient(), avg_gradients[i]);
       std::swap(storage.getError(), avg_errors[i]);
       opti_meth->optimize(storage, queue);
+      // Placeholder until we remove the backprop storage
+      std::swap(avg_gradients[i], storage.getGradient());
+      std::swap(avg_errors[i], storage.getError());
     }
     queue.finish();
   }
@@ -91,8 +92,8 @@ namespace nnet {
 
     if (weights.empty()) return;
 
-    math::clFMatrix current_layer = math::clFMatrix::gemm(1.0f, false, weights[0], false, inputs,
-                                                          1.0f, biases[0], queue);
+    math::clFMatrix current_layer =
+            math::clFMatrix::gemm(1.0f, false, weights[0], false, inputs, 1.0f, biases[0], queue);
     layers[1] = math::clFMatrix(current_layer, queue, false);
     applyAF(activation_functions[0], current_layer, queue);
     auto afunc = af::getAFFromType(activation_functions[0]).first;
@@ -124,10 +125,9 @@ namespace nnet {
       math::clFMatrix derivative(layers[i + 1], queue);
       applyDerivativeAF(activation_functions[i], derivative, queue);
 
-      derivative.hadamard(storage.getError(), queue);
+      derivative.iphadamard(storage.getError(), queue);
 
-      storage.getError() =
-              math::clFMatrix::gemm(1.0f, true, weights[i], false, derivative, queue);
+      storage.getError() = math::clFMatrix::gemm(1.0f, true, weights[i], false, derivative, queue);
 
       storage.getGradient() =
               math::clFMatrix::gemm(1.0f, false, derivative, true, layers_af[i], queue);

@@ -75,9 +75,7 @@ std::vector<double> benchmarkCLBlast(int n_start, int n_end, int step, utils::cl
     clFMatrix A(n, n);
     clFMatrix B(n, n);
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 20; i++) {
-      clFMatrix C = clFMatrix::gemm(1.0f, false, A, false, B, queue);
-    }
+    for (int i = 0; i < 20; i++) { clFMatrix C = clFMatrix::gemm(1.0f, false, A, false, B, queue); }
     queue.finish();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
