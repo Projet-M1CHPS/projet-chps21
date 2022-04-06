@@ -28,7 +28,7 @@ jobs:
       run: sudo apt-get install -y doxygen gcovr libopenblas-dev libboost-all-dev libtbb-dev
       
     - name: install opencl
-      run: sudo apt-get install -y ocl-icd-opencl-dev libopenblas-dev
+      run: sudo apt-get install -y ocl-icd-opencl-dev opencl-clhpp-headers
 
     - name: install clblast
       run: | 
