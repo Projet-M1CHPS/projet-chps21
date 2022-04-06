@@ -33,7 +33,7 @@ jobs:
     - name: install clblast
       run: | 
            git clone https://github.com/CNugteren/CLBlast ./clblast
-           cd ./clblast && mkdir build
+           cd ./clblast && mkdir build && cd build
            cmake .. -DCMAKE_BUILD_TYPE=RELEASE
            make -j
            sudo make install
