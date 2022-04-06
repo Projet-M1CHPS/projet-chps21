@@ -2,15 +2,6 @@
 
 namespace nnet {
 
-  namespace {
-    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue) {
-      if (type == af::ActivationFunctionType::identity) return;
-      auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
-      afunc.setArg(0, mat.getBuffer());
-      queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
-    }
-  }   // namespace
-
   MLPTopology MLPTopology::fromString(const std::string &str) {
     std::vector<size_t> layers;
     std::stringstream ss(str);
@@ -37,13 +28,13 @@ namespace nnet {
     auto current_layer =
             math::clFMatrix::gemm(1.0f, false, weights[0], false, flattened_input, 1.0f, biases[0], queue);
 
-    applyAF(activation_functions[0], current_layer, queue);
+    af::applyAF(activation_functions[0], current_layer, queue);
 
     for (size_t i = 1; i < weights.size(); i++) {
       current_layer = math::clFMatrix::gemm(1.0f, false, weights[i], false, current_layer, 1.0f,
                                             biases[i], queue);
 
-      applyAF(activation_functions[i], current_layer, queue);
+      af::applyAF(activation_functions[i], current_layer, queue);
     }
     queue.finish();
     return current_layer;

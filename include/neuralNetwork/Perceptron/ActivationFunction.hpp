@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Utils.hpp"
+#include "clUtils/clFMatrix.hpp"
 #include "clUtils/clWrapper.hpp"
 #include <cmath>
 #include <functional>
@@ -89,5 +90,10 @@ namespace af {
 
   std::pair<cl::Kernel, cl::Kernel> getAFKernelFromType(ActivationFunctionType type,
                                                         utils::clWrapper &wrapper);
+
+
+  void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue);
+  void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
+                         cl::CommandQueue &queue);
 
 }   // namespace af

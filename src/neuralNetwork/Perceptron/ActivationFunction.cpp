@@ -58,4 +58,21 @@ namespace af {
     }
   }
 
+
+  void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue) {
+    if (type == af::ActivationFunctionType::identity) return;
+    auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
+    afunc.setArg(0, mat.getBuffer());
+    queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
+  }
+
+  void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
+                         cl::CommandQueue &queue) {
+    if (type == af::ActivationFunctionType::identity) return;
+    auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).second;
+    afunc.setArg(0, mat.getBuffer());
+    queue.enqueueNDRangeKernel(afunc, cl::NullRange, cl::NDRange(mat.getRows(), mat.getCols()),
+                               cl::NullRange);
+  }
+
 }   // namespace af

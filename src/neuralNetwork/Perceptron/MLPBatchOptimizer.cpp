@@ -1,22 +1,6 @@
 #include "MLPBatchOptimizer.hpp"
 
 namespace nnet {
-  namespace {
-    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue) {
-      if (type == af::ActivationFunctionType::identity) return;
-      auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
-      afunc.setArg(0, mat.getBuffer());
-      queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
-    }
-
-    void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
-                           cl::CommandQueue &queue) {
-      if (type == af::ActivationFunctionType::identity) return;
-      auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).second;
-      afunc.setArg(0, mat.getBuffer());
-      queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
-    }
-  }   // namespace
 
   MLPBatchOptimizer::MLPBatchOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm)
       : MLPOptimizer(model, std::move(tm)) {
@@ -95,7 +79,7 @@ namespace nnet {
     math::clFMatrix current_layer =
             math::clFMatrix::gemm(1.0f, false, weights[0], false, inputs, 1.0f, biases[0], queue);
     layers[1] = math::clFMatrix(current_layer, queue, false);
-    applyAF(activation_functions[0], current_layer, queue);
+    af::applyAF(activation_functions[0], current_layer, queue);
     auto afunc = af::getAFFromType(activation_functions[0]).first;
     layers_af[1] = math::clFMatrix(current_layer, queue, false);
 
@@ -106,7 +90,7 @@ namespace nnet {
       layers[k + 1] = math::clFMatrix(current_layer, queue, false);
 
       // Apply activation function on every element of the matrix
-      applyAF(activation_functions[k], current_layer, queue);
+      af::applyAF(activation_functions[k], current_layer, queue);
       layers_af[k + 1] = math::clFMatrix(current_layer, queue, false);
     }
   }
@@ -123,7 +107,7 @@ namespace nnet {
       storage.setIndex(i);
 
       math::clFMatrix derivative(layers[i + 1], queue);
-      applyDerivativeAF(activation_functions[i], derivative, queue);
+      af::applyDerivativeAF(activation_functions[i], derivative, queue);
 
       derivative.iphadamard(storage.getError(), queue);
 

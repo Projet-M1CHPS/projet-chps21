@@ -3,18 +3,6 @@
 
 namespace nnet {
 
-  // TODO : Bouger ca c est horrible
-  namespace {
-    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat,
-                 cl::CommandQueue &queue) {
-      if (type == af::ActivationFunctionType::identity) return;
-      auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
-      afunc.setArg(0, mat.getBuffer());
-      queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
-    }
-  }   // namespace
-
-
   CNNLayer::CNNLayer(const std::pair<size_t, size_t> output, const size_t stride) : outputSize(output), stride(stride) {}
 
 

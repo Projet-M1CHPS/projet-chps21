@@ -5,26 +5,6 @@ using namespace math;
 
 namespace nnet {
 
-  namespace {
-    void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue) {
-      if (type == af::ActivationFunctionType::identity) return;
-      auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
-      afunc.setArg(0, mat.getBuffer());
-      queue.enqueueNDRangeKernel(afunc, cl::NullRange, cl::NDRange(mat.getRows(), mat.getCols()),
-                                 cl::NullRange);
-    }
-
-    void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
-                           cl::CommandQueue &queue) {
-      if (type == af::ActivationFunctionType::identity) return;
-      auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).second;
-      afunc.setArg(0, mat.getBuffer());
-      queue.enqueueNDRangeKernel(afunc, cl::NullRange, cl::NDRange(mat.getRows(), mat.getCols()),
-                                 cl::NullRange);
-    }
-  }   // namespace
-
-
   MLPStochOptimizer::MLPStochOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm)
       : MLPOptimizer(model, std::move(tm)) {
     auto &perceptron = model.getPerceptron();
@@ -88,7 +68,7 @@ namespace nnet {
     layers[1] = clFMatrix(current_layer, queue, false);
 
     // Apply the activation function
-    applyAF(activation_functions[0], current_layer, queue);
+    af::applyAF(activation_functions[0], current_layer, queue);
     // Store the matrix after the activation function
     layers_af[1] = clFMatrix(current_layer, queue, false);
 
@@ -100,7 +80,7 @@ namespace nnet {
       // Store the matrix before the activation function
       layers[k + 1] = clFMatrix(current_layer, queue, false);
 
-      applyAF(activation_functions[k], current_layer, queue);
+      af::applyAF(activation_functions[k], current_layer, queue);
       // Store the matrix after the activation function
       layers_af[k + 1] = clFMatrix(current_layer, queue, false);
     }
@@ -115,7 +95,7 @@ namespace nnet {
       storage.setIndex(i);
 
       math::clFMatrix derivative(layers[i + 1], queue, false);
-      applyDerivativeAF(activation_functions[i], derivative, queue);
+      af::applyDerivativeAF(activation_functions[i], derivative, queue);
 
       derivative.iphadamard(storage.getError(), queue);
 
