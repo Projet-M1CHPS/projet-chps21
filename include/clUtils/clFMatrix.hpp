@@ -26,14 +26,6 @@ namespace math {
      */
     clFMatrix() = default;
 
-
-    /**
-     * @brief Copy another matrix using the default queue, and block until the copy is done.
-     * @param other The matrix to copy
-     * @return The matrix itself after the copy
-     */
-    clFMatrix &operator=(const clFMatrix &other);
-
     /**
      * @brief Convert a FloatMatrix to a clFMatrix, using the default queue, and block until the
      * copy is done.
@@ -98,21 +90,10 @@ namespace math {
         : clFMatrix(matrix, utils::cl_wrapper.getDefaultQueue(), blocking) {}
 
 
-    /**
-     * @brief Copies a matrix on the device
-     * @param other The matrix to copy
-     * @param queue The queue to use for the copy operation
-     * @param blocking True if the operation is blocking, false otherwise
-     */
-    clFMatrix(const clFMatrix &other, cl::CommandQueue &queue, bool blocking = true);
-
-    /**
-     * @brief Copies a matrix on the device, using the default queue
-     * @param other The matrix to copy
-     * @param blocking True if the operation is blocking, false otherwise
-     */
-    clFMatrix(const clFMatrix &other, bool blocking = true)
-        : clFMatrix(other, utils::cl_wrapper.getDefaultQueue(), blocking) {}
+    clFMatrix &copy(const clFMatrix &other, cl::CommandQueue &queue, bool blocking);
+    clFMatrix &copy(const clFMatrix &other, bool blocking) {
+      return copy(other, utils::cl_wrapper.getDefaultQueue(), blocking);
+    }
 
     /**
      * @brief Creates a new matrix from an existing OpenCL buffer

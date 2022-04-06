@@ -35,18 +35,13 @@ namespace control {
     std::unique_lock<std::shared_mutex> lock2(mutex);
 
     tensors = std::move(other.tensors);
-    ids = std::move(other.ids);
-    class_ids = std::move(other.class_ids);
-    size = other.size;
+    samples = std::move(other.samples);
     class_names = std::move(other.class_names);
-
-    other.size = 0;
-
     return *this;
   }
 
   void InputSet::append(math::clFTensor &&tensor, const std::vector<size_t> &new_ids,
-                        const std::vector<long> &class_id) {
+                        const std::vector<long> &class_ids) {
     std::scoped_lock lock(mutex);
 
     // Each sample must have its own id
@@ -60,50 +55,19 @@ namespace control {
               "InputSet::append: tensor must have same size as input_width and input_height");
     }
 
-    ids.insert(ids.end(), new_ids.begin(), new_ids.end());
-
-    // Class ids are optional, and are set to -1 if not provided
-    if (class_id.size() == new_ids.size()) {
-      class_ids.insert(class_ids.end(), class_id.begin(), class_id.end());
-    } else if (class_id.empty()) {
-      class_ids.insert(class_ids.end(), new_ids.size(), -1);
-    } else {
-      throw std::runtime_error("InputSet::append: class_id.size() != new_ids.size()");
+    for (size_t i = 0; i < new_ids.size(); i++) {
+      long class_id = -1;
+      if (class_ids.size() == new_ids.size()) class_id = class_ids[i];
+      samples.emplace_back(new_ids[i], class_id, tensor.getMatrix(i));
     }
-
-    size += tensor.getZ();
     tensors.push_back(std::move(tensor));
-  }
-
-  Sample InputSet::operator[](size_t index) {
-    std::shared_lock<std::shared_mutex> lock(mutex);
-    if (index > size) throw std::out_of_range("Sample index out of range");
-
-    size_t tensor_index = index;
-    size_t local_index = index;
-
-    // Since the tensors may not be of the same size, we need to iterate through them to find the
-    // right one
-    for (size_t i = 0; i < tensors.size(); i++) {
-      // If the tensors contains the sample, break
-      if (local_index < tensors[i].getZ()) {
-        tensor_index = i;
-        break;
-      }
-      // Otherwise, update the local index
-      // And move to the next tensor
-      local_index -= tensors[i].getZ();
-    }
-    // Fetch the matrix from the tensor
-    auto matrix = tensors[tensor_index].getMatrix(local_index);
-    // Fetch the sample id/class_id using the index, and return the matrix
-    return {ids[index], class_ids[index], std::move(matrix)};
   }
 
   void InputSet::alterTensors(size_t new_tensor_size) {
     std::scoped_lock lock(mutex);
 
     std::vector<math::clFTensor> new_tensors;
+    size_t size = samples.size();
     size_t new_tensor_count = size / new_tensor_size;
     size_t new_tensor_remainder = size % new_tensor_size;
 
@@ -142,31 +106,47 @@ namespace control {
       if (i < start) { first_global_index += tensors[i].getZ(); }
       last_global_index += tensors[i].getZ();
     }
-    // Erase the ids and class ids using the computed global indices
-    ids.erase(ids.begin() + first_global_index, ids.begin() + last_global_index);
-    class_ids.erase(class_ids.begin() + first_global_index, class_ids.begin() + last_global_index);
-
+    samples.erase(samples.begin() + first_global_index, samples.begin() + last_global_index);
     // Remove the tensors from the vector
     tensors.erase(tensors.begin() + start, tensors.begin() + end);
   }
 
   void InputSet::shuffle(size_t random_seed) {
     std::scoped_lock lock(mutex);
-    // Shuffle each vectors with the same seed to maintain the same order
-    std::mt19937 generator(random_seed);
-    auto gen2 = generator;
-    auto gen3 = generator;
 
-    std::shuffle(ids.begin(), ids.end(), generator);
-    std::shuffle(class_ids.begin(), class_ids.end(), gen2);
-    std::shuffle(tensors.begin(), tensors.end(), gen3);
+    // Since we need to shuffle not only the tensors, but their content
+    // The easiest way is to recreate a new input set and move copy the samples
+    std::mt19937 generator(random_seed);
+    // We shuffle the samples
+    std::shuffle(samples.begin(), samples.end(), generator);
+
+    InputSet buffer(input_width, input_height);
+
+    // We re-create the input set, using the exact same tensors size, but filling them with the
+    // shuffled samples
+    size_t sample_index = 0;
+    cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
+    for (const auto &tensor : tensors) {
+      size_t tensor_size = tensor.getZ();
+      math::clFTensor buffer_tensor(input_width, input_height, tensor_size);
+
+      std::vector<size_t> new_ids(tensor_size);
+      std::vector<long> class_ids(tensor_size);
+
+      for (auto &matrix : buffer_tensor.getMatrices()) {
+        matrix.copy(samples[sample_index].getData(), queue, false);
+
+        new_ids[sample_index] = samples[sample_index].getId();
+        class_ids[sample_index] = samples[sample_index].getClass();
+        sample_index++;
+      }
+      buffer.append(std::move(buffer_tensor), new_ids, class_ids);
+    }
+    queue.finish();
+    // We now delete the old set and move copy the new one
+    *this = std::move(buffer);
   }
 
 
   void InputSet::shuffle() { shuffle(std::random_device{}()); }
-
-  InputSetIterator InputSet::begin() { return InputSetIterator(*this, 0); }
-
-  InputSetIterator InputSet::end() { return InputSetIterator(*this, size); }
-
 }   // namespace control
