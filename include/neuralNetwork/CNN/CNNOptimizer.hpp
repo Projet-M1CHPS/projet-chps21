@@ -32,11 +32,6 @@ namespace nnet {
   public:
     CNN *nn_cnn;
     MLPerceptron *nn_mlp;
-
-    FloatMatrix flatten;
-
-    // TODO: Move inside the layer ?
-    std::vector<std::vector<std::shared_ptr<CNNStorageBP>>> storage;
   };
 
   class CNNStochOptimizer final : public CNNOptimizer {
@@ -59,14 +54,11 @@ namespace nnet {
     }
 
   private:
-    // TODO : Use clFMatrix
-    void forward(math::FloatMatrix const &input);
-
-    // TODO : Use clFMatrix
-    void backward(math::FloatMatrix const &target, math::FloatMatrix const &errorFlatten);
+    clFMatrix forward(const clFMatrix &input);
+    void backward(const clFMatrix &target, const clFMatrix &errorFlatten);
 
     MLPStochOptimizer mlp_opti;
   };
 
 
-}   // namespace cnnet
+}   // namespace nnet

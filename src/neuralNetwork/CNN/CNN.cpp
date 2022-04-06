@@ -24,12 +24,9 @@ namespace nnet {
 
 
   void CNN::predict(math::clFMatrix const &input, math::clFMatrix &output) {
-    // TODO : Implement this
-
-    std::vector<clFMatrix> output_tensor(topology.getDepth());
-
     if (not tree.getRoot()) { throw std::runtime_error("Root node is not set"); }
 
+    std::vector<clFMatrix> output_tensor(topology.getDepth());
     std::stack<CNNNode *> stack;
 
     output_tensor[0] = tree.getRoot()->getLayer()->compute(input);
