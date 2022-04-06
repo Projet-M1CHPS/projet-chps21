@@ -16,7 +16,7 @@ namespace nnet {
 
   void MomentumOptimization::optimize(BackpropStorage &storage, cl::CommandQueue &queue) {
     auto buf = storage.getGradient().scale(lr, queue);
-    buf.ipadd(1.0f, old_weight_change[storage.getIndex()], queue);
+    buf.ipadd(momentum, old_weight_change[storage.getIndex()], queue);
 
     storage.getWeights().ipsub(1.0f, buf, queue);
     old_weight_change[storage.getIndex()] = std::move(buf);

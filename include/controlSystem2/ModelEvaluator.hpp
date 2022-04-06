@@ -17,17 +17,21 @@ namespace control {
     ModelEvaluation() : avg_precision(0), avg_f1score(0), avg_recall(0) {}
 
 
-    ModelEvaluation(double avg_accuracy, std::vector<double> accuracy, double avg_recall,
-                    std::vector<double> recall, double avg_f1score, std::vector<double> f1score);
+    ModelEvaluation(double avg_precision, std::vector<double> precision, double avg_recall,
+                    std::vector<double> recall, double avg_f1score, std::vector<double> f1score)
+        : avg_precision(avg_precision), precision(std::move(precision)), avg_recall(avg_recall),
+          recall(std::move(recall)), avg_f1score(avg_f1score), f1score(std::move(f1score)) {}
 
-    double getAvgPrecision() const;
-    const std::vector<double> &getPrecision() const;
+    double getAvgPrecision() const { return avg_precision; }
+    const std::vector<double> &getPrecision() const { return precision; }
 
-    double getAvgRecall() const;
-    const std::vector<double> &getRecall() const;
+    double getAvgRecall() const { return avg_recall; }
 
-    double getAvgF1score() const;
-    const std::vector<double> &getF1score() const;
+    const std::vector<double> &getRecall() const { return recall; }
+
+    double getAvgF1score() const { return avg_f1score; }
+
+    const std::vector<double> &getF1score() const { return f1score; }
 
 
   private:
@@ -53,8 +57,7 @@ namespace control {
      * @param max_parallel_jobs The maximum number of parallel jobs to run for the evaluation
      * @return
      */
-    virtual ModelEvaluation evaluate(const nnet::Model &model, const InputSet &input_set,
-                                     size_t max_parallel_jobs) const;
+    virtual ModelEvaluation evaluate(const nnet::Model &model, const InputSet &input_set) const;
   };
 
   /**
@@ -68,7 +71,7 @@ namespace control {
      */
     explicit ModelEvaluatorDecorator(std::shared_ptr<ModelEvaluator> parent)
         : parent(std::move(parent)) {
-      if (not parent) { throw std::invalid_argument("Decorator created with null parent"); }
+      if (not this->parent) { throw std::invalid_argument("ModelEvaluatorDecorator: Decorator created with null parent"); }
     }
 
   protected:
@@ -87,7 +90,7 @@ namespace control {
      * @param output_path The path to save the evolution to
      */
     ModelEvolutionTracker(std::shared_ptr<ModelEvaluator> parent,
-                          const std::filesystem::path &output_path);
+                          std::filesystem::path output_path);
 
     /**
      * @brief Evaluate a model on an input set, and return the evaluation
@@ -96,8 +99,7 @@ namespace control {
      * @param max_parallel_jobs The maximum number of parallel jobs to run for the evaluation
      * @return
      */
-    ModelEvaluation evaluate(const nnet::Model &model, const InputSet &input_set,
-                             size_t max_parallel_jobs) const override;
+    ModelEvaluation evaluate(const nnet::Model &model, const InputSet &input_set) const override;
 
   private:
     std::filesystem::path output_path;
@@ -110,8 +112,7 @@ namespace control {
   public:
     ModelVerboseEvaluator(std::shared_ptr<ModelEvaluator> parent);
 
-    ModelEvaluation evaluate(const nnet::Model &model, const InputSet &input_set,
-                             size_t max_parallel_jobs) const override;
+    ModelEvaluation evaluate(const nnet::Model &model, const InputSet &input_set) const override;
   };
 
 }   // namespace control

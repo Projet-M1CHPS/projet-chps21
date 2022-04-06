@@ -35,7 +35,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   constexpr int kImageSize = 32;
   // Ensure this is the same size as the batch size
-  constexpr int kTensorSize = 256;
+  constexpr int kTensorSize = 1;
 
   tscl::logger("Loading dataset", tscl::Log::Debug);
   TrainingCollectionLoader loader(kTensorSize, kImageSize, kImageSize);
@@ -58,17 +58,17 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
 
   // Create a correctly-sized topology
-  nnet::MLPTopology topology = {kImageSize * kImageSize, 64, 64, 32, 16};
+  nnet::MLPTopology topology = {kImageSize * kImageSize, 128, 64, 64};
   topology.pushBack(training_collection.getClassCount());
 
   auto model = nnet::MLPModel::randomReluSigmoid(topology);
 
-  auto optimizer = nnet::MLPBatchOptimizer::make<nnet::SGDOptimization>(*model, 0.03);
+  auto optimizer = nnet::MLPStochOptimizer::make<nnet::MomentumOptimization>(*model, 0.001, 0.7);
   // auto optimizer = nnet::MLPBatchOptimizer::make<nnet::SGDOptimization>(*model, 0.03);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
   // EvalController controller(output_path, model.get(), &training_collection.getEvaluationSet());
-  TrainingController controller(output_path, *model, *optimizer, training_collection);
+  TrainingController controller(output_path, *model, *optimizer, training_collection, 100);
   ControllerResult res = controller.run();
 
   if (not res) {

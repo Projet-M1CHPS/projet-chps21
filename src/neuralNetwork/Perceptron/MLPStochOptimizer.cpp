@@ -26,7 +26,6 @@ namespace nnet {
     auto &weights = this->neural_network->getWeights();
     auto &topology = this->neural_network->getTopology();
 
-    // cl::CommandQueue queue(wrapper->getContext(), wrapper->getDefaultDevice());
     auto &queue = utils::cl_wrapper.getDefaultQueue();
     forward(input, queue);
     storage.getError() = layers_af[layers_af.size() - 1].sub(1.0f, target, queue);
@@ -46,7 +45,11 @@ namespace nnet {
     for (size_t i = 0; i < inputs.size(); ++i) {
       auto tensor = inputs[i].flatten();
       auto target = targets[i].flatten();
-      for (size_t j = 0; j < inputs[i].getZ(); ++j) {
+      for (size_t j = 0; j < tensor.getZ(); j++) {
+        auto fmatrix = tensor.getMatrix(j).toFloatMatrix();
+        //std::cout << "Input: " << fmatrix << std::endl;
+        auto ftarget = target.getMatrix(j).toFloatMatrix();
+        //std::cout << "Target: " << ftarget << std::endl;
         optimize(tensor.getMatrix(j), target.getMatrix(j));
       }
     }

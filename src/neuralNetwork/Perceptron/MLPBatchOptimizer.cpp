@@ -49,8 +49,6 @@ namespace nnet {
       }
     }
 
-    queue.finish();
-
     for (auto &it : avg_gradients) { it.ipscale(((float) 1.0 / static_cast<float>(n)), queue); }
 
     for (long i = neural_network->getWeights().size() - 1; i >= 0; i--) {
