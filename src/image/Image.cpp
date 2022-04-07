@@ -162,6 +162,26 @@ namespace image {
                    image.getWidth());
   }
 
+
+  void ImageSerializer::save(std::string const &filename, const math::clFMatrix &matrix,
+                             float rescale) {
+    ImageSerializer::save(filename, matrix.toFloatMatrix(), rescale);
+  }
+
+  void ImageSerializer::save(std::string const &filename, const math::FloatMatrix &image,
+                             float rescale) {
+    size_t width = image.getRows();
+    size_t height = image.getCols();
+    std::unique_ptr<grayscale_t[]> ptr = std::make_unique<grayscale_t[]>(width * height);
+
+    for (size_t i = 0; i < width * height; i++) {
+      ptr[i] = (grayscale_t) (image.getData()[i] * rescale);
+    }
+    GrayscaleImage res(width, height, std::move(ptr));
+    ImageSerializer::save(filename, res);
+  }
+
+
   std::vector<image::GrayscaleImage>
   ImageSerializer::loadDirectory(fs::path const &directory_path) {
     std::vector<image::GrayscaleImage> img_list;
