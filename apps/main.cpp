@@ -81,6 +81,55 @@ bool createAndTrain(std::filesystem::path const &input_path,
   return true;
 }
 
+void rawTransformation(std::string &input_path, std::string &output_path) {
+  // Make input_path and output_path absolute
+  input_path = std::filesystem::absolute(input_path);
+  output_path = std::filesystem::absolute(output_path);
+
+  if (not std::filesystem::is_directory(input_path)) {
+    tscl::logger("Skipping " + input_path + ", not a folder.", tscl::Log::Error);
+    return;
+  } else {
+    tscl::logger("Processing " + input_path, tscl::Log::Debug);
+    tscl::logger("Output path: " + output_path, tscl::Log::Debug);
+  }
+
+#pragma omp parallel for
+  for (auto &entry : std::filesystem::directory_iterator(input_path)) {
+    // Get the file name
+    std::string file_name = entry.path().filename().string();
+    // If it's not a directory
+    if (not std::filesystem::is_directory(entry.path())) {
+      // Get the extension
+      std::string extension = entry.path().extension().string();
+      // If it's a jpg
+      if (extension == ".jpg" || extension == ".jpeg" || extension == ".png") {
+        // Load the image
+        auto image = image::ImageSerializer::load(entry.path().string());
+
+        // Transformations
+        image::transform::Resize resize(32, 32);
+        resize.transform(image);
+
+        image::transform::Inversion inversion;
+        inversion.transform(image);
+
+        // Create a new file name
+        std::string new_file_name = file_name.substr(0, file_name.size() - 4) + ".png";
+        // Create the new file path
+        std::string new_file_path = output_path + "/" + new_file_name;
+        // Save the image
+        tscl::logger("Saving " + new_file_path, tscl::Log::Trace);
+        image::ImageSerializer::save(new_file_path, image);
+      }
+    } else {
+      tscl::logger("Skipping " + entry.path().string() + ", is a directory.", tscl::Log::Debug);
+      auto sub_input_path = entry.path().string();
+      rawTransformation(sub_input_path, output_path);
+    }
+  }
+}
+
 int main(int argc, char **argv) {
   Version::setCurrent(Version(VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TWEAK));
   setupLogger();
@@ -90,6 +139,12 @@ int main(int argc, char **argv) {
     tscl::logger("Usage: " + std::string(argv[0]) + " <input_path> (<output_path>)",
                  tscl::Log::Information);
     return 1;
+  } else if (argc >= 3) {
+    tscl::logger("Using output path: " + std::string(argv[2]), tscl::Log::Information);
+    std::string input_path = argv[1];
+    std::string output_path = argv[2];
+    rawTransformation(input_path, output_path);
+    return 0;
   }
 
   tscl::logger("Initializing OpenCL...", tscl::Log::Debug);
