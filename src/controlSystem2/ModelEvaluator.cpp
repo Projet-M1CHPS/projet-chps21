@@ -1,4 +1,5 @@
 #include "ModelEvaluator.hpp"
+#include "image/Image.hpp"
 
 #include <utility>
 
@@ -14,7 +15,6 @@ namespace control {
       long true_class = input.getClass();
       auto buf = model.predict(input.getData());
       auto fbuf = buf.toFloatMatrix();
-      std::cout << "Predicted: " << fbuf << std::endl;
       long predicted_class =
               std::distance(fbuf.begin(), std::max_element(fbuf.begin(), fbuf.end()));
       // size_t predicted_class = buf.imax();

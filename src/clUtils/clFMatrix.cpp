@@ -62,7 +62,6 @@ namespace math {
 
     // We need to return if the size is 0 else OpenCL will throw
     if (size() != 0) {
-      data = cl::Buffer(CL_MEM_READ_WRITE, rows * cols * sizeof(float));
       cl::Event evt;
       queue.enqueueCopyBuffer(other.data, data, other.offset * sizeof(float),
                               offset * sizeof(float), rows * cols * sizeof(float), nullptr, &evt);
@@ -87,6 +86,7 @@ namespace math {
     res.data = data;
     res.rows = rows * cols;
     res.cols = 1;
+    res.offset = offset;
     return res;
   }
 

@@ -1,4 +1,5 @@
 #include "MLPStochOptimizer.hpp"
+#include "image/Image.hpp"
 
 using namespace utils;
 using namespace math;
@@ -46,12 +47,9 @@ namespace nnet {
       auto tensor = inputs[i].flatten();
       auto target = targets[i].flatten();
       for (size_t j = 0; j < tensor.getZ(); j++) {
-        auto fmatrix = tensor.getMatrix(j).toFloatMatrix();
-        //std::cout << "Input: " << fmatrix << std::endl;
-        auto ftarget = target.getMatrix(j).toFloatMatrix();
-        //std::cout << "Target: " << ftarget << std::endl;
-        optimize(tensor.getMatrix(j), target.getMatrix(j));
+        optimize(tensor.getMatrix(j).flatten(), target.getMatrix(j).flatten());
       }
+      // exit(1);
     }
     utils::cl_wrapper.getDefaultQueue().finish();
   }

@@ -52,6 +52,7 @@ namespace math {
       copy.y_dim = y_dim;
       copy.z_dim = z_dim;
       copy.data = data;
+      copy.offset = offset;
       return copy;
     }
 
@@ -71,9 +72,7 @@ namespace math {
         parts.push_back(shallowCopy());
         parts.back().z_dim = z_dim_part;
         parts.back().offset = local_offset;
-        if (i < z_dim_remainder) {
-          parts.back().z_dim++;
-        }
+        if (i < z_dim_remainder) { parts.back().z_dim++; }
         local_offset += parts.back().z_dim;
       }
       return parts;
