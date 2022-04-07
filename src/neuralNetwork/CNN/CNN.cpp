@@ -16,6 +16,8 @@ namespace nnet {
   void CNN::setTopology(CNNTopology const &cnn_topology) {
     tree.build(cnn_topology);
 
+    layers = topology.convertToLayer();
+
     this->topology = cnn_topology;
   }
 
@@ -23,40 +25,17 @@ namespace nnet {
   void CNN::randomizeWeight() { assert(false && "Not implemented"); }
 
 
-  void CNN::predict(math::clFMatrix const &input, math::clFMatrix &output) {
-    if (not tree.getRoot()) { throw std::runtime_error("Root node is not set"); }
+  void CNN::predict(clFTensor const &input, clFTensor &output) {
+    if (layers.empty()) { throw std::runtime_error("no layer in cnn"); }
 
-    std::vector<clFMatrix> output_tensor(topology.getDepth());
-    std::stack<CNNNode *> stack;
+    clFTensor output_tensor;
 
-    output_tensor[0] = tree.getRoot()->getLayer()->compute(input);
-    for (auto &i : tree.getRoot()->getChildren()) { stack.push(&i); }
+    output_tensor = tree.getRoot()->getLayer()->compute(input);
+    for (auto &layer : layers) { output_tensor = layer->compute(output_tensor); }
 
-    while (not stack.empty()) {
-      CNNNode *node = stack.top();
-      stack.pop();
-
-      // TODO : recuperer le node->getLocalId() eme element du future tensor
-      std::cout << "call" << std::endl;
-      output_tensor[node->getGlobalId()] = node->getLayer()->compute(output_tensor[node->getFather()->getGlobalId()]);
-      for (auto &i : node->getChildren()) { stack.push(&i); }
-    }
     utils::cl_wrapper.getDefaultQueue().finish();
 
-
-    // TODO : Remove this
-    FloatMatrix tmp_out = output.toFloatMatrix(true);
-    size_t index = 0;
-    for(auto &leave : tree.getLeaves())
-    {
-      FloatMatrix tmp = output_tensor[leave->getGlobalId()].toFloatMatrix(true);
-      for (auto &val : tmp) {
-        tmp_out(index, 0) = val;
-        index++;
-      }
-    }
-    std::cout << tree << std::endl;
-    output = tmp_out;
+    output = clFTensor(output_tensor);
   }
 
 }   // namespace nnet

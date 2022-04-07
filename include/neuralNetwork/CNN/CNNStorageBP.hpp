@@ -2,6 +2,7 @@
 
 
 #include "Matrix.hpp"
+#include "clUtils/clFTensor.hpp"
 #include <utility>
 
 
@@ -15,8 +16,8 @@ namespace nnet {
     ~CNNStorageBP() = default;
 
     // protected:
-    FloatMatrix errorInput;
-    FloatMatrix output;
+    clFTensor errorInput;
+    clFTensor output;
   };
 
   class CNNStorageBPConvolution final : public CNNStorageBP {
@@ -27,9 +28,7 @@ namespace nnet {
     ~CNNStorageBPConvolution() = default;
 
     // private:
-    FloatMatrix errorFilter;
-    FloatMatrix dilated4Input;
-    FloatMatrix dilated4Filter;
+    clFTensor errorFilter;
   };
 
   class CNNStorageBPPooling : public CNNStorageBP {
@@ -46,7 +45,7 @@ namespace nnet {
     ~CNNStorageBPMaxPooling() = default;
 
     // private:
-    Matrix<std::pair<size_t, size_t>> maxIndex;
+    //Matrix<std::pair<size_t, size_t>> maxIndex;
   };
 
   class CNNStorageBPAvgPooling final : public CNNStorageBPPooling {

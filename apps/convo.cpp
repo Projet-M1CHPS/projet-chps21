@@ -87,7 +87,7 @@ void testConvo() {
 
 
 void testConvolutionalLayer() {
-  nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, af::ActivationFunctionType::relu, 1, 0);
+  /*nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, af::ActivationFunctionType::relu, 1, 0);
 
   auto &filter = layer.getFilter();
   std::cout << "filter : \n" << filter.getMatrix() << std::endl;
@@ -138,7 +138,7 @@ void testConvolutionalLayer() {
   clFMatrix output = layer.compute(_input);
 
   math::FloatMatrix tmp_output = output.toFloatMatrix(true);
-  std::cout << "output : \n" << tmp_output << std::endl;
+  std::cout << "output : \n" << tmp_output << std::endl;*/
 
   /* input
    * 1 2 1 1 4 1
@@ -185,7 +185,7 @@ void testConvolutionalLayer() {
 }
 
 void testMaxPoolingLayer() {
-  nnet::CNNMaxPoolingLayer layer({4, 4}, {3, 3}, 1);
+  /*nnet::CNNMaxPoolingLayer layer({4, 4}, {3, 3}, 1);
 
   math::FloatMatrix input(6, 6);
   {
@@ -233,7 +233,7 @@ void testMaxPoolingLayer() {
   clFMatrix output = layer.compute(_input);
 
   math::FloatMatrix tmp_output = output.toFloatMatrix(true);
-  std::cout << "output : \n" << tmp_output << std::endl;
+  std::cout << "output : \n" << tmp_output << std::endl;*/
 
   /* input
    * 1 2 1 1 4 1
@@ -315,10 +315,10 @@ void testAvgPoolingLayer() {
 
   clFMatrix _input(input, true);
 
-  clFMatrix output = layer.compute(_input);
+  //clFMatrix output = layer.compute(_input);
 
-  math::FloatMatrix tmp_output = output.toFloatMatrix(true);
-  std::cout << "output : \n" << tmp_output << std::endl;
+  //math::FloatMatrix tmp_output = output.toFloatMatrix(true);
+  //std::cout << "output : \n" << tmp_output << std::endl;
 
   /* input
    * 1 2 1 1 4 1
@@ -354,7 +354,8 @@ void testAvgPoolingLayer() {
 }
 
 void testPredictionOneBranch() {
-  std::string str_topo("6 6 relu convolution 1 2 2 1 0 pooling max 2 2 1");
+  //std::string str_topo("6 6 relu convolution 1 2 2 1 0 pooling max 2 2 1");
+  std::string str_topo("6 6 relu convolution 2 2 2 1 0 convolution 2 2 2 1 0 pooling max 2 2 1");
   auto topo = nnet::stringToTopology(str_topo);
   std::cout << topo << std::endl;
 
@@ -405,10 +406,10 @@ void testPredictionOneBranch() {
   std::cout << input << std::endl;
 
   math::clFMatrix tmp_input(input);
-  cnn.predict(tmp_input, output);
+  /*cnn.predict(tmp_input, output);
 
   math::FloatMatrix tmp_output = output.toFloatMatrix(true);
-  std::cout << "output :\n" << tmp_output << std::endl;
+  std::cout << "output :\n" << tmp_output << std::endl;*/
 
   /* input
    * 1 2 1 1 4 1

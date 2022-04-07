@@ -11,6 +11,8 @@
 
 namespace nnet {
 
+  using namespace math;
+
   class CNN {
   public:
     CNN() = default;
@@ -30,12 +32,13 @@ namespace nnet {
 
     void randomizeWeight();
 
-    void predict(math::clFMatrix const &input, math::clFMatrix &output);
+    void predict(clFTensor const &input, clFTensor &output);
 
   private:
     CNNTopology topology;
-
     CNNDependencyTree tree;
+
+    std::vector<std::shared_ptr<CNNLayer>> layers;
   };
 
 }   // namespace cnnet
