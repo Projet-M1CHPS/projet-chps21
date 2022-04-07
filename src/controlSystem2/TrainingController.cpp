@@ -19,8 +19,6 @@ namespace control {
           math::FloatMatrix mat(nclass, 1);
           mat.fill(0.0f);
           mat(input_set.getClassOf(sample_index), 0) = 1.0f;
-          std::cout << "Class: " << input_set.getClassOf(sample_index) << std::endl;
-          std::cout << mat << std::endl;
           buf.getMatrix(j) = mat;
           sample_index++;
         }

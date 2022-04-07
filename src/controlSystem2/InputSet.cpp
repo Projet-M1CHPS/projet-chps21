@@ -61,10 +61,6 @@ namespace control {
       long class_id = -1;
       if (class_ids.size() == new_ids.size()) class_id = class_ids[i];
       auto buffer = tensor.getMatrix(i).toFloatMatrix();
-      std::unique_ptr<image::grayscale_t[]> buffer_ptr(new image::grayscale_t[buffer.getSize()]);
-      for (size_t j = 0; j < buffer.getSize(); j++) { buffer_ptr[j] = buffer.getData()[j]; }
-      image::GrayscaleImage image(buffer.getRows(), buffer.getCols(), std::move(buffer_ptr));
-      image::ImageSerializer::save("loaded_images/" + std::to_string(new_ids[i]) + ".png", image);
       samples.emplace_back(new_ids[i], class_id, tensor.getMatrix(i));
     }
     tensors.push_back(std::move(tensor));

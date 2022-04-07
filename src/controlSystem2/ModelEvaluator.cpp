@@ -14,14 +14,11 @@ namespace control {
     for (auto &input : input_set) {
       long true_class = input.getClass();
       auto buf = model.predict(input.getData());
-      auto fbuf = buf.toFloatMatrix();
-      long predicted_class =
-              std::distance(fbuf.begin(), std::max_element(fbuf.begin(), fbuf.end()));
-      // size_t predicted_class = buf.imax();
+      long predicted_class = buf.imax();
 
       confusion_matrix(predicted_class, true_class)++;
     }
-    std::cout << confusion_matrix << std::endl << std::endl;
+
 
     double avg_precision = 0, avg_recall = 0, avg_f1 = 0;
     std::vector<double> precisions(input_set.getClassCount()), recalls(input_set.getClassCount()),

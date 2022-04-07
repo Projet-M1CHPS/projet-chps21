@@ -65,8 +65,7 @@ namespace control {
 
       // Create an out-of-order queue to transform the images in parallel
       cl::CommandQueue queue =
-              cl::CommandQueue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice(),
-                               CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE);
+              cl::CommandQueue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
 
       // Fetch the normalizing kernel
       // This kernel convert a char array to a float array, and scale every element by a given
