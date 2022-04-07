@@ -13,7 +13,7 @@ namespace control {
     size_t count = 0;
 
     // Temporary implementation that treat each matrix individually and not tensor-wise
-    for (auto it : *input_set) {
+    for (auto& it : *input_set) {
       auto res = model->predict(it.getData());
       auto class_id = res.imax();
       (*input_set)[count].setClass(class_id);

@@ -1,4 +1,5 @@
 #include "TrainingController.hpp"
+#include "ModelEvaluator.hpp"
 #include <chrono>
 
 namespace chrono = std::chrono;
@@ -21,7 +22,7 @@ namespace control {
           buf.getMatrix(j) = mat;
           sample_index++;
         }
-        res.push_back(buf);
+        res.push_back(std::move(buf));
       }
       return res;
     }
@@ -50,23 +51,19 @@ namespace control {
 
     std::vector<math::clFTensor> targets = setupTargets(training_set);
 
-    /*
-    ModelEvaluator stats_evaluator(*model, eval_set, is_outputting_stats);
 
-    std::future<ModelEvaluation> evaluation_future =
-            std::async(std::launch::async, []() { return stats_evaluator.evaluate(); });*/
+    std::shared_ptr<ModelEvaluator> evaluator = std::make_shared<ModelEvaluator>();
+    evaluator = std::make_shared<ModelVerboseEvaluator>(evaluator);
 
     for (size_t curr_epoch = 0; curr_epoch < max_epoch; curr_epoch++) {
       auto epoch_duration = runEpoch(*optimizer, training_set, targets);
 
-      // printEvaluation(evaluation_future.get());
-      //  Async evaluation to avoid downtime
       tscl::logger("Epoch took " + std::to_string(epoch_duration.count()) + "ms",
                    tscl::Log::Information);
-      /*evaluation_future =
-              std::async(std::launch::async, []() { return stats_evaluator.evaluate(); });*/
+
+      //  Async evaluation to avoid downtime
+      ModelEvaluation evaluation = evaluator->evaluate(*model, eval_set);
     }
-    // printEvaluation(evaluation_future.get());
 
     return {0, "Training completed"};
   }

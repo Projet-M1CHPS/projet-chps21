@@ -1,4 +1,5 @@
 #include "MLPStochOptimizer.hpp"
+#include "image/Image.hpp"
 
 using namespace utils;
 using namespace math;
@@ -26,12 +27,14 @@ namespace nnet {
     auto &weights = this->neural_network->getWeights();
     auto &topology = this->neural_network->getTopology();
 
-    // cl::CommandQueue queue(wrapper->getContext(), wrapper->getDefaultDevice());
     auto &queue = utils::cl_wrapper.getDefaultQueue();
     forward(input, queue);
     storage.getError() = layers_af[layers_af.size() - 1].sub(1.0f, target, queue);
     backward(target, queue);
-    return {storage.getError()};
+
+    clFMatrix res;
+    res.copy(storage.getError(), queue, false);
+    return res;
   }
 
   void MLPStochOptimizer::optimize(const std::vector<math::clFTensor> &inputs,
@@ -43,9 +46,10 @@ namespace nnet {
     for (size_t i = 0; i < inputs.size(); ++i) {
       auto tensor = inputs[i].flatten();
       auto target = targets[i].flatten();
-      for (size_t j = 0; j < inputs[i].getZ(); ++j) {
-        optimize(tensor.getMatrix(j), target.getMatrix(j));
+      for (size_t j = 0; j < tensor.getZ(); j++) {
+        optimize(tensor.getMatrix(j).flatten(), target.getMatrix(j).flatten());
       }
+      // exit(1);
     }
     utils::cl_wrapper.getDefaultQueue().finish();
   }
@@ -56,8 +60,8 @@ namespace nnet {
     auto &biases = this->neural_network->getBiases();
     auto &activation_functions = this->neural_network->getActivationFunctions();
 
-    layers[0] = clFMatrix(inputs, queue, false);
-    layers_af[0] = clFMatrix(inputs, queue, false);
+    layers[0].copy(inputs, queue, false);
+    layers_af[0].copy(inputs, queue, false);
 
     if (weights.empty()) return;
 
@@ -65,12 +69,12 @@ namespace nnet {
             clFMatrix::gemm(1.0f, false, weights[0], false, inputs, 1.0f, biases[0], queue);
 
     // Store the matrix before the activation function
-    layers[1] = clFMatrix(current_layer, queue, false);
+    layers[1].copy(current_layer, queue, false);
 
     // Apply the activation function
     af::applyAF(activation_functions[0], current_layer, queue);
     // Store the matrix after the activation function
-    layers_af[1] = clFMatrix(current_layer, queue, false);
+    layers_af[1].copy(current_layer, queue, false);
 
     for (size_t k = 1; k < weights.size(); k++) {
       // Multiply the current layer by the weights and add the biases
@@ -78,11 +82,11 @@ namespace nnet {
                                       biases[k], queue);
 
       // Store the matrix before the activation function
-      layers[k + 1] = clFMatrix(current_layer, queue, false);
+      layers[k + 1].copy(current_layer, queue, false);
 
       af::applyAF(activation_functions[k], current_layer, queue);
       // Store the matrix after the activation function
-      layers_af[k + 1] = clFMatrix(current_layer, queue, false);
+      layers_af[k + 1].copy(current_layer, queue, false);
     }
   }
 
@@ -94,7 +98,9 @@ namespace nnet {
     for (long i = weights.size() - 1; i >= 0; i--) {
       storage.setIndex(i);
 
-      math::clFMatrix derivative(layers[i + 1], queue, false);
+      math::clFMatrix derivative;
+      derivative.copy(layers[i + 1], queue, false);
+
       af::applyDerivativeAF(activation_functions[i], derivative, queue);
 
       derivative.iphadamard(storage.getError(), queue);

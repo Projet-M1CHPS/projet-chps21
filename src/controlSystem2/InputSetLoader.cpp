@@ -65,8 +65,7 @@ namespace control {
 
       // Create an out-of-order queue to transform the images in parallel
       cl::CommandQueue queue =
-              cl::CommandQueue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice(),
-                               CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE);
+              cl::CommandQueue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
 
       // Fetch the normalizing kernel
       // This kernel convert a char array to a float array, and scale every element by a given
@@ -91,16 +90,13 @@ namespace control {
         kernel.setArg(0, img_buffer);
         auto matrix = tensor.getMatrix(i);
         kernel.setArg(1, matrix.getBuffer());
+        kernel.setArg(2, matrix.getOffset());
 
         // We also normalize the matrix by a given factor
-        kernel.setArg(2, 255.f);
-        // OpenCL does not support size_t, so we cast it to unsigned long
-        kernel.setArg(3, (cl_ulong) image.getWidth());
-        kernel.setArg(4, (cl_ulong) image.getHeight());
+        kernel.setArg(3, 255.0f);
 
         // Convert the image to float and normalize it by 255
-        queue.enqueueNDRangeKernel(kernel, cl::NullRange,
-                                   cl::NDRange(image.getWidth(), image.getHeight()),
+        queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(image.getSize()),
                                    cl::NullRange);
         ids.push_back(file.input_id);
         classes.push_back(file.class_id);
@@ -122,13 +118,11 @@ namespace control {
 
       // Create the transformation pipeline
       tr::TransformEngine resize_engine;
-      /* resize_engine.addTransformation(
-              std::make_shared<tr::Resize>(res.getInputWidth(), res.getInputHeight())); */
-      resize_engine.addTransformation(std::make_shared<tr::Resize>(32, 32));
-      TransformationPipeline pipeline({resize_engine});   // , pre_engine, post_engine});
+      resize_engine.addTransformation(
+              std::make_shared<tr::Resize>(res.getInputWidth(), res.getInputHeight()));
+      TransformationPipeline pipeline({resize_engine, pre_engine, post_engine});
 
 
-      // Asynchronously load the tensors
       for (size_t index = 0; index < files.size();
            index += std::min(files.size() - index, tensor_size)) {
         // Let async handle the threading policy
@@ -178,7 +172,7 @@ namespace control {
 
   InputSet InputSetLoader::loadWithoutClasses(const std::filesystem::path &path,
                                               bool shuffle_samples) const {
-    InputSet res(input_width * input_height, 1);
+    InputSet res(input_width, input_height);
 
     std::vector<InputFileMetadata> files;
 

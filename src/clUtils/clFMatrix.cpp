@@ -24,24 +24,6 @@ namespace math {
     fromFloatMatrix(matrix, queue, blocking);
   }
 
-  clFMatrix &clFMatrix::operator=(const clFMatrix &other) {
-    // We need to return if the size is 0 else OpenCL will throw
-
-    // Realloc a buffer if the current one is not big enough
-    if (size() != other.size()) data = cl::Buffer(CL_MEM_READ_WRITE, rows * cols * sizeof(float));
-
-    rows = other.rows;
-    cols = other.cols;
-
-    if (other.size() == 0) return *this;
-    cl::Event evt;
-    enqueueCopyBuffer(other.data, data, other.offset * sizeof(float), offset * sizeof(float),
-                      rows * cols * sizeof(float), nullptr, &evt);
-    evt.wait();
-
-    return *this;
-  }
-
   clFMatrix &clFMatrix::operator=(const FloatMatrix &other) {
     // If the matrix is empty, deallocate the buffer if there is one and return immediately
     if (other.getSize() == 0) {
@@ -65,17 +47,27 @@ namespace math {
     return *this;
   }
 
-  clFMatrix::clFMatrix(const clFMatrix &other, cl::CommandQueue &queue, bool blocking) {
+  clFMatrix &clFMatrix::copy(const clFMatrix &other, cl::CommandQueue &queue, bool blocking) {
+    if (size() != other.size()) {
+      if (offset != 0)
+        throw std::runtime_error("clFMatrix::copy: Cannot copy a matrix with a different size, "
+                                 "when the destination is a submatrix");
+      if (other.size() == 0) data = cl::Buffer();
+      else
+        data = cl::Buffer(CL_MEM_READ_WRITE, other.rows * other.cols * sizeof(float));
+    }
+
     rows = other.rows;
     cols = other.cols;
-    // We need to return if the size is 0 else OpenCL will throw
-    if (size() == 0) return;
 
-    data = cl::Buffer(CL_MEM_READ_WRITE, rows * cols * sizeof(float));
-    cl::Event evt;
-    queue.enqueueCopyBuffer(other.data, data, other.offset * sizeof(float), offset * sizeof(float),
-                            rows * cols * sizeof(float), nullptr, &evt);
-    if (blocking) evt.wait();
+    // We need to return if the size is 0 else OpenCL will throw
+    if (size() != 0) {
+      cl::Event evt;
+      queue.enqueueCopyBuffer(other.data, data, other.offset * sizeof(float),
+                              offset * sizeof(float), rows * cols * sizeof(float), nullptr, &evt);
+      if (blocking) evt.wait();
+    }
+    return *this;
   }
 
   clFMatrix clFMatrix::fromSubbuffer(cl::Buffer subbuffer, size_t rows, size_t cols,
@@ -94,6 +86,7 @@ namespace math {
     res.data = data;
     res.rows = rows * cols;
     res.cols = 1;
+    res.offset = offset;
     return res;
   }
 
@@ -225,7 +218,9 @@ namespace math {
       throw std::invalid_argument("Matrix dimensions do not match");
     }
 
-    clFMatrix res(other, queue, false);
+    clFMatrix res;
+    res.copy(other, queue, false);
+
     cl::Event evt;
     clblast::Axpy<float>(size(), factor, data(), offset, 1, res.data(), 0, 1, &queue(), &evt());
     if (blocking) evt.wait();
@@ -255,7 +250,9 @@ namespace math {
       throw std::invalid_argument("Matrix dimensions do not match");
     }
 
-    clFMatrix res(*this, queue, false);
+    clFMatrix res;
+    res.copy(*this, queue, false);
+
     cl::Event evt;
     clblast::Axpy<float>(size(), -factor, other.data(), other.offset, 1, res.data(), 0, 1, &queue(),
                          &evt());
@@ -272,7 +269,8 @@ namespace math {
   }
 
   clFMatrix clFMatrix::scale(float scale, cl::CommandQueue &queue, bool blocking) const {
-    clFMatrix res(*this, queue, false);
+    clFMatrix res;
+    res.copy(*this, queue, false);
 
     if (size() == 0) return res;
 
@@ -299,7 +297,8 @@ namespace math {
       throw std::invalid_argument("Matrix dimensions do not match");
     }
 
-    clFMatrix res(other, queue, false);
+    clFMatrix res;
+    res.copy(other, queue, false);
     res.iphadamard(*this, queue, blocking);
     return res;
   }
@@ -344,7 +343,9 @@ namespace math {
     size_t n = (transpose_b ? B_rows : B_cols);
     size_t k = (transpose_a ? A_rows : A_cols);
 
-    clFMatrix res(C, queue, false);
+    clFMatrix res;
+    res.copy(C, queue, false);
+
     cl::Event evt;
     clblast::Gemm<float>(clblast::Layout::kRowMajor, ta, tb, m, n, k, alpha, A.data(), A.offset,
                          A_cols, B.data(), B.offset, B_cols, beta, res.data(), 0, res.getCols(),

@@ -49,8 +49,6 @@ namespace nnet {
       }
     }
 
-    queue.finish();
-
     for (auto &it : avg_gradients) { it.ipscale(((float) 1.0 / static_cast<float>(n)), queue); }
 
     for (long i = neural_network->getWeights().size() - 1; i >= 0; i--) {
@@ -71,27 +69,27 @@ namespace nnet {
     auto &biases = this->neural_network->getBiases();
     auto &activation_functions = this->neural_network->getActivationFunctions();
 
-    layers[0] = math::clFMatrix(inputs, queue, false);
-    layers_af[0] = math::clFMatrix(inputs, queue, false);
+    layers[0].copy(inputs, queue, false);
+    layers_af[0].copy(inputs, queue, false);
 
     if (weights.empty()) return;
 
     math::clFMatrix current_layer =
             math::clFMatrix::gemm(1.0f, false, weights[0], false, inputs, 1.0f, biases[0], queue);
-    layers[1] = math::clFMatrix(current_layer, queue, false);
+    layers[1].copy(current_layer, queue, false);
     af::applyAF(activation_functions[0], current_layer, queue);
     auto afunc = af::getAFFromType(activation_functions[0]).first;
-    layers_af[1] = math::clFMatrix(current_layer, queue, false);
+    layers_af[1].copy(current_layer, queue, false);
 
     for (size_t k = 1; k < weights.size(); k++) {
       // C = W * C + B
       current_layer = math::clFMatrix::gemm(1.0f, false, weights[k], false, current_layer, 1.0f,
                                             biases[k], queue);
-      layers[k + 1] = math::clFMatrix(current_layer, queue, false);
+      layers[k + 1].copy(current_layer, queue, false);
 
       // Apply activation function on every element of the matrix
       af::applyAF(activation_functions[k], current_layer, queue);
-      layers_af[k + 1] = math::clFMatrix(current_layer, queue, false);
+      layers_af[k + 1].copy(current_layer, queue, false);
     }
   }
 
@@ -106,7 +104,9 @@ namespace nnet {
     for (long i = weights.size() - 1; i >= 0; i--) {
       storage.setIndex(i);
 
-      math::clFMatrix derivative(layers[i + 1], queue);
+      math::clFMatrix derivative;
+      derivative.copy(layers[i + 1], queue, false);
+
       af::applyDerivativeAF(activation_functions[i], derivative, queue);
 
       derivative.iphadamard(storage.getError(), queue);

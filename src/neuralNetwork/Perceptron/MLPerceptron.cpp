@@ -25,11 +25,10 @@ namespace nnet {
 
     cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
 
-    auto current_layer =
-            math::clFMatrix::gemm(1.0f, false, weights[0], false, flattened_input, 1.0f, biases[0], queue);
+    auto current_layer = math::clFMatrix::gemm(1.0f, false, weights[0], false, flattened_input,
+                                               1.0f, biases[0], queue);
 
     af::applyAF(activation_functions[0], current_layer, queue);
-
     for (size_t i = 1; i < weights.size(); i++) {
       current_layer = math::clFMatrix::gemm(1.0f, false, weights[i], false, current_layer, 1.0f,
                                             biases[i], queue);
