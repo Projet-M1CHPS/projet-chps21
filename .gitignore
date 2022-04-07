@@ -45,6 +45,7 @@
 
 .vscode
 .idea
+cmake-build-*/
 
 # Common CMake build directories
 
