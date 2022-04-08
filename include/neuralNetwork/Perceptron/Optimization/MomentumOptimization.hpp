@@ -10,7 +10,7 @@ namespace nnet {
   public:
     MomentumOptimization(const MLPerceptron &perceptron, float learning_rate, float momentum);
 
-    void optimize(BackpropStorage &storage, cl::CommandQueue &queue) override;
+    void optimize(math::clFMatrix &gradient, math::clFMatrix& dest, cl::CommandQueue &queue) override;
 
   private:
     const float lr;

@@ -16,7 +16,7 @@ namespace math {
 
 
     clFTensor(const clFTensor &other, cl::CommandQueue &queue, bool blocking = true) {
-      *this = other.deepCopy(queue, blocking);
+      this->copy(other, queue, blocking);
     }
     clFTensor(const clFTensor &other, bool blocking = true)
         : clFTensor(other, utils::cl_wrapper.getDefaultQueue(), blocking) {}
@@ -30,16 +30,7 @@ namespace math {
      * @param blocking If true, the operation will block until the copy is finished.
      * @return A new tensor with a copy of the data of this tensor
      */
-    clFTensor deepCopy(cl::CommandQueue &queue, bool blocking = true) const;
-
-    /**
-     * @brief Performs a deep copy of the tensor. Uses the default queue
-     * @param blocking If true, the operation will block until the copy is finished.
-     * @return A new tensor with a copy of the data of this tensor
-     */
-    clFTensor deepCopy(bool blocking = true) const {
-      return deepCopy(utils::cl_wrapper.getDefaultQueue(), blocking);
-    }
+    clFTensor &copy(const clFTensor &other, cl::CommandQueue &queue, bool blocking);
 
     /**
      * @brief Performs a shallow copy of this tensor, meaning that the new tensor shares the same
@@ -94,6 +85,27 @@ namespace math {
       res.z_dim = z_dim;
       return res;
     }
+
+    clFTensor sub(float factor, const clFTensor &other, cl::CommandQueue &queue,
+                  bool blocking = false) const;
+
+    static clFTensor batchedGemm(float alpha, bool transpose_a, const clFMatrix &A, bool transpose_b,
+                                 const clFTensor &B, cl::CommandQueue &queue,
+                                 bool blocking = false);
+
+    static clFTensor batchedGemm(float alpha, bool transpose_a, const clFMatrix &A, bool transpose_b,
+                                 const clFTensor &B, float beta, const clFMatrix &C,
+                                 cl::CommandQueue &queue, bool blocking = false);
+
+
+    static clFTensor batchedGemm(float alpha, bool transpose_a, const clFTensor &A, bool transpose_b,
+                                 const clFTensor &B, cl::CommandQueue &queue,
+                                 bool blocking = false);
+
+    clFMatrix meanSumCollapse(cl::CommandQueue &queue, bool blocking = false) const;
+
+    clFTensor &iphadamard(const clFTensor &other, cl::CommandQueue &queue, bool blocking = false);
+
 
     /**
      * @brief Returns the submatrix at the given index.

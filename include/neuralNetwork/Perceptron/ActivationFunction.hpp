@@ -2,6 +2,7 @@
 
 #include "Utils.hpp"
 #include "clUtils/clFMatrix.hpp"
+#include "clUtils/clFTensor.hpp"
 #include "clUtils/clWrapper.hpp"
 #include <cmath>
 #include <functional>
@@ -93,7 +94,11 @@ namespace af {
 
 
   void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue);
+  void applyAF(af::ActivationFunctionType type, math::clFTensor &mat, cl::CommandQueue &queue);
+
   void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
+                         cl::CommandQueue &queue);
+  void applyDerivativeAF(af::ActivationFunctionType type, math::clFTensor &mat,
                          cl::CommandQueue &queue);
 
 }   // namespace af

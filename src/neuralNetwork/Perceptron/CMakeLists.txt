@@ -14,13 +14,10 @@ add_library(Perceptron STATIC
         Optimization/DecayOptimization.cpp ${CURRENT_INCLUDE_DIR}/Optimization/DecayOptimization.hpp
         Optimization/MomentumOptimization.cpp ${CURRENT_INCLUDE_DIR}/Optimization/MomentumOptimization.hpp
         Optimization/DecayMomentumOptimization.cpp ${CURRENT_INCLUDE_DIR}/Optimization/DecayMomentumOptimization.hpp
-        Optimization/RProPOptimization.cpp ${CURRENT_INCLUDE_DIR}/Optimization/RProPOptimization.hpp
 
         # Optimizers
         ${CURRENT_INCLUDE_DIR}/MLPOptimizer.hpp
-        MLPStochOptimizer.cpp ${CURRENT_INCLUDE_DIR}/MLPStochOptimizer.hpp
-        MLPBatchOptimizer.cpp ${CURRENT_INCLUDE_DIR}/MLPBatchOptimizer.hpp
-        MLPMiniBatchOptimizer.cpp ${CURRENT_INCLUDE_DIR}/MLPMiniBatchOptimizer.hpp
+        MLPOptimizer.cpp ${CURRENT_INCLUDE_DIR}/MLPOptimizer.hpp
         ActivationFunction.cpp ${CURRENT_INCLUDE_DIR}/ActivationFunction.hpp
         )
 

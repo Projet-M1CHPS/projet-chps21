@@ -21,7 +21,7 @@ namespace nnet {
     virtual void optimize(const std::vector<math::clFTensor> &inputs,
                           const std::vector<math::clFTensor> &targets) = 0;
 
-    /**
+     /**
      * @brief The optimizer may hold some internal state that needs updating after each epoch
      * This isn't done automatically since the user may repeat the optimization multiple times
      * Before updating
