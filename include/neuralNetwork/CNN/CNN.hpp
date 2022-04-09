@@ -2,8 +2,8 @@
 
 #include "ActivationFunction.hpp"
 #include "CNNTopology.hpp"
-#include "Matrix.hpp"
-#include "clUtils/clFMatrix.hpp"
+#include "math/Matrix.hpp"
+#include "math/clFMatrix.hpp"
 #include "clUtils/clWrapper.hpp"
 #include "CNNDependencyTree.hpp"
 #include <stack>

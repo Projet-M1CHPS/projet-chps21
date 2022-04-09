@@ -17,7 +17,6 @@ if (COVERARE_ENABLED)
     setup_target_for_coverage_gcovr_html(NAME coverage
             EXECUTABLE ctest -j
             # Ensure every file is compiled to generate gcov files
-            DEPENDENCIES all
             EXCLUDE "${CMAKE_SOURCE_DIR}/extern/*" "${CMAKE_BINARY_DIR}/_deps/*"
             "${CMAKE_SOURCE_DIR}/test/*"
             )

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Matrix.hpp"
-#include "clUtils/clFMatrix.hpp"
+#include "math/Matrix.hpp"
+#include "math/clFMatrix.hpp"
 #include <filesystem>
 #include <memory>
 #include <vector>

@@ -3,7 +3,6 @@
 #define CL_HPP_TARGET_OPENCL_VERSION 120
 #define CL_HPP_ENABLE_EXCEPTIONS 1
 #include "clKernelMap.hpp"
-#include "clQueueHandler.hpp"
 #include <CL/opencl.hpp>
 #include <boost/dll.hpp>
 #include <iostream>
@@ -59,17 +58,6 @@ namespace utils {
     std::vector<cl::Device> &getDevices() { return devices; }
     const std::vector<cl::Device> &getDevices() const { return devices; }
 
-    /**
-     * @brief Returns the default queue handler containing all available devices in this wrapper.
-     * @return The default queue handler that may already be in used
-     */
-    clQueueHandler &getDefaultQueueHandler() { return default_queue_handler; }
-
-    /**
-     * @brief Returns a new queue handler containing all available devices in this wrapper.
-     * @return a new queue handler
-     */
-    clQueueHandler makeQueueHandler(cl::QueueProperties properties = {});
     cl::Device getDefaultDevice() { return default_device; }
 
     clKernelMap &getKernels() { return *kernels; }
@@ -84,7 +72,6 @@ namespace utils {
     std::vector<cl::Device> devices;
 
     cl::CommandQueue default_queue;
-    clQueueHandler default_queue_handler;
 
     std::shared_ptr<clKernelMap> kernels;
   };

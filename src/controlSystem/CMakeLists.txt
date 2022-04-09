@@ -1,6 +1,6 @@
 
 
-set(CURRENT_INCLUDE_DIR ${INCLUDE_DIR}/controlSystem2)
+set(CURRENT_INCLUDE_DIR ${INCLUDE_DIR}/controlSystem)
 add_library(ControlSystem2
         Controller.cpp ${CURRENT_INCLUDE_DIR}/Controller.hpp
         TrainingController.cpp ${CURRENT_INCLUDE_DIR}/TrainingController.hpp

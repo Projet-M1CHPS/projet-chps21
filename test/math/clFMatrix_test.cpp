@@ -1,6 +1,6 @@
 
 #include "Utils.hpp"
-#include "clUtils/clFMatrix.hpp"
+#include "math/clFMatrix.hpp"
 #include <gtest/gtest.h>
 
 using namespace math;

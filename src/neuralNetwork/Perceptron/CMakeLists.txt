@@ -24,4 +24,4 @@ add_library(Perceptron STATIC
 target_include_directories(Perceptron
         PUBLIC ${INCLUDE_DIR} ${CURRENT_INCLUDE_DIR} ${INCLUDE_DIR}/neuralNetwork ${CURRENT_INCLUDE_DIR}/Optimization)
 
-target_link_libraries(Perceptron PUBLIC tscl::tscl)
+target_link_libraries(Perceptron PUBLIC tscl::tscl openclUtils Math)

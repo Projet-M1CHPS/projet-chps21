@@ -83,7 +83,6 @@ namespace utils {
     default_queue = cl::CommandQueue(context, default_device);
     // By default, we do not enable out-of-order execution for the queue handler
     // The user is free to create queues with out-of-order execution enabled
-    default_queue_handler = clQueueHandler(context, devices);
 
     kernels = std::make_shared<clKernelMap>(context, absolute_kernel_path);
   }
@@ -97,7 +96,6 @@ namespace utils {
     default_device = other.default_device;
     devices = other.devices;
     default_queue = other.default_queue;
-    default_queue_handler = other.default_queue_handler;
     // No need to lock the mutex here, since we're just copying the pointers
     kernels = other.kernels;
     return *this;
@@ -112,14 +110,9 @@ namespace utils {
     default_device = other.default_device;
     devices = std::move(other.devices);
     default_queue = other.default_queue;
-    default_queue_handler = other.default_queue_handler;
     // No need to lock the mutex here, since we're just copying the pointers
     kernels = other.kernels;
     return *this;
-  }
-
-  clQueueHandler clWrapper::makeQueueHandler(cl::QueueProperties properties) {
-    return {context, devices, properties};
   }
 
   std::unique_ptr<clWrapper>

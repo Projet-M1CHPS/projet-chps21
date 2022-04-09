@@ -3,7 +3,7 @@ extern "C" {
 #include <cblas.h>
 }
 
-#include "Utils.hpp"
+#include <random>
 #include <cassert>
 #include <cmath>
 #include <cstring>

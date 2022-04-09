@@ -1,7 +1,7 @@
 #pragma once
 #include "InputSet.hpp"
-#include "clUtils/clFMatrix.hpp"
-#include "clUtils/clFTensor.hpp"
+#include "math/clFMatrix.hpp"
+#include "math/clFTensor.hpp"
 #include "image/Image.hpp"
 #include "image/Transform.hpp"
 #include <iostream>

@@ -1,5 +1,5 @@
-#include "Matrix.hpp"
-#include "clFMatrix.hpp"
+#include "math/Matrix.hpp"
+#include "math/clFMatrix.hpp"
 #include "clPlatformSelector.hpp"
 #include "clWrapper.hpp"
 #include <chrono>

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Matrix.hpp"
+#include "math/Matrix.hpp"
 #include "Model.hpp"
+#include "OptimizerOperation.hpp"
 #include <vector>
 
 namespace nnet {
@@ -14,14 +15,13 @@ namespace nnet {
     virtual ~Optimizer() = default;
 
     /**
-     * @brief Optimize the model on the given input and target sets
-     * @param inputs The inputs to be fed to the model
-     * @param targets The corresponding ouputs targets to be fed to the model
+     * @brief Return an operation that can be used to handle the optimization process. This object
+     * should be fed to a OptimizerBatchScheduler.
+     * @return A pointer to an OptimizerBatchScheduler.
      */
-    virtual void optimize(const std::vector<math::clFTensor> &inputs,
-                          const std::vector<math::clFTensor> &targets) = 0;
+    virtual std::unique_ptr<OptimizerOperation> makeBatchOperation() = 0;
 
-     /**
+    /**
      * @brief The optimizer may hold some internal state that needs updating after each epoch
      * This isn't done automatically since the user may repeat the optimization multiple times
      * Before updating

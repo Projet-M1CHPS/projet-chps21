@@ -3,6 +3,7 @@
 #include <chrono>
 
 namespace chrono = std::chrono;
+using namespace nnet;
 
 namespace control {
 
@@ -27,13 +28,11 @@ namespace control {
       return res;
     }
 
-    chrono::milliseconds runEpoch(nnet::Optimizer &optimizer, const InputSet &input_set,
-                                  const std::vector<math::clFTensor> &targets) {
-      auto start = chrono::high_resolution_clock::now();
-      optimizer.optimize(input_set.getTensors(), targets);
-      auto end = chrono::high_resolution_clock::now();
-      optimizer.update();
-      return chrono::duration_cast<chrono::milliseconds>(end - start);
+    OptimizerBatchInfo runEpoch(nnet::Optimizer &optimizer, OptimizerBatchPolicy &policy,
+                                const InputSet &input_set,
+                                const std::vector<math::clFTensor> &targets) {
+      OptimizerBatchScheduler scheduler(optimizer, policy);
+      return scheduler.run(input_set.getTensors(), targets);
     }
   }   // namespace
 
@@ -56,9 +55,10 @@ namespace control {
     evaluator = std::make_shared<ModelVerboseEvaluator>(evaluator);
 
     for (size_t curr_epoch = 0; curr_epoch < max_epoch; curr_epoch++) {
-      auto epoch_duration = runEpoch(*optimizer, training_set, targets);
+      auto info = runEpoch(*optimizer, training_set, targets);
 
-      tscl::logger("Epoch " + std::to_string(curr_epoch) + " took " + std::to_string(epoch_duration.count()) + "ms",
+      tscl::logger("Epoch " + std::to_string(curr_epoch) + " took " +
+                           std::to_string(info.getTotalTime()) + "ms",
                    tscl::Log::Information);
 
       //  Async evaluation to avoid downtime

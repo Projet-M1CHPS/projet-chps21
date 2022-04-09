@@ -1,7 +1,6 @@
 #pragma once
-#include "BackpropStorage.hpp"
 #include "MLPerceptron.hpp"
-#include "Matrix.hpp"
+#include "math/Matrix.hpp"
 
 namespace nnet {
 

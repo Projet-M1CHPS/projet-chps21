@@ -1,6 +1,6 @@
 #pragma once
-#include "clUtils/clFMatrix.hpp"
-#include "clUtils/clFTensor.hpp"
+#include "math/clFMatrix.hpp"
+#include "math/clFTensor.hpp"
 #include <filesystem>
 #include <iostream>
 #include <utility>
