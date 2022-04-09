@@ -14,9 +14,11 @@ add_subdirectory(image)
 # add_subdirectory(neuralNetwork)
 
 if (COVERARE_ENABLED)
-  setup_target_for_coverage_gcovr_html(NAME coverage
-          EXECUTABLE ctest -j
-          EXCLUDE "${CMAKE_SOURCE_DIR}/extern/*" "/usr/*" "${CMAKE_BINARY_DIR}/_deps/*" "${CMAKE_SOURCE_DIR}/test/*"
-          "${CMAKE_SOURCE_DIR}/apps/*"
-          )
+    setup_target_for_coverage_gcovr_html(NAME coverage
+            EXECUTABLE ctest -j
+            # Ensure every file is compiled to generate gcov files
+            DEPENDENCIES all
+            EXCLUDE "${CMAKE_SOURCE_DIR}/extern/*" "${CMAKE_BINARY_DIR}/_deps/*"
+            "${CMAKE_SOURCE_DIR}/test/*"
+            )
 endif ()

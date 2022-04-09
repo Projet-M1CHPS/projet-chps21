@@ -11,19 +11,23 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 # Setup compiler specific flags
 include(CheckCXXCompilerFlag)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fast -O3 -qmkl -lm")
-  # Intel compilers are not supported for coverage tests
-  set(CODE_COVERAGE OFF)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fast -O3 -qmkl -lm")
+    # Intel compilers are not supported for coverage tests
+    set(CODE_COVERAGE OFF)
 else ()
-  CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+    CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
 
-  if (COMPILER_SUPPORTS_MARCH_NATIVE)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
-  endif ()
+    if (COMPILER_SUPPORTS_MARCH_NATIVE)
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
+    endif ()
 endif ()
 
 include(check_coverage)
 maybe_enable_coverage()
+if (COVERARE_ENABLED)
+    # Must be placed at the top level for compiler flags to propagate to all targets
+    append_coverage_compiler_flags()
+endif ()
 
 # Defines version specific Macro
 configure_file(include/ProjectConstant.hpp.in include/ProjectVersion.hpp)
