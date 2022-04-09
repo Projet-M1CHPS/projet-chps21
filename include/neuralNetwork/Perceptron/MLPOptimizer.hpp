@@ -4,7 +4,7 @@
 #include "MLPerceptron.hpp"
 #include "Optimization.hpp"
 #include "Optimizer.hpp"
-#include "OptimizerBatchScheduler.hpp"
+#include "OptimizerScheduler.hpp"
 #include <iostream>
 #include <utility>
 
@@ -12,20 +12,19 @@ namespace nnet {
 
   class MLPWeightUpdater {
   public:
-    MLPWeightUpdater(MLPerceptron &parent, Optimization &optimization);
+    MLPWeightUpdater(MLPerceptron &parent, Optimization &opt);
     const math::clFMatrix &operator[](size_t i);
 
-    void reduce(size_t index, const math::clFMatrix &delta, cl::Event &event);
+    void reduce(size_t index, const math::clFMatrix &delta, size_t contribution_size, cl::Event &event);
     virtual void apply();
 
   private:
-    std::mutex mutex;
     MLPerceptron *perceptron;
     Optimization *optimization;
 
     cl::CommandQueue work_queue;
 
-    size_t n_count;
+    std::vector<std::atomic<size_t>> contributions;
     std::vector<math::clFMatrix> weight_updates;
   };
 
@@ -57,8 +56,8 @@ namespace nnet {
 
   class MLPBatchOperation : public OptimizerOperation {
   public:
-    MLPBatchOperation(MLPOptimizer &optimizer, MLPWeightUpdater &updater)
-        : optimizer(&optimizer), updater(&updater) {}
+    MLPBatchOperation(MLPOptimizer &optimizer, std::shared_ptr<MLPWeightUpdater> updater)
+        : optimizer(&optimizer), updater(std::move(updater)) {}
 
     void operator()(const math::clFTensor &inputs, const math::clFTensor &targets,
                     cl::Device &batch_device) override {
@@ -68,8 +67,8 @@ namespace nnet {
 
     void updateModel() override { updater->apply(); }
 
-  private:
-    MLPWeightUpdater *updater;
+  protected:
+    std::shared_ptr<MLPWeightUpdater> updater;
     MLPOptimizer *optimizer;
   };
 

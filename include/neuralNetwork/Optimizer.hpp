@@ -16,8 +16,8 @@ namespace nnet {
 
     /**
      * @brief Return an operation that can be used to handle the optimization process. This object
-     * should be fed to a OptimizerBatchScheduler.
-     * @return A pointer to an OptimizerBatchScheduler.
+     * should be fed to a OptimizerScheduler.
+     * @return A pointer to an OptimizerScheduler.
      */
     virtual std::unique_ptr<OptimizerOperation> makeBatchOperation() = 0;
 

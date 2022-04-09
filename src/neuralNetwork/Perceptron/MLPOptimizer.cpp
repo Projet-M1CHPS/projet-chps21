@@ -59,20 +59,21 @@ namespace nnet {
                 clFTensor::batchedGemm(1.0f, false, derivative, true, layers_af_output[i], queue);
 
         // Reduce the gradient to a single matrix
-        clFMatrix collapsed_gradient = gradient.meanSumCollapse(queue);
+        clFMatrix collapsed_gradient = gradient.sumCollapse(queue);
         // The reducer cannot proceed until the gradient is collapsed
         // So we create a new event that the reducer can wait on
         cl::Event reduce_event;
         queue.enqueueMarkerWithWaitList(nullptr, &reduce_event);
-        updater.reduce(i, collapsed_gradient, reduce_event);
+        updater.reduce(i, collapsed_gradient, gradient.getDepth(), reduce_event);
       }
     }
   }   // namespace
 
 
   MLPWeightUpdater::MLPWeightUpdater(MLPerceptron &parent, Optimization &optimization)
-      : perceptron(&parent), optimization(&optimization), n_count(0) {
+      : perceptron(&parent), optimization(&optimization) {
     weight_updates.resize(parent.getWeights().size());
+    contributions.resize(parent.getWeights().size(), 0);
 
     work_queue =
             cl::CommandQueue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
@@ -91,30 +92,27 @@ namespace nnet {
     return weight_updates[i];
   }
 
-  void MLPWeightUpdater::reduce(size_t index, const clFMatrix &delta, cl::Event &event) {
+  void MLPWeightUpdater::reduce(size_t index, const clFMatrix &delta, size_t contribution_size, cl::Event &event) {
     std::vector<cl::Event> wait_list = {event};
     work_queue.enqueueBarrierWithWaitList(&wait_list);
-    // std::cout << "Reducing weight " << index << " " << delta.toFloatMatrix() << std::endl;
     weight_updates[index].ipadd(1.0f, delta, work_queue);
-    std::scoped_lock lock(mutex);
-    n_count = 1;
+    contributions[index] += contribution_size;
   }
 
   void MLPWeightUpdater::apply() {
     for (size_t i = 0; i < weight_updates.size(); i++) {
+      float mean_factor = 1.0f / static_cast<float>(contributions[i]);
+      weight_updates[i].ipscale(mean_factor, work_queue);
       optimization->optimize(weight_updates[i], perceptron->getWeights()[i], i, work_queue);
       weight_updates[i].fill(0.0f, work_queue);
     }
-    // n_count = 0;
+    std::for_each(contributions.begin(), contributions.end(), [](auto &c) { c = 0; });
     work_queue.finish();
   }
 
-
-  void MLPOptimizer::optimize(const std::vector<clFTensor> &inputs,
-                              const std::vector<clFTensor> &targets) {
-    MLPWeightUpdater updater(*neural_network, *opti_meth);
-    MLPBatchScheduler scheduler(*this, updater, batch_size);
-    scheduler.run(inputs, targets);
+  std::unique_ptr<OptimizerOperation> MLPOptimizer::makeBatchOperation() {
+    auto updater = std::make_shared<MLPWeightUpdater>(*neural_network, *opti_meth);
+    return std::make_unique<MLPBatchOperation>(*this, updater);
   }
 
   void MLPOptimizer::optimize(const clFTensor &inputs, const clFTensor &targets,

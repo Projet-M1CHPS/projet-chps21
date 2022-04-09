@@ -260,18 +260,17 @@ namespace math {
     return res;
   }
 
-  clFMatrix clFTensor::meanSumCollapse(cl::CommandQueue &queue, bool blocking) const {
+  clFMatrix clFTensor::sumCollapse(cl::CommandQueue &queue, bool blocking) const {
     clFMatrix result(rows, cols);
     result.fill(0.0f, queue, false);
     if (depth == 0) { return result; }
 
-    float factor = 1.0f / static_cast<float>(depth);
     for (size_t i = 0; i < depth; i++) {
       clFMatrix mat = (*this)[i];
       if (i == depth - 1) {
-        result.ipadd(factor, mat, queue, blocking);
+        result.ipadd(1.0f, mat, queue, blocking);
       } else {
-        result.ipadd(factor, mat, queue, false);
+        result.ipadd(1.0f, mat, queue, false);
       }
     }
     return result;

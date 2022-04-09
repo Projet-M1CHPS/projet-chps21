@@ -28,10 +28,10 @@ namespace control {
       return res;
     }
 
-    OptimizerBatchInfo runEpoch(nnet::Optimizer &optimizer, OptimizerBatchPolicy &policy,
+    OptimizerSchedulerInfo runEpoch(nnet::Optimizer &optimizer, OptimizerSchedulerPolicy &policy,
                                 const InputSet &input_set,
                                 const std::vector<math::clFTensor> &targets) {
-      OptimizerBatchScheduler scheduler(optimizer, policy);
+      OptimizerScheduler scheduler(optimizer, policy);
       return scheduler.run(input_set.getTensors(), targets);
     }
   }   // namespace

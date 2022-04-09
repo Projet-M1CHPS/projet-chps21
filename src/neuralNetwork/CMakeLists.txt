@@ -5,9 +5,12 @@ add_subdirectory(CNN)
 set(CURRENT_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include/neuralNetwork)
 
 # Create an interface library for the neural networks
-add_library(nnet STATIC OptimizerBatchScheduler.cpp ${CURRENT_INCLUDE_DIR}/OptimizerBatchScheduler.hpp ${INCLUDE_DIR}/NeuralNetwork.hpp)
+add_library(nnet STATIC
+        OptimizerScheduler.cpp ${CURRENT_INCLUDE_DIR}/OptimizerScheduler.hpp
+        ${INCLUDE_DIR}/NeuralNetwork.hpp
+        )
 target_include_directories(nnet PUBLIC "${INCLUDE_DIR}" "${CURRENT_INCLUDE_DIR}")
-target_link_libraries(nnet PUBLIC m openclUtils Math  Utils)
+target_link_libraries(nnet PUBLIC m openclUtils Math Utils)
 
 add_library(NeuralNetwork INTERFACE)
 target_include_directories(NeuralNetwork INTERFACE "${INCLUDE_DIR}" "${CURRENT_INCLUDE_DIR}")

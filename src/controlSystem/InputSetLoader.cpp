@@ -158,7 +158,6 @@ namespace control {
       for (const auto &file : fs::directory_iterator(entry.path())) {
         if (not file.is_regular_file()) continue;
 
-        // TODO fix me
         files.push_back({file.path(), files.size(), static_cast<long>(classes.size() - 1)});
       }
     }

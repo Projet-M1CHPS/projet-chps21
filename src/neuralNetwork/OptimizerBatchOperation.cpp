@@ -1,1 +1,1 @@
-#include "../../include/neuralNetwork/OptimizerOperation.hpp"
+#include "OptimizerOperation.hpp"

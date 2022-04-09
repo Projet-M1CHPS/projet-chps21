@@ -187,7 +187,7 @@ namespace math {
                                  bool transpose_b, const clFTensor &B, cl::CommandQueue &queue,
                                  bool blocking = false);
 
-    clFMatrix meanSumCollapse(cl::CommandQueue &queue,
+    clFMatrix sumCollapse(cl::CommandQueue &queue,
                               bool blocking = false) const;
 
     clFTensor &iphadamard(const clFTensor &other, cl::CommandQueue &queue, bool blocking = false);

@@ -7,8 +7,8 @@ add_library(Perceptron STATIC
         MLPModel.cpp ${CURRENT_INCLUDE_DIR}/MLPModel.hpp
         MLPModelSerializer.cpp ${CURRENT_INCLUDE_DIR}/MLPModelSerializer.hpp
 
-        ${CURRENT_INCLUDE_DIR}/BackpropStorage.hpp
         ${CURRENT_INCLUDE_DIR}/Optimization/Optimization.hpp
+
         # Every optimization
         Optimization/SGDOptimization.cpp ${CURRENT_INCLUDE_DIR}/Optimization/SGDOptimization.hpp
         Optimization/DecayOptimization.cpp ${CURRENT_INCLUDE_DIR}/Optimization/DecayOptimization.hpp
