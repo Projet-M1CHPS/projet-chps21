@@ -88,7 +88,7 @@ namespace control {
         queue.enqueueWriteBuffer(img_buffer, CL_TRUE, 0, image.getSize(), image.getData());
 
         kernel.setArg(0, img_buffer);
-        auto matrix = tensor.getMatrix(i);
+        auto matrix = tensor[i];
         kernel.setArg(1, matrix.getBuffer());
         kernel.setArg(2, matrix.getOffset());
 

@@ -129,6 +129,7 @@ namespace math {
 
       return {data, rows, cols, getOffsetOf(z)};
     }
+
     clFMatrix operator[](size_t z) const {
       if (z > depth) { throw std::out_of_range("clFTensor::getMatrix: z index out of range"); }
 
@@ -186,7 +187,7 @@ namespace math {
                                  bool transpose_b, const clFTensor &B, cl::CommandQueue &queue,
                                  bool blocking = false);
 
-    clFMatrix meanSumCollapse(cl::CommandQueue &queue, cl::Event &event,
+    clFMatrix meanSumCollapse(cl::CommandQueue &queue,
                               bool blocking = false) const;
 
     clFTensor &iphadamard(const clFTensor &other, cl::CommandQueue &queue, bool blocking = false);

@@ -59,8 +59,11 @@ namespace nnet {
                 clFTensor::batchedGemm(1.0f, false, derivative, true, layers_af_output[i], queue);
 
         // Reduce the gradient to a single matrix
+        clFMatrix collapsed_gradient = gradient.meanSumCollapse(queue);
+        // The reducer cannot proceed until the gradient is collapsed
+        // So we create a new event that the reducer can wait on
         cl::Event reduce_event;
-        clFMatrix collapsed_gradient = gradient.meanSumCollapse(queue, reduce_event);
+        queue.enqueueMarkerWithWaitList(nullptr, &reduce_event);
         updater.reduce(i, collapsed_gradient, reduce_event);
       }
     }
@@ -88,8 +91,7 @@ namespace nnet {
     return weight_updates[i];
   }
 
-  void MLPWeightUpdater::reduce(size_t index, const clFMatrix &delta, cl::Event& event) {
-
+  void MLPWeightUpdater::reduce(size_t index, const clFMatrix &delta, cl::Event &event) {
     std::vector<cl::Event> wait_list = {event};
     work_queue.enqueueBarrierWithWaitList(&wait_list);
     // std::cout << "Reducing weight " << index << " " << delta.toFloatMatrix() << std::endl;
@@ -119,7 +121,7 @@ namespace nnet {
                               MLPWeightUpdater &updater, cl::CommandQueue &queue) {
     std::vector<clFTensor> layers_output(neural_network->getWeights().size() + 1);
     std::vector<clFTensor> layers_af_output(neural_network->getWeights().size() + 1);
-    FloatMatrix input = inputs.getMatrix(0).toFloatMatrix();
+    FloatMatrix input = inputs[0].toFloatMatrix();
 
     forward(*neural_network, inputs.flatten(), layers_output, layers_af_output, queue);
     backward(*neural_network, targets.flatten(), layers_output, layers_af_output, updater, queue);

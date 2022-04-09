@@ -260,8 +260,7 @@ namespace math {
     return res;
   }
 
-  clFMatrix clFTensor::meanSumCollapse(cl::CommandQueue &queue, cl::Event &event,
-                                       bool blocking) const {
+  clFMatrix clFTensor::meanSumCollapse(cl::CommandQueue &queue, bool blocking) const {
     clFMatrix result(rows, cols);
     result.fill(0.0f, queue, false);
     if (depth == 0) { return result; }
@@ -269,10 +268,12 @@ namespace math {
     float factor = 1.0f / static_cast<float>(depth);
     for (size_t i = 0; i < depth; i++) {
       clFMatrix mat = (*this)[i];
-      clblast::Axpy<float>(rows * cols, factor, mat.getBuffer()(), mat.getOffset(), 1,
-                           result.getBuffer()(), result.getOffset(), 1, &queue(), &event());
+      if (i == depth - 1) {
+        result.ipadd(factor, mat, queue, blocking);
+      } else {
+        result.ipadd(factor, mat, queue, false);
+      }
     }
-    if (blocking) event.wait();
     return result;
   }
 
