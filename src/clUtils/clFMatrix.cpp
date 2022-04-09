@@ -85,7 +85,7 @@ namespace math {
     clFMatrix res;
     res.data = data;
     res.rows = rows * cols;
-    res.cols = 1;
+    res.cols = cols == 0 ? 0 : 1;
     res.offset = offset;
     return res;
   }

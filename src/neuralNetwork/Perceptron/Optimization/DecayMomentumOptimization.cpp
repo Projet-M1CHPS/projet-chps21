@@ -14,12 +14,13 @@ namespace nnet {
     }
   }
 
-  void DecayMomentumOptimization::optimize(BackpropStorage &storage, cl::CommandQueue &queue) {
-    auto buf = storage.getGradient().scale(learning_r, queue);
-    buf.ipadd(1.0f, old_weight_change[storage.getIndex()], queue);
+  void DecayMomentumOptimization::optimize(math::clFMatrix &gradient, math::clFMatrix &dest,
+                                           size_t layer, cl::CommandQueue &queue) {
+    auto buf = gradient.scale(learning_r, queue);
+    buf.ipadd(momentum, old_weight_change[layer], queue);
 
-    storage.getWeights().ipsub(1.0f, buf, queue);
-    old_weight_change[storage.getIndex()] = std::move(buf);
+    dest.ipsub(1.0f, buf, queue);
+    old_weight_change[layer] = std::move(buf);
   }
 
 

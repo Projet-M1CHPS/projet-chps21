@@ -45,27 +45,23 @@ namespace nnet {
 
       if (weights.empty()) return;
 
-
       clFTensor error = layers_af_output.back().sub(1.0f, targets, queue);
 
       // Need to use a long since we stop when index reaches -1
       for (long i = weights.size() - 1; i >= 0; i--) {
         clFTensor derivative;
         derivative.copy(layers_output[i + 1], queue, false);
-
         af::applyDerivativeAF(activation_functions[i], derivative, queue);
-
         derivative.iphadamard(error, queue);
-
         error = clFTensor::batchedGemm(1.0f, true, weights[i], false, derivative, queue);
 
         clFTensor gradient =
                 clFTensor::batchedGemm(1.0f, false, derivative, true, layers_af_output[i], queue);
 
         // Reduce the gradient to a single matrix
-        clFMatrix collapsed_gradient = gradient.meanSumCollapse(queue);
-
-        updater.reduce(i, collapsed_gradient);
+        cl::Event reduce_event;
+        clFMatrix collapsed_gradient = gradient.meanSumCollapse(queue, reduce_event);
+        updater.reduce(i, collapsed_gradient, reduce_event);
       }
     }
   }   // namespace
@@ -80,6 +76,7 @@ namespace nnet {
     for (size_t i = 0; auto &w : parent.getWeights()) {
       weight_updates[i] = clFMatrix(w.getRows(), w.getCols());
       weight_updates[i].fill(0.0f, work_queue);
+      i++;
     }
     work_queue.finish();
   }
@@ -91,19 +88,22 @@ namespace nnet {
     return weight_updates[i];
   }
 
-  void MLPWeightUpdater::reduce(size_t index, const clFMatrix &delta) {
+  void MLPWeightUpdater::reduce(size_t index, const clFMatrix &delta, cl::Event& event) {
+
+    std::vector<cl::Event> wait_list = {event};
+    work_queue.enqueueBarrierWithWaitList(&wait_list);
+    // std::cout << "Reducing weight " << index << " " << delta.toFloatMatrix() << std::endl;
     weight_updates[index].ipadd(1.0f, delta, work_queue);
     std::scoped_lock lock(mutex);
-    n_count++;
+    n_count = 1;
   }
 
   void MLPWeightUpdater::apply() {
     for (size_t i = 0; i < weight_updates.size(); i++) {
-      weight_updates[i].ipscale(1.0f / n_count, work_queue);
-      optimization->optimize(weight_updates[i], perceptron->getWeights()[i], work_queue);
+      optimization->optimize(weight_updates[i], perceptron->getWeights()[i], i, work_queue);
       weight_updates[i].fill(0.0f, work_queue);
     }
-    n_count = 0;
+    // n_count = 0;
     work_queue.finish();
   }
 
@@ -117,10 +117,12 @@ namespace nnet {
 
   void MLPOptimizer::optimize(const clFTensor &inputs, const clFTensor &targets,
                               MLPWeightUpdater &updater, cl::CommandQueue &queue) {
-    std::vector<clFTensor> layers_output;
-    std::vector<clFTensor> layers_af_output;
-    forward(*neural_network, inputs, layers_output, layers_af_output, queue);
-    backward(*neural_network, targets, layers_output, layers_af_output, updater, queue);
+    std::vector<clFTensor> layers_output(neural_network->getWeights().size() + 1);
+    std::vector<clFTensor> layers_af_output(neural_network->getWeights().size() + 1);
+    FloatMatrix input = inputs.getMatrix(0).toFloatMatrix();
+
+    forward(*neural_network, inputs.flatten(), layers_output, layers_af_output, queue);
+    backward(*neural_network, targets.flatten(), layers_output, layers_af_output, updater, queue);
   }
 
 }   // namespace nnet

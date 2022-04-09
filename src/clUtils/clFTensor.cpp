@@ -29,7 +29,7 @@ namespace math {
       cl::Event evt;
       size_t mat_size = x_dim * y_dim * sizeof(float);
       queue.enqueueCopyBuffer(other.data, data, other.offset * mat_size, offset * mat_size,
-                              size * sizeof(float), nullptr, &evt);
+                              other_size * sizeof(float), nullptr, &evt);
       if (blocking) evt.wait();
     }
     return *this;
@@ -57,6 +57,22 @@ namespace math {
     return matrices;
   }
 
+  std::vector<clFTensor> clFTensor::shallowSplit(size_t ndiv) const {
+    std::vector<clFTensor> parts;
+    size_t z_dim_part = z_dim / ndiv;
+    size_t z_dim_remainder = z_dim % ndiv;
+
+    size_t local_offset = 0;
+    for (size_t i = 0; i < ndiv; i++) {
+      parts.push_back(shallowCopy());
+      parts.back().z_dim = z_dim_part;
+      parts.back().offset = local_offset;
+      if (i < z_dim_remainder) { parts.back().z_dim++; }
+      local_offset += parts.back().z_dim;
+    }
+    return parts;
+  }
+
   clFTensor clFTensor::sub(float factor, const clFTensor &other, cl::CommandQueue &queue,
                            bool blocking) const {
     if (x_dim != other.x_dim || y_dim != other.y_dim || z_dim != other.z_dim) {
@@ -67,23 +83,9 @@ namespace math {
     result.copy(*this, queue, false);
     size_t size = x_dim * y_dim;
 
-    std::vector<float> alphas(size, -factor);
-    std::vector<size_t> x_offset(size);
-    for (size_t i = 0; i < size; i++) {
-      size_t mat_offset = (i + offset) * (x_dim * y_dim);
-      x_offset[i] = mat_offset;
-    }
-
-    std::vector<size_t> y_offsets(size);
-    for (size_t i = 0; i < z_dim; i++) {
-      size_t mat_offset = (i + offset) * (x_dim * y_dim);
-      y_offsets[i] = mat_offset;
-    }
-
     cl::Event evt;
-
-    clblast::AxpyBatched<float>(size, alphas.data(), other.data(), x_offset.data(), 1,
-                                result.data(), y_offsets.data(), 1, z_dim, &queue(), &evt());
+    clblast::Axpy<float>(size * z_dim, -factor, other.data(), other.offset, 1, result.data(),
+                         result.offset, 1, &queue(), &evt());
     if (blocking) evt.wait();
     return result;
   }
@@ -134,7 +136,8 @@ namespace math {
   clFTensor clFTensor::batchedGemm(float alpha, bool transpose_a, const clFMatrix &A,
                                    bool transpose_b, const clFTensor &B, float beta,
                                    const clFMatrix &C, cl::CommandQueue &queue, bool blocking) {
-    const size_t A_rows = A.getRows(), A_cols = A.getCols(), B_rows = B.getX(), B_cols = B.getY();
+    const size_t A_rows = A.getRows(), A_cols = A.getCols(), B_rows = B.getX(), B_cols = B.getY(),
+                 C_rows = C.getRows(), C_cols = C.getCols();
 
     if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows)) {
       throw std::invalid_argument("Matrix size do not match");
@@ -146,7 +149,7 @@ namespace math {
     size_t n = (transpose_b ? B_rows : B_cols);
     size_t k = (transpose_a ? A_rows : A_cols);
 
-    clFTensor res((transpose_a ? A_cols : A_rows), (transpose_b ? B_rows : B_cols), B.z_dim);
+    clFTensor res(C_rows, C_cols, B.z_dim);
     for (size_t i = 0; i < res.z_dim; i++) { res.getMatrix(i).copy(C, queue, false); }
     cl::Event evt;
 
@@ -166,10 +169,18 @@ namespace math {
       c_offset[i] = mat_offset;
     }
 
+    queue.finish();
+
+    FloatMatrix tmp = A.toFloatMatrix();
+    tmp = B.getMatrix(0).toFloatMatrix();
+    tmp = res.getMatrix(0).toFloatMatrix();
+
     clblast::GemmBatched<float>(clblast::Layout::kRowMajor, ta, tb, m, n, k, alphas.data(),
                                 A.getBuffer()(), a_offset.data(), A_cols, B.data(),
                                 b_offsets.data(), B_cols, betas.data(), res.data(), c_offset.data(),
-                                res.getY(), B.z_dim, &queue(), &evt());
+                                C_cols, B.z_dim, &queue(), &evt());
+    queue.finish();
+    tmp = res.getMatrix(0).toFloatMatrix();
     if (blocking) evt.wait();
 
     return res;
@@ -223,21 +234,19 @@ namespace math {
     return res;
   }
 
-  clFMatrix clFTensor::meanSumCollapse(cl::CommandQueue &queue, bool blocking) const {
+  clFMatrix clFTensor::meanSumCollapse(cl::CommandQueue &queue, cl::Event &event,
+                                       bool blocking) const {
     clFMatrix result(x_dim, y_dim);
+    result.fill(0.0f, queue, false);
     if (z_dim == 0) { return result; }
 
-    result.copy(getMatrix(0), queue, false);
-
     float factor = 1.0f / z_dim;
-    for (size_t i = 1; i < z_dim; i++) {
+    for (size_t i = 0; i < z_dim; i++) {
       clFMatrix mat = getMatrix(i);
-      if (i == z_dim - 1) {
-        result.ipadd(factor, mat, queue, blocking);
-      } else {
-        result.ipadd(factor, mat, queue, false);
-      }
+      clblast::Axpy<float>(x_dim * y_dim, factor, mat.getBuffer()(), mat.getOffset(), 1,
+                           result.getBuffer()(), result.getOffset(), 1, &queue(), &event());
     }
+    if (blocking) event.wait();
     return result;
   }
 

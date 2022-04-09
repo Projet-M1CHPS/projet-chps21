@@ -58,7 +58,7 @@ namespace control {
     for (size_t curr_epoch = 0; curr_epoch < max_epoch; curr_epoch++) {
       auto epoch_duration = runEpoch(*optimizer, training_set, targets);
 
-      tscl::logger("Epoch took " + std::to_string(epoch_duration.count()) + "ms",
+      tscl::logger("Epoch " + std::to_string(curr_epoch) + " took " + std::to_string(epoch_duration.count()) + "ms",
                    tscl::Log::Information);
 
       //  Async evaluation to avoid downtime

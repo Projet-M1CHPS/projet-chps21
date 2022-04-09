@@ -64,8 +64,8 @@ namespace control {
       math::clFTensor tensor(res.getInputWidth(), res.getInputHeight(), count);
 
       // Create an out-of-order queue to transform the images in parallel
-      cl::CommandQueue queue =
-              cl::CommandQueue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
+      cl::CommandQueue queue = cl::CommandQueue(utils::cl_wrapper.getContext(),
+                                                utils::cl_wrapper.getDefaultDevice());
 
       // Fetch the normalizing kernel
       // This kernel convert a char array to a float array, and scale every element by a given
@@ -158,6 +158,7 @@ namespace control {
       for (const auto &file : fs::directory_iterator(entry.path())) {
         if (not file.is_regular_file()) continue;
 
+        // TODO fix me
         files.push_back({file.path(), files.size(), static_cast<long>(classes.size() - 1)});
       }
     }

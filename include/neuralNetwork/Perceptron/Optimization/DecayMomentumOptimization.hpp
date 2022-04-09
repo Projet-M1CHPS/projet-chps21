@@ -10,7 +10,7 @@ namespace nnet {
   public:
     DecayMomentumOptimization(const MLPerceptron &perceptron, float lr_0, float dr, float mom);
 
-    void optimize(math::clFMatrix &gradient, math::clFMatrix& dest, cl::CommandQueue &queue) override;
+    void optimize(math::clFMatrix &gradient, math::clFMatrix& dest, size_t layer, cl::CommandQueue &queue) override;
     void update() override;
 
   private:

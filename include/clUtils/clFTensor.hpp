@@ -53,21 +53,7 @@ namespace math {
      * @param ndiv The number of parts to split the tensor in.
      * @return A vector containing the split tensors.
      */
-    std::vector<clFTensor> shallowSplit(size_t ndiv) const {
-      std::vector<clFTensor> parts;
-      size_t z_dim_part = z_dim / ndiv;
-      size_t z_dim_remainder = z_dim % ndiv;
-
-      size_t local_offset = 0;
-      for (size_t i = 0; i < ndiv; i++) {
-        parts.push_back(shallowCopy());
-        parts.back().z_dim = z_dim_part;
-        parts.back().offset = local_offset;
-        if (i < z_dim_remainder) { parts.back().z_dim++; }
-        local_offset += parts.back().z_dim;
-      }
-      return parts;
-    }
+    std::vector<clFTensor> shallowSplit(size_t ndiv) const;
 
     /**
      * @brief Returns a clFTensor wheres matrices are flattened (x * y, 1)
@@ -83,29 +69,35 @@ namespace math {
       res.x_dim = x_dim * y_dim;
       res.y_dim = y_dim > 0 ? 1 : 0;
       res.z_dim = z_dim;
+      res.offset = offset;
       return res;
     }
 
     clFTensor sub(float factor, const clFTensor &other, cl::CommandQueue &queue,
                   bool blocking = false) const;
 
-    static clFTensor batchedGemm(float alpha, bool transpose_a, const clFMatrix &A, bool transpose_b,
-                                 const clFTensor &B, cl::CommandQueue &queue,
+    static clFTensor batchedGemm(float alpha, bool transpose_a, const clFMatrix &A,
+                                 bool transpose_b, const clFTensor &B, cl::CommandQueue &queue,
                                  bool blocking = false);
 
-    static clFTensor batchedGemm(float alpha, bool transpose_a, const clFMatrix &A, bool transpose_b,
-                                 const clFTensor &B, float beta, const clFMatrix &C,
-                                 cl::CommandQueue &queue, bool blocking = false);
-
-
-    static clFTensor batchedGemm(float alpha, bool transpose_a, const clFTensor &A, bool transpose_b,
-                                 const clFTensor &B, cl::CommandQueue &queue,
+    static clFTensor batchedGemm(float alpha, bool transpose_a, const clFMatrix &A,
+                                 bool transpose_b, const clFTensor &B, float beta,
+                                 const clFMatrix &C, cl::CommandQueue &queue,
                                  bool blocking = false);
 
-    clFMatrix meanSumCollapse(cl::CommandQueue &queue, bool blocking = false) const;
+
+    static clFTensor batchedGemm(float alpha, bool transpose_a, const clFTensor &A,
+                                 bool transpose_b, const clFTensor &B, cl::CommandQueue &queue,
+                                 bool blocking = false);
+
+    clFMatrix meanSumCollapse(cl::CommandQueue &queue, cl::Event &event,
+                              bool blocking = false) const;
 
     clFTensor &iphadamard(const clFTensor &other, cl::CommandQueue &queue, bool blocking = false);
 
+    size_t offsetOf(size_t index);
+    size_t offsetOfInBytes(size_t index);
+    size_t getOffset();
 
     /**
      * @brief Returns the submatrix at the given index.

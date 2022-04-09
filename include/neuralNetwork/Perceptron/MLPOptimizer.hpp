@@ -3,7 +3,7 @@
 #include "BatchScheduler.hpp"
 #include "MLPModel.hpp"
 #include "MLPerceptron.hpp"
-#include "Optimization/RProPOptimization.hpp"
+#include "Optimization.hpp"
 #include "Optimizer.hpp"
 #include <iostream>
 #include <utility>
@@ -15,7 +15,7 @@ namespace nnet {
     MLPWeightUpdater(MLPerceptron &parent, Optimization &optimization);
     const math::clFMatrix &operator[](size_t i);
 
-    void reduce(size_t index, const math::clFMatrix &delta);
+    void reduce(size_t index, const math::clFMatrix &delta, cl::Event &event);
     virtual void apply();
 
   private:
@@ -42,6 +42,13 @@ namespace nnet {
     size_t getBatchSize() const { return batch_size; }
     size_t setBatchSize() const { return batch_size; }
 
+    template<class optim, typename... Args>
+    static std::unique_ptr<MLPOptimizer> make(MLPModel &model, size_t batch_size, Args &&...args) {
+      return std::make_unique<MLPOptimizer>(
+              model, std::make_unique<optim>(model.getPerceptron(), std::forward<Args>(args)...),
+              batch_size);
+    }
+
     /**
      * @brief Train the neural network on a single input and return the error on the input
      * Mainly used for convolution network and testing
@@ -52,8 +59,8 @@ namespace nnet {
     void optimize(const std::vector<math::clFTensor> &inputs,
                   const std::vector<math::clFTensor> &targets) override;
 
-    void optimize(const math::clFTensor &inputs, const math::clFTensor &targets, MLPWeightUpdater &updater,
-                  cl::CommandQueue &queue);
+    void optimize(const math::clFTensor &inputs, const math::clFTensor &targets,
+                  MLPWeightUpdater &updater, cl::CommandQueue &queue);
 
   private:
     MLPerceptron *neural_network;
@@ -63,7 +70,8 @@ namespace nnet {
 
   class MLPBatchScheduler : public BatchScheduler {
   public:
-    MLPBatchScheduler(MLPOptimizer &optimizer, MLPWeightUpdater &updater, size_t batch_size);
+    MLPBatchScheduler(MLPOptimizer &optimizer, MLPWeightUpdater &updater, size_t batch_size)
+        : BatchScheduler(batch_size), optimizer(&optimizer), updater(&updater) {}
 
     void endOfBatch() override { updater->apply(); }
 

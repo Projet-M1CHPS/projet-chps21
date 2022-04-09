@@ -10,7 +10,7 @@ namespace nnet {
   public:
     explicit SGDOptimization(const MLPerceptron &perceptron, float lr);
 
-    void optimize(math::clFMatrix &gradient, math::clFMatrix& dest, cl::CommandQueue &queue) override;
+    void optimize(math::clFMatrix &gradient, math::clFMatrix& dest, size_t layer, cl::CommandQueue &queue) override;
 
   private:
     const float learning_r;

@@ -7,9 +7,10 @@ namespace nnet {
 
   class BatchScheduler {
   public:
-    BatchScheduler(size_t batch_size);
+    BatchScheduler(size_t batch_size) : batch_size(batch_size) {}
 
-    void run(std::vector<math::clFTensor> inputs, std::vector<math::clFTensor> targets) {
+    void run(const std::vector<math::clFTensor> &inputs,
+             const std::vector<math::clFTensor> &targets) {
       // TODO: implement this
       // Test function using stochastic gradient descent
 
@@ -24,6 +25,9 @@ namespace nnet {
 
     virtual void runBatch(const math::clFTensor &inputs, const math::clFTensor &targets,
                           cl::CommandQueue &queue) = 0;
+
+  protected:
+    size_t batch_size;
   };
 
 }   // namespace nnet

@@ -17,7 +17,8 @@ namespace nnet {
      *
      * @param storage
      */
-    virtual void optimize(math::clFMatrix &gradient, math::clFMatrix& dest, cl::CommandQueue &queue) = 0;
+    virtual void optimize(math::clFMatrix &gradient, math::clFMatrix &dest, size_t layer,
+                          cl::CommandQueue &queue) = 0;
 
     /**
      * @brief Some optimization require to be updated after each epoch
