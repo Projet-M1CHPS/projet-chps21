@@ -86,11 +86,34 @@ void testConvo() {
 }
 
 
-void testConvolutionalLayer() {
-  /*nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, af::ActivationFunctionType::relu, 1, 0);
+void testConvolutionalLayer1Branch() {
+  // 1 branch 2 filter/branch 2 input/branch
+  const size_t number_filter = 2;
+  const size_t number_input = 2;
 
+  nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, number_filter, af::ActivationFunctionType::relu,
+                                  1, 1);
+
+  FloatMatrix f1(2, 2);
+  {
+    f1(0, 0) = 2.f;
+    f1(0, 1) = 1.f;
+    f1(1, 0) = 0.5f;
+    f1(1, 1) = 1.5f;
+  }
+  FloatMatrix f2(2, 2);
+  {
+    f2(0, 0) = 1.f;
+    f2(0, 1) = 1.f;
+    f2(1, 0) = 1.f;
+    f2(1, 1) = 1.f;
+  }
   auto &filter = layer.getFilter();
-  std::cout << "filter : \n" << filter.getMatrix() << std::endl;
+  filter.getMatrix(0) = f1;
+  filter.getMatrix(1) = f2;
+
+  for (size_t i = 0; i < filter.getZ(); i++)
+    std::cout << "filter " << i << " : \n" << filter.getMatrix(i).toFloatMatrix(true) << std::endl;
 
   math::FloatMatrix input(6, 6);
   {
@@ -131,14 +154,142 @@ void testConvolutionalLayer() {
     input(5, 4) = 4.f;
     input(5, 5) = 1.f;
   }
-  std::cout << "input : \n" << input << std::endl;
 
-  clFMatrix _input(input, true);
+  clFTensor input_tensor(6, 6, number_input);
+  for (size_t i = 0; i < input_tensor.getZ(); i++) input_tensor.getMatrix(i) = input;
+  for (size_t i = 0; i < input_tensor.getZ(); i++)
+    std::cout << "input " << i << " : \n"
+              << input_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
 
-  clFMatrix output = layer.compute(_input);
+  clFTensor output_tensor = layer.compute(input_tensor);
 
-  math::FloatMatrix tmp_output = output.toFloatMatrix(true);
-  std::cout << "output : \n" << tmp_output << std::endl;*/
+  for (size_t i = 0; i < output_tensor.getZ(); i++)
+    std::cout << "output " << i << " : \n"
+              << output_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
+
+  /* input
+   * 1 2 1 1 4 1
+   * 2 1 1 2 2 1
+   * 4 3 2 1 2 1
+   * 1 5 1 1 2 1
+   * 2 1 1 4 1 1
+   * 2 1 4 2 4 1
+   *
+   * filter
+   * 2   1
+   * 0.5 1.5
+   *
+   * error input
+   * 6.5  7   6.5 10  11.5
+   * 11.5 7.5 6.5 9.5 7.5
+   * 19   12  7   7.5 7.5
+   * 9.5  13  9.5 7.5 7
+   * 7.5 9.5 11 16 6.5
+   * */
+
+  /*nnet::CNNStorageBPConvolution storage({6, 6}, {5, 5}, {2, 2}, 1);
+
+  layer.computeForward(input, storage);
+  std::cout << "compute forward : \n" << storage.output << std::endl;
+  for (auto &i : storage.output) { i = 1.f; }
+  layer.computeBackward(input, storage);
+  std::cout << "error input : \n" << storage.errorInput << std::endl;
+  std::cout << "error filter : \n" << storage.errorFilter << std::endl;*/
+
+  /* error input
+   *
+   * 2 3 3 3 3 1
+   * 2.5 5 5 5 5 2.5
+   * 2.5 5 5 5 5 2.5
+   * 2.5 5 5 5 5 2.5
+   * 2.5 5 5 5 5 2.5
+   * 0.5 2 2 2 2 1.5
+   *
+   * error filter
+   * 48 43
+   * 52 46
+   * */
+}
+
+void testConvolutionalLayerXBranch() {
+  // 3 branch 2 filter/branch 3input/branch
+  nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, 2, af::ActivationFunctionType::relu, 1, 3);
+
+  FloatMatrix f1(2, 2);
+  {
+    f1(0, 0) = 2.f;
+    f1(0, 1) = 1.f;
+    f1(1, 0) = 0.5f;
+    f1(1, 1) = 1.5f;
+  }
+  FloatMatrix f2(2, 2);
+  {
+    f2(0, 0) = 1.f;
+    f2(0, 1) = 1.f;
+    f2(1, 0) = 1.f;
+    f2(1, 1) = 1.f;
+  }
+  math::FloatMatrix input(6, 6);
+  {
+    input(0, 0) = 1.f;
+    input(0, 1) = 2.f;
+    input(0, 2) = 1.f;
+    input(0, 3) = 1.f;
+    input(0, 4) = 4.f;
+    input(0, 5) = 1.f;
+    input(1, 0) = 2.f;
+    input(1, 1) = 1.f;
+    input(1, 2) = 1.f;
+    input(1, 3) = 2.f;
+    input(1, 4) = 2.f;
+    input(1, 5) = 1.f;
+    input(2, 0) = 4.f;
+    input(2, 1) = 3.f;
+    input(2, 2) = 2.f;
+    input(2, 3) = 1.f;
+    input(2, 4) = 2.f;
+    input(2, 5) = 1.f;
+    input(3, 0) = 1.f;
+    input(3, 1) = 5.f;
+    input(3, 2) = 1.f;
+    input(3, 3) = 1.f;
+    input(3, 4) = 2.f;
+    input(3, 5) = 1.f;
+    input(4, 0) = 2.f;
+    input(4, 1) = 1.f;
+    input(4, 2) = 1.f;
+    input(4, 3) = 4.f;
+    input(4, 4) = 1.f;
+    input(4, 5) = 1.f;
+    input(5, 0) = 2.f;
+    input(5, 1) = 1.f;
+    input(5, 2) = 4.f;
+    input(5, 3) = 2.f;
+    input(5, 4) = 4.f;
+    input(5, 5) = 1.f;
+  }
+
+  auto &filter = layer.getFilter();
+  filter.getMatrix(0) = f1;
+  filter.getMatrix(1) = f2;
+  filter.getMatrix(2) = f1;
+  filter.getMatrix(3) = f2;
+  filter.getMatrix(4) = f1;
+  filter.getMatrix(5) = f2;
+  for (size_t i = 0; i < filter.getZ(); i++)
+    std::cout << "filter " << i << " : \n" << filter.getMatrix(i).toFloatMatrix(true) << std::endl;
+
+  clFTensor input_tensor(6, 6, 6);
+  for (size_t i = 0; i < input_tensor.getZ(); i++) input_tensor.getMatrix(i) = input;
+  for (size_t i = 0; i < input_tensor.getZ(); i++)
+    std::cout << "input " << i << " : \n"
+              << input_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
+
+  clFTensor output_tensor = layer.compute(input_tensor);
+
+  for (size_t i = 0; i < output_tensor.getZ(); i++)
+    std::cout << "output " << i << " : \n"
+              << output_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
 
   /* input
    * 1 2 1 1 4 1
@@ -185,7 +336,7 @@ void testConvolutionalLayer() {
 }
 
 void testMaxPoolingLayer() {
-  /*nnet::CNNMaxPoolingLayer layer({4, 4}, {3, 3}, 1);
+  nnet::CNNMaxPoolingLayer layer({4, 4}, {3, 3}, 1);
 
   math::FloatMatrix input(6, 6);
   {
@@ -226,14 +377,18 @@ void testMaxPoolingLayer() {
     input(5, 4) = 4.f;
     input(5, 5) = 1.f;
   }
-  std::cout << input << std::endl;
 
-  clFMatrix _input(input, true);
+  clFTensor input_tensor(6, 6, 4);
+  for (size_t i = 0; i < input_tensor.getZ(); i++) input_tensor.getMatrix(i) = input;
+  for (size_t i = 0; i < input_tensor.getZ(); i++)
+    std::cout << "input " << i << " : \n"
+              << input_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
 
-  clFMatrix output = layer.compute(_input);
+  clFTensor output_tensor = layer.compute(input_tensor);
 
-  math::FloatMatrix tmp_output = output.toFloatMatrix(true);
-  std::cout << "output : \n" << tmp_output << std::endl;*/
+  for (size_t i = 0; i < output_tensor.getZ(); i++)
+    std::cout << "output " << i << " : \n"
+              << output_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
 
   /* input
    * 1 2 1 1 4 1
@@ -311,14 +466,18 @@ void testAvgPoolingLayer() {
     input(5, 4) = 4.f;
     input(5, 5) = 1.f;
   }
-  std::cout << "input :\n" << input << std::endl;
 
-  clFMatrix _input(input, true);
+  clFTensor input_tensor(6, 6, 4);
+  for (size_t i = 0; i < input_tensor.getZ(); i++) input_tensor.getMatrix(i) = input;
+  for (size_t i = 0; i < input_tensor.getZ(); i++)
+    std::cout << "input " << i << " : \n"
+              << input_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
 
-  //clFMatrix output = layer.compute(_input);
+  clFTensor output_tensor = layer.compute(input_tensor);
 
-  //math::FloatMatrix tmp_output = output.toFloatMatrix(true);
-  //std::cout << "output : \n" << tmp_output << std::endl;
+  for (size_t i = 0; i < output_tensor.getZ(); i++)
+    std::cout << "output " << i << " : \n"
+              << output_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
 
   /* input
    * 1 2 1 1 4 1
@@ -353,15 +512,22 @@ void testAvgPoolingLayer() {
    * */
 }
 
-void testPredictionOneBranch() {
-  //std::string str_topo("6 6 relu convolution 1 2 2 1 0 pooling max 2 2 1");
-  std::string str_topo("6 6 relu convolution 2 2 2 1 0 convolution 2 2 2 1 0 pooling max 2 2 1");
-  auto topo = nnet::stringToTopology(str_topo);
-  std::cout << topo << std::endl;
+void testPrediction1Branch() {
+  std::string str_topology("6 6 relu convolution 1 2 2 1 0 pooling max 2 2 1");
+  // std::string str_topology("6 6 relu convolution 1 2 2 1 0");
+  auto topology = nnet::stringToTopology(str_topology);
+  std::cout << topology << std::endl;
 
   nnet::CNN cnn;
-  cnn.setTopology(topo);
+  cnn.setTopology(topology);
 
+  FloatMatrix f(2, 2);
+  {
+    f(0, 0) = 2.f;
+    f(0, 1) = 1.f;
+    f(1, 0) = 0.5f;
+    f(1, 1) = 1.5f;
+  }
   math::FloatMatrix input(6, 6);
   {
     input(0, 0) = 1.f;
@@ -401,15 +567,142 @@ void testPredictionOneBranch() {
     input(5, 4) = 4.f;
     input(5, 5) = 1.f;
   }
-  math::clFMatrix output(16, 1);
 
-  std::cout << input << std::endl;
+  const auto &layer = cnn.layers[0].get();
+  const auto &layer_convolution = dynamic_cast<const nnet::CNNConvolutionLayer *>(layer);
+  auto &filter = layer_convolution->getFilter();
+  for (size_t i = 0; i < filter.getZ(); i++) filter.getMatrix(i) = f;
 
-  math::clFMatrix tmp_input(input);
-  /*cnn.predict(tmp_input, output);
+  clFTensor input_tensor(6, 6, 2);
+  for (size_t i = 0; i < input_tensor.getZ(); i++) input_tensor.getMatrix(i) = input;
+  for (size_t i = 0; i < input_tensor.getZ(); i++)
+    std::cout << "input " << i << " : \n"
+              << input_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
 
-  math::FloatMatrix tmp_output = output.toFloatMatrix(true);
-  std::cout << "output :\n" << tmp_output << std::endl;*/
+
+  clFTensor output_tensor = cnn.predict(input_tensor);
+
+  for (size_t i = 0; i < output_tensor.getZ(); i++)
+    std::cout << "output " << i << " : \n"
+              << output_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
+
+  /* input
+   * 1 2 1 1 4 1
+   * 2 1 1 2 2 1
+   * 4 3 2 1 2 1
+   * 1 5 1 1 2 1
+   * 2 1 1 4 1 1
+   * 2 1 4 2 4 1
+   *
+   * filter
+   * 2   1
+   * 0.5 1.5
+   *
+   * output
+   * 11.5
+   * 7.5
+   * 10
+   * 11.5
+   * 19
+   * 12
+   * 9.5
+   * 9.5
+   * 19
+   * 13
+   * 9.5
+   * 7.5
+   * 13
+   * 13
+   * 16
+   * 16
+   * */
+}
+
+void testPredictionXBranch() {
+  //std::string str_topology("6 6 relu convolution 2 2 2 1 0");
+  //std::string str_topology("6 6 relu convolution 2 2 2 1 0 pooling max 2 2 1");
+  //std::string str_topology("6 6 relu convolution 2 2 2 1 0 convolution 2 2 2 1 0");
+  std::string str_topology("6 6 relu convolution 2 2 2 1 0 convolution 2 2 2 1 0 pooling max 2 2 1");
+  auto topology = nnet::stringToTopology(str_topology);
+  std::cout << topology << std::endl;
+
+  nnet::CNN cnn;
+  cnn.setTopology(topology);
+
+  FloatMatrix f1(2, 2);
+  {
+    f1(0, 0) = 2.f;
+    f1(0, 1) = 1.f;
+    f1(1, 0) = 0.5f;
+    f1(1, 1) = 1.5f;
+  }
+  FloatMatrix f2(2, 2);
+  {
+    f2(0, 0) = 2.f;
+    f2(0, 1) = 1.f;
+    f2(1, 0) = 0.f;
+    f2(1, 1) = 1.f;
+  }
+  math::FloatMatrix input(6, 6);
+  {
+    input(0, 0) = 1.f;
+    input(0, 1) = 2.f;
+    input(0, 2) = 1.f;
+    input(0, 3) = 1.f;
+    input(0, 4) = 4.f;
+    input(0, 5) = 1.f;
+    input(1, 0) = 2.f;
+    input(1, 1) = 1.f;
+    input(1, 2) = 1.f;
+    input(1, 3) = 2.f;
+    input(1, 4) = 2.f;
+    input(1, 5) = 1.f;
+    input(2, 0) = 4.f;
+    input(2, 1) = 3.f;
+    input(2, 2) = 2.f;
+    input(2, 3) = 1.f;
+    input(2, 4) = 2.f;
+    input(2, 5) = 1.f;
+    input(3, 0) = 1.f;
+    input(3, 1) = 5.f;
+    input(3, 2) = 1.f;
+    input(3, 3) = 1.f;
+    input(3, 4) = 2.f;
+    input(3, 5) = 1.f;
+    input(4, 0) = 2.f;
+    input(4, 1) = 1.f;
+    input(4, 2) = 1.f;
+    input(4, 3) = 4.f;
+    input(4, 4) = 1.f;
+    input(4, 5) = 1.f;
+    input(5, 0) = 2.f;
+    input(5, 1) = 1.f;
+    input(5, 2) = 4.f;
+    input(5, 3) = 2.f;
+    input(5, 4) = 4.f;
+    input(5, 5) = 1.f;
+  }
+
+  const auto &layer1 = dynamic_cast<const nnet::CNNConvolutionLayer *>(cnn.layers[0].get());
+  auto &filter1 = layer1->getFilter();
+  for (size_t i = 0; i < filter1.getZ(); i++) filter1.getMatrix(i) = f1;
+
+  const auto &layer2 = dynamic_cast<const nnet::CNNConvolutionLayer *>(cnn.layers[1].get());
+  auto &filter2 = layer2->getFilter();
+  for (size_t i = 0; i < filter2.getZ(); i++) filter2.getMatrix(i) = f2;
+
+  clFTensor input_tensor(6, 6, 2);
+  for (size_t i = 0; i < input_tensor.getZ(); i++) input_tensor.getMatrix(i) = input;
+  for (size_t i = 0; i < input_tensor.getZ(); i++)
+    std::cout << "input " << i << " : \n"
+              << input_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
+
+
+  clFTensor output_tensor = cnn.predict(input_tensor);
+
+  for (size_t i = 0; i < output_tensor.getZ(); i++)
+    std::cout << "output " << i << " : \n"
+              << output_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
 
   /* input
    * 1 2 1 1 4 1
@@ -447,11 +740,14 @@ int main() {
   utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault());
   // testConvo();
 
-  // testConvolutionalLayer();
+  // testConvolutionalLayer1Branch();
+  // testConvolutionalLayerXBranch();
+
   // testMaxPoolingLayer();
   // testAvgPoolingLayer();
 
-  testPredictionOneBranch();
+  //testPrediction1Branch();
+  testPredictionXBranch();
 
   return 0;
 }

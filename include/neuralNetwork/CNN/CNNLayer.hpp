@@ -2,7 +2,6 @@
 
 #include "ActivationFunction.hpp"
 #include "CNNStorageBP.hpp"
-#include "Filter.hpp"
 #include "Matrix.hpp"
 #include "clUtils/clFMatrix.hpp"
 #include "clUtils/clFTensor.hpp"
@@ -41,6 +40,7 @@ namespace nnet {
 
     [[nodiscard]] const size_t getPadding() const { return padding; };
     [[nodiscard]] const clFTensor &getFilter() const { return filters; }
+    [[nodiscard]] clFTensor &getFilter() { return filters; }
 
     clFTensor compute(const clFTensor &input) override;
     clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) override;
@@ -48,6 +48,7 @@ namespace nnet {
 
   private:
     const size_t n_branch;
+    const size_t n_filter;
     const size_t padding;
     af::ActivationFunctionType activationFunction;
 

@@ -24,8 +24,8 @@ namespace nnet {
         activationFunction(aFunction), outputSize(computeOutputSize(inputSize)) {}
 
   std::shared_ptr<CNNLayer> CNNTopologyLayerConvolution::convertToLayer() const {
-    return std::make_shared<CNNConvolutionLayer>(outputSize, filter, features * n_branch, activationFunction,
-                                                 stride, padding);
+    return std::make_shared<CNNConvolutionLayer>(outputSize, filter, features, activationFunction,
+                                                 stride, n_branch, padding);
   }
 
   std::shared_ptr<CNNStorageBP>

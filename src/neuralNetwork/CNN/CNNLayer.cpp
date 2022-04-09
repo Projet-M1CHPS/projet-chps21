@@ -15,25 +15,40 @@ namespace nnet {
                                            const size_t padding)
       : CNNLayer(outputSize, stride),
         filters(sizeFilter.first, sizeFilter.second, nFilter * nBranch), n_branch(nBranch),
-        padding(padding), activationFunction(aFunction) {
-  }
+        n_filter(nFilter), padding(padding), activationFunction(aFunction) {}
 
 
   clFTensor CNNConvolutionLayer::compute(const clFTensor &input) {
     auto sub_tensor_in = input.shallowSplit(n_branch);
 
-    clFTensor res(outputSize.first, outputSize.second, n_branch * filters.getZ());
-    auto sub_tensor_out = res.shallowSplit(n_branch * filters.getZ());
+    std::cout << "call compute : branch{" << n_branch << "}, filter{" << n_filter << "}"
+              << std::endl;
 
     cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
+
+    const size_t output_size_z = n_branch * n_filter * input.getZ() / n_branch;
+    clFTensor res(outputSize.first, outputSize.second, output_size_z);
+
+    auto sub_filter = filters.shallowSplit(n_branch);
+    auto sub_tensor_out = res.shallowSplit(n_branch * n_filter);
+
     size_t out_index = 0;
     for (size_t i = 0; i < n_branch; i++) {
-      for (size_t j = 0; j < filters.getZ(); j++) {
+      std::cout << "branch" << std::endl;
+      for (size_t j = 0; j < n_filter; j++) {
+        std::cout << "filter" << std::endl;
+
+        std::cout << sub_filter[i].getMatrix(0).toFloatMatrix(true) << std::endl;
+
         clblast::Convgemm<float>(
                 clblast::KernelMode::kCrossCorrelation, 1, input.getX(), input.getY(),
                 filters.getX(), filters.getY(), padding, padding, stride, stride, 1, 1, 1,
-                input.getZ(), sub_tensor_in[i].getBuffer()(), 0, filters.getMatrix(j).getBuffer()(),
-                0, sub_tensor_out[out_index++].getBuffer()(), 0, &queue(), nullptr);
+                input.getZ() / n_branch, sub_tensor_in[i].getBuffer()(),
+                sub_tensor_in[i].offset * input.getX() * input.getY(),
+                sub_filter[i].getMatrix(j).getBuffer()(), sub_filter[i].getMatrix(j).getOffset(),
+                sub_tensor_out[out_index].getBuffer()(),
+                sub_tensor_out[out_index].offset * res.getX() * res.getY(), &queue(), nullptr);
+        out_index++;
       }
     }
 

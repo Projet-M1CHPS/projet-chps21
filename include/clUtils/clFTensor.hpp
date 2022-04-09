@@ -152,7 +152,7 @@ namespace math {
 
     cl::Buffer getBuffer() const { return data; }
 
-  private:
+  public:
     cl::Buffer data;
     size_t x_dim = 0;
     size_t y_dim = 0;
