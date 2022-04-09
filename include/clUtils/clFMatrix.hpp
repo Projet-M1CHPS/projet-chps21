@@ -21,6 +21,8 @@ namespace math {
    */
   class clFMatrix {
   public:
+    friend std::ostream &operator<<(std::ostream &os, const clFMatrix &m);
+
     /**
      * @brief Creates an empty matrix
      */
@@ -68,7 +70,7 @@ namespace math {
      * Note that if the operation is non-blocking, the user is responsible for ensuring that the
      * matrix remains valid until the operation is finished
      */
-    clFMatrix(const float *source, size_t rows, size_t cols, bool blocking = true)
+    clFMatrix(const float *source, size_t rows, size_t cols, bool blocking)
         : clFMatrix(source, rows, cols, utils::cl_wrapper.getDefaultQueue(), blocking) {}
 
     /**
@@ -79,7 +81,7 @@ namespace math {
      * Note that if the operation is non-blocking, the user is responsible for ensuring that the
      * matrix remains valid until the operation is finished
      */
-    clFMatrix(const math::FloatMatrix &matrix, cl::CommandQueue &queue, bool blocking = true);
+    clFMatrix(const math::FloatMatrix &matrix, cl::CommandQueue &queue, bool blocking);
 
     /**
      * @brief Copies a FloatMatrix to the device, using the default queue
@@ -104,8 +106,18 @@ namespace math {
      * @param cols The number of cols of the matrix
      * @param offset The offset in elements (float), starting from the beginning of the buffer
      */
-    static clFMatrix fromSubbuffer(cl::Buffer subbuffer, size_t rows, size_t cols,
-                                   size_t offset = 0);
+    clFMatrix(cl::Buffer &subbuffer, size_t width, size_t height, size_t offset);
+
+    /**
+     * @brief Creates a new matrix from an existing OpenCL buffer
+     * The buffer is not copied, the new matrix is just a wrapper around the existing buffer
+     *
+     * @param subbuffer The OpenCL buffer to be used for the matrix
+     * @param rows The number of rows of the matrix
+     * @param cols The number of cols of the matrix
+     * @param offset The offset in elements (float), starting from the beginning of the buffer
+     */
+    clFMatrix(const cl::Buffer &subbuffer, size_t width, size_t height, size_t offset);
 
     /**
      * @brief Reinterpret the matrix as a flat vector, without copying the data
@@ -121,7 +133,9 @@ namespace math {
     [[nodiscard]] size_t getRows() const { return rows; }
     [[nodiscard]] size_t getCols() const { return cols; }
     [[nodiscard]] size_t getOffset() const { return offset; }
+    [[nodiscard]] size_t getOffsetInBytes() const { return offset; }
     [[nodiscard]] size_t size() const { return rows * cols; }
+    [[nodiscard]] size_t sizeInBytes() const { return size() * sizeof(float); }
 
     /**
      * @brief Copies a matrix on the host to the device, replacing the current matrix

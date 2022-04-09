@@ -8,41 +8,41 @@ using namespace utils;
 
 TEST(clFTensor, canCreateEmpty) {
   clFTensor t;
-  EXPECT_EQ(t.getZ(), 0);
-  EXPECT_EQ(t.getX(), 0);
-  EXPECT_EQ(t.getY(), 0);
+  EXPECT_EQ(t.getDepth(), 0);
+  EXPECT_EQ(t.getRows(), 0);
+  EXPECT_EQ(t.getCols(), 0);
 }
 
 TEST(clFTensor, canCreate) {
   clFTensor t2(1, 2, 3);
 
-  EXPECT_EQ(t2.getX(), 1);
-  EXPECT_EQ(t2.getY(), 2);
-  EXPECT_EQ(t2.getZ(), 3);
+  EXPECT_EQ(t2.getRows(), 1);
+  EXPECT_EQ(t2.getCols(), 2);
+  EXPECT_EQ(t2.getDepth(), 3);
 }
 
 TEST(clFTensor, canFlatten) {
   clFTensor t;
   auto flat = t.flatten();
-  EXPECT_EQ(flat.getX(), 0);
-  EXPECT_EQ(flat.getY(), 0);
-  EXPECT_EQ(flat.getZ(), 0);
+  EXPECT_EQ(flat.getRows(), 0);
+  EXPECT_EQ(flat.getCols(), 0);
+  EXPECT_EQ(flat.getDepth(), 0);
 
   clFTensor t2(1, 2, 3);
   flat = t2.flatten();
 
-  EXPECT_EQ(flat.getX(), 2);
-  EXPECT_EQ(flat.getY(), 1);
-  EXPECT_EQ(flat.getZ(), 3);
+  EXPECT_EQ(flat.getRows(), 2);
+  EXPECT_EQ(flat.getCols(), 1);
+  EXPECT_EQ(flat.getDepth(), 3);
 }
 
 TEST(clFTensor, canDeepCopy) {
   clFTensor t(1, 2, 3);
-  clFTensor t2 = t;
+  clFTensor t2(t, true);
 
-  EXPECT_EQ(t2.getX(), 1);
-  EXPECT_EQ(t2.getY(), 2);
-  EXPECT_EQ(t2.getZ(), 3);
+  EXPECT_EQ(t2.getRows(), 1);
+  EXPECT_EQ(t2.getCols(), 2);
+  EXPECT_EQ(t2.getDepth(), 3);
 
   // The buffer should not have been copied
   EXPECT_NE(t2.getBuffer()(), t.getBuffer()());
@@ -52,9 +52,9 @@ TEST(clFTensor, canShallowCopy) {
   clFTensor t(1, 2, 3);
   clFTensor t2 = t.shallowCopy();
 
-  EXPECT_EQ(t2.getX(), 1);
-  EXPECT_EQ(t2.getY(), 2);
-  EXPECT_EQ(t2.getZ(), 3);
+  EXPECT_EQ(t2.getRows(), 1);
+  EXPECT_EQ(t2.getCols(), 2);
+  EXPECT_EQ(t2.getDepth(), 3);
 
   // The buffer should have been copied
   EXPECT_EQ(t2.getBuffer()(), t.getBuffer()());
@@ -66,20 +66,20 @@ TEST(clFTensor, canCreateSubmatrix) {
   m(0, 1) = 1;
 
   clFTensor tensor(1, 2, 3);
-  clFMatrix mat1 = tensor.getMatrix(0);
+  clFMatrix mat1 = tensor[0];
 
   EXPECT_EQ(mat1.getRows(), 1);
   EXPECT_EQ(mat1.getCols(), 2);
   mat1 = m;
   mat1.ipadd(1.0f, mat1);
 
-  clFMatrix mat2 = tensor.getMatrix(1);
+  clFMatrix mat2 = tensor[1];
   EXPECT_EQ(mat2.getRows(), 1);
   EXPECT_EQ(mat2.getCols(), 2);
   mat2 = m;
   mat2.ipadd(2.0f, mat2);
 
-  clFMatrix mat3 = tensor.getMatrix(2);
+  clFMatrix mat3 = tensor[2];
   EXPECT_EQ(mat3.getRows(), 1);
   EXPECT_EQ(mat3.getCols(), 2);
   mat3 = m;
@@ -87,7 +87,7 @@ TEST(clFTensor, canCreateSubmatrix) {
 
   utils::cl_wrapper.getDefaultQueue().finish();
 
-  auto entire_tensor = clFMatrix::fromSubbuffer(tensor.getBuffer(), 6, 1);
+  clFMatrix entire_tensor(tensor.getBuffer(), 6, 1, 0);
   auto fmatrix = entire_tensor.toFloatMatrix();
 
   EXPECT_EQ(fmatrix.getRows(), 6);
@@ -110,28 +110,28 @@ TEST(clFTensor, canSplitShallowCopy) {
 
 
   clFTensor tensor(1, 2, 3);
-  auto subtensors = tensor.shallowSplit(3);
+  auto subtensors = tensor.slice(3);
 
   for (size_t i = 0; i < 3; i++) {
-    EXPECT_EQ(subtensors[i].getX(), 1);
-    EXPECT_EQ(subtensors[i].getY(), 2);
-    EXPECT_EQ(subtensors[i].getZ(), 1);
+    EXPECT_EQ(subtensors[i].getRows(), 1);
+    EXPECT_EQ(subtensors[i].getCols(), 2);
+    EXPECT_EQ(subtensors[i].getDepth(), 1);
   }
 
-  clFMatrix mat1 = subtensors[0].getMatrix(0);
+  clFMatrix mat1 = subtensors[0][0];
 
   EXPECT_EQ(mat1.getRows(), 1);
   EXPECT_EQ(mat1.getCols(), 2);
   mat1 = m;
   mat1.ipadd(1.0f, mat1);
 
-  clFMatrix mat2 = subtensors[1].getMatrix(0);
+  clFMatrix mat2 = subtensors[1][0];
   EXPECT_EQ(mat2.getRows(), 1);
   EXPECT_EQ(mat2.getCols(), 2);
   mat2 = m;
   mat2.ipadd(2.0f, mat2);
 
-  clFMatrix mat3 = subtensors[2].getMatrix(0);
+  clFMatrix mat3 = subtensors[2][0];
   EXPECT_EQ(mat3.getRows(), 1);
   EXPECT_EQ(mat3.getCols(), 2);
   mat3 = m;
@@ -139,7 +139,7 @@ TEST(clFTensor, canSplitShallowCopy) {
 
   utils::cl_wrapper.getDefaultQueue().finish();
 
-  auto entire_tensor = clFMatrix::fromSubbuffer(tensor.getBuffer(), 6, 1);
+  clFMatrix entire_tensor(tensor.getBuffer(), 6, 1, 0);
   auto fmatrix = entire_tensor.toFloatMatrix();
 
   EXPECT_EQ(fmatrix.getRows(), 6);
@@ -228,11 +228,14 @@ TEST(clFTensor, canSumCollapse) {
   }
 
   cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
-  FloatMatrix tmp = tensor.meanSumCollapse(queue, true).toFloatMatrix();
+  cl::Event e;
+  FloatMatrix tmp = tensor.meanSumCollapse(queue, e, true).toFloatMatrix();
   FloatMatrix exact(5, 5);
   exact.fill(0);
   for (auto &buf : a) { exact += buf; }
-  for (size_t j = 0; j < exact.getSize(); j++) { EXPECT_NEAR(tmp.getData()[j], exact.getData()[j] / 100, 0.1); }
+  for (size_t j = 0; j < exact.getSize(); j++) {
+    EXPECT_NEAR(tmp.getData()[j], exact.getData()[j] / 100, 0.1);
+  }
 }
 
 // where _t denotes a tensor :
@@ -258,9 +261,9 @@ TEST(clFTensor, canBatchGemmMatrixTensorMatrix) {
   clFTensor res =
           math::clFTensor::batchedGemm(1.0f, false, cla, false, tensor, 1.0f, clc, queue, true);
 
-  for (size_t i = 0; i < res.getZ(); i++) {
+  for (size_t i = 0; i < res.getDepth(); i++) {
     FloatMatrix exact = math::FloatMatrix::matMatProdMatAdd(a, b[i], c);
-    FloatMatrix tmp = res.getMatrix(i).toFloatMatrix();
+    FloatMatrix tmp = res[i].toFloatMatrix();
     for (size_t j = 0; j < exact.getSize(); j++) {
       EXPECT_FLOAT_EQ(tmp.getData()[j], exact.getData()[j]);
     }
@@ -287,9 +290,9 @@ TEST(clFTensor, canBatchGemmMatrixTensor) {
   cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
   clFTensor res = math::clFTensor::batchedGemm(1.0f, false, cla, false, tensor, queue, true);
 
-  for (size_t i = 0; i < res.getZ(); i++) {
+  for (size_t i = 0; i < res.getDepth(); i++) {
     FloatMatrix exact = math::FloatMatrix::mul(false, a, false, b[i]);
-    FloatMatrix tmp = res.getMatrix(i).toFloatMatrix();
+    FloatMatrix tmp = res[i].toFloatMatrix();
     for (size_t j = 0; j < exact.getSize(); j++) {
       EXPECT_FLOAT_EQ(tmp.getData()[j], exact.getData()[j]);
     }
@@ -322,9 +325,9 @@ TEST(clFTensor, canBatchGemmTensorTensor) {
   cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
   clFTensor res = math::clFTensor::batchedGemm(1.0f, false, tensor_a, false, tensor_b, queue, true);
 
-  for (size_t i = 0; i < res.getZ(); i++) {
+  for (size_t i = 0; i < res.getDepth(); i++) {
     FloatMatrix exact = math::FloatMatrix::mul(false, a[i], false, b[i]);
-    FloatMatrix tmp = res.getMatrix(i).toFloatMatrix();
+    FloatMatrix tmp = res[i].toFloatMatrix();
     for (size_t j = 0; j < exact.getSize(); j++) {
       EXPECT_NEAR(tmp.getData()[j], exact.getData()[j], 0.1);
     }

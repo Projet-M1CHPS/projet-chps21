@@ -11,17 +11,22 @@ namespace math {
    */
   class clFTensor {
   public:
-    clFTensor() : x_dim(0), y_dim(0), z_dim(0) {}
-    clFTensor(size_t x, size_t y, size_t z);
+    friend std::ostream &operator<<(std::ostream &os, const clFTensor &t);
 
+    clFTensor() : rows(0), cols(0), depth(0) {}
+    clFTensor(size_t width, size_t height, size_t depth);
 
-    clFTensor(const clFTensor &other, cl::CommandQueue &queue, bool blocking = true) {
+    clFTensor(const clFTensor &other, cl::CommandQueue &queue, bool blocking) {
       this->copy(other, queue, blocking);
     }
-    clFTensor(const clFTensor &other, bool blocking = true)
+
+    clFTensor(const clFTensor &other, bool blocking)
         : clFTensor(other, utils::cl_wrapper.getDefaultQueue(), blocking) {}
 
-    clFTensor(clFTensor &&other) noexcept { *this = std::move(other); }
+    clFTensor(const clFTensor &other) = delete;
+    clFTensor &operator=(const clFTensor &other) = delete;
+
+    clFTensor(clFTensor &&other) noexcept = default;
     clFTensor &operator=(clFTensor &&other) noexcept = default;
 
     /**
@@ -37,41 +42,132 @@ namespace math {
      * data. Any changes to the data of the new tensor will also affect the data of this tensor.
      * @return A shallow copy of this tensor
      */
-    clFTensor shallowCopy() const {
-      clFTensor copy;
-      copy.x_dim = x_dim;
-      copy.y_dim = y_dim;
-      copy.z_dim = z_dim;
-      copy.data = data;
-      copy.offset = offset;
-      return copy;
-    }
+    clFTensor shallowCopy() const;
+
+    std::vector<clFTensor> slice(size_t ndiv) const;
 
     /**
-     * @brief Split the tensor in @ndiv parts. The resulting tensor are only a shallow copy.
-     * If the size of the tensor is not divisible by @ndiv, the last part will be smaller.
-     * @param ndiv The number of parts to split the tensor in.
-     * @return A vector containing the split tensors.
+     * @brief Slice this tensor and return the tensor(rows, cols, begin:end)
+     * @param begin The first matrix of the slice
+     * @param end The last matrix of the slice, not included ([begin, end[)
+     * @return A slice of this tensor
      */
-    std::vector<clFTensor> shallowSplit(size_t ndiv) const;
+    clFTensor slice(size_t begin, size_t end) const;
 
     /**
-     * @brief Returns a clFTensor wheres matrices are flattened (x * y, 1)
+     * @brief Return the offset in floats of the matrix at the given index.
+     * @param matrix_index
+     * @return
+     */
+    size_t getOffsetOf(size_t matrix_index) const { return (matrix_index + offset) * rows * cols; }
+
+    /**
+     * @brief Returns the offset in bytes of the matrix at the given index.
+     * @param index
+     * @return
+     */
+    size_t getOffsetOfInBytes(size_t matrix_index) const { return getOffsetOf(matrix_index) * sizeof(float); }
+
+    /**
+     * @brief Returns the offset in matrix of this tensor.
+     * @return
+     */
+    size_t getOffset() const { return offset; }
+
+    /**
+     * @brief Returns the offset in bytes of this tensor.
+     * @return
+     */
+    size_t getOffsetInBytes() const { return offset * rows * cols * sizeof(float); }
+
+    /**
+     * @brief Returns the offsets in floats of this tensor.
+     * @return
+     */
+    size_t getOffsetInFloats() const { return offset * rows * cols; }
+
+    /**
+     * @brief Returns a clFTensor wheres matrices are flattened (x * y, 1, z)
      * Beware that this operation does not copy the matrices, and any change to the matrices will be
      * reflected in the original clFTensor.
      *
      * @param tensor
      * @return
      */
-    clFTensor flatten() const {
-      clFTensor res;
-      res.data = data;
-      res.x_dim = x_dim * y_dim;
-      res.y_dim = y_dim > 0 ? 1 : 0;
-      res.z_dim = z_dim;
-      res.offset = offset;
-      return res;
+    clFTensor flatten() const;
+
+    /**
+     * @brief Returns the submatrix at the given index.
+     * Note that the returned matrix is a view of the internal matrix, and any change made to it
+     * will be reflected in the tensor
+     *
+     * Submatrices created this way remains valid even if the tensor is destroyed, since openCl
+     * keeps track of buffers and subbuffers.
+     *
+     * @param z The index of the submatrix.
+     * @return A submatrix inside the tensor, throws on error
+     */
+    [[deprecated("Use operator[]. Will be removed in future versions")]] clFMatrix
+    getMatrix(size_t z);
+
+    /**
+     * @brief Returns the submatrix at the given index.
+     * Note that the returned matrix is a view of the internal matrix, and any change made to it
+     * will be reflected in the tensor
+     *
+     * Submatrices created this way remains valid even if the tensor is destroyed, since openCl
+     * keeps track of buffers and subbuffers.
+     *
+     * @param z The index of the submatrix.
+     * @return A submatrix inside the tensor, throws on error
+     */
+    [[deprecated("Use operator[]. Will be removed in future versions")]] clFMatrix
+    getMatrix(size_t z) const;
+
+    clFMatrix operator[](size_t z) {
+      if (z > depth) { throw std::out_of_range("clFTensor::getMatrix: z index out of range"); }
+
+      return {data, rows, cols, getOffsetOf(z)};
     }
+    clFMatrix operator[](size_t z) const {
+      if (z > depth) { throw std::out_of_range("clFTensor::getMatrix: z index out of range"); }
+
+      return {data, rows, cols, getOffsetOf(z)};
+    }
+
+    /**
+     * @brief Returns an array of submatrices.
+     *
+     * * Submatrices created this way remains valid even if the tensor is destroyed, since openCl
+     * keeps track of buffers and subbuffers.
+     * @return An array of submatrices inside the tensor
+     */
+    [[nodiscard]] std::vector<clFMatrix> getMatrices();
+    [[nodiscard]] std::vector<clFMatrix> getMatrices() const;
+
+    /**
+     * @brief Get the x dimension of the tensor, corresponding to the number of columns in each
+     * matrix
+     * @return
+     */
+    size_t getRows() const { return rows; }
+
+    /**
+     * @brief Get the y dimension of the tensor, corresponding to the number of rows in each matrix
+     * @return
+     */
+    size_t getCols() const { return cols; }
+
+    /**
+     * @brief Get the z dimension of the tensor, corresponding to the number of matrices
+     * @return
+     */
+    size_t getDepth() const { return depth; }
+
+    size_t size() const { return rows * cols * depth; }
+    size_t sizeInBytes() const { return size() * sizeof(float); }
+
+    cl::Buffer getBuffer() const { return data; }
 
     clFTensor sub(float factor, const clFTensor &other, cl::CommandQueue &queue,
                   bool blocking = false) const;
@@ -95,72 +191,14 @@ namespace math {
 
     clFTensor &iphadamard(const clFTensor &other, cl::CommandQueue &queue, bool blocking = false);
 
-    size_t offsetOf(size_t index);
-    size_t offsetOfInBytes(size_t index);
-    size_t getOffset();
-
-    /**
-     * @brief Returns the submatrix at the given index.
-     * Note that the returned matrix is a view of the internal matrix, and any change made to it
-     * will be reflected in the tensor
-     *
-     * Submatrices created this way remains valid even if the tensor is destroyed, since openCl
-     * keeps track of buffers and subbuffers.
-     *
-     * @param z The index of the submatrix.
-     * @return A submatrix inside the tensor, throws on error
-     */
-    clFMatrix getMatrix(size_t z);
-
-    /**
-     * @brief Returns the submatrix at the given index.
-     * Note that the returned matrix is a view of the internal matrix, and any change made to it
-     * will be reflected in the tensor
-     *
-     * Submatrices created this way remains valid even if the tensor is destroyed, since openCl
-     * keeps track of buffers and subbuffers.
-     *
-     * @param z The index of the submatrix.
-     * @return A submatrix inside the tensor, throws on error
-     */
-    clFMatrix getMatrix(size_t z) const;
-
-    /**
-     * @brief Returns an array of submatrices.
-     *
-     * * Submatrices created this way remains valid even if the tensor is destroyed, since openCl
-     * keeps track of buffers and subbuffers.
-     * @return An array of submatrices inside the tensor
-     */
-    std::vector<clFMatrix> getMatrices();
-
-    /**
-     * @brief Get the x dimension of the tensor, corresponding to the number of columns in each
-     * matrix
-     * @return
-     */
-    size_t getX() const { return x_dim; }
-
-    /**
-     * @brief Get the y dimension of the tensor, corresponding to the number of rows in each matrix
-     * @return
-     */
-    size_t getY() const { return y_dim; }
-
-    /**
-     * @brief Get the z dimension of the tensor, corresponding to the number of matrices
-     * @return
-     */
-    size_t getZ() const { return z_dim; }
-
-    cl::Buffer getBuffer() const { return data; }
-
   private:
     cl::Buffer data;
-    size_t x_dim = 0;
-    size_t y_dim = 0;
-    size_t z_dim = 0;
+    size_t rows = 0, cols = 0, depth = 0;
+    // Offset of the first element in the tensor, in element (number of matrix to skip)
     size_t offset = 0;
-  };
 
+    // If true, this tensor is a view of another tensor
+    // and should never be resized
+    bool is_view = false;
+  };
 }   // namespace math

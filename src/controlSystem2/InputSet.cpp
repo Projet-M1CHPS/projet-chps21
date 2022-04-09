@@ -6,18 +6,18 @@ namespace control {
     void fillTensor(math::clFTensor &tensor, std::vector<math::clFTensor> &old_tensors,
                     size_t &local_index, cl::CommandQueue &queue) {
       // Fill the new tensor up
-      for (size_t i = 0; i < tensor.getZ(); i++) {
+      for (size_t i = 0; i < tensor.getDepth(); i++) {
         // Copy the old matrix into the new one
         // We cannot copy the whole tensor because the size of the new tensor might be different
-        auto old_matrix = old_tensors.front().getMatrix(local_index);
-        auto new_matrix = tensor.getMatrix(i);
+        auto old_matrix = old_tensors.front()[local_index];
+        auto new_matrix = tensor[i];
 
         // Perform a non-blocking copy
         queue.enqueueCopyBuffer(old_matrix.getBuffer(), new_matrix.getBuffer(), 0, 0,
-                                sizeof(float) * tensor.getX() * tensor.getY());
+                                sizeof(float) * tensor.getRows() * tensor.getCols());
 
         // Increment the local index and check if we need to jump to the next tensor
-        if (local_index++ >= old_tensors[0].getZ()) {
+        if (local_index++ >= old_tensors[0].getDepth()) {
           // We don't need the old tensors anymore
           // Removing it allows us to reuse the memory
           // As soon as the copy is finished
@@ -46,12 +46,12 @@ namespace control {
     std::scoped_lock lock(mutex);
 
     // Each sample must have its own id
-    if (tensor.getZ() != new_ids.size()) {
+    if (tensor.getDepth() != new_ids.size()) {
       throw std::runtime_error("InputSet::append: tensor and new_ids must have same size");
     }
 
     // The input tensor should be correctly sized
-    if (tensor.getX() != input_width or tensor.getY() != input_height) {
+    if (tensor.getRows() != input_width or tensor.getCols() != input_height) {
       throw std::runtime_error(
               "InputSet::append: tensor must have same size as input_width and input_height");
     }
@@ -60,8 +60,8 @@ namespace control {
     for (size_t i = 0; i < new_ids.size(); i++) {
       long class_id = -1;
       if (class_ids.size() == new_ids.size()) class_id = class_ids[i];
-      auto buffer = tensor.getMatrix(i).toFloatMatrix();
-      samples.emplace_back(new_ids[i], class_id, tensor.getMatrix(i));
+      auto buffer = tensor[i].toFloatMatrix();
+      samples.emplace_back(new_ids[i], class_id, tensor[i]);
     }
     tensors.push_back(std::move(tensor));
   }
@@ -106,8 +106,8 @@ namespace control {
     size_t last_global_index = 0;
 
     for (size_t i = 0; i < end; i++) {
-      if (i < start) { first_global_index += tensors[i].getZ(); }
-      last_global_index += tensors[i].getZ();
+      if (i < start) { first_global_index += tensors[i].getDepth(); }
+      last_global_index += tensors[i].getDepth();
     }
     samples.erase(samples.begin() + first_global_index, samples.begin() + last_global_index);
     // Remove the tensors from the vector
@@ -130,7 +130,7 @@ namespace control {
     size_t sample_index = 0;
     cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
     for (const auto &tensor : tensors) {
-      size_t tensor_size = tensor.getZ();
+      size_t tensor_size = tensor.getDepth();
       math::clFTensor buffer_tensor(input_width, input_height, tensor_size);
 
       std::vector<size_t> new_ids(tensor_size);

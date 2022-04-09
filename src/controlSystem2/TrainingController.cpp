@@ -12,14 +12,14 @@ namespace control {
       size_t nclass = input_set.getClasses().size();
 
       for (size_t sample_index = 0; auto &tensor : input_set.getTensors()) {
-        size_t size = tensor.getZ();
+        size_t size = tensor.getDepth();
         math::clFTensor buf(nclass, 1, size);
 
         for (size_t j = 0; j < size; j++) {
           math::FloatMatrix mat(nclass, 1);
           mat.fill(0.0f);
           mat(input_set.getClassOf(sample_index), 0) = 1.0f;
-          buf.getMatrix(j) = mat;
+          buf[j] = mat;
           sample_index++;
         }
         res.push_back(std::move(buf));

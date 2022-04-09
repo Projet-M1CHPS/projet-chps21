@@ -70,7 +70,7 @@ namespace af {
     if (type == af::ActivationFunctionType::identity) return;
     auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
     afunc.setArg(0, mat.getBuffer());
-    queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.getZ() * mat.getX() * mat.getY(),
+    queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.getDepth() * mat.getRows() * mat.getCols(),
                                cl::NullRange);
   }
 
@@ -87,7 +87,7 @@ namespace af {
     if (type == af::ActivationFunctionType::identity) return;
     auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).second;
     afunc.setArg(0, mat.getBuffer());
-    queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.getZ() * mat.getX() * mat.getY(),
+    queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.getDepth() * mat.getRows() * mat.getCols(),
                                cl::NullRange);
   }
 

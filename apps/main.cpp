@@ -33,7 +33,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   if (not std::filesystem::exists(output_path)) std::filesystem::create_directories(output_path);
 
-  constexpr int kImageSize = 40;
+  constexpr int kImageSize = 32;
   // Ensure this is the same size as the batch size
   constexpr int kTensorSize = 8;
 
@@ -45,7 +45,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   auto &engine = loader.getPostProcessEngine();
   // Add postprocessing transformations here
-  // engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
+  engine.addTransformation(std::make_shared<image::transform::BinaryScale>());
 
   TrainingCollection training_collection = loader.load(input_path);
 
@@ -58,15 +58,15 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
 
   // Create a correctly-sized topology
-  nnet::MLPTopology topology = {kImageSize * kImageSize, 512, 256, 512, 256, 128, 64, 64, 64};
-  topology.pushBack(training_collection.getClassCount());
+  // nnet::MLPTopology topology = {kImageSize * kImageSize, 512, 256, 512, 256, 128, 64, 64, 64};
+  // topology.pushBack(training_collection.getClassCount());
 
   // auto model = nnet::MLPModel::randomReluSigmoid(topology);
-  auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
-  // auto model = std::make_unique<nnet::MLPModel>();
-  // model->load("michal.nnet");
+  // auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
+  auto model = std::make_unique<nnet::MLPModel>();
+  model->load("michal.nnet");
 
-  auto optimizer = nnet::MLPOptimizer::make<nnet::MomentumOptimization>(*model, 1, 0.00004, 0.75);
+  auto optimizer = nnet::MLPOptimizer::make<nnet::MomentumOptimization>(*model, 1, 0.005, 0.9);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
   // EvalController controller(output_path, model.get(), &training_collection.getEvaluationSet());

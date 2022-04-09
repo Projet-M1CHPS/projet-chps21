@@ -2,6 +2,12 @@
 
 namespace math {
 
+  std::ostream &operator<<(std::ostream &os, const clFMatrix &m) {
+    FloatMatrix mat = m.toFloatMatrix();
+    os << mat;
+    return os;
+  }
+
   clFMatrix::clFMatrix(size_t rows, size_t cols) : rows(rows), cols(cols) {
     // clblast doesn't support zero-sized operations
     // And this would waste cpu time anyway
@@ -70,16 +76,12 @@ namespace math {
     return *this;
   }
 
-  clFMatrix clFMatrix::fromSubbuffer(cl::Buffer subbuffer, size_t rows, size_t cols,
-                                     size_t offset) {
-    clFMatrix res;
-    res.data = std::move(subbuffer);
-    res.rows = rows;
-    res.cols = cols;
-    res.offset = offset;
 
-    return res;
-  }
+  clFMatrix::clFMatrix(cl::Buffer &subbuffer, size_t width, size_t height, size_t offset)
+      : data(subbuffer), rows(width), cols(height), offset(offset) {}
+
+  clFMatrix::clFMatrix(const cl::Buffer &subbuffer, size_t width, size_t height, size_t offset)
+      : data(subbuffer), rows(width), cols(height), offset(offset) {}
 
   clFMatrix clFMatrix::flatten() const {
     clFMatrix res;
