@@ -113,7 +113,6 @@ namespace math {
     if (begin > depth or begin > end or end > depth) {
       throw std::out_of_range("clFTensor::slice: begin or end index out of range");
     }
-
     clFTensor slice = shallowCopy();
     slice.depth = end - begin;
     slice.offset = begin;

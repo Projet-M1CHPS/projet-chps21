@@ -92,10 +92,12 @@ namespace nnet {
     return weight_updates[i];
   }
 
-  void MLPWeightUpdater::reduce(size_t index, const clFMatrix &delta, size_t contribution_size, cl::Event &event) {
+  void MLPWeightUpdater::reduce(size_t index, const clFMatrix &delta, size_t contribution_size,
+                                cl::Event &event) {
     std::vector<cl::Event> wait_list = {event};
     work_queue.enqueueBarrierWithWaitList(&wait_list);
     weight_updates[index].ipadd(1.0f, delta, work_queue);
+    std::scoped_lock<std::mutex> lock(mutex);
     contributions[index] += contribution_size;
   }
 
@@ -119,7 +121,6 @@ namespace nnet {
                               MLPWeightUpdater &updater, cl::CommandQueue &queue) {
     std::vector<clFTensor> layers_output(neural_network->getWeights().size() + 1);
     std::vector<clFTensor> layers_af_output(neural_network->getWeights().size() + 1);
-    FloatMatrix input = inputs[0].toFloatMatrix();
 
     forward(*neural_network, inputs.flatten(), layers_output, layers_af_output, queue);
     backward(*neural_network, targets.flatten(), layers_output, layers_af_output, updater, queue);

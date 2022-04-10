@@ -2,9 +2,9 @@
 #include "NeuralNetwork.hpp"
 #include "ProjectVersion.hpp"
 #include "TrainingController.hpp"
-#include "clUtils/clPlatformSelector.hpp"
-#include "controlSystem2/TrainingCollection.hpp"
-#include "controlSystem2/TrainingCollectionLoader.hpp"
+#include "controlSystem/TrainingCollection.hpp"
+#include "controlSystem/TrainingCollectionLoader.hpp"
+#include "openclUtils/clPlatformSelector.hpp"
 #include "tscl.hpp"
 
 #include <iomanip>
@@ -35,7 +35,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   constexpr int kImageSize = 32;
   // Ensure this is the same size as the batch size
-  constexpr int kTensorSize = 8;
+  constexpr int kTensorSize = 256;
 
   tscl::logger("Loading dataset", tscl::Log::Debug);
   TrainingCollectionLoader loader(kTensorSize, kImageSize, kImageSize);
@@ -66,7 +66,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   auto model = std::make_unique<nnet::MLPModel>();
   model->load("michal.nnet");
 
-  auto optimizer = nnet::MLPOptimizer::make<nnet::MomentumOptimization>(*model, 1, 0.005, 0.9);
+  auto optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(*model, 0.08);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
   // EvalController controller(output_path, model.get(), &training_collection.getEvaluationSet());

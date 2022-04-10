@@ -5,7 +5,7 @@
 #include "Filter.hpp"
 #include "math/Matrix.hpp"
 #include "math/clFMatrix.hpp"
-#include "clUtils/clWrapper.hpp"
+#include "openclUtils/clWrapper.hpp"
 #include <iostream>
 
 

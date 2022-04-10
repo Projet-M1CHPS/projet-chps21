@@ -29,9 +29,9 @@ namespace control {
     }
 
     OptimizerSchedulerInfo runEpoch(nnet::Optimizer &optimizer, OptimizerSchedulerPolicy &policy,
-                                const InputSet &input_set,
-                                const std::vector<math::clFTensor> &targets) {
-      OptimizerScheduler scheduler(optimizer, policy);
+                                    const InputSet &input_set,
+                                    const std::vector<math::clFTensor> &targets) {
+      OptimizerScheduler scheduler(16, optimizer, policy);
       return scheduler.run(input_set.getTensors(), targets);
     }
   }   // namespace
@@ -54,11 +54,13 @@ namespace control {
     std::shared_ptr<ModelEvaluator> evaluator = std::make_shared<ModelEvaluator>();
     evaluator = std::make_shared<ModelVerboseEvaluator>(evaluator);
 
+    OptimizerSchedulerPolicy policy = OptimizerSchedulerPolicy::defaultPolicy();
+
     for (size_t curr_epoch = 0; curr_epoch < max_epoch; curr_epoch++) {
-      auto info = runEpoch(*optimizer, training_set, targets);
+      auto info = runEpoch(*optimizer, policy, training_set, targets);
 
       tscl::logger("Epoch " + std::to_string(curr_epoch) + " took " +
-                           std::to_string(info.getTotalTime()) + "ms",
+                           std::to_string(info.getTotalTime().count()) + "ms",
                    tscl::Log::Information);
 
       //  Async evaluation to avoid downtime

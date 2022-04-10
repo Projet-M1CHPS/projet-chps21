@@ -24,7 +24,8 @@ namespace nnet {
 
     cl::CommandQueue work_queue;
 
-    std::vector<std::atomic<size_t>> contributions;
+    std::mutex mutex;
+    std::vector<size_t> contributions;
     std::vector<math::clFMatrix> weight_updates;
   };
 

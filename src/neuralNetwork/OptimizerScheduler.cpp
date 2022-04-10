@@ -1,11 +1,94 @@
 #include "OptimizerScheduler.hpp"
 
-#include <boost/asio/io_service.hpp>
+#include <boost/asio.hpp>
+#include <boost/bind/bind.hpp>
+#include <future>
 
 using namespace std::chrono_literals;
-using namespace boost::asio;
+using namespace boost;
+using namespace math;
 
 namespace nnet {
+
+  namespace {
+
+    std::pair<size_t, size_t> incrementIndexes(const std::vector<clFTensor> &inputs,
+                                               size_t tensor_index, size_t local_index) {
+      while (local_index >= inputs[tensor_index].getDepth()) {
+        // If we have reached the end of the input sets, loop back to the beginning
+        if (tensor_index >= inputs.size()) tensor_index = 0;
+        local_index -= inputs[tensor_index].getDepth();
+        tensor_index++;
+      }
+      return {tensor_index, local_index};
+    }
+
+    class BatchDispatcher {
+    public:
+      BatchDispatcher(const std::vector<clFTensor> &inputs, const std::vector<clFTensor> &targets,
+                      OptimizerOperation &op, asio::thread_pool &worker_pool, size_t pool_size);
+
+      void dispatch(size_t batch_size);
+
+    private:
+      void runBatch(size_t tensor_index, size_t local_index, size_t count);
+
+      const std::vector<clFTensor> *inputs, *targets;
+      OptimizerOperation *op;
+      asio::thread_pool *worker_pool;
+      size_t thread_pool_size;
+      size_t tensor_index = 0, local_index = 0;
+    };
+
+    BatchDispatcher::BatchDispatcher(const std::vector<clFTensor> &inputs,
+                                     const std::vector<clFTensor> &targets, OptimizerOperation &op,
+                                     asio::thread_pool &worker_pool, size_t pool_size)
+        : inputs(&inputs), targets(&targets), op(&op), worker_pool(&worker_pool),
+          thread_pool_size(pool_size) {}
+
+    void BatchDispatcher::dispatch(size_t batch_size) {
+      size_t local_work_size = batch_size / thread_pool_size;
+      size_t remainder = batch_size % thread_pool_size;
+      std::vector<std::future<void>> futures;
+
+      auto lambda = [this](size_t tindex, size_t lindex, size_t count) {
+        runBatch(tindex, lindex, count);
+      };
+
+      for (size_t i = 0; i < thread_pool_size; ++i) {
+        size_t count = local_work_size;
+        if (i < remainder) { count++; }
+        // TODO: refactor this
+        auto task = [lambda, count, ti = tensor_index, li = local_index] {
+          return lambda(ti, li, count);
+        };
+        futures.push_back(asio::post(*worker_pool, std::packaged_task<void()>(task)));
+        local_index += count;
+        std::tie(tensor_index, local_index) = incrementIndexes(*inputs, tensor_index, local_index);
+      }
+      // Wait for all threads to finish
+      // Note that using thread_pool join effectively kills the thread pool
+      for (auto &f : futures) { f.get(); }
+    }
+
+    void BatchDispatcher::runBatch(size_t start_tensor, size_t start_index, size_t count) {
+      cl::Device device = utils::cl_wrapper.getDefaultDevice();
+
+      for (size_t i = 0; i < count;) {
+        size_t work_size = std::min(count - i, (*inputs)[start_tensor].getDepth() - start_index);
+
+        clFTensor current_input =
+                (*inputs)[start_tensor].slice(start_index, start_index + work_size);
+        clFTensor current_target =
+                (*targets)[start_tensor].slice(start_index, start_index + work_size);
+
+        (*op)(current_input, current_target, device);
+        std::tie(start_tensor, start_index) =
+                incrementIndexes(*inputs, start_tensor, start_index + work_size);
+        i += work_size;
+      }
+    }
+  }   // namespace
 
   std::ostream &operator<<(std::ostream &os, const OptimizerSchedulerPolicy &policy) {
     os << "OptimizerSchedulerPolicy: " << std::endl;
@@ -16,6 +99,7 @@ namespace nnet {
     for (auto &device : policy.allowed_devices) {
       os << "\t\t" << device.getInfo<CL_DEVICE_NAME>() << std::endl;
     }
+    return os;
   }
 
   OptimizerSchedulerPolicy::OptimizerSchedulerPolicy(size_t max_concurrent_thread,
@@ -47,7 +131,7 @@ namespace nnet {
     return os;
   }
 
-  OptimizerSchedulerInfo::OptimizerSchedulerInfo(OptimizerSchedulerPolicy &policy)
+  OptimizerSchedulerInfo::OptimizerSchedulerInfo(const OptimizerSchedulerPolicy &policy)
       : policy(&policy), total_time(0s), time_per_input(0s), time_per_batch(0s),
         model_update_duration(0s) {}
 
@@ -58,18 +142,9 @@ namespace nnet {
     // If the policy does not allow multiple thread per device, restrict the number of thread to the
     // number of device
     if (not policy.hasMultipleThreadPerDevice()) nthread = policy.getAllowedDevices().size();
-    worker_pool = std::make_unique<thread_pool>(nthread);
+    worker_pool = std::make_unique<asio::thread_pool>(nthread);
+    worker_pool_size = nthread;
   }
-
-  std::pair<size_t, size_t> dispatchBatch(size_t batch_size, std::pair<size_t, size_t> indexes,
-                                          const std::vector<math::clFTensor> &inputs,
-                                          const std::vector<math::clFTensor> &targets,
-                                          OptimizerOperation &batch_operation) {}
-
-  void threadRunBatch(const std::vector<math::clFTensor> *inputs,
-                      const std::vector<math::clFTensor> *targets, OptimizerOperation *operation,
-                      size_t start_index, const cl::Device &device) {}
-
 
   OptimizerSchedulerInfo OptimizerScheduler::run(const std::vector<math::clFTensor> &inputs,
                                                  const std::vector<math::clFTensor> &targets) {
@@ -80,19 +155,25 @@ namespace nnet {
     auto optimizer_operation = optimizer->makeBatchOperation();
 
     auto device = cl::Device::getDefault();
-    io_service io_service;
-    io_service::work work(io_service);
 
-    size_t global_work_size = 0, tensor_index = 0, local_index = 0;
+    size_t global_work_size = 0;
     for (auto &t : inputs) { global_work_size += t.getDepth(); }
 
+    BatchDispatcher dispatcher(inputs, targets, *optimizer_operation, *worker_pool,
+                               worker_pool_size);
+
+
+    auto start = std::chrono::high_resolution_clock::now();
     for (size_t current_size = 0; current_size < global_work_size; current_size += batch_size) {
       size_t current_batch_size = std::min(global_work_size - current_size, batch_size);
-      std::tie(tensor_index, local_index) =
-              dispatchBatch(current_batch_size, {tensor_index, local_index}, inputs, targets,
-                            *optimizer_operation);
+      dispatcher.dispatch(current_batch_size);
       optimizer_operation->updateModel();
     }
+    auto end = std::chrono::high_resolution_clock::now();
+
     optimizer->update();
+    OptimizerSchedulerInfo result(*policy);
+    result.setTotalTime(std::chrono::duration_cast<std::chrono::microseconds>(end - start));
+    return result;
   }
 }   // namespace nnet

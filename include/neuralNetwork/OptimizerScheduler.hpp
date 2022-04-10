@@ -22,7 +22,7 @@ namespace nnet {
      * @return A generic policy
      */
     static OptimizerSchedulerPolicy defaultPolicy() {
-      return {std::thread::hardware_concurrency(), false};
+      return {2, true};
     }
 
 
@@ -71,11 +71,11 @@ namespace nnet {
   public:
     friend std::ostream &operator<<(std::ostream &os, const OptimizerSchedulerInfo &info);
 
-    OptimizerSchedulerInfo(OptimizerSchedulerPolicy &policy);
+    OptimizerSchedulerInfo(const OptimizerSchedulerPolicy &policy);
 
-    OptimizerSchedulerPolicy *getPolicy() const { return policy; }
+    const OptimizerSchedulerPolicy& getPolicy() const { return *policy; }
 
-    std::chrono::microseconds getTotalTime() const { return total_time; }
+    std::chrono::milliseconds getTotalTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(total_time); }
 
     void setTotalTime(std::chrono::microseconds time) { total_time = time; }
 
@@ -102,7 +102,7 @@ namespace nnet {
     void setModelUpdateTime(std::chrono::microseconds time) { model_update_duration = time; }
 
   private:
-    OptimizerSchedulerPolicy *policy;
+    const OptimizerSchedulerPolicy *policy;
 
     std::chrono::microseconds total_time;
     std::chrono::microseconds time_per_batch;
@@ -121,9 +121,12 @@ namespace nnet {
                                const std::vector<math::clFTensor> &targets);
 
   protected:
+
     // We need to allocate the worker_pool on the heap, since it is not copyable and we don't know
     // the number of thread in advance
     std::unique_ptr<boost::asio::thread_pool> worker_pool;
+    size_t worker_pool_size;
+
     Optimizer *optimizer;
     const OptimizerSchedulerPolicy *policy;
     const size_t batch_size;
