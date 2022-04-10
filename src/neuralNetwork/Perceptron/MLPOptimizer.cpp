@@ -40,7 +40,6 @@ namespace nnet {
                   std::vector<clFTensor> &layers_output, std::vector<clFTensor> &layers_af_output,
                   MLPWeightUpdater &updater, cl::CommandQueue &queue) {
       auto &weights = perceptron.getWeights();
-      auto &biases = perceptron.getBiases();
       auto &activation_functions = perceptron.getActivationFunctions();
 
       if (weights.empty()) return;

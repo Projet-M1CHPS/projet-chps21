@@ -11,11 +11,6 @@ namespace math {
       return res;
     }
 
-    std::vector<size_t> makeNullOffsetVector(const clFTensor &tensor) {
-      std::vector<size_t> res(tensor.getDepth(), tensor.getOffsetInFloats());
-      return res;
-    }
-
     std::vector<size_t> makeNullOffsetVector(const clFMatrix &matrix, size_t count) {
       std::vector<size_t> res(count, matrix.getOffset());
       return res;

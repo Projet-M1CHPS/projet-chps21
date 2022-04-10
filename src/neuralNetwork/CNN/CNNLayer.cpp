@@ -3,15 +3,15 @@
 
 namespace nnet {
 
-  CNNLayer::CNNLayer(const std::pair<size_t, size_t> output, const size_t stride) : outputSize(output), stride(stride) {}
+  CNNLayer::CNNLayer(const std::pair<size_t, size_t> output, const size_t stride) : stride(stride), outputSize(output) {}
 
 
   CNNConvolutionLayer::CNNConvolutionLayer(const std::pair<size_t, size_t> outputSize,
                                            const std::pair<size_t, size_t> sizeFilter,
                                            const af::ActivationFunctionType aFunction,
                                            const size_t stride, const size_t padding)
-      : filter(sizeFilter), CNNLayer(outputSize, stride),
-        padding(padding), activationFunction(aFunction) {
+      : CNNLayer(outputSize, stride), padding(padding),
+        activationFunction(aFunction), filter(sizeFilter) {
     // filter.randomize(0.f, 1.f);
   }
 
@@ -132,7 +132,7 @@ namespace nnet {
 
   CNNPoolingLayer::CNNPoolingLayer(const std::pair<size_t, size_t> outputSize,
                                    const std::pair<size_t, size_t> poolSize, const size_t stride)
-      : poolingSize(poolSize), CNNLayer(outputSize, stride) {}
+      : CNNLayer(outputSize, stride), poolingSize(poolSize) {}
 
 
   CNNMaxPoolingLayer::CNNMaxPoolingLayer(const std::pair<size_t, size_t> outputSize,

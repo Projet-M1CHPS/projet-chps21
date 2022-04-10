@@ -58,7 +58,7 @@ namespace nnet {
   class MLPBatchOperation : public OptimizerOperation {
   public:
     MLPBatchOperation(MLPOptimizer &optimizer, std::shared_ptr<MLPWeightUpdater> updater)
-        : optimizer(&optimizer), updater(std::move(updater)) {}
+        : updater(std::move(updater)), optimizer(&optimizer) {}
 
     void operator()(const math::clFTensor &inputs, const math::clFTensor &targets,
                     cl::Device &batch_device) override {

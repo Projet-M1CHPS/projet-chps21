@@ -31,7 +31,7 @@ namespace nnet {
       void dispatch(size_t batch_size);
 
     private:
-      void runBatch(size_t tensor_index, size_t local_index, size_t count);
+      void runBatch(size_t start_tensor, size_t start_index, size_t count);
 
       const std::vector<clFTensor> *inputs, *targets;
       OptimizerOperation *op;
@@ -134,12 +134,12 @@ namespace nnet {
   }
 
   OptimizerSchedulerInfo::OptimizerSchedulerInfo(const OptimizerSchedulerPolicy &policy)
-      : policy(&policy), total_time(0s), time_per_input(0s), time_per_batch(0s),
+      : policy(&policy), total_time(0s), time_per_batch(0s), time_per_input(0s),
         model_update_duration(0s) {}
 
   OptimizerScheduler::OptimizerScheduler(size_t batch_size, Optimizer &optimizer,
                                          const OptimizerSchedulerPolicy &policy)
-      : batch_size(batch_size), optimizer(&optimizer), policy(&policy) {
+      : optimizer(&optimizer), policy(&policy), batch_size(batch_size) {
     size_t nthread = policy.getMaxConcurrentThread();
     // If the policy does not allow multiple thread per device, restrict the number of thread to the
     // number of device

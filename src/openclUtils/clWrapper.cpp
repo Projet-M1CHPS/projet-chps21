@@ -49,15 +49,6 @@ namespace utils {
       }
       return gpu_platforms;
     }
-
-    // Loading an OpenCL program requires it to be loaded into a buffer first
-    std::string readFile(const std::string &path) {
-      std::ifstream t(path);
-      if (!t.is_open()) { throw std::runtime_error("Could not open file: " + path); }
-      std::string res((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
-      return res;
-    }
-
   }   // namespace
 
   clWrapper cl_wrapper;

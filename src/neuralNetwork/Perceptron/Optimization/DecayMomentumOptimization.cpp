@@ -5,7 +5,7 @@ namespace nnet {
   DecayMomentumOptimization::DecayMomentumOptimization(const MLPerceptron &perceptron,
                                                        const float lr_0, const float dr,
                                                        const float mom)
-      : initial_lr(lr_0), learning_r(lr_0), momentum(mom), decay_r(dr) {
+      : initial_lr(lr_0), decay_r(dr), learning_r(lr_0), momentum(mom) {
     auto &topology = perceptron.getTopology();
     for (size_t i = 0; i < topology.size() - 1; i++) {
       math::FloatMatrix buf(topology[i + 1], topology[i]);

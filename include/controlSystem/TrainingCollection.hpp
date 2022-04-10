@@ -13,7 +13,7 @@ namespace control {
 
 
     TrainingCollection(size_t input_width, size_t input_height)
-        : eval_set(input_width, input_height), training_set(input_width, input_height) {}
+        : training_set(input_width, input_height), eval_set(input_width, input_height) {}
 
     // Since copying the collection might be costly, we delete the default copy constructor and
     // assignment operator to prevent misuse

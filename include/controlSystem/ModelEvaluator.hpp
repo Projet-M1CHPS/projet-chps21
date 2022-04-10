@@ -14,7 +14,7 @@ namespace control {
 
   class ModelEvaluation {
   public:
-    ModelEvaluation() : avg_precision(0), avg_f1score(0), avg_recall(0) {}
+    ModelEvaluation() : avg_precision(0), avg_recall(0), avg_f1score(0) {}
 
 
     ModelEvaluation(double avg_precision, std::vector<double> precision, double avg_recall,

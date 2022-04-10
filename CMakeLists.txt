@@ -22,6 +22,7 @@ else ()
     endif ()
 endif ()
 
+
 include(check_coverage)
 maybe_enable_coverage()
 if (COVERARE_ENABLED)
@@ -52,6 +53,11 @@ find_package(BLAS REQUIRED)
 set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 # Setup external dependency of the project
 add_subdirectory(extern)
+
+# Messy way to setup extra error messages, but i don't want to spend time on it
+CHECK_CXX_COMPILER_FLAG("-Wall -Wpedantic -Wextra -Wno-sign-compare" COMPILER_SUPPORT_WALL_WERROR_WPEDANTIC_WEXTRA)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wpedantic -Wno-sign-compare")
+
 # Main project directory
 add_subdirectory(src)
 
