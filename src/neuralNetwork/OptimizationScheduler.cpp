@@ -1,4 +1,4 @@
-#include "OptimizerScheduler.hpp"
+#include "OptimizationScheduler.hpp"
 
 #include <boost/asio.hpp>
 #include <boost/bind/bind.hpp>
@@ -126,8 +126,8 @@ namespace nnet {
     return os;
   }
 
-  std::ostream &operator<<(std::ostream &os, const OptimizerScheduler &scheduler) {
-    os << "OptimizerScheduler: " << std::endl;
+  std::ostream &operator<<(std::ostream &os, const OptimizationScheduler &scheduler) {
+    os << "OptimizationScheduler: " << std::endl;
     os << "Batch size: " << scheduler.batch_size;
     os << *scheduler.policy << std::endl;
     return os;
@@ -137,7 +137,7 @@ namespace nnet {
       : policy(&policy), total_time(0s), time_per_batch(0s), time_per_input(0s),
         model_update_duration(0s) {}
 
-  OptimizerScheduler::OptimizerScheduler(size_t batch_size, Optimizer &optimizer,
+  OptimizationScheduler::OptimizerScheduler(size_t batch_size, Optimizer &optimizer,
                                          const OptimizerSchedulerPolicy &policy)
       : optimizer(&optimizer), policy(&policy), batch_size(batch_size) {
     size_t nthread = policy.getMaxConcurrentThread();
@@ -148,10 +148,10 @@ namespace nnet {
     worker_pool_size = nthread;
   }
 
-  OptimizerSchedulerInfo OptimizerScheduler::run(const std::vector<math::clFTensor> &inputs,
+  OptimizerSchedulerInfo OptimizationScheduler::run(const std::vector<math::clFTensor> &inputs,
                                                  const std::vector<math::clFTensor> &targets) {
     if (inputs.size() != targets.size()) {
-      throw std::runtime_error("OptimizerScheduler: inputs and targets size mismatch");
+      throw std::runtime_error("OptimizationScheduler: inputs and targets size mismatch");
     }
 
     auto optimizer_operation = optimizer->makeBatchOperation();

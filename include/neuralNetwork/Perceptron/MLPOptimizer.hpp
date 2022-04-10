@@ -4,7 +4,7 @@
 #include "MLPerceptron.hpp"
 #include "Optimization.hpp"
 #include "Optimizer.hpp"
-#include "OptimizerScheduler.hpp"
+#include "OptimizationScheduler.hpp"
 #include <iostream>
 #include <utility>
 
