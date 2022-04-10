@@ -21,9 +21,7 @@ namespace nnet {
      * concurrency, a single thread per device.
      * @return A generic policy
      */
-    static OptimizerSchedulerPolicy defaultPolicy() {
-      return {4, true};
-    }
+    static OptimizerSchedulerPolicy defaultPolicy() { return {4, false}; }
 
 
     /**
@@ -73,9 +71,11 @@ namespace nnet {
 
     OptimizerSchedulerInfo(const OptimizerSchedulerPolicy &policy);
 
-    const OptimizerSchedulerPolicy& getPolicy() const { return *policy; }
+    const OptimizerSchedulerPolicy &getPolicy() const { return *policy; }
 
-    std::chrono::milliseconds getTotalTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(total_time); }
+    std::chrono::milliseconds getTotalTime() const {
+      return std::chrono::duration_cast<std::chrono::milliseconds>(total_time);
+    }
 
     void setTotalTime(std::chrono::microseconds time) { total_time = time; }
 
@@ -114,13 +114,45 @@ namespace nnet {
   public:
     friend std::ostream &operator<<(std::ostream &os, const OptimizerScheduler &scheduler);
 
-    OptimizerScheduler(size_t batch_size, Optimizer &optimizer,
-                       const OptimizerSchedulerPolicy &policy);
+    virtual ~OptimizerScheduler() = default;
 
-    OptimizerSchedulerInfo run(const std::vector<math::clFTensor> &inputs,
-                               const std::vector<math::clFTensor> &targets);
+    virtual OptimizerSchedulerInfo run() = 0;
+
+    virtual void updateModel() = 0;
 
   protected:
+    virtual void print(std::ostream &os) const = 0;
+  };
+
+  class OptimizerBatchScheduler : public OptimizerScheduler {
+  public:
+    OptimizerBatchScheduler(size_t batch_size, std::vector<math::clFTensor> &inputs,
+                            std::vector<math::clFTensor> &targets);
+
+    size_t getBatchSize() const { return batch_size; }
+    void setBatchSize(size_t batch_size) { this->batch_size = batch_size; }
+
+  private:
+    virtual void print(std::ostream &os) const;
+
+    size_t batch_size;
+    std::vector<math::clFTensor> *input_tensors;
+    std::vector<math::clFTensor> *target_tensors;
+  };
+
+  class ParallelScheduler : public OptimizerBatchScheduler {
+  public:
+    class Policy;
+
+    ParallelScheduler(size_t batch_size, Optimizer &optimizer, const Policy &policy);
+
+    Policy getPolicy() const;
+
+    OptimizerSchedulerInfo run() override;
+
+  protected:
+    void updateModel() override;
+    virtual void print(std::ostream &os) const = 0;
 
     // We need to allocate the worker_pool on the heap, since it is not copyable and we don't know
     // the number of thread in advance
@@ -128,8 +160,25 @@ namespace nnet {
     size_t worker_pool_size;
 
     Optimizer *optimizer;
-    const OptimizerSchedulerPolicy *policy;
+    const Policy policy;
     const size_t batch_size;
   };
 
+  class SequentialScheduler : public OptimizerBatchScheduler {
+  public :
+
+
+  };
+
+
+  class SchedulerDecorator : public OptimizerScheduler {
+  public:
+  private:
+    std::shared_ptr<OptimizerScheduler> wrappee;
+  };
+
+  class SchedulerProfiler {
+  public:
+  private:
+  };
 }   // namespace nnet
