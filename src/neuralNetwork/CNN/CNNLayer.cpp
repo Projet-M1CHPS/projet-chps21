@@ -62,43 +62,34 @@ namespace nnet {
   }
 
 
-  clFTensor CNNConvolutionLayer::computeBackward(const clFTensor &input, CNNStorageBP &storage) {
-    /*FloatMatrix input = _input.toFloatMatrix(true);
-
+  clFTensor CNNConvolutionLayer::computeBackward(const clFTensor &errors, CNNStorageBP &storage) {
     auto &convoStorage = static_cast<CNNStorageBPConvolution &>(storage);
 
-    fillDilatedMatrix(convoStorage.output, convoStorage.dilated4Input, stride - 1,
-                      std::make_pair(filter.getRows() - 1, filter.getCols() - 1));
-    fillDilatedMatrix(convoStorage.output, convoStorage.dilated4Filter, stride - 1,
-                      std::make_pair(0, 0));
+    clFTensor res(3, 3, errors.getZ());
 
-    // std::cout << "dilated out for input: " << std::endl;
-    // std::cout << convoStorage.dilated4Input << std::endl;
-    // std::cout << "dilated out for filter: " << std::endl;
-    // std::cout << convoStorage.dilated4Filter << std::endl;
+    cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
-    FloatMatrix &mat_filter = filter.getMatrix();
+    {
+      const size_t height = convoStorage.input.getX();
+      const size_t width = convoStorage.input.getY();
+      const size_t kernel_h = errors.getX();
+      const size_t kernel_w = errors.getY();
+      const size_t dilatation_h = stride;
+      const size_t dilatation_w = stride;
 
-    // compute filter error
-    size_t rowsPos = 0;
-    size_t colsPos = 0;
-    for (size_t i = 0; i < convoStorage.errorFilter.getRows(); i++) {
-      for (size_t j = 0; j < convoStorage.errorFilter.getCols(); j++) {
-        float sum = 0.f;
-        for (long k = 0; k < convoStorage.dilated4Filter.getRows(); k++) {
-          for (long l = 0; l < convoStorage.dilated4Filter.getCols(); l++) {
-            sum += input(k + rowsPos, l + colsPos) * convoStorage.dilated4Filter(k, l);
-          }
-        }
-        convoStorage.errorFilter(i, j) = sum;
-        colsPos++;
-      }
-      rowsPos++;
-      colsPos = 0;
+      // compute filter error
+      clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, height, width, kernel_h,
+                               kernel_w, 0, 0, 1, 1, dilatation_h, dilatation_w, 1, 1,
+                               convoStorage.input.getBuffer()(), 0, errors.getBuffer()(), 0,
+                               convoStorage.errorFilter.getBuffer()(), 0, &queue(), nullptr);
     }
 
     // compute input error
-    rowsPos = 0;
+    // on convertie le tensor en matrice dilater
+
+
+
+    /*rowsPos = 0;
     colsPos = 0;
     for (size_t i = 0; i < input.getRows(); i++) {
       for (size_t j = 0; j < input.getCols(); j++) {
@@ -115,13 +106,10 @@ namespace nnet {
       }
       rowsPos++;
       colsPos = 0;
-    }
+    }*/
 
-    for (size_t i = 0; i < filter.getRows(); i++)
-      for (size_t j = 0; j < filter.getCols(); j++)
-        mat_filter(i, j) -= 0.2f * convoStorage.errorFilter(i, j);*/
 
-    return {0, 0, 0};
+    return res;
   }
 
 
@@ -183,7 +171,8 @@ namespace nnet {
           save_cols(i, j) = colsPos;
           for (size_t k = 0; k < poolingSize.first; k++) {
             for (size_t l = 0; l < poolingSize.second; l++) {
-              std::cout << max << " " << _input(k + rowsPos, l + colsPos) << " " << k + rowsPos << " " << l + colsPos << std::endl;
+              std::cout << max << " " << _input(k + rowsPos, l + colsPos) << " " << k + rowsPos
+                        << " " << l + colsPos << std::endl;
               if (max < _input(k + rowsPos, l + colsPos)) {
                 max = _input(k + rowsPos, l + colsPos);
                 save_rows(i, j) = k + rowsPos;

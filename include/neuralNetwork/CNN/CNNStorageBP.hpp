@@ -21,12 +21,14 @@ namespace nnet {
     ~CNNStorageBPConvolution() = default;
 
     // private:
+    clFTensor input;
     clFTensor errorFilter;
   };
 
   class CNNStorageBPPooling : public CNNStorageBP {
   public:
-    explicit CNNStorageBPPooling(const std::pair<size_t, size_t> inputSize) : input_size(inputSize) {}
+    explicit CNNStorageBPPooling(const std::pair<size_t, size_t> inputSize)
+        : input_size(inputSize) {}
     ~CNNStorageBPPooling() = default;
 
     // private:
