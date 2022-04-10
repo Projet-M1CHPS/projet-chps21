@@ -11,20 +11,13 @@ namespace nnet {
 
   class CNNStorageBP {
   public:
-    CNNStorageBP(const std::pair<size_t, size_t> &inputSize,
-                 const std::pair<size_t, size_t> &outputSize);
+    CNNStorageBP() = default;
     ~CNNStorageBP() = default;
-
-    // protected:
-    clFTensor errorInput;
-    clFTensor output;
   };
 
   class CNNStorageBPConvolution final : public CNNStorageBP {
   public:
-    CNNStorageBPConvolution(const std::pair<size_t, size_t> &inputSize,
-                            const std::pair<size_t, size_t> &outputSize,
-                            const std::pair<size_t, size_t> &filterSize, const size_t stride);
+    CNNStorageBPConvolution() = default;
     ~CNNStorageBPConvolution() = default;
 
     // private:
@@ -33,26 +26,28 @@ namespace nnet {
 
   class CNNStorageBPPooling : public CNNStorageBP {
   public:
-    CNNStorageBPPooling(const std::pair<size_t, size_t> &inputSize,
-                        const std::pair<size_t, size_t> &outputSize);
+    CNNStorageBPPooling(const std::pair<size_t, size_t> inputSize) : input_size(inputSize) {}
     ~CNNStorageBPPooling() = default;
+
+    // private:
+    std::pair<size_t, size_t> input_size;
   };
 
   class CNNStorageBPMaxPooling final : public CNNStorageBPPooling {
   public:
-    CNNStorageBPMaxPooling(const std::pair<size_t, size_t> &inputSize,
-                           const std::pair<size_t, size_t> &outputSize);
+    explicit CNNStorageBPMaxPooling(const std::pair<size_t, size_t> inputSize)
+        : CNNStorageBPPooling(inputSize) {}
     ~CNNStorageBPMaxPooling() = default;
 
     // private:
-    //Matrix<std::pair<size_t, size_t>> maxIndex;
+    // Matrix<std::pair<size_t, size_t>> maxIndex;
   };
 
   class CNNStorageBPAvgPooling final : public CNNStorageBPPooling {
   public:
-    CNNStorageBPAvgPooling(const std::pair<size_t, size_t> &inputSize,
-                           const std::pair<size_t, size_t> &outputSize);
+    explicit CNNStorageBPAvgPooling(const std::pair<size_t, size_t> inputSize)
+        : CNNStorageBPPooling(inputSize) {}
     ~CNNStorageBPAvgPooling() = default;
   };
 
-}   // namespace cnnet
+}   // namespace nnet

@@ -135,10 +135,10 @@ namespace nnet {
                                          const size_t stride)
       : CNNPoolingLayer(outputSize, poolSize, stride) {}
 
-  clFTensor CNNMaxPoolingLayer::compute(const clFTensor &input) {
-    clFTensor res(outputSize.first, outputSize.second, input.getZ());
-    for (size_t ii = 0; ii < input.getZ(); ii++) {
-      FloatMatrix _input = input.getMatrix(ii).toFloatMatrix(true);
+  clFTensor CNNMaxPoolingLayer::compute(const clFTensor &inputs) {
+    clFTensor res(outputSize.first, outputSize.second, inputs.getZ());
+    for (size_t ii = 0; ii < inputs.getZ(); ii++) {
+      FloatMatrix _input = inputs.getMatrix(ii).toFloatMatrix(true);
       FloatMatrix _output = res.getMatrix(ii).toFloatMatrix(true);
 
       size_t rowsPos = 0, colsPos = 0;
@@ -163,51 +163,53 @@ namespace nnet {
     return res;
   }
 
-  clFTensor CNNMaxPoolingLayer::computeForward(const clFTensor &input, CNNStorageBP &storage) {
-    /*FloatMatrix input = _input.toFloatMatrix(true);
-
+  clFTensor CNNMaxPoolingLayer::computeForward(const clFTensor &inputs, CNNStorageBP &storage) {
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
-    size_t rowsPos = 0, colsPos = 0;
+    clFTensor res(outputSize.first, outputSize.second, inputs.getZ());
+    for (size_t ii = 0; ii < inputs.getZ(); ii++) {
+      FloatMatrix _input = inputs.getMatrix(ii).toFloatMatrix(true);
+      FloatMatrix _output = res.getMatrix(ii).toFloatMatrix(true);
 
-    for (size_t i = 0; i < poolingStorage.output.getRows(); i++) {
-      for (size_t j = 0; j < poolingStorage.output.getCols(); j++) {
-        float max = input(rowsPos, colsPos);
-        poolingStorage.maxIndex(i, j).first = rowsPos;
-        poolingStorage.maxIndex(i, j).second = colsPos;
-        for (size_t k = 0; k < poolingSize.first; k++) {
-          for (size_t l = 0; l < poolingSize.second; l++) {
-            if (input(k + rowsPos, l + colsPos) > max) {
-              max = input(k + rowsPos, l + colsPos);
-              poolingStorage.maxIndex(i, j).first = k + rowsPos;
-              poolingStorage.maxIndex(i, j).second = l + colsPos;
+      size_t rowsPos = 0, colsPos = 0;
+
+      for (size_t i = 0; i < _output.getRows(); i++) {
+        for (size_t j = 0; j < _output.getCols(); j++) {
+          float max = _input(rowsPos, colsPos);
+          for (size_t k = 0; k < poolingSize.first; k++) {
+            for (size_t l = 0; l < poolingSize.second; l++) {
+              max = std::max(max, _input(k + rowsPos, l + colsPos));
+              // TODO : save l index i j dans le poolingStorage
             }
           }
+          _output(i, j) = max;
+          colsPos += stride;
         }
-        poolingStorage.output(i, j) = max;
-        colsPos += stride;
+        colsPos = 0;
+        rowsPos += stride;
       }
-      colsPos = 0;
-      rowsPos += stride;
-    }*/
-    return {0, 0, 0};
+      // TODO : faire attention je crois on modifie pas le tensor res
+      res.getMatrix(ii) = _output;
+    }
+    return res;
   }
 
-  clFTensor CNNMaxPoolingLayer::computeBackward(const clFTensor &_input, CNNStorageBP &storage) {
-    /*FloatMatrix input = _input.toFloatMatrix(true);
-
-    std::cout << "compute backprop max pooling" << std::endl;
+  clFTensor CNNMaxPoolingLayer::computeBackward(const clFTensor &errors, CNNStorageBP &storage) {
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
 
-    for (auto &i : poolingStorage.errorInput) { i = 0.f; }
+    std::pair<size_t, size_t> inputSize = {1, 1};
+    clFTensor res(inputSize.first, inputSize.second, errors.getZ());
+    for (size_t ii = 0; ii < errors.getZ(); ii++) {
+      FloatMatrix error_output = errors.getMatrix(ii).toFloatMatrix(true);
+      FloatMatrix error_input = res.getMatrix(ii).toFloatMatrix(true);
+      error_input.fill(0.f);
 
-    for (size_t i = 0; i < poolingStorage.output.getRows(); i++) {
-      for (size_t j = 0; j < poolingStorage.output.getCols(); j++) {
-        poolingStorage.errorInput(poolingStorage.maxIndex(i, j).first,
-                                  poolingStorage.maxIndex(i, j).second) +=
-                poolingStorage.output(i, j);
+      for (size_t i = 0; i < 100; i++) {
+        for (size_t j = 0; j < 100; j++) {
+          //error_input(max i, max j) += error_output;
+        }
       }
-    }*/
-    return {0, 0, 0};
+    }
+    return res;
   }
 
   CNNAvgPoolingLayer::CNNAvgPoolingLayer(const std::pair<size_t, size_t> outputSize,
@@ -242,33 +244,41 @@ namespace nnet {
     return res;
   }
 
-  clFTensor CNNAvgPoolingLayer::computeForward(const clFTensor &input, CNNStorageBP &storage) {
+  clFTensor CNNAvgPoolingLayer::computeForward(const clFTensor &input, CNNStorageBP &storages) {
     return compute(input);
   }
 
-  clFTensor CNNAvgPoolingLayer::computeBackward(const clFTensor &_input, CNNStorageBP &storage) {
-    /*FloatMatrix input = _input.toFloatMatrix(true);
+  clFTensor CNNAvgPoolingLayer::computeBackward(const clFTensor &errors, CNNStorageBP &storages) {
+    auto &poolingStorage = static_cast<CNNStorageBPAvgPooling &>(storages);
 
-    auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
+    clFTensor res(poolingStorage.input_size.first, poolingStorage.input_size.second, errors.getZ());
 
-    for (auto &i : poolingStorage.errorInput) { i = 0.f; }
+    for (size_t ii = 0; ii < errors.getZ(); ii++) {
+      std::cout << "call" << std::endl;
+      FloatMatrix error_output = errors.getMatrix(ii).toFloatMatrix(true);
+      FloatMatrix error_input = res.getMatrix(ii).toFloatMatrix(true);
+      error_input.fill(0.f);
 
-    const float factor = 1.f / (float) (poolingSize.first * poolingSize.second);
-    size_t rowsPos = 0, colsPos = 0;
-    for (size_t i = 0; i < poolingStorage.output.getRows(); i++) {
-      for (size_t j = 0; j < poolingStorage.output.getCols(); j++) {
-        for (size_t k = 0; k < poolingSize.first; k++) {
-          for (size_t l = 0; l < poolingSize.second; l++) {
-            poolingStorage.errorInput(k + rowsPos, l + colsPos) +=
-                    poolingStorage.output(i, j) * factor;
+      size_t rowsPos = 0, colsPos = 0;
+
+      const size_t max_i = error_input.getRows() - error_output.getRows() + 1;
+      const size_t max_j = error_input.getCols() - error_output.getCols() + 1;
+      for (size_t i = 0; i < max_i; i++) {
+        for (size_t j = 0; j < max_j; j++) {
+          for (size_t k = 0; k < error_output.getRows(); k++) {
+            for (size_t l = 0; l < error_output.getCols(); l++) {
+              error_input(k + rowsPos, l + colsPos) += error_output(i, j);
+            }
           }
+          colsPos += stride;
         }
-        colsPos += stride;
+        colsPos = 0;
+        rowsPos += stride;
       }
-      colsPos = 0;
-      rowsPos += stride;
-    }*/
-    return {0, 0, 0};
+      error_input *= 1.f / (float) (poolingSize.first * poolingSize.second);
+      res.getMatrix(ii) = error_input;
+    }
+    return res;
   }
 
 

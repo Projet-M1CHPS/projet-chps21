@@ -10,7 +10,7 @@ add_library(CNN STATIC
         CNNLayer.cpp ${CURRENT_INCLUDE_DIR}/CNNLayer.hpp
         CNNStorageBP.cpp ${CURRENT_INCLUDE_DIR}/CNNStorageBP.hpp
 
-        #CNNOptimizer.cpp ${CURRENT_INCLUDE_DIR}/CNNOptimizer.hpp
+        CNNOptimizer.cpp ${CURRENT_INCLUDE_DIR}/CNNOptimizer.hpp
         )
 
 target_include_directories(CNN PUBLIC ${INCLUDE_DIR} ${CURRENT_INCLUDE_DIR} ${INCLUDE_DIR}/neuralNetwork)

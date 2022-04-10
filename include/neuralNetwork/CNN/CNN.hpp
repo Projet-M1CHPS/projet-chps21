@@ -23,6 +23,8 @@ namespace nnet {
     void setTopology(CNNTopology const &topology);
     [[nodiscard]] CNNTopology const &getTopology() const { return topology; }
 
+    [[nodiscard]] const std::vector<std::shared_ptr<CNNLayer>> &getLayers() const { return layers; }
+
     [[nodiscard]] size_t getOutputSize() const {
       // TODO : warning
       assert(0 && "A voir si on en a besoin");
@@ -38,4 +40,4 @@ namespace nnet {
     std::vector<std::shared_ptr<CNNLayer>> layers;
   };
 
-}   // namespace cnnet
+}   // namespace nnet

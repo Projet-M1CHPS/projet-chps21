@@ -39,6 +39,7 @@ namespace nnet {
     void setActivationFunction(const af::ActivationFunctionType act_function) {
       activationFunction = act_function;
     }
+
     [[nodiscard]] const af::ActivationFunctionType getActivationFunction() const {
       return activationFunction;
     }
@@ -49,7 +50,8 @@ namespace nnet {
       return layers;
     }
 
-    std::vector<std::shared_ptr<CNNLayer>> convertToLayer();
+    [[nodiscard]] std::vector<std::shared_ptr<CNNLayer>> convertToLayer() const;
+    [[nodiscard]] std::vector<std::unique_ptr<CNNStorageBP>> convertToStorage() const;
 
   private:
     void addConvolution(const std::pair<size_t, size_t> &inputSize, const size_t features,
@@ -70,4 +72,5 @@ namespace nnet {
   const CNNTopology stringToTopology(const std::string &str);
 
   std::ostream &operator<<(std::ostream &os, const CNNTopologyLayer &nn);
+  
 }   // namespace nnet

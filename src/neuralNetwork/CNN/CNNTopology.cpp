@@ -13,7 +13,7 @@ namespace nnet {
     return layers[index];
   }
 
-  std::vector<std::shared_ptr<CNNLayer>> CNNTopology::convertToLayer() {
+  std::vector<std::shared_ptr<CNNLayer>> CNNTopology::convertToLayer() const {
     std::vector<std::shared_ptr<CNNLayer>> res;
     for (auto &layer : layers) { res.push_back(layer->convertToLayer()); }
     return res;

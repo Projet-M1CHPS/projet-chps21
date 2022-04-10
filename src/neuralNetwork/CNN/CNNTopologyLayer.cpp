@@ -30,8 +30,7 @@ namespace nnet {
 
   std::shared_ptr<CNNStorageBP>
   CNNTopologyLayerConvolution::createStorage(const std::pair<size_t, size_t> &inputSize) const {
-    return std::make_shared<CNNStorageBPConvolution>(inputSize, getOutputSize(inputSize), filter,
-                                                     stride);
+    return std::make_shared<CNNStorageBPConvolution>();
   }
 
   const std::pair<size_t, size_t>
@@ -84,7 +83,7 @@ namespace nnet {
 
   std::shared_ptr<CNNStorageBP>
   CNNTopologyLayerMaxPooling::createStorage(const std::pair<size_t, size_t> &inputSize) const {
-    return std::make_shared<CNNStorageBPMaxPooling>(inputSize, getOutputSize(inputSize));
+    return std::make_shared<CNNStorageBPMaxPooling>(inputSize);
   }
 
   std::ostream &CNNTopologyLayerMaxPooling::printTo(std::ostream &os) const {
@@ -106,7 +105,7 @@ namespace nnet {
 
   std::shared_ptr<CNNStorageBP>
   CNNTopologyLayerAvgPooling::createStorage(const std::pair<size_t, size_t> &inputSize) const {
-    return std::make_shared<CNNStorageBPAvgPooling>(inputSize, getOutputSize(inputSize));
+    return std::make_shared<CNNStorageBPAvgPooling>(inputSize);
   }
 
   std::ostream &CNNTopologyLayerAvgPooling::printTo(std::ostream &os) const {

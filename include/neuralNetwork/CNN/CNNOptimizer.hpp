@@ -26,39 +26,24 @@ namespace nnet {
     CNNOptimizer &operator=(const CNNOptimizer &other) = delete;
     CNNOptimizer &operator=(CNNOptimizer &&other) noexcept = default;
 
-    CNN *getCNN() const { return nn_cnn; }
-    MLPerceptron *getMLP() const { return nn_mlp; }
+    CNN *getCNN() const { return cnn; }
+    MLPerceptron *getMLP() const { return mlp; }
 
-  public:
-    CNN *nn_cnn;
-    MLPerceptron *nn_mlp;
-  };
+    // TODO : attention optimize doit etre override
+    void optimize(const clFTensor &inputs, const clFTensor &targets);
 
-  class CNNStochOptimizer final : public CNNOptimizer {
-  public:
-    CNNStochOptimizer(CNNModel &model, std::unique_ptr<Optimization> mlp_optimization)
-        : CNNOptimizer(model), mlp_opti(model.getMlp(), std::move(mlp_optimization)) {}
-
-    void optimize(const math::clFMatrix &input, const math::clFMatrix &target);
-
-    void optimize(const std::vector<math::clFTensor> &inputs,
-                  const std::vector<math::clFTensor> &targets) override;
-
-    void update() override { mlp_opti.update(); }
-
-    template<typename Optimization, typename... Args,
-             typename = std::is_base_of<nnet::Optimization, Optimization>>
-    static std::unique_ptr<CNNStochOptimizer> make(CNNModel &model, Args &&...args) {
-      return std::make_unique<CNNStochOptimizer>(
-              model, std::make_unique<Optimization>(model.getMlp(), std::forward<Args>(args)...));
-    }
+    // TODO : implémenter update
+    void update() override {}
 
   private:
-    clFMatrix forward(const clFMatrix &input);
-    void backward(const clFMatrix &target, const clFMatrix &errorFlatten);
+    clFTensor forward(const clFTensor &inputs,
+                      std::vector<std::unique_ptr<CNNStorageBP>> &storages);
+    void backward(const clFTensor &inputs, const clFTensor &errorsFlatten,
+                  std::vector<std::unique_ptr<CNNStorageBP>> &storages);
 
-    MLPStochOptimizer mlp_opti;
+  private:
+    CNN *cnn;
+    MLPerceptron *mlp;
   };
-
 
 }   // namespace nnet

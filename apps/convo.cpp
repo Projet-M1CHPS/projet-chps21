@@ -512,6 +512,74 @@ void testAvgPoolingLayer() {
    * */
 }
 
+void testAvgPoolingLayerBP() {
+  nnet::CNNAvgPoolingLayer layer({4, 4}, {3, 3}, 1);
+  nnet::CNNStorageBPAvgPooling storage({6, 6});
+
+  math::FloatMatrix input(6, 6);
+  {
+    input(0, 0) = 1.f;
+    input(0, 1) = 2.f;
+    input(0, 2) = 1.f;
+    input(0, 3) = 1.f;
+    input(0, 4) = 4.f;
+    input(0, 5) = 1.f;
+    input(1, 0) = 2.f;
+    input(1, 1) = 1.f;
+    input(1, 2) = 1.f;
+    input(1, 3) = 2.f;
+    input(1, 4) = 2.f;
+    input(1, 5) = 1.f;
+    input(2, 0) = 4.f;
+    input(2, 1) = 3.f;
+    input(2, 2) = 2.f;
+    input(2, 3) = 1.f;
+    input(2, 4) = 2.f;
+    input(2, 5) = 1.f;
+    input(3, 0) = 1.f;
+    input(3, 1) = 5.f;
+    input(3, 2) = 1.f;
+    input(3, 3) = 1.f;
+    input(3, 4) = 2.f;
+    input(3, 5) = 1.f;
+    input(4, 0) = 2.f;
+    input(4, 1) = 1.f;
+    input(4, 2) = 1.f;
+    input(4, 3) = 4.f;
+    input(4, 4) = 1.f;
+    input(4, 5) = 1.f;
+    input(5, 0) = 2.f;
+    input(5, 1) = 1.f;
+    input(5, 2) = 4.f;
+    input(5, 3) = 2.f;
+    input(5, 4) = 4.f;
+    input(5, 5) = 1.f;
+  }
+
+  clFTensor input_tensor(6, 6, 4);
+  for (size_t i = 0; i < input_tensor.getZ(); i++) input_tensor.getMatrix(i) = input;
+  for (size_t i = 0; i < input_tensor.getZ(); i++)
+    std::cout << "input " << i << " : \n"
+              << input_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
+
+  clFTensor output_tensor = layer.computeForward(input_tensor, storage);
+
+  for (size_t i = 0; i < output_tensor.getZ(); i++)
+    std::cout << "output " << i << " : \n"
+              << output_tensor.getMatrix(i).toFloatMatrix(true) << std::endl;
+
+  clFTensor errors_tensor(4, 4, 4);
+  for (size_t i = 0; i < errors_tensor.getZ(); i++) {
+    errors_tensor.getMatrix(i).fill(1.f, utils::cl_wrapper.getDefaultQueue(), true);
+  }
+
+  clFTensor errors_input = layer.computeBackward(errors_tensor, storage);
+
+  for (size_t i = 0; i < errors_input.getZ(); i++)
+    std::cout << "output " << i << " : \n"
+              << errors_input.getMatrix(i).toFloatMatrix(true) << std::endl;
+}
+
 void testPrediction1Branch() {
   std::string str_topology("6 6 relu convolution 1 2 2 1 0 pooling max 2 2 1");
   // std::string str_topology("6 6 relu convolution 1 2 2 1 0");
@@ -619,10 +687,11 @@ void testPrediction1Branch() {
 }
 
 void testPredictionXBranch() {
-  //std::string str_topology("6 6 relu convolution 2 2 2 1 0");
-  //std::string str_topology("6 6 relu convolution 2 2 2 1 0 pooling max 2 2 1");
-  //std::string str_topology("6 6 relu convolution 2 2 2 1 0 convolution 2 2 2 1 0");
-  std::string str_topology("6 6 relu convolution 2 2 2 1 0 convolution 2 2 2 1 0 pooling max 2 2 1");
+  // std::string str_topology("6 6 relu convolution 2 2 2 1 0");
+  // std::string str_topology("6 6 relu convolution 2 2 2 1 0 pooling max 2 2 1");
+  // std::string str_topology("6 6 relu convolution 2 2 2 1 0 convolution 2 2 2 1 0");
+  std::string str_topology(
+          "6 6 relu convolution 2 2 2 1 0 convolution 2 2 2 1 0 pooling max 2 2 1");
   auto topology = nnet::stringToTopology(str_topology);
   std::cout << topology << std::endl;
 
@@ -745,9 +814,10 @@ int main() {
 
   // testMaxPoolingLayer();
   // testAvgPoolingLayer();
+  testAvgPoolingLayerBP();
 
-  //testPrediction1Branch();
-  testPredictionXBranch();
+  // testPrediction1Branch();
+  // testPredictionXBranch();
 
   return 0;
 }
