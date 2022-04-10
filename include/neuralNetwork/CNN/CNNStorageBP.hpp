@@ -26,7 +26,7 @@ namespace nnet {
 
   class CNNStorageBPPooling : public CNNStorageBP {
   public:
-    CNNStorageBPPooling(const std::pair<size_t, size_t> inputSize) : input_size(inputSize) {}
+    explicit CNNStorageBPPooling(const std::pair<size_t, size_t> inputSize) : input_size(inputSize) {}
     ~CNNStorageBPPooling() = default;
 
     // private:
@@ -41,6 +41,8 @@ namespace nnet {
 
     // private:
     // Matrix<std::pair<size_t, size_t>> maxIndex;
+    std::vector<Matrix<size_t>> max_rows;
+    std::vector<Matrix<size_t>> max_cols;
   };
 
   class CNNStorageBPAvgPooling final : public CNNStorageBPPooling {

@@ -157,7 +157,6 @@ namespace nnet {
         colsPos = 0;
         rowsPos += stride;
       }
-      // TODO : faire attention je crois on modifie pas le tensor res
       res.getMatrix(ii) = _output;
     }
     return res;
@@ -170,15 +169,26 @@ namespace nnet {
       FloatMatrix _input = inputs.getMatrix(ii).toFloatMatrix(true);
       FloatMatrix _output = res.getMatrix(ii).toFloatMatrix(true);
 
-      size_t rowsPos = 0, colsPos = 0;
+      Matrix<size_t> save_rows(outputSize.first, outputSize.second);
+      Matrix<size_t> save_cols(outputSize.first, outputSize.second);
+      save_rows.fill(0);
+      save_cols.fill(0);
 
+      size_t rowsPos = 0, colsPos = 0;
+      std::cout << "put" << _input << std::endl;
       for (size_t i = 0; i < _output.getRows(); i++) {
         for (size_t j = 0; j < _output.getCols(); j++) {
           float max = _input(rowsPos, colsPos);
+          save_rows(i, j) = rowsPos;
+          save_cols(i, j) = colsPos;
           for (size_t k = 0; k < poolingSize.first; k++) {
             for (size_t l = 0; l < poolingSize.second; l++) {
-              max = std::max(max, _input(k + rowsPos, l + colsPos));
-              // TODO : save l index i j dans le poolingStorage
+              std::cout << max << " " << _input(k + rowsPos, l + colsPos) << " " << k + rowsPos << " " << l + colsPos << std::endl;
+              if (max < _input(k + rowsPos, l + colsPos)) {
+                max = _input(k + rowsPos, l + colsPos);
+                save_rows(i, j) = k + rowsPos;
+                save_cols(i, j) = l + colsPos;
+              }
             }
           }
           _output(i, j) = max;
@@ -187,7 +197,8 @@ namespace nnet {
         colsPos = 0;
         rowsPos += stride;
       }
-      // TODO : faire attention je crois on modifie pas le tensor res
+      poolingStorage.max_rows.push_back(std::move(save_rows));
+      poolingStorage.max_cols.push_back(std::move(save_cols));
       res.getMatrix(ii) = _output;
     }
     return res;
@@ -196,18 +207,21 @@ namespace nnet {
   clFTensor CNNMaxPoolingLayer::computeBackward(const clFTensor &errors, CNNStorageBP &storage) {
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
 
-    std::pair<size_t, size_t> inputSize = {1, 1};
-    clFTensor res(inputSize.first, inputSize.second, errors.getZ());
+    clFTensor res(poolingStorage.input_size.first, poolingStorage.input_size.second, errors.getZ());
     for (size_t ii = 0; ii < errors.getZ(); ii++) {
       FloatMatrix error_output = errors.getMatrix(ii).toFloatMatrix(true);
       FloatMatrix error_input = res.getMatrix(ii).toFloatMatrix(true);
       error_input.fill(0.f);
 
-      for (size_t i = 0; i < 100; i++) {
-        for (size_t j = 0; j < 100; j++) {
-          //error_input(max i, max j) += error_output;
+      Matrix<size_t> &save_rows = poolingStorage.max_rows[ii];
+      Matrix<size_t> &save_cols = poolingStorage.max_cols[ii];
+
+      for (size_t i = 0; i < errors.getX(); i++) {
+        for (size_t j = 0; j < errors.getY(); j++) {
+          error_input(save_rows(i, j), save_cols(i, j)) += error_output(i, j);
         }
       }
+      res.getMatrix(ii) = error_input;
     }
     return res;
   }
