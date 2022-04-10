@@ -31,7 +31,7 @@ namespace control {
     OptimizerSchedulerInfo runEpoch(nnet::Optimizer &optimizer, OptimizerSchedulerPolicy &policy,
                                     const InputSet &input_set,
                                     const std::vector<math::clFTensor> &targets) {
-      OptimizerScheduler scheduler(16, optimizer, policy);
+      OptimizerScheduler scheduler(512, optimizer, policy);
       return scheduler.run(input_set.getTensors(), targets);
     }
   }   // namespace

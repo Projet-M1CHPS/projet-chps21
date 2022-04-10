@@ -14,11 +14,11 @@ namespace nnet {
 
     std::pair<size_t, size_t> incrementIndexes(const std::vector<clFTensor> &inputs,
                                                size_t tensor_index, size_t local_index) {
-      while (local_index >= inputs[tensor_index].getDepth()) {
-        // If we have reached the end of the input sets, loop back to the beginning
-        if (tensor_index >= inputs.size()) tensor_index = 0;
+      while (local_index > 0 and local_index >= inputs[tensor_index].getDepth()) {
         local_index -= inputs[tensor_index].getDepth();
         tensor_index++;
+        // If we have reached the end of the input sets, loop back to the beginning
+        if (tensor_index >= inputs.size()) tensor_index = 0;
       }
       return {tensor_index, local_index};
     }
@@ -57,12 +57,14 @@ namespace nnet {
 
       for (size_t i = 0; i < thread_pool_size; ++i) {
         size_t count = local_work_size;
+        // if (count == 0) break;
         if (i < remainder) { count++; }
         // TODO: refactor this
         auto task = [lambda, count, ti = tensor_index, li = local_index] {
           return lambda(ti, li, count);
         };
-        futures.push_back(asio::post(*worker_pool, std::packaged_task<void()>(task)));
+        auto future = asio::post(*worker_pool, std::packaged_task<void()>(task));
+        futures.push_back(std::move(future));
         local_index += count;
         std::tie(tensor_index, local_index) = incrementIndexes(*inputs, tensor_index, local_index);
       }

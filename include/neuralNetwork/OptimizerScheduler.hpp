@@ -22,7 +22,7 @@ namespace nnet {
      * @return A generic policy
      */
     static OptimizerSchedulerPolicy defaultPolicy() {
-      return {2, true};
+      return {4, true};
     }
 
 

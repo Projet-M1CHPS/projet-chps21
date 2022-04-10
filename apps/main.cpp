@@ -35,7 +35,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   constexpr int kImageSize = 32;
   // Ensure this is the same size as the batch size
-  constexpr int kTensorSize = 256;
+  constexpr int kTensorSize = 512;
 
   tscl::logger("Loading dataset", tscl::Log::Debug);
   TrainingCollectionLoader loader(kTensorSize, kImageSize, kImageSize);
@@ -70,7 +70,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   tscl::logger("Creating controller", tscl::Log::Trace);
   // EvalController controller(output_path, model.get(), &training_collection.getEvaluationSet());
-  TrainingController controller(output_path, *model, *optimizer, training_collection, 500);
+  TrainingController controller(output_path, *model, *optimizer, training_collection, 1000);
   ControllerResult res = controller.run();
 
   if (not res) {

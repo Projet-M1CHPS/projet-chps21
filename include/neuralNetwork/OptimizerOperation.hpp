@@ -16,6 +16,8 @@ namespace nnet {
   class OptimizerOperation {
   public:
 
+    virtual ~OptimizerOperation() = default;
+
     /**
      * @brief Run the optimizer on some inputs, using the given device. This operation must be
      * thread-safe and reentrant. If this operation is called multiple times in a row (or
