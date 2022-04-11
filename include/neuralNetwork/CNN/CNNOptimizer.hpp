@@ -4,7 +4,6 @@
 #include "Optimizer.hpp"
 #include "Perceptron/MLPModel.hpp"
 #include "Perceptron/MLPOptimizer.hpp"
-#include "Perceptron/MLPStochOptimizer.hpp"
 #include "Perceptron/Optimization/Optimization.hpp"
 #include "neuralNetwork/CNN/CNN.hpp"
 #include "neuralNetwork/CNN/CNNStorageBP.hpp"

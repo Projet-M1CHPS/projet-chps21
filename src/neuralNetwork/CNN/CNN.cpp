@@ -18,8 +18,9 @@ namespace nnet {
 
     for (auto &layer : layers) {
       output = layer->compute(output);
-      for(size_t i = 0; i < output.getZ(); i++)
-        std::cout << "output INTERMEDIAIRE " << i << "\n" << output.getMatrix(i).toFloatMatrix(true) << std::endl;
+      for (size_t i = 0; i < output.getDepth(); i++)
+        std::cout << "output INTERMEDIAIRE " << i << "\n"
+                  << output[i].toFloatMatrix(true) << std::endl;
     }
 
     utils::cl_wrapper.getDefaultQueue().finish();

@@ -2,7 +2,7 @@
 
 
 #include "Matrix.hpp"
-#include "clUtils/clFTensor.hpp"
+#include "math/clFTensor.hpp"
 #include <utility>
 
 

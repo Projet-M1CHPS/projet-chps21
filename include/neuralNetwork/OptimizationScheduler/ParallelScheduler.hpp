@@ -1,6 +1,6 @@
 #pragma once
-#include "BatchProgression.hpp"
 #include "BatchOptimizationScheduler.hpp"
+#include "BatchProgression.hpp"
 
 namespace nnet {
 
@@ -54,6 +54,7 @@ namespace nnet {
 
   class ParallelScheduler::Dispatcher {
   public:
+    virtual ~Dispatcher() = default;
     virtual void dispatch(BatchProgression &progression, size_t count,
                           Optimizer::Operation &op) = 0;
   };
@@ -63,8 +64,7 @@ namespace nnet {
    */
   class ParallelScheduler::Policy {
   public:
-    Policy(size_t max_thread, bool multiple_thread_per_device,
-           std::vector<cl::Device> devices);
+    Policy(size_t max_thread, bool multiple_thread_per_device, std::vector<cl::Device> devices);
 
     size_t getMaxThread() const { return max_thread; }
 
@@ -73,7 +73,6 @@ namespace nnet {
     const std::vector<cl::Device> &getDevices() const { return devices; }
 
   private:
-
     size_t max_thread;
     bool multiple_thread_per_device;
     std::vector<cl::Device> devices;

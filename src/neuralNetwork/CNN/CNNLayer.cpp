@@ -19,18 +19,18 @@ namespace nnet {
 
 
   clFTensor CNNConvolutionLayer::compute(const clFTensor &input) {
-    auto sub_tensor_in = input.shallowSplit(n_branch);
+    auto sub_tensor_in = input.slice(n_branch);
 
     std::cout << "call compute : branch{" << n_branch << "}, filter{" << n_filter << "}"
               << std::endl;
 
     cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
-    const size_t output_size_z = n_branch * n_filter * input.getZ() / n_branch;
+    const size_t output_size_z = n_branch * n_filter * input.getDepth() / n_branch;
     clFTensor res(outputSize.first, outputSize.second, output_size_z);
 
-    auto sub_filter = filters.shallowSplit(n_branch);
-    auto sub_tensor_out = res.shallowSplit(n_branch * n_filter);
+    auto sub_filter = filters.slice(n_branch);
+    auto sub_tensor_out = res.slice(n_branch * n_filter);
 
     size_t out_index = 0;
     for (size_t i = 0; i < n_branch; i++) {
@@ -41,13 +41,12 @@ namespace nnet {
         std::cout << sub_filter[i].getMatrix(0).toFloatMatrix(true) << std::endl;
 
         clblast::Convgemm<float>(
-                clblast::KernelMode::kCrossCorrelation, 1, input.getX(), input.getY(),
-                filters.getX(), filters.getY(), padding, padding, stride, stride, 1, 1, 1,
-                input.getZ() / n_branch, sub_tensor_in[i].getBuffer()(),
-                sub_tensor_in[i].offset * input.getX() * input.getY(),
-                sub_filter[i].getMatrix(j).getBuffer()(), sub_filter[i].getMatrix(j).getOffset(),
-                sub_tensor_out[out_index].getBuffer()(),
-                sub_tensor_out[out_index].offset * res.getX() * res.getY(), &queue(), nullptr);
+                clblast::KernelMode::kCrossCorrelation, 1, input.getRows(), input.getCols(),
+                filters.getRows(), filters.getCols(), padding, padding, stride, stride, 1, 1, 1,
+                input.getDepth() / n_branch, sub_tensor_in[i].getBuffer()(),
+                sub_tensor_in[i].getOffsetInFloats(), sub_filter[i][j].getBuffer()(),
+                sub_filter[i][j].getOffset(), sub_tensor_out[out_index].getBuffer()(),
+                sub_tensor_out[out_index].getOffsetInFloats(), &queue(), nullptr);
         out_index++;
       }
     }
@@ -65,15 +64,15 @@ namespace nnet {
   clFTensor CNNConvolutionLayer::computeBackward(const clFTensor &errors, CNNStorageBP &storage) {
     auto &convoStorage = static_cast<CNNStorageBPConvolution &>(storage);
 
-    clFTensor res(3, 3, errors.getZ());
+    clFTensor res(3, 3, errors.getDepth());
 
     cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
     {
-      const size_t height = convoStorage.input.getX();
-      const size_t width = convoStorage.input.getY();
-      const size_t kernel_h = errors.getX();
-      const size_t kernel_w = errors.getY();
+      const size_t height = convoStorage.input.getRows();
+      const size_t width = convoStorage.input.getCols();
+      const size_t kernel_h = errors.getRows();
+      const size_t kernel_w = errors.getCols();
       const size_t dilatation_h = stride;
       const size_t dilatation_w = stride;
 
@@ -86,7 +85,6 @@ namespace nnet {
 
     // compute input error
     // on convertie le tensor en matrice dilater
-
 
 
     /*rowsPos = 0;
@@ -124,10 +122,10 @@ namespace nnet {
       : CNNPoolingLayer(outputSize, poolSize, stride) {}
 
   clFTensor CNNMaxPoolingLayer::compute(const clFTensor &inputs) {
-    clFTensor res(outputSize.first, outputSize.second, inputs.getZ());
-    for (size_t ii = 0; ii < inputs.getZ(); ii++) {
-      FloatMatrix _input = inputs.getMatrix(ii).toFloatMatrix(true);
-      FloatMatrix _output = res.getMatrix(ii).toFloatMatrix(true);
+    clFTensor res(outputSize.first, outputSize.second, inputs.getRows());
+    for (size_t ii = 0; ii < inputs.getDepth(); ii++) {
+      FloatMatrix _input = inputs[ii].toFloatMatrix(true);
+      FloatMatrix _output = res[ii].toFloatMatrix(true);
 
       size_t rowsPos = 0, colsPos = 0;
 
@@ -145,17 +143,17 @@ namespace nnet {
         colsPos = 0;
         rowsPos += stride;
       }
-      res.getMatrix(ii) = _output;
+      res[ii] = _output;
     }
     return res;
   }
 
   clFTensor CNNMaxPoolingLayer::computeForward(const clFTensor &inputs, CNNStorageBP &storage) {
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
-    clFTensor res(outputSize.first, outputSize.second, inputs.getZ());
-    for (size_t ii = 0; ii < inputs.getZ(); ii++) {
-      FloatMatrix _input = inputs.getMatrix(ii).toFloatMatrix(true);
-      FloatMatrix _output = res.getMatrix(ii).toFloatMatrix(true);
+    clFTensor res(outputSize.first, outputSize.second, inputs.getDepth());
+    for (size_t ii = 0; ii < inputs.getDepth(); ii++) {
+      FloatMatrix _input = inputs[ii].toFloatMatrix(true);
+      FloatMatrix _output = res[ii].toFloatMatrix(true);
 
       Matrix<size_t> save_rows(outputSize.first, outputSize.second);
       Matrix<size_t> save_cols(outputSize.first, outputSize.second);
@@ -188,7 +186,7 @@ namespace nnet {
       }
       poolingStorage.max_rows.push_back(std::move(save_rows));
       poolingStorage.max_cols.push_back(std::move(save_cols));
-      res.getMatrix(ii) = _output;
+      res[ii] = _output;
     }
     return res;
   }
@@ -196,21 +194,22 @@ namespace nnet {
   clFTensor CNNMaxPoolingLayer::computeBackward(const clFTensor &errors, CNNStorageBP &storage) {
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
 
-    clFTensor res(poolingStorage.input_size.first, poolingStorage.input_size.second, errors.getZ());
-    for (size_t ii = 0; ii < errors.getZ(); ii++) {
-      FloatMatrix error_output = errors.getMatrix(ii).toFloatMatrix(true);
-      FloatMatrix error_input = res.getMatrix(ii).toFloatMatrix(true);
+    clFTensor res(poolingStorage.input_size.first, poolingStorage.input_size.second,
+                  errors.getDepth());
+    for (size_t ii = 0; ii < errors.getDepth(); ii++) {
+      FloatMatrix error_output = errors[ii].toFloatMatrix(true);
+      FloatMatrix error_input = res[ii].toFloatMatrix(true);
       error_input.fill(0.f);
 
       Matrix<size_t> &save_rows = poolingStorage.max_rows[ii];
       Matrix<size_t> &save_cols = poolingStorage.max_cols[ii];
 
-      for (size_t i = 0; i < errors.getX(); i++) {
-        for (size_t j = 0; j < errors.getY(); j++) {
+      for (size_t i = 0; i < errors.getRows(); i++) {
+        for (size_t j = 0; j < errors.getCols(); j++) {
           error_input(save_rows(i, j), save_cols(i, j)) += error_output(i, j);
         }
       }
-      res.getMatrix(ii) = error_input;
+      res[ii] = error_input;
     }
     return res;
   }
@@ -221,10 +220,10 @@ namespace nnet {
       : CNNPoolingLayer(outputSize, poolSize, stride) {}
 
   clFTensor CNNAvgPoolingLayer::compute(const clFTensor &input) {
-    clFTensor res(outputSize.first, outputSize.second, input.getZ());
-    for (size_t ii = 0; ii < input.getZ(); ii++) {
-      FloatMatrix _input = input.getMatrix(ii).toFloatMatrix(true);
-      FloatMatrix _output = res.getMatrix(ii).toFloatMatrix(true);
+    clFTensor res(outputSize.first, outputSize.second, input.getDepth());
+    for (size_t ii = 0; ii < input.getDepth(); ii++) {
+      FloatMatrix _input = input[ii].toFloatMatrix(true);
+      FloatMatrix _output = res[ii].toFloatMatrix(true);
 
       size_t rowsPos = 0, colsPos = 0;
 
@@ -254,12 +253,13 @@ namespace nnet {
   clFTensor CNNAvgPoolingLayer::computeBackward(const clFTensor &errors, CNNStorageBP &storages) {
     auto &poolingStorage = static_cast<CNNStorageBPAvgPooling &>(storages);
 
-    clFTensor res(poolingStorage.input_size.first, poolingStorage.input_size.second, errors.getZ());
+    clFTensor res(poolingStorage.input_size.first, poolingStorage.input_size.second,
+                  errors.getDepth());
 
-    for (size_t ii = 0; ii < errors.getZ(); ii++) {
+    for (size_t ii = 0; ii < errors.getDepth(); ii++) {
       std::cout << "call" << std::endl;
-      FloatMatrix error_output = errors.getMatrix(ii).toFloatMatrix(true);
-      FloatMatrix error_input = res.getMatrix(ii).toFloatMatrix(true);
+      FloatMatrix error_output = errors[ii].toFloatMatrix(true);
+      FloatMatrix error_input = res[ii].toFloatMatrix(true);
       error_input.fill(0.f);
 
       size_t rowsPos = 0, colsPos = 0;
@@ -279,7 +279,7 @@ namespace nnet {
         rowsPos += stride;
       }
       error_input *= 1.f / (float) (poolingSize.first * poolingSize.second);
-      res.getMatrix(ii) = error_input;
+      res[ii] = error_input;
     }
     return res;
   }

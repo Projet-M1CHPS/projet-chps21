@@ -58,6 +58,7 @@ namespace control {
      * @return
      */
     virtual ModelEvaluation evaluate(const nnet::Model &model, const InputSet &input_set) const;
+    virtual ~ModelEvaluator() = default;
   };
 
   /**
@@ -71,7 +72,9 @@ namespace control {
      */
     explicit ModelEvaluatorDecorator(std::shared_ptr<ModelEvaluator> parent)
         : parent(std::move(parent)) {
-      if (not this->parent) { throw std::invalid_argument("ModelEvaluatorDecorator: Decorator created with null parent"); }
+      if (not this->parent) {
+        throw std::invalid_argument("ModelEvaluatorDecorator: Decorator created with null parent");
+      }
     }
 
   protected:

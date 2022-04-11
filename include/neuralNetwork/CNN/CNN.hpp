@@ -3,8 +3,8 @@
 #include "ActivationFunction.hpp"
 #include "CNNTopology.hpp"
 #include "Matrix.hpp"
-#include "clUtils/clFMatrix.hpp"
-#include "clUtils/clWrapper.hpp"
+#include "math/clFMatrix.hpp"
+#include "openclUtils/clWrapper.hpp"
 #include <utility>
 
 namespace nnet {

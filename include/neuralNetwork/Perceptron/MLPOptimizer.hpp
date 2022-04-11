@@ -43,7 +43,7 @@ namespace nnet {
   class MLPOptimizer::WeightUpdater {
   public:
     WeightUpdater(MLPerceptron &parent, Optimization &opt);
-    ~WeightUpdater() = default;
+    virtual ~WeightUpdater() = default;
 
     const math::clFMatrix &operator[](size_t i);
 
@@ -68,6 +68,8 @@ namespace nnet {
   public:
     Operation(MLPOptimizer &optimizer, std::shared_ptr<WeightUpdater> updater)
         : updater(std::move(updater)), optimizer(&optimizer) {}
+
+    virtual ~Operation() = default;
 
     void operator()(const math::clFTensor &inputs, const math::clFTensor &targets,
                     cl::Device &batch_device) override {
