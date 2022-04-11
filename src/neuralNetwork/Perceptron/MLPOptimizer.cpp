@@ -36,13 +36,14 @@ namespace nnet {
       }
     }
 
-    void backward(MLPerceptron &perceptron, const clFTensor &targets,
-                  std::vector<clFTensor> &layers_output, std::vector<clFTensor> &layers_af_output,
-                  MLPWeightUpdater &updater, cl::CommandQueue &queue) {
+    clFTensor backward(MLPerceptron &perceptron, const clFTensor &targets,
+                       std::vector<clFTensor> &layers_output,
+                       std::vector<clFTensor> &layers_af_output,
+                       MLPOptimizer::WeightUpdater &updater, cl::CommandQueue &queue) {
       auto &weights = perceptron.getWeights();
       auto &activation_functions = perceptron.getActivationFunctions();
 
-      if (weights.empty()) return;
+      if (weights.empty()) return {};
 
       clFTensor error = layers_af_output.back().sub(1.0f, targets, queue);
 
@@ -65,11 +66,13 @@ namespace nnet {
         queue.enqueueMarkerWithWaitList(nullptr, &reduce_event);
         updater.reduce(i, collapsed_gradient, gradient.getDepth(), reduce_event);
       }
+      return error;
     }
   }   // namespace
 
+  using WeightUpdater = MLPOptimizer::WeightUpdater;
 
-  MLPWeightUpdater::MLPWeightUpdater(MLPerceptron &parent, Optimization &optimization)
+  WeightUpdater::WeightUpdater(MLPerceptron &parent, Optimization &optimization)
       : perceptron(&parent), optimization(&optimization) {
     weight_updates.resize(parent.getWeights().size());
     contributions.resize(parent.getWeights().size(), 0);
@@ -84,15 +87,15 @@ namespace nnet {
     work_queue.finish();
   }
 
-  const clFMatrix &MLPWeightUpdater::operator[](size_t i) {
+  const clFMatrix &WeightUpdater::operator[](size_t i) {
     if (i > weight_updates.size()) {
       throw std::out_of_range("MLPWeightUpdater::operator[]: Index out of range");
     }
     return weight_updates[i];
   }
 
-  void MLPWeightUpdater::reduce(size_t index, const clFMatrix &delta, size_t contribution_size,
-                                cl::Event &event) {
+  void WeightUpdater::reduce(size_t index, const clFMatrix &delta, size_t contribution_size,
+                             cl::Event &event) {
     std::vector<cl::Event> wait_list = {event};
     work_queue.enqueueBarrierWithWaitList(&wait_list);
     weight_updates[index].ipadd(1.0f, delta, work_queue);
@@ -100,7 +103,7 @@ namespace nnet {
     contributions[index] += contribution_size;
   }
 
-  void MLPWeightUpdater::apply() {
+  void WeightUpdater::apply() {
     for (size_t i = 0; i < weight_updates.size(); i++) {
       float mean_factor = 1.0f / static_cast<float>(contributions[i]);
       weight_updates[i].ipscale(mean_factor, work_queue);
@@ -111,18 +114,18 @@ namespace nnet {
     work_queue.finish();
   }
 
-  std::unique_ptr<OptimizerOperation> MLPOptimizer::makeBatchOperation() {
-    auto updater = std::make_shared<MLPWeightUpdater>(*neural_network, *opti_meth);
-    return std::make_unique<MLPBatchOperation>(*this, updater);
+  std::unique_ptr<Optimizer::Operation> MLPOptimizer::makeBatchOperation() {
+    auto updater = std::make_shared<WeightUpdater>(*neural_network, *opti_meth);
+    return std::make_unique<Operation>(*this, updater);
   }
 
-  void MLPOptimizer::optimize(const clFTensor &inputs, const clFTensor &targets,
-                              MLPWeightUpdater &updater, cl::CommandQueue &queue) {
+  clFTensor MLPOptimizer::optimize(const clFTensor &inputs, const clFTensor &targets,
+                                   WeightUpdater &updater, cl::CommandQueue &queue) {
     std::vector<clFTensor> layers_output(neural_network->getWeights().size() + 1);
     std::vector<clFTensor> layers_af_output(neural_network->getWeights().size() + 1);
 
     forward(*neural_network, inputs.flatten(), layers_output, layers_af_output, queue);
-    backward(*neural_network, targets.flatten(), layers_output, layers_af_output, updater, queue);
+    return backward(*neural_network, targets.flatten(), layers_output, layers_af_output, updater,
+                    queue);
   }
-
 }   // namespace nnet

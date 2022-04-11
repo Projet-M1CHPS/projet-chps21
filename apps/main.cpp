@@ -33,9 +33,9 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   if (not std::filesystem::exists(output_path)) std::filesystem::create_directories(output_path);
 
-  constexpr int kImageSize = 32;
+  constexpr int kImageSize = 64;
   // Ensure this is the same size as the batch size
-  constexpr int kTensorSize = 512;
+  constexpr int kTensorSize = 8;
 
   tscl::logger("Loading dataset", tscl::Log::Debug);
   TrainingCollectionLoader loader(kTensorSize, kImageSize, kImageSize);
@@ -58,15 +58,16 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
 
   // Create a correctly-sized topology
-  // nnet::MLPTopology topology = {kImageSize * kImageSize, 512, 256, 512, 256, 128, 64, 64, 64};
-  // topology.pushBack(training_collection.getClassCount());
+  nnet::MLPTopology topology = {kImageSize * kImageSize, 256, 64};
+  topology.pushBack(training_collection.getClassCount());
 
   // auto model = nnet::MLPModel::randomReluSigmoid(topology);
-  // auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
-  auto model = std::make_unique<nnet::MLPModel>();
-  model->load("michal.nnet");
+  auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
+  // auto model = std::make_unique<nnet::MLPModel>();
+  // model->load("michal.nnet");
 
   auto optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(*model, 0.08);
+  // ParallelScheduler scheduler(batch, input, target);
 
   tscl::logger("Creating controller", tscl::Log::Trace);
   // EvalController controller(output_path, model.get(), &training_collection.getEvaluationSet());

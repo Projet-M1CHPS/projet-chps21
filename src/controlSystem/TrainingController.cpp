@@ -1,5 +1,6 @@
 #include "TrainingController.hpp"
 #include "ModelEvaluator.hpp"
+#include "ParallelScheduler.hpp"
 #include <chrono>
 
 namespace chrono = std::chrono;
@@ -27,13 +28,6 @@ namespace control {
       }
       return res;
     }
-
-    OptimizerSchedulerInfo runEpoch(nnet::Optimizer &optimizer, OptimizerSchedulerPolicy &policy,
-                                    const InputSet &input_set,
-                                    const std::vector<math::clFTensor> &targets) {
-      OptimizationScheduler scheduler(16, optimizer, policy);
-      return scheduler.run(input_set.getTensors(), targets);
-    }
   }   // namespace
 
   TrainingController::TrainingController(std::filesystem::path const &output_path,
@@ -54,13 +48,18 @@ namespace control {
     std::shared_ptr<ModelEvaluator> evaluator = std::make_shared<ModelEvaluator>();
     evaluator = std::make_shared<ModelVerboseEvaluator>(evaluator);
 
-    OptimizerSchedulerPolicy policy = OptimizerSchedulerPolicy::defaultPolicy();
+    ParallelScheduler::Policy policy(4, true, {});
+    auto scheduler = ParallelScheduler::makeDefaultDispatcher(training_set.getTensors(), targets,
+                                                              1, *optimizer, policy);
 
     for (size_t curr_epoch = 0; curr_epoch < max_epoch; curr_epoch++) {
-      auto info = runEpoch(*optimizer, policy, training_set, targets);
+      auto start = chrono::steady_clock::now();
+      scheduler.run();
+      auto end = chrono::steady_clock::now();
+      auto elapsed = chrono::duration_cast<chrono::milliseconds>(end - start);
 
       tscl::logger("Epoch " + std::to_string(curr_epoch) + " took " +
-                           std::to_string(info.getTotalTime().count()) + "ms",
+                           std::to_string(elapsed.count()) + "ms",
                    tscl::Log::Information);
 
       //  Async evaluation to avoid downtime

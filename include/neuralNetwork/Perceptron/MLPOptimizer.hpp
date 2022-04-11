@@ -3,34 +3,18 @@
 #include "MLPModel.hpp"
 #include "MLPerceptron.hpp"
 #include "Optimization.hpp"
+#include "neuralNetwork/OptimizationScheduler/OptimizationScheduler.hpp"
 #include "Optimizer.hpp"
-#include "OptimizationScheduler.hpp"
 #include <iostream>
 #include <utility>
 
 namespace nnet {
 
-  class MLPWeightUpdater {
-  public:
-    MLPWeightUpdater(MLPerceptron &parent, Optimization &opt);
-    const math::clFMatrix &operator[](size_t i);
-
-    void reduce(size_t index, const math::clFMatrix &delta, size_t contribution_size, cl::Event &event);
-    virtual void apply();
-
-  private:
-    MLPerceptron *perceptron;
-    Optimization *optimization;
-
-    cl::CommandQueue work_queue;
-
-    std::mutex mutex;
-    std::vector<size_t> contributions;
-    std::vector<math::clFMatrix> weight_updates;
-  };
-
   class MLPOptimizer : public Optimizer {
   public:
+    class Operation;
+    class WeightUpdater;
+
     MLPOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm)
         : neural_network(&model.getPerceptron()), opti_meth(std::move(tm)) {}
 
@@ -45,19 +29,44 @@ namespace nnet {
               model, std::make_unique<optim>(model.getPerceptron(), std::forward<Args>(args)...));
     }
 
-    void optimize(const math::clFTensor &inputs, const math::clFTensor &targets,
-                  MLPWeightUpdater &updater, cl::CommandQueue &queue);
+    math::clFTensor optimize(const math::clFTensor &inputs, const math::clFTensor &targets,
+                             WeightUpdater &updater, cl::CommandQueue &queue);
 
-    std::unique_ptr<OptimizerOperation> makeBatchOperation() override;
+    std::unique_ptr<Optimizer::Operation> makeBatchOperation() override;
 
   private:
+
     MLPerceptron *neural_network;
     std::unique_ptr<Optimization> opti_meth;
   };
 
-  class MLPBatchOperation : public OptimizerOperation {
+  class MLPOptimizer::WeightUpdater {
   public:
-    MLPBatchOperation(MLPOptimizer &optimizer, std::shared_ptr<MLPWeightUpdater> updater)
+    WeightUpdater(MLPerceptron &parent, Optimization &opt);
+    ~WeightUpdater() = default;
+
+    const math::clFMatrix &operator[](size_t i);
+
+    void reduce(size_t index, const math::clFMatrix &delta, size_t contribution_size,
+                cl::Event &event);
+    virtual void apply();
+
+  protected:
+    MLPerceptron *perceptron;
+
+  private:
+    Optimization *optimization;
+
+    cl::CommandQueue work_queue;
+
+    std::mutex mutex;
+    std::vector<size_t> contributions;
+    std::vector<math::clFMatrix> weight_updates;
+  };
+
+  class MLPOptimizer::Operation : public Optimizer::Operation {
+  public:
+    Operation(MLPOptimizer &optimizer, std::shared_ptr<WeightUpdater> updater)
         : updater(std::move(updater)), optimizer(&optimizer) {}
 
     void operator()(const math::clFTensor &inputs, const math::clFTensor &targets,
@@ -69,7 +78,7 @@ namespace nnet {
     void updateModel() override { updater->apply(); }
 
   protected:
-    std::shared_ptr<MLPWeightUpdater> updater;
+    std::shared_ptr<WeightUpdater> updater;
     MLPOptimizer *optimizer;
   };
 

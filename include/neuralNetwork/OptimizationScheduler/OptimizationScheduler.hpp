@@ -1,10 +1,8 @@
 #pragma once
-#include "Optimizer.hpp"
-#include "math/clFTensor.hpp"
-#include <boost/asio/thread_pool.hpp>
 #include <iostream>
 #include <utility>
 #include <vector>
+#include <memory>
 
 namespace nnet {
 
