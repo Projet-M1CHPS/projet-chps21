@@ -7,14 +7,10 @@ add_library(CNN STATIC
 
         CNNModel.cpp ${CURRENT_INCLUDE_DIR}/CNNModel.hpp
 
-        Filter.cpp ${CURRENT_INCLUDE_DIR}/Filter.hpp
         CNNLayer.cpp ${CURRENT_INCLUDE_DIR}/CNNLayer.hpp
         CNNStorageBP.cpp ${CURRENT_INCLUDE_DIR}/CNNStorageBP.hpp
 
-        #CNNOptimizer.cpp ${CURRENT_INCLUDE_DIR}/CNNOptimizer.hpp
-
-        CNNNode.cpp ${CURRENT_INCLUDE_DIR}/CNNNode.hpp
-        CNNDependencyTree.cpp ${CURRENT_INCLUDE_DIR}/CNNDependencyTree.hpp
+        CNNOptimizer.cpp ${CURRENT_INCLUDE_DIR}/CNNOptimizer.hpp
         )
 
 target_include_directories(CNN PUBLIC ${INCLUDE_DIR} ${CURRENT_INCLUDE_DIR} ${INCLUDE_DIR}/neuralNetwork)

@@ -2,40 +2,42 @@
 
 #include "ActivationFunction.hpp"
 #include "CNNTopology.hpp"
-#include "math/Matrix.hpp"
+#include "Matrix.hpp"
 #include "math/clFMatrix.hpp"
 #include "openclUtils/clWrapper.hpp"
-#include "CNNDependencyTree.hpp"
-#include <stack>
 #include <utility>
 
 namespace nnet {
+
+  using namespace math;
 
   class CNN {
   public:
     CNN() = default;
 
     CNN(const CNN &other) = default;
-    CNN(CNN &&other) noexcept;
+    CNN(CNN &&other) = default;
     CNN &operator=(const CNN &) = default;
-    CNN &operator=(CNN &&other) noexcept;
+    CNN &operator=(CNN &&other) = default;
 
     void setTopology(CNNTopology const &topology);
     [[nodiscard]] CNNTopology const &getTopology() const { return topology; }
 
+    [[nodiscard]] const std::vector<std::shared_ptr<CNNLayer>> &getLayers() const { return layers; }
+
     [[nodiscard]] size_t getOutputSize() const {
-      // TODO: check if this is correct
+      // TODO : warning
+      assert(0 && "A voir si on en a besoin");
       return 0;
     }
 
     void randomizeWeight();
 
-    void predict(math::clFMatrix const &input, math::clFMatrix &output);
+    clFTensor predict(clFTensor const &input);
 
-  private:
+  public:
     CNNTopology topology;
-
-    CNNDependencyTree tree;
+    std::vector<std::shared_ptr<CNNLayer>> layers;
   };
 
-}   // namespace cnnet
+}   // namespace nnet

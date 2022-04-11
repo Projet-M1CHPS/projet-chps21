@@ -12,7 +12,7 @@ namespace nnet {
     // TODO: Remove flatten object member and use a local variable instead
     math::clFMatrix _flatten = clFMatrix(cnn->getOutputSize(), 1);
 
-    cnn->predict(input, _flatten);
+    //cnn->predict(input, _flatten);
 
     return mlp->predict(_flatten);
   }

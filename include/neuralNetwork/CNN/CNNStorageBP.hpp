@@ -1,7 +1,8 @@
 #pragma once
 
 
-#include "math/Matrix.hpp"
+#include "Matrix.hpp"
+#include "math/clFTensor.hpp"
 #include <utility>
 
 
@@ -10,50 +11,47 @@ namespace nnet {
 
   class CNNStorageBP {
   public:
-    CNNStorageBP(const std::pair<size_t, size_t> &inputSize,
-                 const std::pair<size_t, size_t> &outputSize);
+    CNNStorageBP() = default;
     ~CNNStorageBP() = default;
-
-    // protected:
-    FloatMatrix errorInput;
-    FloatMatrix output;
   };
 
   class CNNStorageBPConvolution final : public CNNStorageBP {
   public:
-    CNNStorageBPConvolution(const std::pair<size_t, size_t> &inputSize,
-                            const std::pair<size_t, size_t> &outputSize,
-                            const std::pair<size_t, size_t> &filterSize, const size_t stride);
+    CNNStorageBPConvolution() = default;
     ~CNNStorageBPConvolution() = default;
 
     // private:
-    FloatMatrix errorFilter;
-    FloatMatrix dilated4Input;
-    FloatMatrix dilated4Filter;
+    clFTensor input;
+    clFTensor errorFilter;
   };
 
   class CNNStorageBPPooling : public CNNStorageBP {
   public:
-    CNNStorageBPPooling(const std::pair<size_t, size_t> &inputSize,
-                        const std::pair<size_t, size_t> &outputSize);
+    explicit CNNStorageBPPooling(const std::pair<size_t, size_t> inputSize)
+        : input_size(inputSize) {}
     ~CNNStorageBPPooling() = default;
+
+    // private:
+    std::pair<size_t, size_t> input_size;
   };
 
   class CNNStorageBPMaxPooling final : public CNNStorageBPPooling {
   public:
-    CNNStorageBPMaxPooling(const std::pair<size_t, size_t> &inputSize,
-                           const std::pair<size_t, size_t> &outputSize);
+    explicit CNNStorageBPMaxPooling(const std::pair<size_t, size_t> inputSize)
+        : CNNStorageBPPooling(inputSize) {}
     ~CNNStorageBPMaxPooling() = default;
 
     // private:
-    Matrix<std::pair<size_t, size_t>> maxIndex;
+    // Matrix<std::pair<size_t, size_t>> maxIndex;
+    std::vector<Matrix<size_t>> max_rows;
+    std::vector<Matrix<size_t>> max_cols;
   };
 
   class CNNStorageBPAvgPooling final : public CNNStorageBPPooling {
   public:
-    CNNStorageBPAvgPooling(const std::pair<size_t, size_t> &inputSize,
-                           const std::pair<size_t, size_t> &outputSize);
+    explicit CNNStorageBPAvgPooling(const std::pair<size_t, size_t> inputSize)
+        : CNNStorageBPPooling(inputSize) {}
     ~CNNStorageBPAvgPooling() = default;
   };
 
-}   // namespace cnnet
+}   // namespace nnet

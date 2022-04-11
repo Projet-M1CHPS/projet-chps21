@@ -13,24 +13,33 @@ namespace nnet {
     return layers[index];
   }
 
+  std::vector<std::shared_ptr<CNNLayer>> CNNTopology::convertToLayer() const {
+    std::vector<std::shared_ptr<CNNLayer>> res;
+    for (auto &layer : layers) { res.push_back(layer->convertToLayer()); }
+    return res;
+  }
+
   void CNNTopology::addConvolution(const std::pair<size_t, size_t> &inputSize,
                                    const size_t features,
                                    const std::pair<size_t, size_t> &filterSize,
                                    const af::ActivationFunctionType aFunction, const size_t stride,
-                                   const size_t padding) {
-    layers.push_back(std::make_shared<CNNTopologyLayerConvolution>(inputSize, features, filterSize,
-                                                                   aFunction, stride, padding));
+                                   const size_t padding, const size_t nbranch) {
+    layers.push_back(std::make_shared<CNNTopologyLayerConvolution>(
+            inputSize, features, filterSize, aFunction, stride, padding, nbranch));
   }
 
   void CNNTopology::addPooling(const std::pair<size_t, size_t> &inputSize,
                                const PoolingType poolingType,
-                               const std::pair<size_t, size_t> &poolSize, const size_t stride) {
+                               const std::pair<size_t, size_t> &poolSize, const size_t stride,
+                               const size_t nbranch) {
     switch (poolingType) {
       case PoolingType::MAX:
-        layers.push_back(std::make_shared<CNNTopologyLayerMaxPooling>(inputSize, poolSize, stride));
+        layers.push_back(
+                std::make_shared<CNNTopologyLayerMaxPooling>(inputSize, poolSize, stride, nbranch));
         break;
       case PoolingType::AVERAGE:
-        layers.push_back(std::make_shared<CNNTopologyLayerAvgPooling>(inputSize, poolSize, stride));
+        layers.push_back(
+                std::make_shared<CNNTopologyLayerAvgPooling>(inputSize, poolSize, stride, nbranch));
         break;
       default:
         throw std::invalid_argument("Invalid pooling type");
@@ -65,6 +74,7 @@ namespace nnet {
     ss >> type;
     res.activationFunction = af::strToAFType(type);
 
+    size_t n_branch = 1;
     while (ss >> type) {
       LayerType layerType = stringToLayerType(type);
       if (layerType == LayerType::CONVOLUTION) {
@@ -74,7 +84,8 @@ namespace nnet {
         if (not CNNTopologyLayer::isValidParameters(inputSize, filterSize, stride, padding))
           throw std::runtime_error("Invalid parameters for convolution layer");
         res.addConvolution(inputSize, features, filterSize, res.activationFunction, stride,
-                           padding);
+                           padding, n_branch);
+        n_branch *= features;
       } else if (layerType == LayerType::POOLING) {
         std::string strPoolingType;
         std::pair<size_t, size_t> poolSize;
@@ -83,7 +94,7 @@ namespace nnet {
         if (not CNNTopologyLayer::isValidParameters(inputSize, poolSize, stride, 0))
           throw std::runtime_error("Invalid parameters for pooling layer");
         PoolingType poolType = stringToPoolingType(strPoolingType);
-        res.addPooling(inputSize, poolType, poolSize, stride);
+        res.addPooling(inputSize, poolType, poolSize, stride, n_branch);
       } else {
         throw std::invalid_argument("Invalid type " + type);
       }
@@ -103,4 +114,4 @@ namespace nnet {
     return layer.printTo(os);
   }
 
-}   // namespace cnnet
+}   // namespace nnet

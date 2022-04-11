@@ -48,9 +48,9 @@ namespace control {
     std::shared_ptr<ModelEvaluator> evaluator = std::make_shared<ModelEvaluator>();
     evaluator = std::make_shared<ModelVerboseEvaluator>(evaluator);
 
-    ParallelScheduler::Policy policy(4, true, {});
+    ParallelScheduler::Policy policy(1, false, {});
     auto scheduler = ParallelScheduler::makeDefaultDispatcher(training_set.getTensors(), targets,
-                                                              1, *optimizer, policy);
+                                                              16, *optimizer, policy);
 
     for (size_t curr_epoch = 0; curr_epoch < max_epoch; curr_epoch++) {
       auto start = chrono::steady_clock::now();

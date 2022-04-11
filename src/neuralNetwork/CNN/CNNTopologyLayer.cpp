@@ -2,8 +2,9 @@
 
 namespace nnet {
 
-  CNNTopologyLayer::CNNTopologyLayer(const std::pair<size_t, size_t> filter, const size_t stride)
-      : filter(filter), stride(stride) {}
+  CNNTopologyLayer::CNNTopologyLayer(const std::pair<size_t, size_t> filter, const size_t stride,
+                                     const size_t nBranch)
+      : filter(filter), stride(stride), n_branch(nBranch) {}
 
 
   const bool CNNTopologyLayer::isValidParameters(const std::pair<size_t, size_t> inputSize,
@@ -18,18 +19,18 @@ namespace nnet {
   CNNTopologyLayerConvolution::CNNTopologyLayerConvolution(
           const std::pair<size_t, size_t> inputSize, const size_t features,
           const std::pair<size_t, size_t> filter, const af::ActivationFunctionType aFunction,
-          const size_t stride, const size_t padding)
-      : CNNTopologyLayer(filter, stride), features(features), padding(padding),
+          const size_t stride, const size_t padding, const size_t nBranch)
+      : CNNTopologyLayer(filter, stride, nBranch), features(features), padding(padding),
         activationFunction(aFunction), outputSize(computeOutputSize(inputSize)) {}
 
   std::shared_ptr<CNNLayer> CNNTopologyLayerConvolution::convertToLayer() const {
-    return std::make_shared<CNNConvolutionLayer>(outputSize, filter, activationFunction, stride, padding);
+    return std::make_shared<CNNConvolutionLayer>(outputSize, filter, features, activationFunction,
+                                                 stride, n_branch, padding);
   }
 
   std::shared_ptr<CNNStorageBP>
   CNNTopologyLayerConvolution::createStorage(const std::pair<size_t, size_t> &inputSize) const {
-    return std::make_shared<CNNStorageBPConvolution>(inputSize, getOutputSize(inputSize), filter,
-                                                     stride);
+    return std::make_shared<CNNStorageBPConvolution>();
   }
 
   const std::pair<size_t, size_t>
@@ -46,17 +47,17 @@ namespace nnet {
   }
 
   std::ostream &CNNTopologyLayerConvolution::printTo(std::ostream &os) const {
-    os << "Convolution layer: outPutSize{" << outputSize.first << ", " << outputSize.second
-       << "}, features{" << features << "}, filter{" << filter.first << ", " << filter.second
-       << "}, stride{" << stride << "}, padding{" << padding << "}";
+    os << "Convolution layer: nBranch{" << n_branch << "}, outPutSize{" << outputSize.first << ", "
+       << outputSize.second << "}, features{" << features << "}, filter{" << filter.first << ", "
+       << filter.second << "}, stride{" << stride << "}, padding{" << padding << "}";
     return os;
   }
 
 
   CNNTopologyLayerPooling::CNNTopologyLayerPooling(const std::pair<size_t, size_t> inputSize,
                                                    const std::pair<size_t, size_t> filter,
-                                                   const size_t stride)
-      : CNNTopologyLayer(filter, stride), outputSize(computeOutputSize(inputSize)) {}
+                                                   const size_t stride, const size_t nBranch)
+      : CNNTopologyLayer(filter, stride, nBranch), outputSize(computeOutputSize(inputSize)) {}
 
   const std::pair<size_t, size_t>
   CNNTopologyLayerPooling::computeOutputSize(const std::pair<size_t, size_t> &inputSize) const {
@@ -73,8 +74,8 @@ namespace nnet {
 
   CNNTopologyLayerMaxPooling::CNNTopologyLayerMaxPooling(const std::pair<size_t, size_t> inputSize,
                                                          const std::pair<size_t, size_t> filter,
-                                                         const size_t stride)
-      : CNNTopologyLayerPooling(inputSize, filter, stride) {}
+                                                         const size_t stride, const size_t nBranch)
+      : CNNTopologyLayerPooling(inputSize, filter, stride, nBranch) {}
 
   std::shared_ptr<CNNLayer> CNNTopologyLayerMaxPooling::convertToLayer() const {
     return std::make_shared<CNNMaxPoolingLayer>(outputSize, filter, stride);
@@ -82,20 +83,21 @@ namespace nnet {
 
   std::shared_ptr<CNNStorageBP>
   CNNTopologyLayerMaxPooling::createStorage(const std::pair<size_t, size_t> &inputSize) const {
-    return std::make_shared<CNNStorageBPMaxPooling>(inputSize, getOutputSize(inputSize));
+    return std::make_shared<CNNStorageBPMaxPooling>(inputSize);
   }
 
   std::ostream &CNNTopologyLayerMaxPooling::printTo(std::ostream &os) const {
-    os << "Max Pooling layer: outputSize{" << outputSize.first << ", " << outputSize.second
-       << "}, filter{" << filter.first << ", " << filter.second << "}, stride{" << stride << "}";
+    os << "Max Pooling layer: nBranch{" << n_branch << "}, outputSize{" << outputSize.first << ", "
+       << outputSize.second << "}, filter{" << filter.first << ", " << filter.second << "}, stride{"
+       << stride << "}";
     return os;
   }
 
 
   CNNTopologyLayerAvgPooling::CNNTopologyLayerAvgPooling(const std::pair<size_t, size_t> inputSize,
                                                          const std::pair<size_t, size_t> filter,
-                                                         const size_t stride)
-      : CNNTopologyLayerPooling(inputSize, filter, stride) {}
+                                                         const size_t stride, const size_t nBranch)
+      : CNNTopologyLayerPooling(inputSize, filter, stride, nBranch) {}
 
   std::shared_ptr<CNNLayer> CNNTopologyLayerAvgPooling::convertToLayer() const {
     return std::make_shared<CNNAvgPoolingLayer>(outputSize, filter, stride);
@@ -103,13 +105,14 @@ namespace nnet {
 
   std::shared_ptr<CNNStorageBP>
   CNNTopologyLayerAvgPooling::createStorage(const std::pair<size_t, size_t> &inputSize) const {
-    return std::make_shared<CNNStorageBPAvgPooling>(inputSize, getOutputSize(inputSize));
+    return std::make_shared<CNNStorageBPAvgPooling>(inputSize);
   }
 
   std::ostream &CNNTopologyLayerAvgPooling::printTo(std::ostream &os) const {
-    os << "Avg Pooling layer: filter{" << filter.first << ", " << filter.second << "}, stride{"
-       << stride << "}";
+    os << "Avg Pooling layer: nBranch{" << n_branch << ", outputSize{" << outputSize.first << ", "
+       << outputSize.second << "}, nBranch{" << n_branch << "}, filter{" << filter.first << ", "
+       << filter.second << "}, stride {" << stride << "}";
     return os;
   }
 
-}   // namespace cnnet
+}   // namespace nnet

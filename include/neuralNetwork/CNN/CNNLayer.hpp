@@ -2,9 +2,9 @@
 
 #include "ActivationFunction.hpp"
 #include "CNNStorageBP.hpp"
-#include "Filter.hpp"
-#include "math/Matrix.hpp"
+#include "Matrix.hpp"
 #include "math/clFMatrix.hpp"
+#include "math/clFTensor.hpp"
 #include "openclUtils/clWrapper.hpp"
 #include <iostream>
 
@@ -20,9 +20,9 @@ namespace nnet {
     explicit CNNLayer(const std::pair<size_t, size_t> outputSize, const size_t stride);
 
     [[nodiscard]] const size_t getStride() const { return stride; };
-    virtual clFMatrix compute(const clFMatrix &input) = 0;
-    virtual void computeForward(const clFMatrix &input, CNNStorageBP &storage) = 0;
-    virtual void computeBackward(const clFMatrix &input, CNNStorageBP &storage) = 0;
+    virtual clFTensor compute(const clFTensor &input) = 0;
+    virtual clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) = 0;
+    virtual clFTensor computeBackward(const clFTensor &input, CNNStorageBP &storage) = 0;
 
   protected:
     const size_t stride;
@@ -30,26 +30,29 @@ namespace nnet {
   };
 
 
-  class CNNConvolutionLayer : public CNNLayer {
+  class CNNConvolutionLayer final : public CNNLayer {
   public:
+    // nFilter nombre de kernel par branche
     CNNConvolutionLayer(const std::pair<size_t, size_t> outputSize,
-                        const std::pair<size_t, size_t> sizeFilter,
+                        const std::pair<size_t, size_t> sizeFilter, const size_t nFilter,
                         const af::ActivationFunctionType aFunction, const size_t stride,
-                        const size_t padding = 0);
+                        const size_t nBranch, const size_t padding = 0);
 
     [[nodiscard]] const size_t getPadding() const { return padding; };
-    [[nodiscard]] const Filter &getFilter() const { return filter; }
+    [[nodiscard]] const clFTensor &getFilter() const { return filters; }
+    [[nodiscard]] clFTensor &getFilter() { return filters; }
 
-    clFMatrix compute(const clFMatrix &input) override;
-    void computeForward(const clFMatrix &input, CNNStorageBP &storage) override;
-    void computeBackward(const clFMatrix &input, CNNStorageBP &storage) override;
+    clFTensor compute(const clFTensor &input) override;
+    clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) override;
+    clFTensor computeBackward(const clFTensor &input, CNNStorageBP &storage) override;
 
   private:
+    const size_t n_branch;
+    const size_t n_filter;
     const size_t padding;
     af::ActivationFunctionType activationFunction;
 
-    // TODO : Replace filter class with tensor of filters and tensor of output
-    Filter filter;
+    clFTensor filters;
   };
 
 
@@ -63,25 +66,25 @@ namespace nnet {
   };
 
 
-  class CNNMaxPoolingLayer : public CNNPoolingLayer {
+  class CNNMaxPoolingLayer final : public CNNPoolingLayer {
   public:
     CNNMaxPoolingLayer(const std::pair<size_t, size_t> outputSize,
                        const std::pair<size_t, size_t> PoolSize, const size_t stride);
 
-    clFMatrix compute(const clFMatrix &input) override;
-    void computeForward(const clFMatrix &input, CNNStorageBP &storage) override;
-    void computeBackward(const clFMatrix &input, CNNStorageBP &storage) override;
+    clFTensor compute(const clFTensor &input) override;
+    clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) override;
+    clFTensor computeBackward(const clFTensor &input, CNNStorageBP &storage) override;
   };
 
 
-  class CNNAvgPoolingLayer : public CNNPoolingLayer {
+  class CNNAvgPoolingLayer final : public CNNPoolingLayer {
   public:
     CNNAvgPoolingLayer(const std::pair<size_t, size_t> outputSize,
                        const std::pair<size_t, size_t> PoolSize, const size_t stride);
 
-    clFMatrix compute(const clFMatrix &input) override;
-    void computeForward(const clFMatrix &input, CNNStorageBP &storage) override;
-    void computeBackward(const clFMatrix &input, CNNStorageBP &storage) override;
+    clFTensor compute(const clFTensor &input) override;
+    clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) override;
+    clFTensor computeBackward(const clFTensor &input, CNNStorageBP &storage) override;
   };
 
 
