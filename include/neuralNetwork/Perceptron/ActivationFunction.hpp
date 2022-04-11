@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Utils.hpp"
-#include "clUtils/clFMatrix.hpp"
-#include "clUtils/clWrapper.hpp"
+#include "math/clFMatrix.hpp"
+#include "math/clFTensor.hpp"
+#include "openclUtils/clWrapper.hpp"
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -93,7 +94,11 @@ namespace af {
 
 
   void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue);
+  void applyAF(af::ActivationFunctionType type, math::clFTensor &mat, cl::CommandQueue &queue);
+
   void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
+                         cl::CommandQueue &queue);
+  void applyDerivativeAF(af::ActivationFunctionType type, math::clFTensor &mat,
                          cl::CommandQueue &queue);
 
 }   // namespace af

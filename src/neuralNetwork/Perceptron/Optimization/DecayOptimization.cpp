@@ -2,9 +2,9 @@
 
 namespace nnet {
 
-  void DecayOptimization::optimize(BackpropStorage &storage, cl::CommandQueue &queue) {
-    auto buf = storage.getGradient().scale(learning_r, queue);
-    storage.getWeights().ipsub(1.0f, buf, queue);
+  void DecayOptimization::optimize(math::clFMatrix &gradient, math::clFMatrix &dest, size_t layer,
+                                   cl::CommandQueue &queue) {
+    dest.ipsub(learning_r, gradient, queue);
   }
 
   void DecayOptimization::update() {

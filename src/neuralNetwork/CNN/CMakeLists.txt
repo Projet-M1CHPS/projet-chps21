@@ -18,4 +18,4 @@ add_library(CNN STATIC
         )
 
 target_include_directories(CNN PUBLIC ${INCLUDE_DIR} ${CURRENT_INCLUDE_DIR} ${INCLUDE_DIR}/neuralNetwork)
-target_link_libraries(CNN PUBLIC clUtils tscl::tscl Perceptron)
+target_link_libraries(CNN PUBLIC openclUtils tscl::tscl Perceptron)

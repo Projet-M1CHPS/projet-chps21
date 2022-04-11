@@ -11,7 +11,7 @@ namespace nnet {
     DecayOptimization(const MLPerceptron &perceptron, const float lr_0, const float dr)
         : initial_lr(lr_0), decay_r(dr), learning_r(lr_0), epoch(0) {}
 
-    void optimize(BackpropStorage &storage, cl::CommandQueue &queue) override;
+    void optimize(math::clFMatrix &gradient, math::clFMatrix& dest, size_t layer, cl::CommandQueue &queue) override;
     void update() override;
 
   private:
