@@ -66,12 +66,28 @@ namespace af {
     queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
   }
 
+  void applyAF(af::ActivationFunctionType type, math::clFTensor &mat, cl::CommandQueue &queue) {
+    if (type == af::ActivationFunctionType::identity) return;
+    auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
+    afunc.setArg(0, mat.getBuffer());
+    queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.getDepth() * mat.getRows() * mat.getCols(),
+                               cl::NullRange);
+  }
+
   void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
                          cl::CommandQueue &queue) {
     if (type == af::ActivationFunctionType::identity) return;
     auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).second;
     afunc.setArg(0, mat.getBuffer());
-    queue.enqueueNDRangeKernel(afunc, cl::NullRange, cl::NDRange(mat.getRows(), mat.getCols()),
+    queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.getRows() * mat.getCols(), cl::NullRange);
+  }
+
+  void applyDerivativeAF(af::ActivationFunctionType type, math::clFTensor &mat,
+                         cl::CommandQueue &queue) {
+    if (type == af::ActivationFunctionType::identity) return;
+    auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).second;
+    afunc.setArg(0, mat.getBuffer());
+    queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.getDepth() * mat.getRows() * mat.getCols(),
                                cl::NullRange);
   }
 

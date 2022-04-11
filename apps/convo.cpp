@@ -1,8 +1,8 @@
 #include "CNN.hpp"
 #include "CNNLayer.hpp"
 #include "CNNTopology.hpp"
-#include "Matrix.hpp"
-#include "clUtils/clFMatrix.hpp"
+#include "math/Matrix.hpp"
+#include "math/clFMatrix.hpp"
 #include <iostream>
 
 using namespace math;

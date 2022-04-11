@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Matrix.hpp"
+#include "math/Matrix.hpp"
+#include "math/clFMatrix.hpp"
 #include <filesystem>
 #include <memory>
 #include <vector>
@@ -132,8 +133,8 @@ namespace image {
     [[nodiscard]] size_t getSize() const { return height * width; }
 
     /**
-     * @brief Change the images dimensions properties (input_width, input_height) and re-allocate the pixels
-     * array accordingly.
+     * @brief Change the images dimensions properties (input_width, input_height) and re-allocate
+     * the pixels array accordingly.
      */
     void setSize(size_t new_width, size_t new_height) {
       if (new_width <= 0) throw std::invalid_argument("setSize needs a new_width > 0");
@@ -188,6 +189,10 @@ namespace image {
      * @param image
      */
     static void save(std::string const &filename, const GrayscaleImage &image);
+
+    static void save(std::string const &filename, const math::clFMatrix &matrix, float rescale);
+
+    static void save(std::string const &filename, const math::FloatMatrix &image, float rescale);
 
     /** @brief Returns a vector containing all the png images located in the given directory
      *

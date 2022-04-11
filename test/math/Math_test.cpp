@@ -1,4 +1,4 @@
-#include "Matrix.hpp"
+#include "math/Matrix.hpp"
 #include "Utils.hpp"
 #include <gtest/gtest.h>
 #include <utility>

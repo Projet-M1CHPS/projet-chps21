@@ -1,6 +1,6 @@
 
 #include "Utils.hpp"
-#include "clUtils/clFMatrix.hpp"
+#include "math/clFMatrix.hpp"
 #include <gtest/gtest.h>
 
 using namespace math;
@@ -38,7 +38,8 @@ TEST(clFMatrixTest, CanCopy) {
   }
 
   // Should be able to copy two clFMatrices
-  clFMatrix p = m;
+  clFMatrix p;
+  p.copy(m, true);
   auto test2 = p.toFloatMatrix();
 
   for (size_t i = 0; i < 2; i++) {
@@ -47,7 +48,7 @@ TEST(clFMatrixTest, CanCopy) {
 
   // Should be able to copy an empty matrix
   clFMatrix o;
-  m = o;
+  m.copy(o, true);
 
   ASSERT_EQ(0, m.getRows());
   ASSERT_EQ(0, m.getCols());
@@ -182,7 +183,7 @@ TEST(clFMatrixTest, CanScale) {
   }
 
   // Check that we can scale in place
-  c = clFMatrix(a);
+  c.copy(a, false);
   c.ipscale(scale);
   n = c.toFloatMatrix();
 

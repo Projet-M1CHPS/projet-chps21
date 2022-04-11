@@ -100,7 +100,7 @@ namespace nnet {
       }
       inputSize = res.layers.back()->getOutputSize(inputSize);
     }
-    return std::move(res);
+    return res;
   }
 
 

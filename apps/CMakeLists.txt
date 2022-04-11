@@ -14,7 +14,7 @@ target_link_libraries(xor PRIVATE NeuralNetwork Threads::Threads tscl::tscl BLAS
 add_executable(gemm_benchmark benchmark/gemm_benchmark.cpp)
 set_target_properties(gemm_benchmark PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(gemm_benchmark PUBLIC "${INCLUDE_DIR}")
-target_link_libraries(gemm_benchmark PRIVATE clUtils NeuralNetwork Threads::Threads tscl::tscl BLAS::BLAS)
+target_link_libraries(gemm_benchmark PRIVATE openclUtils NeuralNetwork Threads::Threads tscl::tscl BLAS::BLAS)
 
 add_executable(convo convo.cpp)
 set_target_properties(convo PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")

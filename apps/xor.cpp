@@ -20,7 +20,7 @@
 // XOR problem. This example serves as a crash test for the neural network, to be used when
 // everything else fails and for the most desperate times.
 void runXor(const size_t bach_size, const float learning_rate, const float error_limit) {
-  /*nnet::MLPModel model;
+  nnet::MLPModel model;
   auto &nn1 = model.getPerceptron();
   nnet::MLPTopology topology = {2, 3, 3, 1};
   nn1.setTopology(topology);
@@ -29,7 +29,7 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
 
   auto &w1 = nn1.getWeights();
 
-  auto optimizer = nnet::MLPStochOptimizer::make<nnet::SGDOptimization>(model, learning_rate);
+  auto optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(model, 1, learning_rate);
 
   std::vector<math::FloatMatrix> input_buffer(4);
   std::vector<math::FloatMatrix> target_buffer(4);
@@ -54,11 +54,13 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
   target_buffer[2](0, 0) = 1.f;
   target_buffer[3](0, 0) = 0.f;
 
-  std::vector<math::clFMatrix> input(4);
-  std::vector<math::clFMatrix> target(4);
+  std::vector<math::clFTensor> input(4);
+  std::vector<math::clFTensor> target(4);
   for (size_t i = 0; i < 4; i++) {
-    input[i] = input_buffer[i];
-    target[i] = target_buffer[i];
+    input[i] = math::clFTensor(2, 1, 1);
+    target[i] = math::clFTensor(1, 1, 1);
+    input[i][0] = input_buffer[i];
+    target[i][0] = target_buffer[i];
   }
 
   float error = 1.0;
@@ -66,18 +68,16 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
   std::cout << std::setprecision(8);
   while (error > error_limit && count < 600) {
     for (int i = 0; i < bach_size; i++) {
-      for (int j = 0; j < 4; j++) {
-        optimizer->optimize((math::clFMatrix) input[j], (math::clFMatrix) target[j]);
-      }
+      for (int j = 0; j < 4; j++) { optimizer->optimize(input, target); }
     }
 
     error = 0.0;
     for (int i = 0; i < input.size(); i++) {
-      auto cl_matrix = nn1.predict((math::clFMatrix) input[i]);
+      auto cl_matrix = nn1.predict(input[i][0]);
       auto fmatrix = cl_matrix.toFloatMatrix();
-      error += std::fabs(fmatrix(0, 0) - target[i](0, 0));
+      error += std::fabs(fmatrix(0, 0) - target_buffer[i](0, 0));
     }
-    error /= (float)input.size();
+    error /= (float) input.size();
     std::cout << error << std::endl;
     count++;
   }
@@ -86,11 +86,11 @@ void runXor(const size_t bach_size, const float learning_rate, const float error
   std::cout << "Result"
             << "---> " << count << " iterations" << std::endl;
   for (int i = 0; i < input.size(); i++) {
-    auto cl_matrix = nn1.predict((math::clFMatrix) input[i]);
+    auto cl_matrix = nn1.predict(input[i][0]);
     auto fmatrix = cl_matrix.toFloatMatrix();
-    std::cout << input[i](0, 0) << "|" << input[i](1, 0) << " = " << fmatrix << "("
-              << target[i](0, 0) << ")" << std::endl;
-  }*/
+    std::cout << input_buffer[i](0, 0) << "|" << input_buffer[i](1, 0) << " = " << fmatrix << "("
+              << fmatrix(0, 0) << ")" << std::endl;
+  }
 }
 
 

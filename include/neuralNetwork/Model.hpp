@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Matrix.hpp"
-#include "clUtils/clFMatrix.hpp"
-#include "clUtils/clFTensor.hpp"
-#include "clUtils/clWrapper.hpp"
+#include "math/Matrix.hpp"
+#include "math/clFMatrix.hpp"
+#include "math/clFTensor.hpp"
+#include "openclUtils//clWrapper.hpp"
 #include <filesystem>
 #include <utility>
 

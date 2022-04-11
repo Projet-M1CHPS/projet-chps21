@@ -11,7 +11,6 @@ function(maybe_enable_coverage)
     if (GCOVR AND GCOV)
       # Setup code coverage
       include(extern/CodeCoverage.cmake)
-      append_coverage_compiler_Flags()
       set(COVERAGE_EXCLUDES "/extern" "/test")
       message(STATUS "Code coverage enabled")
       set(COVERARE_ENABLED ON PARENT_SCOPE)
