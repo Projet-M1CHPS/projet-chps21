@@ -3,19 +3,16 @@
 
 namespace nnet {
 
-  CNNLayer::CNNLayer(const std::pair<size_t, size_t> output, const size_t stride)
-      : outputSize(output), stride(stride) {}
+  CNNLayer::CNNLayer(const std::pair<size_t, size_t> output) : outputSize(output) {}
 
 
   CNNConvolutionLayer::CNNConvolutionLayer(const std::pair<size_t, size_t> outputSize,
                                            const std::pair<size_t, size_t> sizeFilter,
                                            const size_t nFilter,
                                            const af::ActivationFunctionType aFunction,
-                                           const size_t stride, const size_t nBranch,
-                                           const size_t padding)
-      : CNNLayer(outputSize, stride),
-        filters(sizeFilter.first, sizeFilter.second, nFilter * nBranch), n_branch(nBranch),
-        n_filter(nFilter), padding(padding), activationFunction(aFunction) {}
+                                           const size_t nBranch)
+      : CNNLayer(outputSize), n_branch(nBranch), n_filter(nFilter), activationFunction(aFunction),
+        filters(sizeFilter.first, sizeFilter.second, nFilter * nBranch) {}
 
 
   clFTensor CNNConvolutionLayer::compute(const clFTensor &input) {
@@ -38,11 +35,11 @@ namespace nnet {
       for (size_t j = 0; j < n_filter; j++) {
         std::cout << "filter" << std::endl;
 
-        std::cout << sub_filter[i].getMatrix(0).toFloatMatrix(true) << std::endl;
+        std::cout << sub_filter[i][0].toFloatMatrix(true) << std::endl;
 
         clblast::Convgemm<float>(
                 clblast::KernelMode::kCrossCorrelation, 1, input.getRows(), input.getCols(),
-                filters.getRows(), filters.getCols(), padding, padding, stride, stride, 1, 1, 1,
+                filters.getRows(), filters.getCols(), 0, 0, 1, 1, 1, 1, 1,
                 input.getDepth() / n_branch, sub_tensor_in[i].getBuffer()(),
                 sub_tensor_in[i].getOffsetInFloats(), sub_filter[i][j].getBuffer()(),
                 sub_filter[i][j].getOffset(), sub_tensor_out[out_index].getBuffer()(),
@@ -73,14 +70,13 @@ namespace nnet {
       const size_t width = convoStorage.input.getCols();
       const size_t kernel_h = errors.getRows();
       const size_t kernel_w = errors.getCols();
-      const size_t dilatation_h = stride;
-      const size_t dilatation_w = stride;
+
 
       // compute filter error
       clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, height, width, kernel_h,
-                               kernel_w, 0, 0, 1, 1, dilatation_h, dilatation_w, 1, 1,
-                               convoStorage.input.getBuffer()(), 0, errors.getBuffer()(), 0,
-                               convoStorage.errorFilter.getBuffer()(), 0, &queue(), nullptr);
+                               kernel_w, 0, 0, 1, 1, 1, 1, 1, 1, convoStorage.input.getBuffer()(),
+                               0, errors.getBuffer()(), 0, convoStorage.errorFilter.getBuffer()(),
+                               0, &queue(), nullptr);
     }
 
     // compute input error
@@ -112,14 +108,13 @@ namespace nnet {
 
 
   CNNPoolingLayer::CNNPoolingLayer(const std::pair<size_t, size_t> outputSize,
-                                   const std::pair<size_t, size_t> poolSize, const size_t stride)
-      : poolingSize(poolSize), CNNLayer(outputSize, stride) {}
+                                   const std::pair<size_t, size_t> poolSize)
+      : CNNLayer(outputSize), poolingSize(poolSize) {}
 
 
   CNNMaxPoolingLayer::CNNMaxPoolingLayer(const std::pair<size_t, size_t> outputSize,
-                                         const std::pair<size_t, size_t> poolSize,
-                                         const size_t stride)
-      : CNNPoolingLayer(outputSize, poolSize, stride) {}
+                                         const std::pair<size_t, size_t> poolSize)
+      : CNNPoolingLayer(outputSize, poolSize) {}
 
   clFTensor CNNMaxPoolingLayer::compute(const clFTensor &inputs) {
     clFTensor res(outputSize.first, outputSize.second, inputs.getRows());
@@ -138,10 +133,10 @@ namespace nnet {
             }
           }
           _output(i, j) = max;
-          colsPos += stride;
+          colsPos++;
         }
         colsPos = 0;
-        rowsPos += stride;
+        rowsPos++;
       }
       res[ii] = _output;
     }
@@ -169,8 +164,6 @@ namespace nnet {
           save_cols(i, j) = colsPos;
           for (size_t k = 0; k < poolingSize.first; k++) {
             for (size_t l = 0; l < poolingSize.second; l++) {
-              std::cout << max << " " << _input(k + rowsPos, l + colsPos) << " " << k + rowsPos
-                        << " " << l + colsPos << std::endl;
               if (max < _input(k + rowsPos, l + colsPos)) {
                 max = _input(k + rowsPos, l + colsPos);
                 save_rows(i, j) = k + rowsPos;
@@ -179,10 +172,10 @@ namespace nnet {
             }
           }
           _output(i, j) = max;
-          colsPos += stride;
+          colsPos++;
         }
         colsPos = 0;
-        rowsPos += stride;
+        rowsPos++;
       }
       poolingStorage.max_rows.push_back(std::move(save_rows));
       poolingStorage.max_cols.push_back(std::move(save_cols));
@@ -215,9 +208,8 @@ namespace nnet {
   }
 
   CNNAvgPoolingLayer::CNNAvgPoolingLayer(const std::pair<size_t, size_t> outputSize,
-                                         const std::pair<size_t, size_t> poolSize,
-                                         const size_t stride)
-      : CNNPoolingLayer(outputSize, poolSize, stride) {}
+                                         const std::pair<size_t, size_t> poolSize)
+      : CNNPoolingLayer(outputSize, poolSize) {}
 
   clFTensor CNNAvgPoolingLayer::compute(const clFTensor &input) {
     clFTensor res(outputSize.first, outputSize.second, input.getDepth());
@@ -236,12 +228,12 @@ namespace nnet {
             }
           }
           _output(i, j) = sum / static_cast<float>(poolingSize.first * poolingSize.second);
-          colsPos += stride;
+          colsPos++;
         }
         colsPos = 0;
-        rowsPos += stride;
+        rowsPos++;
       }
-      res.getMatrix(ii) = _output;
+      res[0] = _output;
     }
     return res;
   }
@@ -273,10 +265,10 @@ namespace nnet {
               error_input(k + rowsPos, l + colsPos) += error_output(i, j);
             }
           }
-          colsPos += stride;
+          colsPos++;
         }
         colsPos = 0;
-        rowsPos += stride;
+        rowsPos++;
       }
       error_input *= 1.f / (float) (poolingSize.first * poolingSize.second);
       res[ii] = error_input;
@@ -284,14 +276,5 @@ namespace nnet {
     return res;
   }
 
-
-  void fillDilatedMatrix(const FloatMatrix &input, FloatMatrix &dilated, const size_t stride,
-                         const std::pair<size_t, size_t> padding) {
-    for (size_t i = 0; i < input.getRows(); i++) {
-      for (size_t j = 0; j < input.getCols(); j++) {
-        dilated(i + padding.first + i * stride, j + padding.second + j * stride) = input(i, j);
-      }
-    }
-  }
 
 }   // namespace nnet

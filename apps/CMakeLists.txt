@@ -19,4 +19,4 @@ target_link_libraries(gemm_benchmark PRIVATE openclUtils NeuralNetwork Threads::
 add_executable(convo convo.cpp)
 set_target_properties(convo PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(convo PUBLIC "${INCLUDE_DIR}")
-target_link_libraries(convo PRIVATE NeuralNetwork Threads::Threads tscl::tscl BLAS::BLAS clUtils)
+target_link_libraries(convo PRIVATE NeuralNetwork Threads::Threads tscl::tscl BLAS::BLAS openclUtils)

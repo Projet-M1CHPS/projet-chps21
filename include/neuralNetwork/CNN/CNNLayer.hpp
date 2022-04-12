@@ -17,15 +17,13 @@ namespace nnet {
 
   class CNNLayer {
   public:
-    explicit CNNLayer(const std::pair<size_t, size_t> outputSize, const size_t stride);
+    explicit CNNLayer(const std::pair<size_t, size_t> outputSize);
 
-    [[nodiscard]] const size_t getStride() const { return stride; };
     virtual clFTensor compute(const clFTensor &input) = 0;
     virtual clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) = 0;
     virtual clFTensor computeBackward(const clFTensor &input, CNNStorageBP &storage) = 0;
 
   protected:
-    const size_t stride;
     const std::pair<size_t, size_t> outputSize;
   };
 
@@ -35,10 +33,9 @@ namespace nnet {
     // nFilter nombre de kernel par branche
     CNNConvolutionLayer(const std::pair<size_t, size_t> outputSize,
                         const std::pair<size_t, size_t> sizeFilter, const size_t nFilter,
-                        const af::ActivationFunctionType aFunction, const size_t stride,
-                        const size_t nBranch, const size_t padding = 0);
+                        const af::ActivationFunctionType aFunction,
+                        const size_t nBranch);
 
-    [[nodiscard]] const size_t getPadding() const { return padding; };
     [[nodiscard]] const clFTensor &getFilter() const { return filters; }
     [[nodiscard]] clFTensor &getFilter() { return filters; }
 
@@ -49,7 +46,6 @@ namespace nnet {
   private:
     const size_t n_branch;
     const size_t n_filter;
-    const size_t padding;
     af::ActivationFunctionType activationFunction;
 
     clFTensor filters;
@@ -59,7 +55,7 @@ namespace nnet {
   class CNNPoolingLayer : public CNNLayer {
   public:
     CNNPoolingLayer(const std::pair<size_t, size_t> outputSize,
-                    const std::pair<size_t, size_t> PoolSize, const size_t stride);
+                    const std::pair<size_t, size_t> PoolSize);
 
   protected:
     const std::pair<size_t, size_t> poolingSize;
@@ -69,7 +65,7 @@ namespace nnet {
   class CNNMaxPoolingLayer final : public CNNPoolingLayer {
   public:
     CNNMaxPoolingLayer(const std::pair<size_t, size_t> outputSize,
-                       const std::pair<size_t, size_t> PoolSize, const size_t stride);
+                       const std::pair<size_t, size_t> PoolSize);
 
     clFTensor compute(const clFTensor &input) override;
     clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) override;
@@ -80,15 +76,11 @@ namespace nnet {
   class CNNAvgPoolingLayer final : public CNNPoolingLayer {
   public:
     CNNAvgPoolingLayer(const std::pair<size_t, size_t> outputSize,
-                       const std::pair<size_t, size_t> PoolSize, const size_t stride);
+                       const std::pair<size_t, size_t> PoolSize);
 
     clFTensor compute(const clFTensor &input) override;
     clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) override;
     clFTensor computeBackward(const clFTensor &input, CNNStorageBP &storage) override;
   };
-
-
-  void fillDilatedMatrix(const FloatMatrix &input, FloatMatrix &dilated, const size_t stride,
-                         const std::pair<size_t, size_t> padding);
 
 }   // namespace nnet
