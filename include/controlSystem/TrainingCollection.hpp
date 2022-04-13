@@ -75,11 +75,20 @@ namespace control {
     void shuffle() {
       training_set.shuffle();
       eval_set.shuffle();
+      makeTrainingTargets();
+    }
+
+    const std::vector<math::clFTensor>& getTargets() {
+      return training_targets;
     }
 
   private:
+    void makeTrainingTargets();
+
     InputSet training_set;
     InputSet eval_set;
+    // Temporary solution, this should probably moved elsewhere
+    std::vector<math::clFTensor> training_targets;
   };
 
 }   // namespace control

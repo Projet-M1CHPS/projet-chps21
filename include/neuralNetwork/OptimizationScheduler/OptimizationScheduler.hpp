@@ -25,6 +25,14 @@ namespace nnet {
     virtual void run() = 0;
 
   protected:
+
+    // TODO Refactor me!
+    // Implementing those methods as protected, and not implementing them in as a non-virtual method
+    // provides no guarantee that the scheduler will be used/inherited correctly
+    // (e.g an inherited scheduler might not call epochStart or endEpoch)
+    // To enforce : make run() non-virtual and call each of the following methods
+    // This forces inheritance of the scheduler to call the right methods
+
     /**
      * @brief Update the model after a batch of training.
      */
