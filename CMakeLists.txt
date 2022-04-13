@@ -23,6 +23,16 @@ else ()
 endif ()
 
 
+## MPI support
+set(USE_MPI OFF)
+message(STATUS "Looking for mpicxx...")
+if (CMAKE_CXX_COMPILER MATCHES ".*mpicxx")
+    set(USE_MPI ON)
+    message(STATUS "Found mpicxx: ${CMAKE_CXX_COMPILER}")
+else ()
+    message(STATUS "No mpicxx found.")
+endif ()
+
 include(check_coverage)
 maybe_enable_coverage()
 if (COVERARE_ENABLED)
