@@ -48,7 +48,7 @@ namespace nnet {
       }
     }
 
-    // applyAF(activationFunction, res, queue);
+    applyAF(activationFunction, res, queue);
     return res;
   }
 
