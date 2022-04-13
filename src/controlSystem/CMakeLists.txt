@@ -10,5 +10,5 @@ add_library(ControlSystem2
         TrainingCollectionLoader.cpp ${CURRENT_INCLUDE_DIR}/TrainingCollectionLoader.hpp
         InputSetLoader.cpp ${CURRENT_INCLUDE_DIR}/InputSetLoader.hpp ModelEvaluator.cpp ${CURRENT_INCLUDE_DIR}/ModelEvaluator.hpp)
 
-target_link_libraries(ControlSystem2 PUBLIC NeuralNetwork openclUtils TBB::tbb)
+target_link_libraries(ControlSystem2 PUBLIC NeuralNetwork openclUtils TBB::tbb OpenMP::OpenMP_CXX)
 target_include_directories(ControlSystem2 PUBLIC ${CURRENT_INCLUDE_DIR})
