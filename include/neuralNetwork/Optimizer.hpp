@@ -53,7 +53,7 @@ namespace nnet {
      * @param batch_device The device that must be used to run this operation.
      */
     virtual void operator()(const math::clFTensor &inputs, const math::clFTensor &targets,
-                            cl::Device &batch_device) = 0;
+                            cl::CommandQueue &queue) = 0;
 
     /**
      * @brief Update the model using the cached changes. This operation is guaranteed to be called a

@@ -14,10 +14,14 @@ namespace control {
 
   ControllerResult TrainingController::run() {
     for (size_t curr_epoch = 0; curr_epoch < max_epoch; curr_epoch++) {
+      auto start = chrono::steady_clock::now();
       scheduler->run();
-      auto evaluation = evaluator->evaluate();
+      auto end = chrono::steady_clock::now();
+      auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+      // auto evaluation = evaluator->evaluate();
       if (is_verbose)
-        std::cout << "Epoch " << curr_epoch << ": " << evaluation << std::endl;
+        std::cout << "(" << duration.count() << std::endl; /*<<  "ms) Epoch " << curr_epoch << ": " << evaluation
+                  << std::endl; */
     }
 
     return {0, "Training completed"};

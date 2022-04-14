@@ -99,7 +99,7 @@ namespace control {
     ClassOutputStreams eval_set_avg_output_streams;
     ClassOutputStreams training_set_avg_output_streams;
 
-    void writeHeader(std::fstream &stream, const std::string &label);
+    static void writeHeader(std::fstream &stream, const std::string &label);
     static void writeToStreams(ModelEvaluation &eval, ClassOutputStreams& avg_streams, std::vector<ClassOutputStreams> &streams);
   };
 }   // namespace control

@@ -11,7 +11,7 @@ namespace control {
     ss << me.avg_f1score * 100.f << "% Average f1 score" << std::endl;
     ss << "\t- " << me.avg_precision * 100.f << "% Average precision: " << std::endl;
     ss << "\t- " << me.avg_recall * 100.f << "% Average recall " << std::endl;
-    tscl::logger("Model evaluation:" + ss.str(), tscl::Log::Information);
+    tscl::logger("Model evaluation: " + ss.str(), tscl::Log::Information);
     return os;
   }
 
@@ -24,8 +24,8 @@ namespace control {
 
     // On huge input sets, the evaluation can take quite some time
     // No reason not to use OpenMP here
-#pragma omp declare reduction (add_matrix : math::Matrix<size_t> : omp_out.operator+=(omp_in) ) initializer ( omp_priv(omp_orig) )
-#pragma omp parallel for reduction(add_matrix: confusion_matrix) schedule(dynamic) default(none) shared(input_set, model) num_threads(4) // 4 max thread to avoid overloading the GPU
+#pragma omp declare reduction (add_matrix : math::Matrix<size_t> : omp_out += omp_in ) initializer ( omp_priv(omp_orig) )
+#pragma omp parallel for reduction(add_matrix: confusion_matrix) schedule(dynamic) default(none) shared(input_set, model) num_threads(1) // 4 max thread to avoid overloading the GPU
     for (auto &input : input_set) {
       long true_class = input.getClass();
       auto buf = model.predict(input.getData());
@@ -82,7 +82,7 @@ namespace control {
                                                const TrainingCollection &training_collection)
       : do_eval_on_test(false), model(&model), output_path(std::move(output_path)),
         training_collection(&training_collection) {
-    if (not fs::exists(output_path)) fs::create_directories(output_path);
+    if (not fs::exists(this->output_path)) fs::create_directories(this->output_path);
     setupStreams(eval_set_avg_output_streams, eval_set_output_streams, "eval");
   }
 
@@ -137,7 +137,7 @@ namespace control {
   ModelEvaluation ModelEvolutionTracker::evaluate() {
     ModelEvaluation evaluation =
             evaluator.evaluate(*model, training_collection->getEvaluationSet());
-    writeToStreams(evaluation, training_set_avg_output_streams, training_set_output_streams);
+    writeToStreams(evaluation, eval_set_avg_output_streams, eval_set_output_streams);
 
     if (do_eval_on_test) {
       evaluation = evaluator.evaluate(*model, training_collection->getTrainingSet());
@@ -145,6 +145,10 @@ namespace control {
     }
 
     return evaluation;
+  }
+
+  void ModelEvolutionTracker::writeHeader(std::fstream &stream, const std::string &label) {
+    stream << "# " << label << std::endl;
   }
 
   void ModelEvolutionTracker::writeToStreams(ModelEvaluation &eval, ClassOutputStreams &avg_streams,

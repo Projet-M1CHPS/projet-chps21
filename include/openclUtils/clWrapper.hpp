@@ -29,7 +29,7 @@ namespace utils {
      */
     static clWrapper &initOpenCL(clWrapper &wrapper) noexcept;
 
-    clWrapper() noexcept = default;
+    clWrapper() = default;
 
     clWrapper(const clWrapper &other) { *this = other; }
     clWrapper &operator=(const clWrapper &other);
