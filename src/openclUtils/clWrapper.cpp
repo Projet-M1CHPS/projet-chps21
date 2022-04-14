@@ -46,7 +46,6 @@ namespace utils {
                     << std::endl;
           std::cout << "device fission: " << devices[i].getInfo<CL_DEVICE_PARTITION_MAX_SUB_DEVICES>()
                     << std::endl;
-          std::abort();
         }
         if (!devices.empty()) { gpu_platforms.push_back(platform); }
       }
