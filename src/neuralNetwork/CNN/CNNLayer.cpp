@@ -16,8 +16,6 @@ namespace nnet {
 
 
   clFTensor CNNConvolutionLayer::compute(const clFTensor &input) {
-    auto sub_tensor_in = input.slice(n_branch);
-
     std::cout << "call compute : branch{" << n_branch << "}, filter{" << n_filter << "}"
               << std::endl;
 
@@ -26,25 +24,22 @@ namespace nnet {
     const size_t output_size_z = n_branch * n_filter * input.getDepth() / n_branch;
     clFTensor res(outputSize.first, outputSize.second, output_size_z);
 
+    auto sub_input = input.slice(n_branch);
     auto sub_filter = filters.slice(n_branch);
-    auto sub_tensor_out = res.slice(n_branch * n_filter);
+    auto sub_output = res.slice(n_branch * n_filter);
 
-    size_t out_index = 0;
+    size_t index_out = 0;
     for (size_t i = 0; i < n_branch; i++) {
       std::cout << "branch" << std::endl;
-      for (size_t j = 0; j < n_filter; j++) {
-        std::cout << "filter" << std::endl;
-
-        std::cout << sub_filter[i][0].toFloatMatrix(true) << std::endl;
-
-        clblast::Convgemm<float>(
-                clblast::KernelMode::kCrossCorrelation, 1, input.getRows(), input.getCols(),
-                filters.getRows(), filters.getCols(), 0, 0, 1, 1, 1, 1, 1,
-                input.getDepth() / n_branch, sub_tensor_in[i].getBuffer()(),
-                sub_tensor_in[i].getOffsetInFloats(), sub_filter[i][j].getBuffer()(),
-                sub_filter[i][j].getOffset(), sub_tensor_out[out_index].getBuffer()(),
-                sub_tensor_out[out_index].getOffsetInFloats(), &queue(), nullptr);
-        out_index++;
+      for(size_t j = 0; j < sub_filter[i].getDepth(); j++) {
+        clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, input.getRows(),
+                                 input.getCols(), filters.getRows(), filters.getCols(), 0, 0, 1, 1,
+                                 1, 1, 1, sub_input[i].getDepth(),
+                                 sub_input[i].getBuffer()(),
+                                 sub_input[i].getOffsetInFloats(), sub_filter[i][j].getBuffer()(),
+                                 sub_filter[i][j].getOffset(), sub_output[index_out].getBuffer()(),
+                                 sub_output[index_out].getOffsetInFloats(), &queue(), nullptr);
+        index_out++;
       }
     }
 
@@ -117,7 +112,7 @@ namespace nnet {
       : CNNPoolingLayer(outputSize, poolSize) {}
 
   clFTensor CNNMaxPoolingLayer::compute(const clFTensor &inputs) {
-    clFTensor res(outputSize.first, outputSize.second, inputs.getRows());
+    clFTensor res(outputSize.first, outputSize.second, inputs.getDepth());
     for (size_t ii = 0; ii < inputs.getDepth(); ii++) {
       FloatMatrix _input = inputs[ii].toFloatMatrix(true);
       FloatMatrix _output = res[ii].toFloatMatrix(true);
@@ -209,32 +204,25 @@ namespace nnet {
 
   CNNAvgPoolingLayer::CNNAvgPoolingLayer(const std::pair<size_t, size_t> outputSize,
                                          const std::pair<size_t, size_t> poolSize)
-      : CNNPoolingLayer(outputSize, poolSize) {}
+      : CNNPoolingLayer(outputSize, poolSize), filter(poolSize.first, poolSize.second, 1) {
+    // TODO : faire attention a la queu sur laquel on fait le calcul
+    filter[0].fill(1.f, utils::cl_wrapper.getDefaultQueue());
+  }
 
   clFTensor CNNAvgPoolingLayer::compute(const clFTensor &input) {
     clFTensor res(outputSize.first, outputSize.second, input.getDepth());
-    for (size_t ii = 0; ii < input.getDepth(); ii++) {
-      FloatMatrix _input = input[ii].toFloatMatrix(true);
-      FloatMatrix _output = res[ii].toFloatMatrix(true);
 
-      size_t rowsPos = 0, colsPos = 0;
+    cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
-      for (size_t i = 0; i < outputSize.first; i++) {
-        for (size_t j = 0; j < outputSize.second; j++) {
-          float sum = 0.f;
-          for (size_t k = 0; k < poolingSize.first; k++) {
-            for (size_t l = 0; l < poolingSize.second; l++) {
-              sum += _input(k + rowsPos, l + colsPos);
-            }
-          }
-          _output(i, j) = sum / static_cast<float>(poolingSize.first * poolingSize.second);
-          colsPos++;
-        }
-        colsPos = 0;
-        rowsPos++;
-      }
-      res[0] = _output;
-    }
+    clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, input.getRows(),
+                             input.getCols(), filter.getRows(), filter.getCols(), 0, 0, 1, 1, 1, 1,
+                             1, input.getDepth(), input.getBuffer()(), input.getOffsetInFloats(),
+                             filter.getBuffer()(), filter.getOffsetInFloats(), res.getBuffer()(),
+                             res.getOffsetInFloats(), &queue(), nullptr);
+
+    const float scale = 1.f / static_cast<float>(filter.getRows() * filter.getCols());
+    res.ipscale(scale, queue);
+
     return res;
   }
 

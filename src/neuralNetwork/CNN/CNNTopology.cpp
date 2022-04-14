@@ -93,6 +93,7 @@ namespace nnet {
       }
       inputSize = res.layers.back()->getOutputSize(inputSize);
     }
+    res.n_branch_final = n_branch;
     return res;
   }
 

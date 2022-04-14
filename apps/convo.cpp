@@ -104,7 +104,7 @@ void testConvo() {
 void testConvolutionalLayer1Branch() {
   // 1 branch 2 filter/branch 2 input/branch
   const size_t number_filter = 2;
-  const size_t number_input = 2;
+  const size_t number_input = 3;
 
   nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, number_filter, af::ActivationFunctionType::relu,
                                   1);
@@ -342,7 +342,7 @@ void testConvolutionalLayer1BranchBP() {
 
 void testConvolutionalLayerXBranch() {
   // 3 branch 2 filter/branch 3input/branch
-  nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, 2, af::ActivationFunctionType::relu, 3);
+  nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, 2, af::ActivationFunctionType::relu, 2);
 
   FloatMatrix f1(2, 2);
   {
@@ -357,6 +357,20 @@ void testConvolutionalLayerXBranch() {
     f2(0, 1) = 1.f;
     f2(1, 0) = 1.f;
     f2(1, 1) = 1.f;
+  }
+  FloatMatrix f3(2, 2);
+  {
+    f3(0, 0) = 2.f;
+    f3(0, 1) = 2.f;
+    f3(1, 0) = 2.f;
+    f3(1, 1) = 2.f;
+  }
+  FloatMatrix f4(2, 2);
+  {
+    f4(0, 0) = 4.f;
+    f4(0, 1) = 4.f;
+    f4(1, 0) = 4.f;
+    f4(1, 1) = 4.f;
   }
   math::FloatMatrix input(6, 6);
   {
@@ -397,26 +411,64 @@ void testConvolutionalLayerXBranch() {
     input(5, 4) = 4.f;
     input(5, 5) = 1.f;
   }
+  math::FloatMatrix input2(6, 6);
+  {
+    input2(0, 0) = 100.f;
+    input2(0, 1) = 2.f;
+    input2(0, 2) = 1.f;
+    input2(0, 3) = 1.f;
+    input2(0, 4) = 4.f;
+    input2(0, 5) = 1.f;
+    input2(1, 0) = 2.f;
+    input2(1, 1) = 1.f;
+    input2(1, 2) = 1.f;
+    input2(1, 3) = 2.f;
+    input2(1, 4) = 2.f;
+    input2(1, 5) = 1.f;
+    input2(2, 0) = 4.f;
+    input2(2, 1) = 3.f;
+    input2(2, 2) = 2.f;
+    input2(2, 3) = 1.f;
+    input2(2, 4) = 2.f;
+    input2(2, 5) = 1.f;
+    input2(3, 0) = 1.f;
+    input2(3, 1) = 5.f;
+    input2(3, 2) = 1.f;
+    input2(3, 3) = 1.f;
+    input2(3, 4) = 2.f;
+    input2(3, 5) = 1.f;
+    input2(4, 0) = 2.f;
+    input2(4, 1) = 1.f;
+    input2(4, 2) = 1.f;
+    input2(4, 3) = 4.f;
+    input2(4, 4) = 1.f;
+    input2(4, 5) = 1.f;
+    input2(5, 0) = 2.f;
+    input2(5, 1) = 1.f;
+    input2(5, 2) = 4.f;
+    input2(5, 3) = 2.f;
+    input2(5, 4) = 4.f;
+    input2(5, 5) = 1.f;
+  }
 
   auto &filter = layer.getFilter();
   filter[0] = f1;
   filter[1] = f2;
-  filter[2] = f1;
-  filter[3] = f2;
-  filter[4] = f1;
-  filter[5] = f2;
-  for (size_t i = 0; i < filter.getDepth(); i++)
-    std::cout << "filter " << i << " : \n" << filter[i].toFloatMatrix(true) << std::endl;
+  filter[2] = f3;
+  filter[3] = f4;
 
-  clFTensor input_tensor(6, 6, 6);
-  for (size_t i = 0; i < input_tensor.getDepth(); i++) input_tensor[i] = input;
-  for (size_t i = 0; i < input_tensor.getDepth(); i++)
-    std::cout << "input " << i << " : \n" << input_tensor[i].toFloatMatrix(true) << std::endl;
+  std::cout << "filter : " << filter << std::endl;
+
+  clFTensor input_tensor(6, 6, 4);
+  input_tensor[0] = input;
+  input_tensor[1] = input;
+  input_tensor[2] = input2;
+  input_tensor[3] = input2;
+  std::cout << "input : " << input_tensor << std::endl;
 
   clFTensor output_tensor = layer.compute(input_tensor);
 
-  for (size_t i = 0; i < output_tensor.getDepth(); i++)
-    std::cout << "output " << i << " : \n" << output_tensor[i].toFloatMatrix(true) << std::endl;
+  std::cout << "output : " << output_tensor << std::endl;
 
   /* input
    * 1 2 1 1 4 1
@@ -436,29 +488,6 @@ void testConvolutionalLayerXBranch() {
    * 19   12  7   7.5 7.5
    * 9.5  13  9.5 7.5 7
    * 7.5 9.5 11 16 6.5
-   * */
-
-  /*nnet::CNNStorageBPConvolution storage({6, 6}, {5, 5}, {2, 2}, 1);
-
-  layer.computeForward(input, storage);
-  std::cout << "compute forward : \n" << storage.output << std::endl;
-  for (auto &i : storage.output) { i = 1.f; }
-  layer.computeBackward(input, storage);
-  std::cout << "error input : \n" << storage.errorInput << std::endl;
-  std::cout << "error filter : \n" << storage.errorFilter << std::endl;*/
-
-  /* error input
-   *
-   * 2 3 3 3 3 1
-   * 2.5 5 5 5 5 2.5
-   * 2.5 5 5 5 5 2.5
-   * 2.5 5 5 5 5 2.5
-   * 2.5 5 5 5 5 2.5
-   * 0.5 2 2 2 2 1.5
-   *
-   * error filter
-   * 48 43
-   * 52 46
    * */
 }
 
@@ -810,7 +839,7 @@ void testPrediction1Branch() {
   auto &filter = layer_convolution->getFilter();
   for (size_t i = 0; i < filter.getDepth(); i++) filter[i] = f;
 
-  clFTensor input_tensor(6, 6, 2);
+  clFTensor input_tensor(6, 6, 3);
   for (size_t i = 0; i < input_tensor.getDepth(); i++) input_tensor[i] = input;
   for (size_t i = 0; i < input_tensor.getDepth(); i++)
     std::cout << "input " << i << " : \n" << input_tensor[i].toFloatMatrix(true) << std::endl;
@@ -856,9 +885,8 @@ void testPrediction1Branch() {
 void testPredictionXBranch() {
   // std::string str_topology("6 6 relu convolution 2 2 2");
   // std::string str_topology("6 6 relu convolution 2 2 2 pooling max 2 2");
-  // std::string str_topology("6 6 relu convolution 2 2 2 convolution 2 2 2");
-  std::string str_topology(
-          "6 6 relu convolution 2 2 2 convolution 2 2 2 pooling max 2 2");
+  //std::string str_topology("6 6 relu convolution 2 2 2 convolution 2 2 2");
+  std::string str_topology("6 6 relu convolution 2 2 2 convolution 2 2 2 pooling max 2 2");
   auto topology = nnet::stringToTopology(str_topology);
   std::cout << topology << std::endl;
 
@@ -918,6 +946,45 @@ void testPredictionXBranch() {
     input(5, 4) = 4.f;
     input(5, 5) = 1.f;
   }
+  math::FloatMatrix input2(6, 6);
+  {
+    input2(0, 0) = 100.f;
+    input2(0, 1) = 2.f;
+    input2(0, 2) = 1.f;
+    input2(0, 3) = 1.f;
+    input2(0, 4) = 4.f;
+    input2(0, 5) = 1.f;
+    input2(1, 0) = 2.f;
+    input2(1, 1) = 1.f;
+    input2(1, 2) = 1.f;
+    input2(1, 3) = 2.f;
+    input2(1, 4) = 2.f;
+    input2(1, 5) = 1.f;
+    input2(2, 0) = 4.f;
+    input2(2, 1) = 3.f;
+    input2(2, 2) = 2.f;
+    input2(2, 3) = 1.f;
+    input2(2, 4) = 2.f;
+    input2(2, 5) = 1.f;
+    input2(3, 0) = 1.f;
+    input2(3, 1) = 5.f;
+    input2(3, 2) = 1.f;
+    input2(3, 3) = 1.f;
+    input2(3, 4) = 2.f;
+    input2(3, 5) = 1.f;
+    input2(4, 0) = 2.f;
+    input2(4, 1) = 1.f;
+    input2(4, 2) = 1.f;
+    input2(4, 3) = 4.f;
+    input2(4, 4) = 1.f;
+    input2(4, 5) = 1.f;
+    input2(5, 0) = 2.f;
+    input2(5, 1) = 1.f;
+    input2(5, 2) = 4.f;
+    input2(5, 3) = 2.f;
+    input2(5, 4) = 4.f;
+    input2(5, 5) = 1.f;
+  }
 
   const auto &layer1 = dynamic_cast<const nnet::CNNConvolutionLayer *>(cnn.layers[0].get());
   auto &filter1 = layer1->getFilter();
@@ -928,15 +995,14 @@ void testPredictionXBranch() {
   for (size_t i = 0; i < filter2.getDepth(); i++) filter2[i] = f2;
 
   clFTensor input_tensor(6, 6, 2);
-  for (size_t i = 0; i < input_tensor.getDepth(); i++) input_tensor[i] = input;
-  for (size_t i = 0; i < input_tensor.getDepth(); i++)
-    std::cout << "input " << i << " : \n" << input_tensor[i].toFloatMatrix(true) << std::endl;
+  input_tensor[0] = input;
+  input_tensor[1] = input2;
 
+  std::cout << "input : " << input_tensor << std::endl;
 
   clFTensor output_tensor = cnn.predict(input_tensor);
 
-  for (size_t i = 0; i < output_tensor.getDepth(); i++)
-    std::cout << "output " << i << " : \n" << output_tensor[i].toFloatMatrix(true) << std::endl;
+  std::cout << "output : " << output_tensor << std::endl;
 
   /* input
    * 1 2 1 1 4 1
@@ -975,9 +1041,9 @@ int main() {
 
   // testConvo();
 
-  testConvolutionalLayer1Branch();
+  // testConvolutionalLayer1Branch();
   // testConvolutionalLayer1BranchBP();
-  //  testConvolutionalLayerXBranch();
+  // testConvolutionalLayerXBranch();
 
   // testMaxPoolingLayer();
   // testMaxPoolingLayerBP();
@@ -986,7 +1052,7 @@ int main() {
   // testAvgPoolingLayerBP();
 
   // testPrediction1Branch();
-  // testPredictionXBranch();
+  testPredictionXBranch();
 
   return 0;
 }

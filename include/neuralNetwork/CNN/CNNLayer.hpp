@@ -81,6 +81,9 @@ namespace nnet {
     clFTensor compute(const clFTensor &input) override;
     clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) override;
     clFTensor computeBackward(const clFTensor &input, CNNStorageBP &storage) override;
+
+  private:
+    clFTensor filter;
   };
 
 }   // namespace nnet

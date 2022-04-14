@@ -286,4 +286,12 @@ namespace math {
     return *this;
   }
 
+  void clFTensor::ipscale(float scale, cl::CommandQueue &queue, bool blocking) {
+    if (getDepth() == 0 || getRows() == 0 || getCols() == 0) return;
+
+    cl::Event evt;
+    clblast::Scal<float>(rows * cols * depth, scale, data(), offset, 1, &queue(), &evt());
+    if (blocking) evt.wait();
+  }
+
 }   // namespace math
