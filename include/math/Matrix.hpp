@@ -3,12 +3,12 @@ extern "C" {
 #include <cblas.h>
 }
 
-#include <random>
 #include <cassert>
 #include <cmath>
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <random>
 #include <utility>
 
 #define USE_BLAS
@@ -102,10 +102,9 @@ namespace math {
           cblas_scopy(rows * cols, other.data.get(), 1, data.get(), 1);
         } else if constexpr (std::is_same_v<T, double>) {
           cblas_dcopy(rows * cols, other.data.get(), 1, data.get(), 1);
-        }
-#else
-        std::memcpy(data.get(), other.getData(), sizeof(real) * rows * cols);
+        } else
 #endif
+        std::memcpy(data.get(), other.getData(), sizeof(T) * rows * cols);
       }
       return *this;
     }
@@ -168,10 +167,9 @@ namespace math {
         cblas_saxpy(rows * cols, 1.0f, other_data, 1, data.get(), 1);
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_daxpy(rows * cols, 1.0, other_data, 1, data.get(), 1);
-      }
-#else
-      for (size_t i = 0; i < rows * cols; i++) { data[i] += other_data[i]; }
+      } else
 #endif
+      for (size_t i = 0; i < rows * cols; i++) { data[i] += other_data[i]; }
       return *this;
     }
 
@@ -195,10 +193,10 @@ namespace math {
         cblas_saxpy(rows * cols, 1.0f, data.get(), 1, res_data, 1);
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_daxpy(rows * cols, 1.0, data.get(), 1, res_data, 1);
-      }
-#else
-      for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] + other_data[i]; }
+      } else
 #endif
+      for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] + other_data[i]; }
+
       return res;
     }
 
@@ -216,10 +214,10 @@ namespace math {
         cblas_saxpy(rows * cols, -1.f, other_data, 1, data.get(), 1);
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_daxpy(rows * cols, -1.0, other_data, 1, data.get(), 1);
-      }
-#else
-      for (size_t i = 0; i < rows * cols; i++) { data[i] -= other_data[i]; }
+      } else
 #endif
+      for (size_t i = 0; i < rows * cols; i++) { data[i] -= other_data[i]; }
+
       return *this;
     }
 
@@ -243,10 +241,10 @@ namespace math {
         cblas_saxpy(rows * cols, -1.0f, other_data, 1, res_data, 1);
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_daxpy(rows * cols, -1.0, other_data, 1, res_data, 1);
-      }
-#else
-      for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] - other_data[i]; }
+      } else
 #endif
+      for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] - other_data[i]; }
+
       return res;
     }
 
@@ -267,17 +265,19 @@ namespace math {
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, rows, other_cols, cols, 1.0,
                     data.get(), cols, raw_other, other_cols, 0.0, raw_res, other_cols);
-      }
-#else
-      for (int i = 0; i < rows; i++) {
-        for (int k = 0; k < cols; k++) {
-          real a_ik = data[i * cols + k];
-          for (int j = 0; j < other_cols; j++) {
-            raw_res[i * other_cols + j] += a_ik * raw_other[k * other_cols + j];
+      } else
+#endif
+      {
+        for (int i = 0; i < rows; i++) {
+          for (int k = 0; k < cols; k++) {
+            T a_ik = data[i * cols + k];
+            for (int j = 0; j < other_cols; j++) {
+              raw_res[i * other_cols + j] += a_ik * raw_other[k * other_cols + j];
+            }
           }
         }
       }
-#endif
+
       return res;
     }
 
@@ -293,11 +293,13 @@ namespace math {
         cblas_sscal(rows * cols, scale, raw_res, 1);
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_dscal(rows * cols, scale, raw_res, 1);
-      }
-#else
-      const size_t size{rows * cols};
-      for (size_t i = 0; i < size; i++) { raw_res[i] *= scale; }
+      } else
 #endif
+      {
+        const size_t size{rows * cols};
+        for (size_t i = 0; i < size; i++) { raw_res[i] *= scale; }
+      }
+
       return res;
     }
 
@@ -309,11 +311,12 @@ namespace math {
         cblas_sscal(rows * cols, scale, raw_mat, 1);
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_dscal(rows * cols, scale, raw_mat, 1);
-      }
-#else
-      const size_t size{rows * cols};
-      for (size_t i = 0; i < size; i++) { raw_mat[i] *= scale; }
+      } else
 #endif
+      {
+        const size_t size{rows * cols};
+        for (size_t i = 0; i < size; i++) { raw_mat[i] *= scale; }
+      }
       return *this;
     }
 
@@ -347,10 +350,10 @@ namespace math {
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, A_rows, B_cols, A_cols, 1.0,
                     A.getData(), A_cols, B.getData(), B_cols, 1.0, res.getData(), C_cols);
-      }
-#else
-      res = A * B + C;
+      } else
 #endif
+        res = A * B + C;
+
       return res;
     }
 
@@ -368,10 +371,10 @@ namespace math {
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_dgemm(CblasRowMajor, CblasTrans, CblasNoTrans, A_cols, B_cols, A_rows, 1.0,
                     A.getData(), A_cols, B.getData(), B_cols, 0.0, res.getData(), B_cols);
-      }
-#else
-      res = A.transpose() * B;
+      } else
 #endif
+        res = A.transpose() * B;
+
       return res;
     }
 
@@ -389,10 +392,10 @@ namespace math {
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasTrans, A_rows, B_rows, A_cols, 1.f,
                     A.getData(), A_cols, B.getData(), B_cols, 0.f, res.getData(), res.getCols());
-      }
-#else
-      res = A * B.transpose();
+      } else
 #endif
+        res = A * B.transpose();
+
       return res;
     }
 
@@ -419,18 +422,20 @@ namespace math {
       } else if constexpr (std::is_same_v<T, double>) {
         cblas_dgemm(CblasRowMajor, ta, tb, m, n, k, alpha, A.getData(), A_cols, B.getData(), B_cols,
                     0.0, res.getData(), res.getCols());
-      }
-#else
-      if (!transpose_a && !transpose_b) {
-        res = (A * alpha) * B;
-      } else if (transpose_a && !transpose_b) {
-        res = (A.transpose() * alpha) * B;
-      } else if (!transpose_a && transpose_b) {
-        res = (A * alpha) * B.transpose();
-      } else {
-        res = (A.transpose() * alpha) * B.transpose();
-      }
+      } else
 #endif
+      {
+        if (!transpose_a && !transpose_b) {
+          res = (A * alpha) * B;
+        } else if (transpose_a && !transpose_b) {
+          res = (A.transpose() * alpha) * B;
+        } else if (!transpose_a && transpose_b) {
+          res = (A * alpha) * B.transpose();
+        } else {
+          res = (A.transpose() * alpha) * B.transpose();
+        }
+      }
+
       return res;
     }
 

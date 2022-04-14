@@ -69,12 +69,11 @@ namespace nnet {
     Operation(MLPOptimizer &optimizer, std::shared_ptr<WeightUpdater> updater)
         : updater(std::move(updater)), optimizer(&optimizer) {}
 
-    virtual ~Operation() = default;
+    ~Operation() override = default;
 
     void operator()(const math::clFTensor &inputs, const math::clFTensor &targets,
-                    cl::Device &batch_device) override {
-      cl::CommandQueue queue(utils::cl_wrapper.getContext(), batch_device);
-      optimizer->optimize(inputs, targets, *updater, queue);
+                    cl::CommandQueue &batch_queue) override {
+      optimizer->optimize(inputs, targets, *updater, batch_queue);
     }
 
     void updateModel() override { updater->apply(); }

@@ -26,8 +26,8 @@ namespace math {
     clFTensor(const clFTensor &other) = delete;
     clFTensor &operator=(const clFTensor &other) = delete;
 
-    clFTensor(clFTensor &&other) noexcept = default;
-    clFTensor &operator=(clFTensor &&other) noexcept = default;
+    clFTensor(clFTensor &&other) = default;
+    clFTensor &operator=(clFTensor &&other) = default;
 
     /**
      * @brief Performs a deep copy of the tensor.

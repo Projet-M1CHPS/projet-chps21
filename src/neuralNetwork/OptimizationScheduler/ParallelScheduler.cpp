@@ -50,7 +50,6 @@ namespace nnet {
     DefaultDispatcher::DefaultDispatcher(const ParallelScheduler::Policy &policy) {
       size_t total_thread = policy.getMaxThread();
       if (total_thread == 0) { total_thread = std::thread::hardware_concurrency(); }
-      thread_pool_size = total_thread;
       worker_pool = std::make_unique<asio::thread_pool>(total_thread);
 
 
@@ -59,9 +58,14 @@ namespace nnet {
 
       size_t thread_per_device = total_thread / devices.size();
       size_t remainder = total_thread % devices.size();
+      if (not policy.hasMultipleThreadPerDevice()) {
+        thread_per_device = 1;
+        remainder = 0;
+      }
       for (size_t i = 0; i < devices.size(); ++i) {
         resources.emplace_back(thread_per_device + (i < remainder ? 1 : 0), devices[i]);
       }
+      thread_pool_size = thread_per_device * devices.size() + remainder;
     }
 
     void DefaultDispatcher::dispatch(BatchProgression &progression, size_t batch_size,
@@ -96,17 +100,21 @@ namespace nnet {
       // Wait for all threads to finish
       // Note that using thread_pool join effectively kills the thread pool
       for (auto &f : futures) { f.get(); }
+
     }
 
     void DefaultDispatcher::runBatch(BatchProgression progression, size_t count, cl::Device device,
                                      Optimizer::Operation &op) {
+      cl::CommandQueue queue(utils::cl_wrapper.getContext(), device);
+      std::cout << "Running on device " << device.getInfo<CL_DEVICE_NAME>() << std::endl;
+      std::cout << "Running on " << count << " batch" << std::endl;
       for (size_t i = 0; i < count;) {
         size_t work_size = std::min(count - i, progression.getBatchRemainder());
 
         clFTensor current_input = progression.getInputSlice(work_size);
         clFTensor current_target = progression.getTargetSlice(work_size);
 
-        op(current_input, current_target, device);
+        op(current_input, current_target, queue);
         progression.progress(work_size);
         i += work_size;
       }

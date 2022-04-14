@@ -41,14 +41,14 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // One day, we'll have enough time to make this configurable from a file :c
   constexpr int kImageSize = 32;   // We assume we use square images
   // Size to use for images allocation
-  constexpr int kTensorSize = 256;
+  constexpr int kTensorSize = 16;
   // The size of the batch. We highly recommend using a multiple/dividend of the tensor size
   // to avoid batch fragmentation
-  constexpr int kBatchSize = 256;
+  constexpr int kBatchSize = 512;
 
-  constexpr float kLearningRate = 0.08;
+  constexpr float kLearningRate = 0.01;
   constexpr float kMomentum = 0.9;
-  constexpr float kDecayRate = 0.1;
+  constexpr float kDecayRate = 0.001;
 
   enum OptimType { kUseSGD, kUseMomentum, kUseDecay, kUseDecayMomentum };
 
@@ -57,17 +57,17 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // Maximum number of thread
   // The scheduler is free to use less if it judges necessary
   constexpr size_t kMaxThread = 4;
-  constexpr bool kAllowMultipleThreadPerDevice = false;
-  constexpr size_t kMaxEpoch = 100;
+  constexpr bool kAllowMultipleThreadPerDevice = true;
+  constexpr size_t kMaxEpoch = 40;
   // If set to true, the scheduler will move batches around to ensure each batch used for
   // computation is of size kBatchSize
   constexpr bool kAllowBatchDefragmentation = false;
   constexpr size_t kMaxDeviceCount = 1;
 
-  utils::clPlatformSelector::initOpenCL();
+  // utils::clPlatformSelector::initOpenCL();
   // Uncomment to display a ncurses-based UI for platform selection
   // Take care to only call initOpenCL ONCE!
-  // utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault());
+  utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault());
   std::vector<cl::Device> allowed_devices = utils::cl_wrapper.getDevices();
 
   // Just truncate the list of devices to kMaxDeviceCount (We assume every device is the same for
@@ -78,7 +78,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   utils::cl_wrapper.restrictDevicesTo(allowed_devices);
 
   // Do not add the output size, it is automatically set to the number of classes
-  MLPTopology topology = {kImageSize * kImageSize, 64, 64, 64};
+  MLPTopology topology = {kImageSize * kImageSize, 64, 64, 64, 64};
 
   logger("Loading dataset", tscl::Log::Debug);
   TrainingCollectionLoader loader(kTensorSize, kImageSize, kImageSize);
@@ -105,33 +105,44 @@ bool createAndTrain(std::filesystem::path const &input_path,
   auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
   // auto model = std::make_unique<nnet::MLPModel>();
   // model->load("michal.nnet");
+  std::unique_ptr<Optimizer> optimizer;
+  if (kOptimType == kUseSGD)
+    optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(*model, kLearningRate);
+  else if (kOptimType == kUseMomentum)
+    optimizer = nnet::MLPOptimizer::make<nnet::MomentumOptimization>(*model, kLearningRate, kMomentum);
+  else if (kOptimType == kUseDecay)
+    optimizer = nnet::MLPOptimizer::make<nnet::DecayOptimization>(*model, kLearningRate, kDecayRate);
+  else if (kOptimType == kUseDecayMomentum)
+    optimizer = nnet::MLPOptimizer::make<nnet::DecayMomentumOptimization>(*model, kLearningRate, kDecayRate, kMomentum);
 
-  auto optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(*model, kLearningRate);
   // ParallelScheduler scheduler(batch, input, target);
 
   logger("Creating scheduler", tscl::Log::Debug);
 
   ParallelScheduler::Builder scheduler_builder;
-  scheduler_builder.setTrainingSets(training_collection.getTrainingSet(),
+  scheduler_builder.setTrainingSets(training_collection.getTrainingSet().getTensors(),
                                     training_collection.getTargets());
   // Set the resources for the scheduler
   scheduler_builder.setMaxThread(kMaxThread, kAllowMultipleThreadPerDevice);
   scheduler_builder.setDevices(utils::cl_wrapper.getDevices());
 
+  scheduler_builder.setOptimizer(*optimizer);
+
   // Set the batch size, and allow/disallow batch optimization
   scheduler_builder.setBatchSize(kBatchSize, kAllowBatchDefragmentation);
 
-  SchedulerProfiler sc_profiler(scheduler_builder.build(), output_path / "scheduler");
-  sc_profiler.setVerbose(false);
+  auto scheduler = scheduler_builder.build();
+  // SchedulerProfiler sc_profiler(scheduler_builder.build(), output_path / "scheduler");
+  //  sc_profiler.setVerbose(false);
 
   ModelEvolutionTracker evaluator(output_path / "model_evolution", *model, training_collection);
 
   logger("Starting run", tscl::Log::Debug);
-  TrainingController controller(kMaxEpoch, evaluator, sc_profiler);
+  TrainingController controller(kMaxEpoch, evaluator, *scheduler);
   controller.setVerbose(true);
   ControllerResult res = controller.run();
   // Ensure the profiler dumps to disk cleanly
-  sc_profiler.finish();
+  // sc_profiler.finish();
 
   if (not res) {
     tscl::logger("Controller failed with an exception", tscl::Log::Error);

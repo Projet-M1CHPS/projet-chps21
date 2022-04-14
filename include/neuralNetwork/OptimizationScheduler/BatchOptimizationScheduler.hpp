@@ -39,7 +39,7 @@ namespace nnet {
     size_t batch_size;
     const std::vector<math::clFTensor> *const input_tensors;
     const std::vector<math::clFTensor> *const target_tensors;
-    const std::unique_ptr<Optimizer::Operation> optimizer_operation;
+    std::unique_ptr<Optimizer::Operation> optimizer_operation;
     Optimizer *optimizer;
   };
 }   // namespace nnet
