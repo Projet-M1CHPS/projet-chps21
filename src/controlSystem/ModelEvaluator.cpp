@@ -7,11 +7,9 @@ namespace control {
 
   namespace fs = std::filesystem;
   std::ostream &operator<<(std::ostream &os, const ModelEvaluation &me) {
-    std::stringstream ss;
-    ss << me.avg_f1score * 100.f << "% Average f1 score" << std::endl;
-    ss << "\t- " << me.avg_precision * 100.f << "% Average precision: " << std::endl;
-    ss << "\t- " << me.avg_recall * 100.f << "% Average recall " << std::endl;
-    tscl::logger("Model evaluation: " + ss.str(), tscl::Log::Information);
+    os << me.avg_f1score * 100.f << "% Average f1 score" << std::endl;
+    os << "\t- " << me.avg_precision * 100.f << "% Average precision: " << std::endl;
+    os << "\t- " << me.avg_recall * 100.f << "% Average recall " << std::endl;
     return os;
   }
 
@@ -160,7 +158,7 @@ namespace control {
     avg_streams.s_precision << epoch << eval.avg_precision << std::endl;
     avg_streams.s_recall << epoch << eval.avg_recall << std::endl;
 
-    for (size_t i = 0; i < epoch << eval.f1score.size(); i++) {
+    for (size_t i = 0; i < eval.f1score.size(); i++) {
       streams[i].s_f1_score << epoch << eval.f1score[i] << std::endl;
       streams[i].s_precision << epoch << eval.precision[i] << std::endl;
       streams[i].s_recall << epoch << eval.recall[i] << std::endl;
