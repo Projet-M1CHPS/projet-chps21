@@ -41,10 +41,10 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // One day, we'll have enough time to make this configurable from a file :c
   constexpr int kImageSize = 32;   // We assume we use square images
   // Size to use for images allocation
-  constexpr int kTensorSize = 16;
+  constexpr int kTensorSize = 512;
   // The size of the batch. We highly recommend using a multiple/dividend of the tensor size
   // to avoid batch fragmentation
-  constexpr int kBatchSize = 512;
+  constexpr int kBatchSize = 16;
 
   constexpr float kLearningRate = 0.01;
   constexpr float kMomentum = 0.9;
@@ -56,9 +56,9 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   // Maximum number of thread
   // The scheduler is free to use less if it judges necessary
-  constexpr size_t kMaxThread = 4;
-  constexpr bool kAllowMultipleThreadPerDevice = true;
-  constexpr size_t kMaxEpoch = 40;
+  constexpr size_t kMaxThread = 1;
+  constexpr bool kAllowMultipleThreadPerDevice = false;
+  constexpr size_t kMaxEpoch = 100;
   // If set to true, the scheduler will move batches around to ensure each batch used for
   // computation is of size kBatchSize
   constexpr bool kAllowBatchDefragmentation = false;

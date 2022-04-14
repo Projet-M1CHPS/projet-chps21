@@ -19,9 +19,12 @@ namespace control {
       auto end = chrono::steady_clock::now();
       auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
       auto evaluation = evaluator->evaluate();
-      if (is_verbose)
-        std::cout << "(" << duration.count() << std::endl<< "ms) Epoch " << curr_epoch << ": " << evaluation
-                  << std::endl;
+      if (is_verbose) {
+        std::stringstream ss;
+        ss << "(" << duration.count() << "ms) Epoch " << curr_epoch << ": " << evaluation
+           << std::endl;
+        tscl::logger(ss.str(), tscl::Log::Information);
+      }
     }
 
     return {0, "Training completed"};

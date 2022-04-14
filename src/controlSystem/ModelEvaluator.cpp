@@ -99,9 +99,9 @@ namespace control {
 
     fs::path target_path = output_path / subdir;
     if (not fs::exists(target_path)) fs::create_directories(target_path);
-    if (not fs::exists(target_path / "f1")) fs::create_directories(target_path);
-    if (not fs::exists(target_path / "precision")) fs::create_directories(target_path);
-    if (not fs::exists(target_path / "recall")) fs::create_directories(target_path);
+    if (not fs::exists(target_path / "f1")) fs::create_directories(target_path / "f1");
+    if (not fs::exists(target_path / "precision")) fs::create_directories(target_path / "precision");
+    if (not fs::exists(target_path / "recall")) fs::create_directories(target_path / "recall");
 
     // If something fails, just throw an exception
     for (size_t i = 0; auto &c : training_collection->getClassNames()) {
@@ -126,11 +126,11 @@ namespace control {
 
     avg_streams.s_precision.exceptions(std::ifstream::badbit);
     avg_streams.s_precision.open(target_path / "avg_precision.dat");
-    writeHeader(avg_streams.s_f1_score, "t recall");
+    writeHeader(avg_streams.s_precision, "t recall");
 
     avg_streams.s_recall.exceptions(std::ifstream::badbit);
     avg_streams.s_recall.open(target_path / "avg_recall.dat");
-    writeHeader(avg_streams.s_f1_score, "t recall");
+    writeHeader(avg_streams.s_recall, "t recall");
   }
 
 
@@ -143,27 +143,27 @@ namespace control {
       evaluation = evaluator.evaluate(*model, training_collection->getTrainingSet());
       writeToStreams(evaluation, training_set_avg_output_streams, training_set_output_streams);
     }
-
+    epoch++;
     return evaluation;
   }
 
-  void ModelEvolutionTracker::writeHeader(std::fstream &stream, const std::string &label) {
+  void ModelEvolutionTracker::writeHeader(std::ostream &stream, const std::string &label) {
     stream << "# " << label << std::endl;
   }
 
   void ModelEvolutionTracker::writeToStreams(ModelEvaluation &eval, ClassOutputStreams &avg_streams,
-                                             std::vector<ClassOutputStreams> &streams) {
+                                             std::vector<ClassOutputStreams> &streams) const {
     if (eval.f1score.size() != streams.size())
       throw std::runtime_error("ModelEvaluation::writeToStreams: size mismatch");
 
-    avg_streams.s_f1_score << eval.avg_f1score << std::endl;
-    avg_streams.s_precision << eval.avg_precision << std::endl;
-    avg_streams.s_recall << eval.avg_recall << std::endl;
+    avg_streams.s_f1_score << epoch << eval.avg_f1score << std::endl;
+    avg_streams.s_precision << epoch << eval.avg_precision << std::endl;
+    avg_streams.s_recall << epoch << eval.avg_recall << std::endl;
 
-    for (size_t i = 0; i < eval.f1score.size(); i++) {
-      streams[i].s_f1_score << eval.f1score[i] << std::endl;
-      streams[i].s_precision << eval.precision[i] << std::endl;
-      streams[i].s_recall << eval.recall[i] << std::endl;
+    for (size_t i = 0; i < epoch << eval.f1score.size(); i++) {
+      streams[i].s_f1_score << epoch << eval.f1score[i] << std::endl;
+      streams[i].s_precision << epoch << eval.precision[i] << std::endl;
+      streams[i].s_recall << epoch << eval.recall[i] << std::endl;
     }
   }
 
