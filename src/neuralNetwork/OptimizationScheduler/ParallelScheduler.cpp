@@ -106,8 +106,6 @@ namespace nnet {
     void DefaultDispatcher::runBatch(BatchProgression progression, size_t count, cl::Device device,
                                      Optimizer::Operation &op) {
       cl::CommandQueue queue(utils::cl_wrapper.getContext(), device);
-      std::cout << "Running on device " << device.getInfo<CL_DEVICE_NAME>() << std::endl;
-      std::cout << "Running on " << count << " batch" << std::endl;
       for (size_t i = 0; i < count;) {
         size_t work_size = std::min(count - i, progression.getBatchRemainder());
 
