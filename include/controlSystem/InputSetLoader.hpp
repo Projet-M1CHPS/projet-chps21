@@ -32,4 +32,4 @@ namespace control {
     size_t tensor_size, input_width, input_height;
   };
 
-};   // namespace control
+}   // namespace control
