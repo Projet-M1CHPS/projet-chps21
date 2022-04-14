@@ -1,5 +1,4 @@
 #include "InputSetLoader.hpp"
-#include <execution>
 #include <filesystem>
 #include <stack>
 

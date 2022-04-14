@@ -10,6 +10,7 @@
 #include "InputSet.hpp"
 #include "Model.hpp"
 #include "TrainingCollection.hpp"
+#include <fstream>
 
 namespace control {
 
@@ -20,7 +21,7 @@ namespace control {
    * needs for getters / setters that would break encapsulation anyway.
    */
   struct ModelEvaluation {
-    friend std::ostream& operator<<(std::ostream& os, const ModelEvaluation& me);
+    friend std::ostream &operator<<(std::ostream &os, const ModelEvaluation &me);
 
     double avg_precision = 0;
     double avg_recall = 0;
@@ -75,6 +76,7 @@ namespace control {
 
   private:
     bool do_eval_on_test;
+    size_t epoch = 0;
 
     nnet::Model *model;
 
@@ -86,9 +88,9 @@ namespace control {
     // Helper struct to store the various streams of each class
     // Declared as private to prevent accidental access
     struct ClassOutputStreams {
-      std::fstream s_f1_score;
-      std::fstream s_precision;
-      std::fstream s_recall;
+      std::ofstream s_f1_score;
+      std::ofstream s_precision;
+      std::ofstream s_recall;
     };
 
     void setupStreams(ClassOutputStreams &avg_streams, std::vector<ClassOutputStreams> &streams,
@@ -99,7 +101,8 @@ namespace control {
     ClassOutputStreams eval_set_avg_output_streams;
     ClassOutputStreams training_set_avg_output_streams;
 
-    static void writeHeader(std::fstream &stream, const std::string &label);
-    static void writeToStreams(ModelEvaluation &eval, ClassOutputStreams& avg_streams, std::vector<ClassOutputStreams> &streams);
+    static void writeHeader(std::ostream &stream, const std::string &label);
+    void writeToStreams(ModelEvaluation &eval, ClassOutputStreams &avg_streams,
+                        std::vector<ClassOutputStreams> &streams) const;
   };
 }   // namespace control
