@@ -8,15 +8,6 @@ namespace nnet {
   }
 
 
-  math::clFMatrix CNNModel::predict(math::clFMatrix const &input) const {
-    // TODO: Remove flatten object member and use a local variable instead
-    math::clFMatrix _flatten = clFMatrix(cnn->getOutputSize(), 1);
-
-    //cnn->predict(input, _flatten);
-
-    return mlp->predict(_flatten);
-  }
-
   std::unique_ptr<CNNModel> CNNModel::random(CNNTopology const &topology,
                                              MLPTopology &mlp_topology) {
     auto res = std::make_unique<CNNModel>();
@@ -27,7 +18,6 @@ namespace nnet {
     // cnn.randomizeWeight();
 
     const size_t size = cnn.getOutputSize();
-    res->flatten = clFMatrix(size, 1);
     mlp_topology.pushFront(size);
 
     auto &mlp = res->getMlp();
@@ -38,4 +28,19 @@ namespace nnet {
     return res;
   }
 
-}   // namespace cnnet
+  clFTensor CNNModel::predict(clFTensor const &inputs) const {
+    clFTensor flatten = cnn->predict(inputs);
+
+    // return mlp->predict(flatten);
+
+    return clFTensor(1, 1, 1);
+  }
+
+  clFMatrix CNNModel::predict(clFMatrix const &input) const {
+    clFTensor buffer(input.getRows(), input.getCols(), 1);
+    buffer[0].copy(input, true);
+
+    return cnn->predict(buffer)[0];
+  }
+
+}   // namespace nnet

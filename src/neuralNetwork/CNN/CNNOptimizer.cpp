@@ -11,18 +11,33 @@ namespace nnet {
                       std::vector<std::unique_ptr<CNNStorageBP>> &storages,
                       cl::CommandQueue &queue) {
       auto &layers = cnn.getLayers();
-      if (layers.empty()) { throw std::runtime_error("no layer in cnn for optimization"); }
 
       clFTensor output = inputs.shallowCopy();
 
-      for (auto &layer : layers) { output = layer->computeForward(output, *storages[0]); }
-      utils::cl_wrapper.getDefaultQueue().finish();
+      for (size_t i = 0; i < layers.size(); i++) {
+        output = layers[i]->computeForward(output, *storages[i]);
+      }
+
+
+      // TODO : reshape output with strange function
+      queue.finish();
 
       return output.flatten();
     }
 
     void backward(const CNN &cnn, const clFTensor &inputs, const clFTensor &errorsFlatten,
-                  std::vector<std::unique_ptr<CNNStorageBP>> &storages, cl::CommandQueue &queue) {}
+                  std::vector<std::unique_ptr<CNNStorageBP>> &storages, cl::CommandQueue &queue) {
+      auto &layers = cnn.getLayers();
+
+      clFTensor output = inputs.shallowCopy();
+
+      for (long i = static_cast<long>(layers.size() - 1); i > -1; i--) {
+        output = layers[i]->computeForward(output, *storages[i]);
+      }
+
+      // TODO : reshape output with strange function
+      queue.finish();
+    }
   }   // namespace
 
   void CNNOptimizer::optimize(const math::clFTensor &inputs, const clFTensor &targets,

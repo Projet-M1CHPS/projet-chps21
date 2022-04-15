@@ -31,11 +31,10 @@ namespace nnet {
     size_t index_out = 0;
     for (size_t i = 0; i < n_branch; i++) {
       std::cout << "branch" << std::endl;
-      for(size_t j = 0; j < sub_filter[i].getDepth(); j++) {
+      for (size_t j = 0; j < sub_filter[i].getDepth(); j++) {
         clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, input.getRows(),
                                  input.getCols(), filters.getRows(), filters.getCols(), 0, 0, 1, 1,
-                                 1, 1, 1, sub_input[i].getDepth(),
-                                 sub_input[i].getBuffer()(),
+                                 1, 1, 1, sub_input[i].getDepth(), sub_input[i].getBuffer()(),
                                  sub_input[i].getOffsetInFloats(), sub_filter[i][j].getBuffer()(),
                                  sub_filter[i][j].getOffset(), sub_output[index_out].getBuffer()(),
                                  sub_output[index_out].getOffsetInFloats(), &queue(), nullptr);
@@ -49,14 +48,14 @@ namespace nnet {
 
 
   clFTensor CNNConvolutionLayer::computeForward(const clFTensor &input, CNNStorageBP &storage) {
+    auto &convoStorage = static_cast<CNNStorageBPConvolution &>(storage);
+    convoStorage.input = input.shallowCopy();
     return compute(input);
   }
 
 
   clFTensor CNNConvolutionLayer::computeBackward(const clFTensor &errors, CNNStorageBP &storage) {
     auto &convoStorage = static_cast<CNNStorageBPConvolution &>(storage);
-
-    clFTensor res(3, 3, errors.getDepth());
 
     cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
@@ -66,37 +65,48 @@ namespace nnet {
       const size_t kernel_h = errors.getRows();
       const size_t kernel_w = errors.getCols();
 
+      std::vector<clFTensor> sub_input = convoStorage.input.slice(n_branch);
+      std::vector<clFTensor> sub_error = errors.slice(n_branch);
 
       // compute filter error
-      clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, height, width, kernel_h,
-                               kernel_w, 0, 0, 1, 1, 1, 1, 1, 1, convoStorage.input.getBuffer()(),
-                               0, errors.getBuffer()(), 0, convoStorage.errorFilter.getBuffer()(),
-                               0, &queue(), nullptr);
+      // for(size_t ii = 0; ii < n_branch; ii++) {
+      //  for (size_t i = 0; i < filters.getDepth(); i++) {
+      //    clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, height, width,
+      //                             kernel_h, kernel_w, 0, 0, 1, 1, 1, 1, 1, 1,
+      //                             sub_input[ii].getBuffer()(),
+      //                             sub_input[ii].getOffsetInFloats(), errors[i].getBuffer()(),
+      //                             errors[i].getOffset(),
+      //                             convoStorage.errorFilter[i].getBuffer()(),
+      //                             convoStorage.errorFilter[i].getOffset(), &queue(), nullptr);
+      //  }
+      //}
     }
 
     // compute input error
-    // on convertie le tensor en matrice dilater
+    clFTensor res(convoStorage.input.getRows(), convoStorage.input.getCols(), errors.getDepth());
+    {
+      const size_t height = errors.getRows();
+      const size_t width = errors.getCols();
+      const size_t kernel_h = filters.getRows();
+      const size_t kernel_w = filters.getCols();
+      const size_t batch_count = errors.getDepth() / (n_branch * n_filter);
 
+      std::vector<clFTensor> sub_error = errors.slice(n_branch * n_filter);
+      std::vector<clFTensor> sub_filter = filters.slice(n_branch * n_filter);
 
-    /*rowsPos = 0;
-    colsPos = 0;
-    for (size_t i = 0; i < input.getRows(); i++) {
-      for (size_t j = 0; j < input.getCols(); j++) {
-        float sum = 0.f;
-        for (long k = 0; k < filter.getRows(); k++) {
-          for (long l = 0; l < filter.getCols(); l++) {
-            sum += convoStorage.dilated4Input(k + rowsPos, l + colsPos) *
-                   mat_filter(std::abs(k - (long) filter.getRows() + 1),
-                              std::abs(l - (long) filter.getCols() + 1));
-          }
+      size_t index = 0;
+      for (size_t i = 0; i < n_branch; i++) {
+        for (size_t j = 0; j < n_filter; j++) {
+          clblast::Convgemm<float>(clblast::KernelMode::kConvolution, 1, height, width, kernel_h,
+                                   kernel_w, kernel_h - 1, kernel_w - 1, 1, 1, 1, 1, 1,
+                                   batch_count, sub_error[i * n_filter + j].getBuffer()(),
+                                   sub_error[i * n_filter + j].getOffsetInFloats(), sub_filter[i * n_filter + j].getBuffer()(),
+                                   sub_filter[i * n_filter + j].getOffsetInFloats(), res[index].getBuffer()(),
+                                   res[index].getOffset(), &queue(), nullptr);
+          index += batch_count;
         }
-        storage.errorInput(i, j) = sum;
-        colsPos++;
       }
-      rowsPos++;
-      colsPos = 0;
-    }*/
-
+    }
 
     return res;
   }

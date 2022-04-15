@@ -9,6 +9,8 @@ using namespace math;
 
 
 void testConvo() {
+  cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
+
   math::FloatMatrix A(6, 6);
   A.fill(1.f);
   {
@@ -54,50 +56,56 @@ void testConvo() {
     A(5, 4) = 2.f;
     A(5, 5) = 2.f;
   }
-  std::cout << "A = \n" << A << std::endl;
-  auto img = clFMatrix(A, true);
+  std::cout << "input = \n" << A << std::endl;
+  auto img = clFTensor(A.getRows(), A.getCols(), 1);
+  img[0] = A;
 
 
-  math::FloatMatrix B(3, 3);
+  math::FloatMatrix B1(3, 3);
   {
-    B(0, 0) = 5.f;
-    B(0, 1) = 2.f;
-    B(0, 2) = 2.f;
+    B1(0, 0) = 5.f;
+    B1(0, 1) = 2.f;
+    B1(0, 2) = 2.f;
 
-    B(1, 0) = 2.f;
-    B(1, 1) = 3.f;
-    B(1, 2) = 1.f;
+    B1(1, 0) = 2.f;
+    B1(1, 1) = 3.f;
+    B1(1, 2) = 1.f;
 
-    B(2, 0) = 1.f;
-    B(2, 1) = 2.f;
-    B(2, 2) = 2.f;
+    B1(2, 0) = 1.f;
+    B1(2, 1) = 2.f;
+    B1(2, 2) = 2.f;
   }
-  std::cout << "B = \n" << B << std::endl;
-  auto filter = clFMatrix(B, true);
+  math::FloatMatrix B2(3, 3);
+  {
+    B2(0, 0) = 1.f;
+    B2(0, 1) = 1.f;
+    B2(0, 2) = 1.f;
 
-  math::FloatMatrix O(2, 2);
-  O.fill(100.f);
-  clFMatrix out(O, true);
+    B2(1, 0) = 1.f;
+    B2(1, 1) = 1.f;
+    B2(1, 2) = 1.f;
+
+    B2(2, 0) = 1.f;
+    B2(2, 1) = 1.f;
+    B2(2, 2) = 1.f;
+  }
+  std::cout << "filter 1 = \n" << B1 << std::endl;
+  std::cout << "filter 2 = \n" << B2 << std::endl;
+  auto filters = clFTensor(B1.getRows(), B1.getCols(), 1);
+  filters[0] = B1;
+
+  clFTensor out(4, 4, img.getDepth());
+  out[0].fill(100.f, queue);
 
 
-  cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
-
-
-  clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, 6, 6, 3, 3, 0, 0, 3, 3, 1, 1,
-                           1, 1, img.getBuffer()(), 0, filter.getBuffer()(), 0, out.getBuffer()(),
-                           0, &queue(), nullptr);
-
-  clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, 3, 3, 2, 2, 2, 2, 1, 1, 2, 2,
-                           1, 1, filter.getBuffer()(), 0, out.getBuffer()(), 0, img.getBuffer()(),
-                           0, &queue(), nullptr);
+  clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, 6, 6, 3, 3, 0, 0, 1, 1, 1, 1,
+                           filters.getDepth(), img.getDepth(), img.getBuffer()(), img.getOffset(),
+                           filters.getBuffer()(), filters.getOffset(), out.getBuffer()(),
+                           out.getOffset(), &queue(), nullptr);
 
   queue.finish();
 
-
-  FloatMatrix tmp = out.toFloatMatrix(true);
-  std::cout << "output\n" << tmp << std::endl;
-
-  std::cout << "aaaa = \n" << img.toFloatMatrix(true) << std::endl;
+  std::cout << "output : " << out << std::endl;
 }
 
 
@@ -226,11 +234,12 @@ void testConvolutionalLayer1Branch() {
 
 void testConvolutionalLayer1BranchBP() {
   // 1 branch 2 filter/branch 2 input/branch
-  const size_t number_filter = 1;
-  const size_t number_input = 1;
+  const size_t number_input = 6;
+  const size_t number_filter = 2;
+  const size_t number_branch = 3;
 
   nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, number_filter, af::ActivationFunctionType::relu,
-                                  1);
+                                  number_branch);
 
   nnet::CNNStorageBPConvolution storage;
 
@@ -250,80 +259,130 @@ void testConvolutionalLayer1BranchBP() {
   }
   auto &filter = layer.getFilter();
   filter[0] = f1;
-  // filter[1] = f2;
+  filter[1] = f2;
+  filter[2] = f1;
+  filter[3] = f2;
+  filter[4] = f1;
+  filter[5] = f2;
 
-  for (size_t i = 0; i < filter.getDepth(); i++)
-    std::cout << "filter " << i << " : \n" << filter[i].toFloatMatrix(true) << std::endl;
+  std::cout << "filter : " << filter << std::endl;
 
-  math::FloatMatrix input(6, 6);
+  math::FloatMatrix input1(6, 6);
   {
-    input(0, 0) = 1.f;
-    input(0, 1) = 2.f;
-    input(0, 2) = 1.f;
-    input(0, 3) = 1.f;
-    input(0, 4) = 4.f;
-    input(0, 5) = 1.f;
-    input(1, 0) = 2.f;
-    input(1, 1) = 1.f;
-    input(1, 2) = 1.f;
-    input(1, 3) = 2.f;
-    input(1, 4) = 2.f;
-    input(1, 5) = 1.f;
-    input(2, 0) = 4.f;
-    input(2, 1) = 3.f;
-    input(2, 2) = 2.f;
-    input(2, 3) = 1.f;
-    input(2, 4) = 2.f;
-    input(2, 5) = 1.f;
-    input(3, 0) = 1.f;
-    input(3, 1) = 5.f;
-    input(3, 2) = 1.f;
-    input(3, 3) = 1.f;
-    input(3, 4) = 2.f;
-    input(3, 5) = 1.f;
-    input(4, 0) = 2.f;
-    input(4, 1) = 1.f;
-    input(4, 2) = 1.f;
-    input(4, 3) = 4.f;
-    input(4, 4) = 1.f;
-    input(4, 5) = 1.f;
-    input(5, 0) = 2.f;
-    input(5, 1) = 1.f;
-    input(5, 2) = 4.f;
-    input(5, 3) = 2.f;
-    input(5, 4) = 4.f;
-    input(5, 5) = 1.f;
+    input1(0, 0) = 1.f;
+    input1(0, 1) = 2.f;
+    input1(0, 2) = 1.f;
+    input1(0, 3) = 1.f;
+    input1(0, 4) = 4.f;
+    input1(0, 5) = 1.f;
+    input1(1, 0) = 2.f;
+    input1(1, 1) = 1.f;
+    input1(1, 2) = 1.f;
+    input1(1, 3) = 2.f;
+    input1(1, 4) = 2.f;
+    input1(1, 5) = 1.f;
+    input1(2, 0) = 4.f;
+    input1(2, 1) = 3.f;
+    input1(2, 2) = 2.f;
+    input1(2, 3) = 1.f;
+    input1(2, 4) = 2.f;
+    input1(2, 5) = 1.f;
+    input1(3, 0) = 1.f;
+    input1(3, 1) = 5.f;
+    input1(3, 2) = 1.f;
+    input1(3, 3) = 1.f;
+    input1(3, 4) = 2.f;
+    input1(3, 5) = 1.f;
+    input1(4, 0) = 2.f;
+    input1(4, 1) = 1.f;
+    input1(4, 2) = 1.f;
+    input1(4, 3) = 4.f;
+    input1(4, 4) = 1.f;
+    input1(4, 5) = 1.f;
+    input1(5, 0) = 2.f;
+    input1(5, 1) = 1.f;
+    input1(5, 2) = 4.f;
+    input1(5, 3) = 2.f;
+    input1(5, 4) = 4.f;
+    input1(5, 5) = 1.f;
+  }
+  math::FloatMatrix input2(6, 6);
+  {
+    input2(0, 0) = 100.f;
+    input2(0, 1) = 2.f;
+    input2(0, 2) = 1.f;
+    input2(0, 3) = 1.f;
+    input2(0, 4) = 4.f;
+    input2(0, 5) = 1.f;
+    input2(1, 0) = 2.f;
+    input2(1, 1) = 1.f;
+    input2(1, 2) = 1.f;
+    input2(1, 3) = 2.f;
+    input2(1, 4) = 2.f;
+    input2(1, 5) = 1.f;
+    input2(2, 0) = 4.f;
+    input2(2, 1) = 3.f;
+    input2(2, 2) = 2.f;
+    input2(2, 3) = 1.f;
+    input2(2, 4) = 2.f;
+    input2(2, 5) = 1.f;
+    input2(3, 0) = 1.f;
+    input2(3, 1) = 5.f;
+    input2(3, 2) = 1.f;
+    input2(3, 3) = 1.f;
+    input2(3, 4) = 2.f;
+    input2(3, 5) = 1.f;
+    input2(4, 0) = 2.f;
+    input2(4, 1) = 1.f;
+    input2(4, 2) = 1.f;
+    input2(4, 3) = 4.f;
+    input2(4, 4) = 1.f;
+    input2(4, 5) = 1.f;
+    input2(5, 0) = 2.f;
+    input2(5, 1) = 1.f;
+    input2(5, 2) = 4.f;
+    input2(5, 3) = 2.f;
+    input2(5, 4) = 4.f;
+    input2(5, 5) = 1.f;
   }
 
   clFTensor input_tensor(6, 6, number_input);
-  for (size_t i = 0; i < input_tensor.getDepth(); i++) input_tensor[i] = input;
-  for (size_t i = 0; i < input_tensor.getDepth(); i++)
-    std::cout << "input " << i << " : \n" << input_tensor[i].toFloatMatrix(true) << std::endl;
+  input_tensor[0] = input1;
+  input_tensor[1] = input2;
+  input_tensor[2] = input1;
+  input_tensor[3] = input2;
+  input_tensor[4] = input1;
+  input_tensor[5] = input2;
+  std::cout << "input : " << input_tensor << std::endl;
 
   clFTensor output_tensor = layer.computeForward(input_tensor, storage);
 
-  for (size_t i = 0; i < output_tensor.getDepth(); i++)
-    std::cout << "output " << i << " : \n" << output_tensor[i].toFloatMatrix(true) << std::endl;
+  std::cout << "output : " << output_tensor << std::endl;
 
-  storage.input = clFTensor(6, 6, 1);
-  storage.input[0] = input;
+  std::cout << "input storage : " << storage.input << std::endl;
 
-  storage.errorFilter = clFTensor(2, 2, 1);
+  storage.errorFilter = clFTensor(2, 2, number_filter * number_branch * (number_input / number_branch));
 
-  for (size_t i = 0; i < storage.input.getDepth(); i++)
-    std::cout << "input storage " << i << " : \n"
-              << storage.input[i].toFloatMatrix(true) << std::endl;
+  clFTensor errors_tensor(5, 5, number_filter * number_branch * (number_input / number_branch));
+  errors_tensor[0].fill(1.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[1].fill(2.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[2].fill(3.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[3].fill(4.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[4].fill(5.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[5].fill(6.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[6].fill(7.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[7].fill(8.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[8].fill(9.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[9].fill(10.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[10].fill(11.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[11].fill(12.f, utils::cl_wrapper.getDefaultQueue(), true);
 
-  clFTensor errors_tensor(5, 5, number_input);
-  for (size_t i = 0; i < errors_tensor.getDepth(); i++) {
-    errors_tensor[i].fill(1.f, utils::cl_wrapper.getDefaultQueue(), true);
-  }
+  std::cout << "error : " << errors_tensor << std::endl;
 
   clFTensor errors_input = layer.computeBackward(errors_tensor, storage);
 
-  for (size_t i = 0; i < storage.errorFilter.getDepth(); i++)
-    std::cout << "error_filter " << i << " : \n"
-              << storage.errorFilter[i].toFloatMatrix(true) << std::endl;
+  //std::cout << "error filter : " << storage.errorFilter << std::endl;
+  std::cout << "error input : " << errors_input << std::endl;
 
   /* error input
    *
@@ -885,7 +944,7 @@ void testPrediction1Branch() {
 void testPredictionXBranch() {
   // std::string str_topology("6 6 relu convolution 2 2 2");
   // std::string str_topology("6 6 relu convolution 2 2 2 pooling max 2 2");
-  //std::string str_topology("6 6 relu convolution 2 2 2 convolution 2 2 2");
+  // std::string str_topology("6 6 relu convolution 2 2 2 convolution 2 2 2");
   std::string str_topology("6 6 relu convolution 2 2 2 convolution 2 2 2 pooling max 2 2");
   auto topology = nnet::stringToTopology(str_topology);
   std::cout << topology << std::endl;
@@ -1042,7 +1101,7 @@ int main() {
   // testConvo();
 
   // testConvolutionalLayer1Branch();
-  // testConvolutionalLayer1BranchBP();
+  testConvolutionalLayer1BranchBP();
   // testConvolutionalLayerXBranch();
 
   // testMaxPoolingLayer();
@@ -1052,7 +1111,7 @@ int main() {
   // testAvgPoolingLayerBP();
 
   // testPrediction1Branch();
-  testPredictionXBranch();
+  // testPredictionXBranch();
 
   return 0;
 }
