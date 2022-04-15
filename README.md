@@ -59,7 +59,7 @@ cd build
 ./bin/main <path todataset> <output path>
 ```
 
-Raw data will be outputted to <output path>/(eval or optimize).
+Raw data will be outputted to <output path>/(eval or computeGradient).
 
 # About this project
 
@@ -74,7 +74,7 @@ also profile the application performance for further work.
 This second part will focus on the project optimization and new QoL features. No further training algorithm should be
 implemented, except if they provide a significant improvement in the results or performance.
 
-For this, we will use OpenCL and OpenMP to optimize the application in a portable way.
+For this, we will use OpenCL and OpenMP to computeGradient the application in a portable way.
 
 ## Features
 

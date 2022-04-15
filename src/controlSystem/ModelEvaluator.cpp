@@ -8,8 +8,8 @@ namespace control {
   namespace fs = std::filesystem;
   std::ostream &operator<<(std::ostream &os, const ModelEvaluation &me) {
     os << me.avg_f1score * 100.f << "% Average f1 score" << std::endl;
-    os << "\t- " << me.avg_precision * 100.f << "% Average precision: " << std::endl;
-    os << "\t- " << me.avg_recall * 100.f << "% Average recall " << std::endl;
+    os << "\t- " << me.avg_precision * 100.f << "% Average precision" << std::endl;
+    os << "\t- " << me.avg_recall * 100.f << "% Average recall" << std::endl;
     return os;
   }
 
@@ -22,8 +22,6 @@ namespace control {
 
     // On huge input sets, the evaluation can take quite some time
     // No reason not to use OpenMP here
-#pragma omp declare reduction (add_matrix : math::Matrix<size_t> : omp_out += omp_in ) initializer ( omp_priv(omp_orig) )
-#pragma omp parallel for reduction(add_matrix: confusion_matrix) schedule(dynamic) default(none) shared(input_set, model) num_threads(1) // 4 max thread to avoid overloading the GPU
     for (auto &input : input_set) {
       long true_class = input.getClass();
       auto buf = model.predict(input.getData());
@@ -38,8 +36,7 @@ namespace control {
             f1s(input_set.getClassCount());
 
 #pragma omp parallel for reduction(+: avg_precision, avg_recall, avg_f1) default(none) \
-        shared(nclass, confusion_matrix, precisions, recalls, f1s) schedule(dynamic)  \
-        num_threads(4)  // 4 max thread to avoid overloading the GPU
+        shared(nclass, confusion_matrix, precisions, recalls, f1s) schedule(dynamic)
     for (size_t i = 0; i < nclass; i++) {
       size_t sum = 0;
       double recall = 0, precision = 0, f1 = 0;

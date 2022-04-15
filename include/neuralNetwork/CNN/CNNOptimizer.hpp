@@ -28,7 +28,7 @@ namespace nnet {
     CNN *getCNN() const { return cnn; }
     MLPerceptron *getMLP() const { return mlp; }
 
-    // TODO : attention optimize doit etre override
+    // TODO : attention computeGradient doit etre override
     void optimize(const clFTensor &inputs, const clFTensor &targets);
 
     // TODO : implémenter update

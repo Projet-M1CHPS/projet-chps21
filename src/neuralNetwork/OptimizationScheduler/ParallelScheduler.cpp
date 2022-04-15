@@ -22,14 +22,18 @@ namespace nnet {
 
     class DeviceResource {
     public:
-      DeviceResource(size_t n_thread, cl::Device device) : n_thread(n_thread), device(device) {}
+      DeviceResource(size_t n_thread, cl::Device &device) : n_thread(n_thread) {
+        for (size_t i = 0; i < n_thread; ++i) {
+          queues.emplace_back(utils::cl_wrapper.getContext(), device);
+        }
+      }
 
       size_t getThreadCount() const { return n_thread; }
-      cl::Device &getDevice() { return device; }
+      cl::CommandQueue &getQueue(size_t index) { return queues[index]; }
 
     private:
       size_t n_thread;
-      cl::Device device;
+      std::vector<cl::CommandQueue> queues;
     };
 
     class DefaultDispatcher final : public ParallelScheduler::Dispatcher {
@@ -39,8 +43,8 @@ namespace nnet {
                     Optimizer::Operation &op) override;
 
     private:
-      static void runBatch(BatchProgression progression, size_t count, cl::Device device,
-                           Optimizer::Operation &op);
+      static void runBatch(size_t thread_rank, BatchProgression progression, size_t count,
+                           cl::CommandQueue &device, Optimizer::Operation &op);
 
       std::unique_ptr<asio::thread_pool> worker_pool;
       std::vector<DeviceResource> resources;
@@ -74,9 +78,11 @@ namespace nnet {
       size_t remainder = batch_size % thread_pool_size;
       std::vector<std::future<void>> futures;
 
-      auto lambda = [](BatchProgression p, size_t count, cl::Device d, Optimizer::Operation &op) {
-        runBatch(p, count, d, op);
-      };
+      auto lambda = [](size_t thread_rank, BatchProgression p, size_t count, cl::CommandQueue &c,
+                       Optimizer::Operation &op) { runBatch(thread_rank, p, count, c, op); };
+      // Ensure we have enough caches for all the threads
+      op.reserveCaches(thread_pool_size);
+      size_t thread_rank = 0;
 
       for (auto &resource : resources) {
         for (size_t j = 0; j < resource.getThreadCount(); j++) {
@@ -89,33 +95,32 @@ namespace nnet {
 
           // If there isn't enough data to fill the thread pool, break
           if (thread_work == 0) break;
-          auto task = [lambda, thread_work, p = progression, d = resource.getDevice(), &op] {
-            return lambda(p, thread_work, d, op);
-          };
+          auto task = [lambda, thread_rank, thread_work, p = progression, &c = resource.getQueue(j),
+                       &op] { return lambda(thread_rank, p, thread_work, c, op); };
           auto future = asio::post(*worker_pool, std::packaged_task<void()>(task));
           futures.push_back(std::move(future));
           progression.progress(local_work_size);
+          thread_rank++;
         }
       }
       // Wait for all threads to finish
       // Note that using thread_pool join effectively kills the thread pool
       for (auto &f : futures) { f.get(); }
-
     }
 
-    void DefaultDispatcher::runBatch(BatchProgression progression, size_t count, cl::Device device,
-                                     Optimizer::Operation &op) {
-      cl::CommandQueue queue(utils::cl_wrapper.getContext(), device);
+    void DefaultDispatcher::runBatch(size_t thread_rank, BatchProgression progression, size_t count,
+                                     cl::CommandQueue &queue, Optimizer::Operation &op) {
       for (size_t i = 0; i < count;) {
         size_t work_size = std::min(count - i, progression.getBatchRemainder());
 
         clFTensor current_input = progression.getInputSlice(work_size);
         clFTensor current_target = progression.getTargetSlice(work_size);
 
-        op(current_input, current_target, queue);
+        op(thread_rank, current_input, current_target, queue);
         progression.progress(work_size);
         i += work_size;
       }
+      queue.finish();
     }
   }   // namespace
 
@@ -153,7 +158,9 @@ namespace nnet {
     optimizer->update();
   }
 
-  void ParallelScheduler::updateModel() { optimizer_operation->updateModel(); }
+  void ParallelScheduler::updateModel() {
+    optimizer_operation->updateModel(utils::cl_wrapper.getDefaultQueue());
+  }
 
   void ParallelScheduler::print(std::ostream &os) const {}
 

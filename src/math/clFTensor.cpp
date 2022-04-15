@@ -260,7 +260,7 @@ namespace math {
     if (depth == 0) { return result; }
 
     for (size_t i = 0; i < depth; i++) {
-      clFMatrix mat = (*this)[i];
+      const clFMatrix& mat = (*this)[i];
       if (i == depth - 1) {
         result.ipadd(1.0f, mat, queue, blocking);
       } else {
