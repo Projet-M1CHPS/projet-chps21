@@ -72,7 +72,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   // Just truncate the list of devices to kMaxDeviceCount (We assume every device is the same for
   // the sake of simplicity)
-  allowed_devices.resize(kMaxDeviceCount);
+  allowed_devices.resize(std::min(kMaxDeviceCount, allowed_devices.size()));
   // This is pretty bad design, but it'll simplify the benchmarking process
   // Not intended for production code
   utils::cl_wrapper.restrictDevicesTo(allowed_devices);
