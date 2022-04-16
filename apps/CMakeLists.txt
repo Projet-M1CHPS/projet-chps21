@@ -4,10 +4,18 @@ add_executable(main main.cpp)
 set_target_properties(main PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 target_include_directories(main PUBLIC "${INCLUDE_DIR}")
 target_link_libraries(main PRIVATE ControlSystem2 Image NeuralNetwork Threads::Threads tscl::tscl BLAS::BLAS)
+
+# MPI app
 if (USE_MPI)
     message(STATUS "Using MPI")
-    target_compile_options(main PUBLIC "-DUSE_MPI")
-endif (USE_MPI)
+    add_executable(mpi_main mpi_main.cpp)
+    set_target_properties(mpi_main PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    target_include_directories(mpi_main PUBLIC "${INCLUDE_DIR}")
+    target_link_libraries(mpi_main PRIVATE MPIControlSystem Image NeuralNetwork Threads::Threads tscl::tscl BLAS::BLAS)
+else ()
+    message(STATUS "MPI not found")
+endif ()
+
 
 # Test app
 add_executable(xor xor.cpp)

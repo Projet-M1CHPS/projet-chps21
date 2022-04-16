@@ -152,4 +152,116 @@ namespace control {
 
 
   void InputSet::shuffle() { shuffle(std::random_device{}()); }
+
+  std::vector<InputSet> InputSet::split(size_t nb_sets) const {
+    std::cout << "InputSet::split() Splitting InputSet intro " + std::to_string(nb_sets) +
+                         " sub-sets."
+              << std::endl;
+    std::vector<InputSet> subsets;
+
+    auto sub_classes = splitClassNames(nb_sets);
+    std::vector<size_t> tensor_counts(nb_sets);
+    size_t part = getTensorCount() / nb_sets;
+    size_t rest = getTensorCount() % nb_sets;
+    for (size_t i = 0; i < nb_sets; i++) tensor_counts[i] = part + ((rest-- > 0) ? 1 : 0);
+
+    std::cout << "Number of classes: " << getSamplesClassIds().size() << std::endl;
+    size_t total_matrix_count = 0;
+    for (auto &item : tensors) total_matrix_count += item.getDepth();
+    std::cout << "Number of matrices: " << total_matrix_count << std::endl;
+
+    // Create the new sets
+    size_t current_tensor_index = 0;
+    size_t current_sample_index = 0;
+    for (size_t i = 0; i < nb_sets; i++) {
+      subsets.emplace_back(input_width, input_height);
+      std::cout << "subsets[" << i << "] dimensions: " << subsets.at(i).getInputWidth() << "x"
+                << subsets.at(i).getInputHeight() << std::endl;
+      for (size_t j = 0; j < tensor_counts.at(i); j++) {
+        auto &item = getTensor(current_tensor_index++);
+        std::vector<size_t> new_ids(item.getDepth());
+        std::vector<long> new_class_ids(item.getDepth());
+        for (size_t k = 0; k < item.getDepth(); k++) {
+          new_ids[k] = samples.at(current_sample_index).getId();
+          new_class_ids[k] = samples.at(current_sample_index).getClass();
+          current_sample_index++;
+        }
+        subsets[i].append(item.shallowCopy(), new_ids, new_class_ids);
+      }
+      subsets[i].updateClasses(sub_classes.at(i));
+    }
+
+    std::cout << "InputSet::split() Done." << std::endl;
+    return subsets;
+  }
+
+  std::vector<std::vector<std::string>> InputSet::splitClassNames(size_t nb_sets) const {
+    std::vector<std::vector<std::string>> new_class_names(nb_sets);
+    size_t classes_per_set = class_names.size() / nb_sets;
+    size_t classes_left = class_names.size() % nb_sets;
+
+    size_t acc_class_index = 0;
+    for (size_t i = 0; i < nb_sets; i++) {
+      size_t count = classes_per_set + (classes_left-- > 0 ? 1 : 0);
+      for (size_t j = 0; j < count; j++)
+        new_class_names.at(i).push_back(class_names[acc_class_index++]);
+    }
+
+    return new_class_names;
+  }
+
+  std::vector<std::vector<Sample>> InputSet::splitSamples(size_t nb_sets) const {
+    std::vector<std::vector<Sample>> new_samples(nb_sets);
+
+    // Amount of samples per set
+    size_t samples_per_set = samples.size() / nb_sets;
+    size_t samples_left = samples.size() % nb_sets;
+    std::vector<size_t> samples_counts(nb_sets);
+    for (size_t i = 0; i < nb_sets; i++) {
+      samples_counts[i] = (samples_per_set + (samples_left-- > 0 ? 1 : 0));
+    }
+
+    // Split the samples
+    size_t sample_index = 0;
+    for (size_t i = 0; i < nb_sets; i++) {
+      for (size_t j = 0; j < samples_per_set; j++) {
+        auto &s = samples[sample_index++];
+        new_samples[i].emplace_back(s.getId(), s.getClass(), s.getData().flatten());
+      }
+    }
+
+    return new_samples;
+  }
+
+  std::vector<std::vector<math::clFTensor>> InputSet::splitTensors(size_t nb_sets) const {
+    assert(nb_sets <= getTensorCount());
+    assert(nb_sets > 0);
+    std::vector<std::vector<math::clFTensor>> new_tensors(nb_sets);
+
+    // Amount of tensors per set
+    size_t part = getTensorCount() / nb_sets;
+    size_t remainder = getTensorCount() % nb_sets;
+    assert(part > 0);
+    for (size_t i = 0; i < nb_sets; i++) new_tensors[i].resize(part + (remainder-- > 0 ? 1 : 0));
+
+    // OpenCl queues (todo: split in threads, each with their own queue)
+    std::vector<cl::CommandQueue> queues(nb_sets);
+    for (size_t i = 0; i < nb_sets; i++)
+      queues[i] = cl::CommandQueue(utils::cl_wrapper.getContext(),
+                                   utils::cl_wrapper.getDefaultDevice());
+
+    // Split the tensors
+    size_t tensor_index = 0;
+    for (size_t i = 0; i < nb_sets; i++) {
+      for (size_t j = 0; j < new_tensors.at(i).size(); j++)
+        new_tensors[i][j].copy(tensors[tensor_index++], queues.at(i), true);
+      tensor_index++;
+    }
+
+    // Wait for all queues to finish
+    for (auto &queue : queues) queue.finish();
+
+    return new_tensors;
+  }
+
 }   // namespace control

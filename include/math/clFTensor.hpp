@@ -66,7 +66,9 @@ namespace math {
      * @param index
      * @return
      */
-    size_t getOffsetOfInBytes(size_t matrix_index) const { return getOffsetOf(matrix_index) * sizeof(float); }
+    size_t getOffsetOfInBytes(size_t matrix_index) const {
+      return getOffsetOf(matrix_index) * sizeof(float);
+    }
 
     /**
      * @brief Returns the offset in matrix of this tensor.
@@ -136,6 +138,7 @@ namespace math {
       return {data, rows, cols, getOffsetOf(z)};
     }
 
+
     /**
      * @brief Returns an array of submatrices.
      *
@@ -187,8 +190,13 @@ namespace math {
                                  bool transpose_b, const clFTensor &B, cl::CommandQueue &queue,
                                  bool blocking = false);
 
-    clFMatrix sumCollapse(cl::CommandQueue &queue,
-                              bool blocking = false) const;
+    clFMatrix sumCollapse(cl::CommandQueue &queue, bool blocking = false) const;
+
+    float sum() const {
+      float sum = .0f;
+      for (auto &item : getMatrices()) sum += item.sumReduce();
+      return sum;
+    }
 
     clFTensor &iphadamard(const clFTensor &other, cl::CommandQueue &queue, bool blocking = false);
 

@@ -6,17 +6,18 @@ namespace control {
 
   class ControllerResult {
   public:
+    ControllerResult() = default;
     ControllerResult(int code, const std::string &message);
     ControllerResult(int code, const std::runtime_error &exception);
 
     const std::string &getMessage() const { return message; }
     int getCode() const { return return_code; }
 
-    operator bool() const { return return_code == 0; }
+    explicit operator bool() const { return return_code == 0; }
 
   private:
     std::string message;
-    int return_code;
+    int return_code = 0;
   };
 
   class Controller {
@@ -24,7 +25,7 @@ namespace control {
     explicit Controller(std::filesystem::path ouput_path);
 
     virtual ~Controller() = default;
-    virtual ControllerResult run() noexcept = 0;
+    virtual ControllerResult run() = 0;
 
     std::filesystem::path getOutputPath() const { return output_path; }
 

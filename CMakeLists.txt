@@ -74,8 +74,8 @@ add_subdirectory(src)
 
 # ! Must be called in the root cmakelist !
 # otherwise, the test target will not be properly set up
-enable_testing()
-add_subdirectory(test)
+#[[enable_testing()
+add_subdirectory(test)]]
 
 # Contains various end executable
 add_subdirectory(apps)
