@@ -46,7 +46,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // to avoid batch fragmentation
   constexpr int kBatchSize = 16;
 
-  constexpr float kLearningRate = 0.01;
+  constexpr float kLearningRate = 0.08;
   constexpr float kMomentum = 0.9;
   constexpr float kDecayRate = 0.001;
 
@@ -58,7 +58,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // The scheduler is free to use less if it judges necessary
   constexpr size_t kMaxThread = 1;
   constexpr bool kAllowMultipleThreadPerDevice = false;
-  constexpr size_t kMaxEpoch = 100;
+  constexpr size_t kMaxEpoch = 75;
   // If set to true, the scheduler will move batches around to ensure each batch used for
   // computation is of size kBatchSize
   constexpr bool kAllowBatchDefragmentation = false;
@@ -102,9 +102,9 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
 
   // auto model = nnet::MLPModel::randomReluSigmoid(topology);
-  auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
-  // auto model = std::make_unique<nnet::MLPModel>();
-  // model->load("michal.nnet");
+  // auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
+  auto model = std::make_unique<nnet::MLPModel>();
+  model->load("michal.nnet");
   std::unique_ptr<Optimizer> optimizer;
   if (kOptimType == kUseSGD)
     optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(*model, kLearningRate);

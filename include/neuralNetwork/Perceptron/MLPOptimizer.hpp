@@ -3,8 +3,8 @@
 #include "MLPModel.hpp"
 #include "MLPerceptron.hpp"
 #include "Optimization.hpp"
-#include "neuralNetwork/OptimizationScheduler/OptimizationScheduler.hpp"
 #include "Optimizer.hpp"
+#include "neuralNetwork/OptimizationScheduler/OptimizationScheduler.hpp"
 #include <iostream>
 #include <utility>
 
@@ -12,8 +12,8 @@ namespace nnet {
 
   class MLPOptimizer : public Optimizer {
   public:
+    class WeightUpdateCache;
     class Operation;
-    class WeightUpdater;
 
     MLPOptimizer(MLPModel &model, std::unique_ptr<Optimization> tm)
         : neural_network(&model.getPerceptron()), opti_meth(std::move(tm)) {}
@@ -30,57 +30,67 @@ namespace nnet {
     }
 
     math::clFTensor optimize(const math::clFTensor &inputs, const math::clFTensor &targets,
-                             WeightUpdater &updater, cl::CommandQueue &queue);
+                             WeightUpdateCache &updater, cl::CommandQueue &queue);
 
     std::unique_ptr<Optimizer::Operation> makeBatchOperation() override;
 
-  private:
+    virtual std::unique_ptr<WeightUpdateCache> makeCache(size_t ncache);
+    virtual std::vector<std::unique_ptr<WeightUpdateCache>> makeCaches(size_t ncache);
 
+  private:
     MLPerceptron *neural_network;
     std::unique_ptr<Optimization> opti_meth;
   };
 
-  class MLPOptimizer::WeightUpdater {
+  class MLPOptimizer::WeightUpdateCache {
   public:
-    WeightUpdater(MLPerceptron &parent, Optimization &opt);
-    virtual ~WeightUpdater() = default;
+    explicit WeightUpdateCache(MLPOptimizer &optimizer);
+    virtual ~WeightUpdateCache() = default;
 
-    const math::clFMatrix &operator[](size_t i);
+    math::clFMatrix &operator[](size_t i) { return weight_updates[i]; }
 
-    void reduce(size_t index, const math::clFMatrix &delta, size_t contribution_size,
-                cl::Event &event);
-    virtual void apply();
+    const math::clFMatrix &operator[](size_t i) const { return weight_updates[i]; }
+
+    void add(size_t index, const math::clFMatrix &delta, size_t contribution_size,
+             cl::CommandQueue &queue);
+    void reduce(WeightUpdateCache &other, cl::CommandQueue &queue);
+
+    void apply(cl::CommandQueue &queue);
+
+    void clear(cl::CommandQueue& queue);
 
   protected:
     MLPerceptron *perceptron;
+    std::vector<size_t> contributions;
+    std::vector<math::clFMatrix> weight_updates;
 
   private:
     Optimization *optimization;
-
-    cl::CommandQueue work_queue;
-
-    std::mutex mutex;
-    std::vector<size_t> contributions;
-    std::vector<math::clFMatrix> weight_updates;
   };
 
   class MLPOptimizer::Operation : public Optimizer::Operation {
   public:
-    Operation(MLPOptimizer &optimizer, std::shared_ptr<WeightUpdater> updater)
-        : updater(std::move(updater)), optimizer(&optimizer) {}
+    explicit Operation(MLPOptimizer &optimizer) : optimizer(&optimizer) {}
 
     ~Operation() override = default;
 
-    void operator()(const math::clFTensor &inputs, const math::clFTensor &targets,
-                    cl::CommandQueue &batch_queue) override {
-      optimizer->optimize(inputs, targets, *updater, batch_queue);
+    void operator()(size_t thread_rank, const math::clFTensor &inputs,
+                    const math::clFTensor &targets, cl::CommandQueue &batch_queue) override {
+      computeGradient(thread_rank, inputs, targets, batch_queue);
     }
 
-    void updateModel() override { updater->apply(); }
+    math::clFTensor computeGradient(size_t thread_rank, const math::clFTensor &inputs,
+                                    const math::clFTensor &targets, cl::CommandQueue &batch_queue);
+
+    void reserveCaches(size_t num_threads) override;
 
   protected:
-    std::shared_ptr<WeightUpdater> updater;
+    std::vector<std::unique_ptr<WeightUpdateCache>> caches;
     MLPOptimizer *optimizer;
+
+    void reduceAll(cl::CommandQueue &queue) override;
+    void applyChanges(cl::CommandQueue &queue) override;
+    void clearChanges(cl::CommandQueue &queue) override;
   };
 
 }   // namespace nnet

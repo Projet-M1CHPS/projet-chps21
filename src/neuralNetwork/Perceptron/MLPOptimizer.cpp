@@ -39,7 +39,7 @@ namespace nnet {
     clFTensor backward(MLPerceptron &perceptron, const clFTensor &targets,
                        std::vector<clFTensor> &layers_output,
                        std::vector<clFTensor> &layers_af_output,
-                       MLPOptimizer::WeightUpdater &updater, cl::CommandQueue &queue) {
+                       MLPOptimizer::WeightUpdateCache &updater, cl::CommandQueue &queue) {
       auto &weights = perceptron.getWeights();
       auto &activation_functions = perceptron.getActivationFunctions();
 
@@ -62,70 +62,107 @@ namespace nnet {
         clFMatrix collapsed_gradient = gradient.sumCollapse(queue);
         // The reducer cannot proceed until the gradient is collapsed
         // So we create a new event that the reducer can wait on
-        cl::Event reduce_event;
-        queue.enqueueMarkerWithWaitList(nullptr, &reduce_event);
-        updater.reduce(i, collapsed_gradient, gradient.getDepth(), reduce_event);
+        updater.add(i, collapsed_gradient, gradient.getDepth(), queue);
       }
       return error;
     }
   }   // namespace
 
-  using WeightUpdater = MLPOptimizer::WeightUpdater;
+  using WeightUpdateCache = MLPOptimizer::WeightUpdateCache;
 
-  WeightUpdater::WeightUpdater(MLPerceptron &parent, Optimization &optimization)
-      : perceptron(&parent), optimization(&optimization) {
-    weight_updates.resize(parent.getWeights().size());
-    contributions.resize(parent.getWeights().size(), 0);
+  WeightUpdateCache::WeightUpdateCache(MLPOptimizer &optimizer)
+      : perceptron(optimizer.neural_network), optimization(optimizer.opti_meth.get()) {
+    weight_updates.resize(perceptron->getWeights().size());
+    contributions.resize(perceptron->getWeights().size(), 0);
 
-    work_queue =
-            cl::CommandQueue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
-    for (size_t i = 0; auto &w : parent.getWeights()) {
+    auto queue = utils::cl_wrapper.getDefaultQueue();
+    for (size_t i = 0; auto &w : perceptron->getWeights()) {
       weight_updates[i] = clFMatrix(w.getRows(), w.getCols());
-      weight_updates[i].fill(0.0f, work_queue);
+      weight_updates[i].fill(0.0f, queue, false);
       i++;
     }
-    work_queue.finish();
+    queue.finish();
   }
 
-  const clFMatrix &WeightUpdater::operator[](size_t i) {
-    if (i > weight_updates.size()) {
-      throw std::out_of_range("MLPWeightUpdater::operator[]: Index out of range");
-    }
-    return weight_updates[i];
-  }
-
-  void WeightUpdater::reduce(size_t index, const clFMatrix &delta, size_t contribution_size,
-                             cl::Event &event) {
-    std::vector<cl::Event> wait_list = {event};
-    work_queue.enqueueBarrierWithWaitList(&wait_list);
-    weight_updates[index].ipadd(1.0f, delta, work_queue);
-    std::scoped_lock<std::mutex> lock(mutex);
+  void WeightUpdateCache::add(size_t index, const clFMatrix &delta, size_t contribution_size,
+                              cl::CommandQueue &queue) {
+    weight_updates[index].ipadd(1.0f, delta, queue);
     contributions[index] += contribution_size;
   }
 
-  void WeightUpdater::apply() {
+  void WeightUpdateCache::reduce(WeightUpdateCache &other, cl::CommandQueue &queue) {
+    for (size_t i = 0; i < weight_updates.size(); i++) {
+      weight_updates[i].ipadd(1.0f, other[i], queue);
+      contributions[i] += other.contributions[i];
+    }
+  }
+
+  void WeightUpdateCache::clear(cl::CommandQueue &queue) {
+    for (auto &w : weight_updates) { w.fill(0.0f, queue); }
+
+    for (auto &c : contributions) { c = 0; }
+  }
+
+  void WeightUpdateCache::apply(cl::CommandQueue &queue) {
     for (size_t i = 0; i < weight_updates.size(); i++) {
       float mean_factor = 1.0f / static_cast<float>(contributions[i]);
-      weight_updates[i].ipscale(mean_factor, work_queue);
-      optimization->optimize(weight_updates[i], perceptron->getWeights()[i], i, work_queue);
-      weight_updates[i].fill(0.0f, work_queue);
+      weight_updates[i].ipscale(mean_factor, queue);
+      optimization->optimize(weight_updates[i], perceptron->getWeights()[i], i, queue);
+      weight_updates[i].fill(0.0f, queue);
     }
-    std::for_each(contributions.begin(), contributions.end(), [](auto &c) { c = 0; });
-    work_queue.finish();
+  }
+
+
+  std::unique_ptr<WeightUpdateCache> MLPOptimizer::makeCache(size_t ncache) {
+    return std::make_unique<WeightUpdateCache>(*this);
+  }
+
+  std::vector<std::unique_ptr<WeightUpdateCache>> MLPOptimizer::makeCaches(size_t ncache) {
+    std::vector<std::unique_ptr<WeightUpdateCache>> caches;
+    caches.reserve(ncache);
+    for (size_t i = 0; i < ncache; i++) {
+      caches.emplace_back(makeCache(ncache));
+    }
+    return caches;
   }
 
   std::unique_ptr<Optimizer::Operation> MLPOptimizer::makeBatchOperation() {
-    auto updater = std::make_shared<WeightUpdater>(*neural_network, *opti_meth);
-    return std::make_unique<Operation>(*this, updater);
+    return std::make_unique<Operation>(*this);
   }
 
   clFTensor MLPOptimizer::optimize(const clFTensor &inputs, const clFTensor &targets,
-                                   WeightUpdater &updater, cl::CommandQueue &queue) {
+                                   WeightUpdateCache &updater, cl::CommandQueue &queue) {
     std::vector<clFTensor> layers_output(neural_network->getWeights().size() + 1);
     std::vector<clFTensor> layers_af_output(neural_network->getWeights().size() + 1);
 
     forward(*neural_network, inputs.flatten(), layers_output, layers_af_output, queue);
     return backward(*neural_network, targets.flatten(), layers_output, layers_af_output, updater,
                     queue);
+  }
+
+  math::clFTensor MLPOptimizer::Operation::computeGradient(size_t thread_rank,
+                                                           const math::clFTensor &inputs,
+                                                           const math::clFTensor &targets,
+                                                           cl::CommandQueue &batch_queue) {
+    if (thread_rank > caches.size())
+      throw std::invalid_argument("Error: Only " + std::to_string(caches.size()) +
+                                  " caches reserved, tried to access cache " +
+                                  std::to_string(thread_rank));
+    return optimizer->optimize(inputs, targets, *caches[thread_rank], batch_queue);
+  }
+
+
+  void MLPOptimizer::Operation::reserveCaches(size_t num_threads) {
+    if (caches.size() < num_threads) { caches = optimizer->makeCaches(num_threads); }
+  }
+
+  void MLPOptimizer::Operation::reduceAll(cl::CommandQueue &queue) {
+    for (size_t i = 1; i < caches.size(); i++) { caches[0]->reduce(*caches[i], queue); }
+  }
+
+  void MLPOptimizer::Operation::applyChanges(cl::CommandQueue &queue) { caches[0]->apply(queue); }
+
+  void MLPOptimizer::Operation::clearChanges(cl::CommandQueue &queue) {
+    for (auto &cache : caches) { cache->clear(queue); }
   }
 }   // namespace nnet
