@@ -59,27 +59,37 @@ namespace nnet {
 
     cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
+    // compute filter error
+    clFTensor res_filter(filters.getRows(), filters.getCols(), errors.getDepth());
     {
       const size_t height = convoStorage.input.getRows();
       const size_t width = convoStorage.input.getCols();
       const size_t kernel_h = errors.getRows();
       const size_t kernel_w = errors.getCols();
+      const size_t n_input = convoStorage.input.getDepth() / n_branch;
 
       std::vector<clFTensor> sub_input = convoStorage.input.slice(n_branch);
-      std::vector<clFTensor> sub_error = errors.slice(n_branch);
+      std::vector<clFTensor> sub_error = errors.slice(n_branch * n_filter);
 
-      // compute filter error
-      // for(size_t ii = 0; ii < n_branch; ii++) {
-      //  for (size_t i = 0; i < filters.getDepth(); i++) {
-      //    clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, height, width,
-      //                             kernel_h, kernel_w, 0, 0, 1, 1, 1, 1, 1, 1,
-      //                             sub_input[ii].getBuffer()(),
-      //                             sub_input[ii].getOffsetInFloats(), errors[i].getBuffer()(),
-      //                             errors[i].getOffset(),
-      //                             convoStorage.errorFilter[i].getBuffer()(),
-      //                             convoStorage.errorFilter[i].getOffset(), &queue(), nullptr);
-      //  }
-      //}
+      size_t index = 0;
+      for (size_t i = 0; i < n_branch; i++) {
+        std::cout << "branch" << std::endl;
+        for (size_t j = 0; j < n_filter; j++) {
+          std::cout << "filter" << std::endl;
+          for (size_t k = 0; k < n_input; k++) {
+            //std::cout << "input" << std::endl;
+            //std::cout << "img\n" << sub_input[i][k] << std::endl;
+            //std::cout << "kernel\n" << errors[index] << std::endl;
+            clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, height, width,
+                                     kernel_h, kernel_w, 0, 0, 1, 1, 1, 1, 1, 1,
+                                     sub_input[i][k].getBuffer()(), sub_input[i][k].getOffset(),
+                                     errors[index].getBuffer()(), errors[index].getOffset(),
+                                     res_filter[index].getBuffer()(), res_filter[index].getOffset(),
+                                     &queue(), nullptr);
+            index++;
+          }
+        }
+      }
     }
 
     // compute input error
@@ -98,17 +108,19 @@ namespace nnet {
       for (size_t i = 0; i < n_branch; i++) {
         for (size_t j = 0; j < n_filter; j++) {
           clblast::Convgemm<float>(clblast::KernelMode::kConvolution, 1, height, width, kernel_h,
-                                   kernel_w, kernel_h - 1, kernel_w - 1, 1, 1, 1, 1, 1,
-                                   batch_count, sub_error[i * n_filter + j].getBuffer()(),
-                                   sub_error[i * n_filter + j].getOffsetInFloats(), sub_filter[i * n_filter + j].getBuffer()(),
-                                   sub_filter[i * n_filter + j].getOffsetInFloats(), res[index].getBuffer()(),
-                                   res[index].getOffset(), &queue(), nullptr);
+                                   kernel_w, kernel_h - 1, kernel_w - 1, 1, 1, 1, 1, 1, batch_count,
+                                   sub_error[i * n_filter + j].getBuffer()(),
+                                   sub_error[i * n_filter + j].getOffsetInFloats(),
+                                   sub_filter[i * n_filter + j].getBuffer()(),
+                                   sub_filter[i * n_filter + j].getOffsetInFloats(),
+                                   res[index].getBuffer()(), res[index].getOffset(), &queue(),
+                                   nullptr);
           index += batch_count;
         }
       }
     }
-
-    return res;
+    //return res;
+    return res_filter;
   }
 
 

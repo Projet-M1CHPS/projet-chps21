@@ -57,8 +57,9 @@ void testConvo() {
     A(5, 5) = 2.f;
   }
   std::cout << "input = \n" << A << std::endl;
-  auto img = clFTensor(A.getRows(), A.getCols(), 1);
+  auto img = clFTensor(A.getRows(), A.getCols(), 2);
   img[0] = A;
+  img[1] = A;
 
 
   math::FloatMatrix B1(3, 3);
@@ -94,14 +95,16 @@ void testConvo() {
   auto filters = clFTensor(B1.getRows(), B1.getCols(), 1);
   filters[0] = B1;
 
-  clFTensor out(4, 4, img.getDepth());
+  clFTensor out(4, 4, 2);
   out[0].fill(100.f, queue);
+  out[1].fill(100.f, queue);
 
 
   clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, 6, 6, 3, 3, 0, 0, 1, 1, 1, 1,
-                           filters.getDepth(), img.getDepth(), img.getBuffer()(), img.getOffset(),
-                           filters.getBuffer()(), filters.getOffset(), out.getBuffer()(),
-                           out.getOffset(), &queue(), nullptr);
+                           filters.getDepth(), img.getDepth(), img.getBuffer()(),
+                           img.getOffsetInFloats(), filters.getBuffer()(),
+                           filters.getOffsetInFloats(), out.getBuffer()(), out.getOffsetInFloats(),
+                           &queue(), nullptr);
 
   queue.finish();
 
@@ -361,7 +364,8 @@ void testConvolutionalLayer1BranchBP() {
 
   std::cout << "input storage : " << storage.input << std::endl;
 
-  storage.errorFilter = clFTensor(2, 2, number_filter * number_branch * (number_input / number_branch));
+  storage.errorFilter =
+          clFTensor(2, 2, number_filter * number_branch * (number_input / number_branch));
 
   clFTensor errors_tensor(5, 5, number_filter * number_branch * (number_input / number_branch));
   errors_tensor[0].fill(1.f, utils::cl_wrapper.getDefaultQueue(), true);
@@ -381,7 +385,7 @@ void testConvolutionalLayer1BranchBP() {
 
   clFTensor errors_input = layer.computeBackward(errors_tensor, storage);
 
-  //std::cout << "error filter : " << storage.errorFilter << std::endl;
+  // std::cout << "error filter : " << storage.errorFilter << std::endl;
   std::cout << "error input : " << errors_input << std::endl;
 
   /* error input
@@ -1095,13 +1099,176 @@ void testPredictionXBranch() {
    * */
 }
 
+
+void foo() {
+  // 1 branch 2 filter/branch 2 input
+  const size_t number_input = 4;
+  const size_t number_filter = 2;
+  const size_t number_branch = 2;
+
+  nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, number_filter, af::ActivationFunctionType::relu,
+                                  number_branch);
+
+  nnet::CNNStorageBPConvolution storage;
+
+  FloatMatrix f1(2, 2);
+  {
+    f1(0, 0) = 2.f;
+    f1(0, 1) = 1.f;
+    f1(1, 0) = 0.5f;
+    f1(1, 1) = 1.5f;
+  }
+  FloatMatrix f2(2, 2);
+  {
+    f2(0, 0) = 1.f;
+    f2(0, 1) = 1.f;
+    f2(1, 0) = 1.f;
+    f2(1, 1) = 1.f;
+  }
+  auto &filter = layer.getFilter();
+  filter[0] = f1;
+  filter[1] = f2;
+  filter[2] = f1;
+  filter[3] = f2;
+
+
+  std::cout << "filter : " << filter << std::endl;
+
+  math::FloatMatrix input1(6, 6);
+  {
+    input1(0, 0) = 1.f;
+    input1(0, 1) = 2.f;
+    input1(0, 2) = 1.f;
+    input1(0, 3) = 1.f;
+    input1(0, 4) = 4.f;
+    input1(0, 5) = 1.f;
+    input1(1, 0) = 2.f;
+    input1(1, 1) = 1.f;
+    input1(1, 2) = 1.f;
+    input1(1, 3) = 2.f;
+    input1(1, 4) = 2.f;
+    input1(1, 5) = 1.f;
+    input1(2, 0) = 4.f;
+    input1(2, 1) = 3.f;
+    input1(2, 2) = 2.f;
+    input1(2, 3) = 1.f;
+    input1(2, 4) = 2.f;
+    input1(2, 5) = 1.f;
+    input1(3, 0) = 1.f;
+    input1(3, 1) = 5.f;
+    input1(3, 2) = 1.f;
+    input1(3, 3) = 1.f;
+    input1(3, 4) = 2.f;
+    input1(3, 5) = 1.f;
+    input1(4, 0) = 2.f;
+    input1(4, 1) = 1.f;
+    input1(4, 2) = 1.f;
+    input1(4, 3) = 4.f;
+    input1(4, 4) = 1.f;
+    input1(4, 5) = 1.f;
+    input1(5, 0) = 2.f;
+    input1(5, 1) = 1.f;
+    input1(5, 2) = 4.f;
+    input1(5, 3) = 2.f;
+    input1(5, 4) = 4.f;
+    input1(5, 5) = 1.f;
+  }
+  math::FloatMatrix input2(6, 6);
+  {
+    input2(0, 0) = 100.f;
+    input2(0, 1) = 2.f;
+    input2(0, 2) = 1.f;
+    input2(0, 3) = 1.f;
+    input2(0, 4) = 4.f;
+    input2(0, 5) = 1.f;
+    input2(1, 0) = 2.f;
+    input2(1, 1) = 1.f;
+    input2(1, 2) = 1.f;
+    input2(1, 3) = 2.f;
+    input2(1, 4) = 2.f;
+    input2(1, 5) = 1.f;
+    input2(2, 0) = 4.f;
+    input2(2, 1) = 3.f;
+    input2(2, 2) = 2.f;
+    input2(2, 3) = 1.f;
+    input2(2, 4) = 2.f;
+    input2(2, 5) = 1.f;
+    input2(3, 0) = 1.f;
+    input2(3, 1) = 5.f;
+    input2(3, 2) = 1.f;
+    input2(3, 3) = 1.f;
+    input2(3, 4) = 2.f;
+    input2(3, 5) = 1.f;
+    input2(4, 0) = 2.f;
+    input2(4, 1) = 1.f;
+    input2(4, 2) = 1.f;
+    input2(4, 3) = 4.f;
+    input2(4, 4) = 1.f;
+    input2(4, 5) = 1.f;
+    input2(5, 0) = 2.f;
+    input2(5, 1) = 1.f;
+    input2(5, 2) = 4.f;
+    input2(5, 3) = 2.f;
+    input2(5, 4) = 4.f;
+    input2(5, 5) = 1.f;
+  }
+
+  clFTensor input_tensor(6, 6, number_input);
+  input_tensor[0] = input1;
+  input_tensor[1] = input2;
+  input_tensor[2] = input1;
+  input_tensor[3] = input2;
+  std::cout << "input : " << input_tensor << std::endl;
+
+  clFTensor output_tensor = layer.computeForward(input_tensor, storage);
+
+  std::cout << "output : " << output_tensor << std::endl;
+
+  std::cout << "input storage : " << storage.input << std::endl;
+
+  storage.errorFilter =
+          clFTensor(2, 2, number_filter * number_branch * (number_input / number_branch));
+
+  clFTensor errors_tensor(5, 5, number_filter * number_branch * (number_input / number_branch));
+  errors_tensor[0].fill(1.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[1].fill(2.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[2].fill(3.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[3].fill(4.f, utils::cl_wrapper.getDefaultQueue(), true);
+
+  errors_tensor[4].fill(5.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[5].fill(6.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[6].fill(7.f, utils::cl_wrapper.getDefaultQueue(), true);
+  errors_tensor[7].fill(8.f, utils::cl_wrapper.getDefaultQueue(), true);
+
+  std::cout << "error : " << errors_tensor << std::endl;
+
+  clFTensor errors_input = layer.computeBackward(errors_tensor, storage);
+
+  std::cout << "error filter : " << errors_input << std::endl;
+
+  /* error input
+   *
+   * 2 3 3 3 3 1
+   * 2.5 5 5 5 5 2.5
+   * 2.5 5 5 5 5 2.5
+   * 2.5 5 5 5 5 2.5
+   * 2.5 5 5 5 5 2.5
+   * 0.5 2 2 2 2 1.5
+   *
+   * error filter
+   * 48 43
+   * 52 46
+   * */
+}
+
 int main() {
   utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault());
 
   // testConvo();
 
   // testConvolutionalLayer1Branch();
-  testConvolutionalLayer1BranchBP();
+  // testConvolutionalLayer1BranchBP();
+  foo();
   // testConvolutionalLayerXBranch();
 
   // testMaxPoolingLayer();
