@@ -235,6 +235,8 @@ namespace control {
       scheduler->run();
       auto end = chrono::steady_clock::now();
       auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+      // Todo: Gather the results in the master process
+      // Todo: Evaluate the results in the master process
       auto evaluation = evaluator->evaluate();
       if (is_verbose) {
         std::stringstream ss;
@@ -242,6 +244,7 @@ namespace control {
            << std::endl;
         tscl::logger(ss.str(), tscl::Log::Information);
       }
+      // Todo: Scatter the evaluation results to all processes
     }
 
     return {0, "Training completed"};

@@ -80,13 +80,13 @@ namespace control {
 
     const std::vector<math::clFTensor> &getTargets() const { return training_targets; }
 
-    std::vector<TrainingCollection> split(int n) const;
+    void split(int n, std::vector<TrainingCollection> &sub_collections) const;
 
     void display() const;
 
-  private:
     void makeTrainingTargets();
 
+  private:
     InputSet training_set;
     InputSet eval_set;
     // Temporary solution, this should probably moved elsewhere

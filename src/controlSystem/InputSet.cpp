@@ -35,6 +35,9 @@ namespace control {
     std::shared_lock<std::shared_mutex> lock(other.mutex);
     std::unique_lock<std::shared_mutex> lock2(mutex);
 
+    input_width = other.input_width;
+    input_height = other.input_height;
+
     tensors = std::move(other.tensors);
     samples = std::move(other.samples);
     class_names = std::move(other.class_names);
@@ -47,11 +50,17 @@ namespace control {
 
     // Each sample must have its own id
     if (tensor.getDepth() != new_ids.size()) {
+      std::cerr << "Error: tensor.getDepth(): " << tensor.getDepth()
+                << " != new_ids.size(): " << new_ids.size() << std::endl;
       throw std::runtime_error("InputSet::append: tensor and new_ids must have same size");
     }
 
     // The input tensor should be correctly sized
     if (tensor.getRows() != input_width or tensor.getCols() != input_height) {
+      std::cerr << "Error: tensor.getRows(): " << tensor.getRows()
+                << " != input_width: " << input_width << std::endl;
+      std::cerr << "Error: tensor.getCols(): " << tensor.getCols()
+                << " != input_height: " << input_height << std::endl;
       throw std::runtime_error(
               "InputSet::append: tensor must have same size as input_width and input_height");
     }
@@ -153,11 +162,11 @@ namespace control {
 
   void InputSet::shuffle() { shuffle(std::random_device{}()); }
 
-  std::vector<InputSet> InputSet::split(size_t nb_sets) const {
+  void InputSet::split(size_t nb_sets, std::vector<InputSet> &sub_sets) const {
+    assert(sub_sets.empty());
     std::cout << "InputSet::split() Splitting InputSet intro " + std::to_string(nb_sets) +
                          " sub-sets."
               << std::endl;
-    std::vector<InputSet> subsets;
 
     auto sub_classes = splitClassNames(nb_sets);
     std::vector<size_t> tensor_counts(nb_sets);
@@ -174,9 +183,18 @@ namespace control {
     size_t current_tensor_index = 0;
     size_t current_sample_index = 0;
     for (size_t i = 0; i < nb_sets; i++) {
-      subsets.emplace_back(input_width, input_height);
-      std::cout << "subsets[" << i << "] dimensions: " << subsets.at(i).getInputWidth() << "x"
-                << subsets.at(i).getInputHeight() << std::endl;
+      InputSet current_set(input_width, input_height);
+      std::cout << "InputSet::split() Creating sub-set " + std::to_string(i) + "." << std::endl;
+      std::cout << "InputSet::split() Sub-set " + std::to_string(i) +
+                           " dimensions: " + std::to_string(current_set.getInputWidth()) + "x" +
+                           std::to_string(current_set.getInputHeight()) + "x" +
+                           std::to_string(current_set.getTensorCount())
+                << std::endl;
+
+      std::cout << "InputSet::split() Dimensions of sub-sets: " << std::endl;
+      for (auto &item : sub_sets)
+        std::cout << "InputSet::split() " << item.getInputWidth() << "x" << item.getInputHeight()
+                  << std::endl;
       for (size_t j = 0; j < tensor_counts.at(i); j++) {
         auto &item = getTensor(current_tensor_index++);
         std::vector<size_t> new_ids(item.getDepth());
@@ -186,13 +204,22 @@ namespace control {
           new_class_ids[k] = samples.at(current_sample_index).getClass();
           current_sample_index++;
         }
-        subsets[i].append(item.shallowCopy(), new_ids, new_class_ids);
+        current_set.append(item.shallowCopy(), new_ids, new_class_ids);
       }
-      subsets[i].updateClasses(sub_classes.at(i));
+      current_set.updateClasses(sub_classes.at(i));
+      sub_sets.emplace_back(std::move(current_set));
+      std::cout << "InputSet::split() Dimensions of sub-sets: " << std::endl;
+      for (auto &item : sub_sets)
+        std::cout << "InputSet::split() " << item.getInputWidth() << "x" << item.getInputHeight()
+                  << std::endl;
     }
 
     std::cout << "InputSet::split() Done." << std::endl;
-    return subsets;
+    std::cout << "InputSet::split() Number of sub-sets: " << sub_sets.size() << std::endl;
+    std::cout << "InputSet::split() Dimensions of sub-sets: " << std::endl;
+    for (auto &item : sub_sets)
+      std::cout << "InputSet::split() " << item.getInputWidth() << "x" << item.getInputHeight()
+                << std::endl;
   }
 
   std::vector<std::vector<std::string>> InputSet::splitClassNames(size_t nb_sets) const {

@@ -52,8 +52,6 @@ namespace control {
    */
   class InputSet final {
   public:
-    InputSet() : input_width(0), input_height(0) {}
-
     InputSet(size_t input_width, size_t input_height)
         : input_width(input_width), input_height(input_height) {}
 
@@ -109,7 +107,7 @@ namespace control {
      */
     void shuffle();
 
-    std::vector<InputSet> split(size_t nb_sets) const;
+    void split(size_t nb_sets, std::vector<InputSet> &sub_sets) const;
 
     size_t getSize() const {
       std::shared_lock<std::shared_mutex> lock(mutex);

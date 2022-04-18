@@ -5,7 +5,11 @@ namespace control {
   void TrainingCollection::makeTrainingTargets() {
     training_targets.clear();
     size_t nclass = training_set.getClasses().size();
-    assert(training_set.getClasses().size() == training_set.getTensors().size());
+
+    std::cout << "TrainingCollection::makeTrainingTargets()" << std::endl;
+    std::cout << "  nclass = " << nclass << std::endl;
+    std::cout << "  ntraining = " << training_set.getTensorCount() << std::endl;
+    assert(training_set.getClasses().size() == training_set.getTensorCount());
 
     for (size_t sample_index = 0; auto &tensor : training_set.getTensors()) {
       size_t size = tensor.getDepth();
@@ -23,36 +27,47 @@ namespace control {
   }
 
   void TrainingCollection::display() const {
-    tscl::logger("Training set: ");
+    tscl::logger("Training set" + std::to_string(training_set.getInputWidth()) + "x" +
+                 std::to_string(training_set.getInputHeight()) + "}: ");
     tscl::logger("  Classes{" + std::to_string(training_set.getClasses().size()) + "}: ");
     for (auto &c : training_set.getClasses()) { tscl::logger(c + " "); }
     tscl::logger("  Tensors{" + std::to_string(training_set.getTensorCount()) + "}: ");
-    for (auto &t : training_set.getTensors()) {
+    for (auto &t : training_set.getTensors())
       tscl::logger("Tensor[" + std::to_string(t.getRows()) + ";" + std::to_string(t.getCols()) +
                    ";" + std::to_string(t.getDepth()) + "] {" + std::to_string(t.sum()) + "}");
-    }
+    tscl::logger("  Targets{" + std::to_string(training_targets.size()) + "}: ");
+    for (auto &t : training_targets)
+      tscl::logger("Target[" + std::to_string(t.getRows()) + ";" + std::to_string(t.getCols()) +
+                   ";" + std::to_string(t.getDepth()) + "] {" + std::to_string(t.sum()) + "}");
+
     tscl::logger("");
   }
 
-  std::vector<TrainingCollection> TrainingCollection::split(int n) const {
+  void TrainingCollection::split(int n, std::vector<TrainingCollection> &sub_collections) const {
+    assert(sub_collections.empty());
     std::cout << "> TrainingCollection::split() Splitting training set into " << n << " parts"
               << std::endl;
 
-    std::vector<TrainingCollection> collections;
     for (size_t i = 0; i < n; i++)
-      collections.emplace_back(
+      sub_collections.emplace_back(
               TrainingCollection(training_set.getInputWidth(), training_set.getInputHeight()));
 
-    auto split_training_set = training_set.split(n);
+    std::vector<InputSet> split_training_set;
+    training_set.split(n, split_training_set);
 
     for (size_t i = 0; i < n; i++) {
       std::cout << "\t>>TrainingCollection::split() Part " << i << " of " << n - 1 << std::endl;
-      collections.at(i).training_set = std::move(split_training_set.at(i));
-      collections.at(i).makeTrainingTargets();
+      std::cout << "NOTmoved_training_set[" << i
+                << "] dimensions: " << split_training_set.at(i).getInputWidth() << "x"
+                << split_training_set.at(i).getInputHeight() << std::endl;
+      sub_collections.at(i).training_set = std::move(split_training_set.at(i));
+      std::cout << "moved_training_set[" << i
+                << "] dimensions: " << sub_collections.at(i).training_set.getInputWidth() << "x"
+                << sub_collections.at(i).training_set.getInputHeight() << std::endl;
+      sub_collections.at(i).makeTrainingTargets();
       std::cout << "\t<<TrainingCollection::split() Part " << i << " done." << std::endl;
     }
 
     std::cout << "< TrainingCollection::split() Training split into " << n << " parts" << std::endl;
-    return collections;
   }
 }   // namespace control

@@ -39,9 +39,9 @@ void mpi_put(const std::string &message, tscl::Log::log_level level = tscl::Log:
   msg.insert(0, rank == 0 ? "\033[0;33m" : "\033[0;35m");
   msg.append("\033[0m");
 
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, win_mutex);   // Lock the mutex
+  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, win_mutex);   // Lock the mutex
   tscl::logger(msg, level);
-  MPI_Win_unlock(0, win_mutex);   // Unlock the mutex
+  MPI_Win_unlock(rank, win_mutex);   // Unlock the mutex
 }
 
 // Create a single mutex for all the processes, accessible by MPI_Win_lock
@@ -52,63 +52,74 @@ void create_output_mutex() {
   mpi_put("Mutex created in main scope");
 }
 
-void initializeMPI(int &rank, int &world_size) {
+void initializeMPI() {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+  MPI_Comm_size(MPI_COMM_WORLD, &nprocess);
   create_output_mutex();
 }
 
-void receiveTensor(math::clFTensor &tensor, std::vector<size_t> &ids, std::vector<long> class_ids,
-                   size_t tensor_index) {
+void receiveTensor(math::clFTensor &tensor, std::string &class_name, std::vector<size_t> &ids,
+                   std::vector<long> &class_ids, size_t tensor_index) {
   mpi_put("> receiveTensor(...)");
   MPI_Status status;
 
   // Receive the tensors dimensions [OFFSET, ROWS, COLS, DEPTH]
-  std::vector<unsigned long> tensor_dimensions(4);
-  MPI_Recv(tensor_dimensions.data(), 4, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  std::array<unsigned long, 4> tensor_dimensions{};
+  MPI_Recv(tensor_dimensions.data(), 4, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, &status);
   mpi_put("Received tensor " + std::to_string(tensor_index) + " dimensions: (" +
-          std::to_string(tensor_dimensions.at(0)) + ", " + std::to_string(tensor_dimensions.at(1)) +
-          ", " + std::to_string(tensor_dimensions.at(2)) + ", " +
-          std::to_string(tensor_dimensions.at(3)) + ")");
+          std::to_string(tensor_dimensions[0]) + ", " + std::to_string(tensor_dimensions[1]) +
+          ", " + std::to_string(tensor_dimensions[2]) + ", " +
+          std::to_string(tensor_dimensions[3]) + ")");
+  size_t tensor_depth = tensor_dimensions[3];
 
   // Receive the tensor
   math::clFTensor tmp_tensor(tensor_dimensions.at(1), tensor_dimensions.at(2),
                              tensor_dimensions.at(3));
+
   math::FloatMatrix tmp_matrix(tensor_dimensions.at(1), tensor_dimensions.at(2));
-  for (int z = 0; z < tensor_dimensions.at(3); z++) {
+  for (int z = 0; z < tensor_depth; z++) {
     MPI_Recv(tmp_matrix.getData(), (int) (tensor_dimensions.at(1) * tensor_dimensions.at(2)),
              MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    mpi_put("Received fMatrix " + std::to_string(z));
-    tmp_tensor[z] = math::clFMatrix(tmp_matrix);
+    tmp_tensor[z] = math::clFMatrix(tmp_matrix, true);
   }
   mpi_put("Received entire tensor " + std::to_string(tensor_index));
 
+  // Copy the temporary tensor to the final one
+  /*cl::CommandQueue queue(cl::Context::getDefault(), cl::Device::getDefault());
+  tmp_tensor.copy(tensor, queue, true);*/
+
+  tensor = std::move(tmp_tensor);
+
   // Receive the samples ids
-  int nb_ids = 0;
-  MPI_Probe(0, 0, MPI_COMM_WORLD, &status);
-  MPI_Get_count(&status, MPI_UNSIGNED_LONG, &nb_ids);
-  ids.resize(nb_ids);
-  MPI_Recv(ids.data(), nb_ids, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-  mpi_put("Received " + std::to_string(nb_ids) + " ids");
+  ids.resize(tensor_depth);
+  MPI_Recv(ids.data(), (int) ids.size(), MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD,
+           MPI_STATUS_IGNORE);
+  mpi_put("Received " + std::to_string(tensor.getDepth()) + " ids");
 
   // Receive the samples class ids
-  int nb_class_ids = 0;
+  class_ids.resize(tensor_depth);
+  MPI_Recv(class_ids.data(), (int) class_ids.size(), MPI_LONG, 0, 0, MPI_COMM_WORLD,
+           MPI_STATUS_IGNORE);
+  mpi_put("Received " + std::to_string(tensor.getDepth()) + " class ids");
+
+  // Receive class_name
   MPI_Probe(0, 0, MPI_COMM_WORLD, &status);
-  MPI_Get_count(&status, MPI_UNSIGNED_LONG, &nb_class_ids);
-  class_ids.resize(nb_class_ids);
-  MPI_Recv(class_ids.data(), nb_class_ids, MPI_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-  mpi_put("Received " + std::to_string(nb_class_ids) + " class ids");
-
-  // Todo: assign referenced tensor
-
+  int class_name_length;
+  MPI_Get_count(&status, MPI_CHAR, &class_name_length);
+  class_name.resize(class_name_length);
+  MPI_Recv(class_name.data(), class_name.size(), MPI_CHAR, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  mpi_put("Received class name: " + class_name);
 
   mpi_put("< receiveTensor(...)");
 }
 
-void sendTensor(const InputSet &input_set, const math::clFTensor &tensor, int dest) {
+void sendTensor(const InputSet &input_set, const std::string &class_name,
+                const math::clFTensor &tensor, int dest, size_t tensor_index) {
   mpi_put("> sendTensor(...)");
+  size_t tensor_class_offset = 0;
+  for (size_t i = 0; i < tensor_index; i++)
+    tensor_class_offset += input_set.getTensor(i).getDepth();
 
-  const auto &tensor_buffer = tensor.getBuffer();
   MPI_Request dimension_request;
 
   // Get tensor dimensions
@@ -116,67 +127,112 @@ void sendTensor(const InputSet &input_set, const math::clFTensor &tensor, int de
   size_t rows = tensor.getRows();
   size_t cols = tensor.getCols();
   // Create an aligned tuple of dimensions
-  std::tuple<unsigned long, unsigned long, unsigned long, unsigned long> dims =
-          std::make_tuple(tensor.getOffset(), rows, cols, depth);
+  std::array<unsigned long, 4> dims{tensor.getOffset(), rows, cols, depth};
 
   // Send the dimensions [OFFSET, ROWS, COLS, DEPTH]
   mpi_put("Sending tensor dimensions (" + std::to_string(tensor.getOffset()) + "," +
           std::to_string(rows) + "," + std::to_string(cols) + "," + std::to_string(depth) +
           ") to " + std::to_string(dest));
-  MPI_Isend(&dims, 4, MPI_UNSIGNED_LONG, dest, 0, MPI_COMM_WORLD, &dimension_request);
+  // MPI_Isend(&dims, 4, MPI_UNSIGNED_LONG, dest, 0, MPI_COMM_WORLD, &dimension_request);
+  MPI_Send(&dims, 4, MPI_UNSIGNED_LONG, dest, 0, MPI_COMM_WORLD);
 
   // Wait for the dimensions to be sent
-  MPI_Wait(&dimension_request, MPI_STATUS_IGNORE);
+  // MPI_Wait(&dimension_request, MPI_STATUS_IGNORE);
   mpi_put("Sent tensor dimensions to " + std::to_string(dest));
+
+  assert(depth == tensor.getMatrices().size());
 
   // Send the tensor
   mpi_put("Sending tensor to " + std::to_string(dest));
-  for (int z = 0; z < tensor.getMatrices().size(); z++) {
-    auto matrix = tensor[z];
-    MPI_Send(matrix.toFloatMatrix().getData(), (int) matrix.size(), MPI_FLOAT, dest, 0,
+  for (int z = 0; z < tensor.getMatrices().size(); z++)
+    MPI_Send(tensor[z].toFloatMatrix().getData(), (int) tensor[z].size(), MPI_FLOAT, dest, 0,
              MPI_COMM_WORLD);
-  }
   mpi_put("Sent tensor " + std::to_string(dest) + " to process " + std::to_string(dest));
 
   // Send samples ids
-  auto class_ids = input_set.getSamplesIds();
+  std::vector<unsigned long> class_ids(tensor.getDepth());
+  for (size_t i = 0; i < tensor.getDepth(); i++)
+    class_ids[i] = input_set.getSamplesIds().at(tensor_class_offset + i);
   mpi_put("Sending samples ids to " + std::to_string(dest));
   MPI_Send(class_ids.data(), (int) class_ids.size(), MPI_UNSIGNED_LONG, dest, 0, MPI_COMM_WORLD);
   mpi_put("Sent class ids to " + std::to_string(dest));
 
   // Send samples class ids
-  auto samples_class_ids = input_set.getSamplesClassIds();
+  std::vector<long> samples_class_ids(tensor.getDepth());
+  for (size_t i = 0; i < tensor.getDepth(); i++)
+    samples_class_ids[i] = input_set.getSamplesClassIds().at(tensor_class_offset + i);
   mpi_put("Sending samples class ids to " + std::to_string(dest));
   MPI_Send(samples_class_ids.data(), (int) samples_class_ids.size(), MPI_LONG, dest, 0,
            MPI_COMM_WORLD);
   mpi_put("Sent samples class ids to " + std::to_string(dest));
 
+  mpi_put("Sending class name " + class_name + " to " + std::to_string(dest));
+  MPI_Send(class_name.c_str(), class_name.size(), MPI_CHAR, dest, 0, MPI_COMM_WORLD);
+  mpi_put("Sent class name to " + std::to_string(dest));
+
   mpi_put("< sendTensor(...)");
 }
 
-void scatterTrainingCollections(const std::vector<TrainingCollection> &send_collections,
-                                TrainingCollection &recv_collection) {
+TrainingCollection scatterTrainingCollections(std::vector<TrainingCollection> &send_collections) {
+  std::array<unsigned long, 2> collection_dim{};
   if (rank == 0) {
-    for (int p = 0; p < nprocess; p++) {
+    auto &set = send_collections.at(0).getTrainingSet();
+    collection_dim = {set.getInputWidth(), set.getInputHeight()};
+    assert(std::all_of(collection_dim.cbegin(), collection_dim.cend(),
+                       [](const auto &e) { return e > 0; }));
+    mpi_put("Sending collection dimensions: " + std::to_string(collection_dim.at(0)) + "x" +
+            std::to_string(collection_dim.at(1)));
+    for (int p = 1; p < nprocess; p++)
+      MPI_Send(collection_dim.data(), 2, MPI_UNSIGNED_LONG, p, 0, MPI_COMM_WORLD);
+  } else {
+    MPI_Recv(collection_dim.data(), 2, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  }
+  TrainingCollection recv_collection(collection_dim.at(0), collection_dim.at(1));
+
+  mpi_put("Recv_collection.dimensions: " + std::to_string(collection_dim.at(0)) + "x" +
+          std::to_string(collection_dim.at(1)));
+
+  if (rank == 0) {
+    for (int p = 1; p < nprocess; p++) {
       const TrainingCollection &current_collection = send_collections.at(p);
       assert(!current_collection.getTargets().empty());
 
-      MPI_Send((const void *) current_collection.getTargets().size(), 1, MPI_UNSIGNED_LONG, p, 0,
-               MPI_COMM_WORLD);
+      // Send the collection size
+      mpi_put("Sending collection size (" + std::to_string(current_collection.getTargets().size()) +
+              ") to " + std::to_string(p));
+      const unsigned long current_targets_count = current_collection.getTargets().size();
+      MPI_Send(&current_targets_count, 1, MPI_UNSIGNED_LONG, p, 0, MPI_COMM_WORLD);
 
-      for (size_t t = 0; t < current_collection.getTargets().size(); t++)
-        sendTensor(current_collection.getTrainingSet(), current_collection.getTargets().at(t), p);
+      for (size_t t = 0; t < current_collection.getTrainingSet().getTensorCount(); t++)
+        sendTensor(current_collection.getTrainingSet(),
+                   current_collection.getTrainingSet().getClasses().at(t),
+                   current_collection.getTrainingSet().getTensor(t), p, t);
     }
   } else {
     unsigned long nb_targets = 0;
     MPI_Recv(&nb_targets, 1, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     mpi_put("Received " + std::to_string(nb_targets) + ", the targets count, from process 0");
-    std::vector<math::clFTensor> targets(nb_targets);
+
+
     std::vector<size_t> ids;
     std::vector<long> class_ids;
+    math::clFTensor tensor;
+    std::vector<std::string> class_names(nb_targets);
 
-    for (size_t t = 0; t < nb_targets; t++) receiveTensor(targets.at(t), ids, class_ids, t);
+    for (size_t t = 0; t < nb_targets; t++) {
+      receiveTensor(tensor, class_names.at(t), ids, class_ids, t);
+      mpi_put("Received tensor " + std::to_string(t) + " from process 0");
+      mpi_put("Received tensor ids: " + std::to_string(ids.size()));
+      mpi_put("Received tensor class ids: " + std::to_string(class_ids.size()));
+      recv_collection.getTrainingSet().append(std::move(tensor), ids, class_ids);
+    }
+    recv_collection.getTrainingSet().updateClasses(class_names);
+    recv_collection.display();
+    recv_collection.makeTrainingTargets();
   }
+
+  if (rank == 0) recv_collection = std::move(send_collections.at(0));
+  return recv_collection;
 }
 
 // This function is quite big, but it allows the user to trivially specify the hyperparameters in
@@ -190,7 +246,6 @@ bool createAndTrain(std::filesystem::path const &input_path,
   if (not std::filesystem::exists(output_path)) std::filesystem::create_directories(output_path);
 
   // MPI shared variables
-  TrainingCollection training_collection;
   std::vector<TrainingCollection> training_collections;
 
   // Change this for benchmarking
@@ -257,26 +312,35 @@ bool createAndTrain(std::filesystem::path const &input_path,
       // Split the dataset into nprocess parts
       mpi_put("Splitting dataset...", tscl::Log::Information);
       training_collections.reserve(nprocess);
-      training_collections = full_training_collection.split(nprocess);
+      full_training_collection.split(nprocess, training_collections);
       mpi_put("Dataset split", tscl::Log::Information);
 
       for (auto &item : training_collections) item.display();
     }
   }
 
-  return true;
 
+  // Repartition the training collections
   mpi_put("Scattering dataset...", tscl::Log::Information);
-  scatterTrainingCollections(training_collections, training_collection);
+  TrainingCollection local_training_collection = scatterTrainingCollections(training_collections);
   mpi_put("Dataset scattered", tscl::Log::Information);
 
+  assert(local_training_collection.getTrainingSet().getTensorCount() > 0);
+  assert(!local_training_collection.getTrainingSet().getSamplesClassIds().empty());
+  assert(!local_training_collection.getTrainingSet().getSamplesIds().empty());
+  assert(local_training_collection.getTrainingSet().getClassCount() > 0);
+
+  sleep(rank);
+  local_training_collection.display();
   return true;
 
-  topology.pushBack(training_collection.getClassCount());
+  topology.pushBack(local_training_collection.getClassCount());
 
-  logger("Training set size: " + std::to_string(training_collection.getTrainingSet().getSize()),
+  logger("Training set size: " +
+                 std::to_string(local_training_collection.getTrainingSet().getSize()),
          tscl::Log::Trace);
-  logger("Testing set size: " + std::to_string(training_collection.getEvaluationSet().getSize()),
+  logger("Testing set size: " +
+                 std::to_string(local_training_collection.getEvaluationSet().getSize()),
          tscl::Log::Trace);
 
 
@@ -302,8 +366,8 @@ bool createAndTrain(std::filesystem::path const &input_path,
   logger("Creating scheduler", tscl::Log::Debug);
 
   ParallelScheduler::Builder scheduler_builder;
-  scheduler_builder.setTrainingSets(training_collection.getTrainingSet().getTensors(),
-                                    training_collection.getTargets());
+  scheduler_builder.setTrainingSets(local_training_collection.getTrainingSet().getTensors(),
+                                    local_training_collection.getTargets());
   // Set the resources for the scheduler
   scheduler_builder.setMaxThread(kMaxThread, kAllowMultipleThreadPerDevice);
   scheduler_builder.setDevices(utils::cl_wrapper.getDevices());
@@ -317,7 +381,8 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // SchedulerProfiler sc_profiler(scheduler_builder.build(), output_path / "scheduler");
   //  sc_profiler.setVerbose(false);
 
-  ModelEvolutionTracker evaluator(output_path / "model_evolution", *model, training_collection);
+  ModelEvolutionTracker evaluator(output_path / "model_evolution", *model,
+                                  local_training_collection);
 
   logger("Starting run", tscl::Log::Debug);
   MPITrainingController controller(kMaxEpoch, evaluator, *scheduler);
@@ -353,7 +418,7 @@ int main(int argc, char **argv) {
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);
 
   MPI_Init(&argc, &argv);
-  initializeMPI(rank, nprocess);
+  initializeMPI();
   auto ret = createAndTrain(args[1], args.size() == 3 ? args[2] : "runs/test");
   MPI_Finalize();
   return ret;
