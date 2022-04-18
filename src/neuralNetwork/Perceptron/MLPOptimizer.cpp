@@ -211,7 +211,7 @@ namespace nnet {
   math::clFTensor MLPOptimizer::Operation::computeGradient(size_t thread_rank,
                                                            const math::clFTensor &inputs,
                                                            const math::clFTensor &targets,
-                                                           cl::CommandQueue &batch_queue) {
+                                                           cl::CommandQueue batch_queue) {
     if (thread_rank > caches.size())
       throw std::invalid_argument("Error: Only " + std::to_string(caches.size()) +
                                   " caches reserved, tried to access cache " +

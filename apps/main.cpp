@@ -44,7 +44,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   constexpr int kTensorSize = 512;
   // The size of the batch. We highly recommend using a multiple/dividend of the tensor size
   // to avoid batch fragmentation
-  constexpr int kBatchSize = 16;
+  constexpr int kBatchSize = 64;
 
   constexpr float kLearningRate = 0.08;
   constexpr float kMomentum = 0.9;
@@ -61,7 +61,6 @@ bool createAndTrain(std::filesystem::path const &input_path,
   constexpr size_t kMaxEpoch = 75;
   // If set to true, the scheduler will move batches around to ensure each batch used for
   // computation is of size kBatchSize
-  constexpr bool kAllowBatchDefragmentation = false;
   constexpr size_t kMaxDeviceCount = 4;
 
   // utils::clPlatformSelector::initOpenCL();
@@ -123,16 +122,13 @@ bool createAndTrain(std::filesystem::path const &input_path,
   logger("Creating scheduler", tscl::Log::Debug);
 
   ParallelScheduler::Builder scheduler_builder;
-  scheduler_builder.setTrainingSets(training_collection.getTrainingSet().getTensors(),
-                                    training_collection.getTargets());
+  scheduler_builder.setJob({kBatchSize, training_collection.getTrainingSet().getTensors(),
+                            training_collection.getTargets()});
   // Set the resources for the scheduler
   scheduler_builder.setMaxThread(kMaxThread, kAllowMultipleThreadPerDevice);
   scheduler_builder.setDevices(utils::cl_wrapper.getDevices());
 
   scheduler_builder.setOptimizer(*optimizer);
-
-  // Set the batch size, and allow/disallow batch optimization
-  scheduler_builder.setBatchSize(kBatchSize, kAllowBatchDefragmentation);
 
   auto scheduler = scheduler_builder.build();
   // SchedulerProfiler sc_profiler(scheduler_builder.build(), output_path / "scheduler");

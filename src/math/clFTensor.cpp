@@ -48,7 +48,7 @@ namespace math {
     if (size() != 0) {
       cl::Event evt;
       queue.enqueueCopyBuffer(other.data, data, other.getOffsetInBytes(), getOffsetInBytes(),
-                              sizeInBytes(), nullptr, nullptr);
+                              sizeInBytes(), nullptr, &evt);
       if (blocking) evt.wait();
     }
     return *this;

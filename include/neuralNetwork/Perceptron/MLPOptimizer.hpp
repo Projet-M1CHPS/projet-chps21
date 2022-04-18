@@ -82,12 +82,12 @@ namespace nnet {
     ~Operation() override = default;
 
     void operator()(size_t thread_rank, const math::clFTensor &inputs,
-                    const math::clFTensor &targets, cl::CommandQueue &batch_queue) override {
+                    const math::clFTensor &targets, cl::CommandQueue batch_queue) override {
       computeGradient(thread_rank, inputs, targets, batch_queue);
     }
 
     math::clFTensor computeGradient(size_t thread_rank, const math::clFTensor &inputs,
-                                    const math::clFTensor &targets, cl::CommandQueue &batch_queue);
+                                    const math::clFTensor &targets, cl::CommandQueue batch_queue);
 
     void reserveCaches(size_t num_threads) override;
 
