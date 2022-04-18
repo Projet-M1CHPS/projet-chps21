@@ -104,7 +104,7 @@ namespace math {
           cblas_dcopy(rows * cols, other.data.get(), 1, data.get(), 1);
         } else
 #endif
-        std::memcpy(data.get(), other.getData(), sizeof(T) * rows * cols);
+          std::memcpy(data.get(), other.getData(), sizeof(T) * rows * cols);
       }
       return *this;
     }
@@ -169,7 +169,7 @@ namespace math {
         cblas_daxpy(rows * cols, 1.0, other_data, 1, data.get(), 1);
       } else
 #endif
-      for (size_t i = 0; i < rows * cols; i++) { data[i] += other_data[i]; }
+        for (size_t i = 0; i < rows * cols; i++) { data[i] += other_data[i]; }
       return *this;
     }
 
@@ -195,7 +195,7 @@ namespace math {
         cblas_daxpy(rows * cols, 1.0, data.get(), 1, res_data, 1);
       } else
 #endif
-      for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] + other_data[i]; }
+        for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] + other_data[i]; }
 
       return res;
     }
@@ -216,7 +216,7 @@ namespace math {
         cblas_daxpy(rows * cols, -1.0, other_data, 1, data.get(), 1);
       } else
 #endif
-      for (size_t i = 0; i < rows * cols; i++) { data[i] -= other_data[i]; }
+        for (size_t i = 0; i < rows * cols; i++) { data[i] -= other_data[i]; }
 
       return *this;
     }
@@ -243,7 +243,7 @@ namespace math {
         cblas_daxpy(rows * cols, -1.0, other_data, 1, res_data, 1);
       } else
 #endif
-      for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] - other_data[i]; }
+        for (size_t i = 0; i < rows * cols; i++) { res_data[i] = data[i] - other_data[i]; }
 
       return res;
     }

@@ -50,6 +50,8 @@ namespace nnet {
     math::clFMatrix &operator[](size_t i) { return weight_updates[i]; }
 
     const math::clFMatrix &operator[](size_t i) const { return weight_updates[i]; }
+    const std::vector<math::clFMatrix> &getWeightsCopy() const { return weight_copy; }
+    const std::vector<math::clFMatrix> &getBiasesCopy() const { return biases_copy; }
 
     void add(size_t index, const math::clFMatrix &delta, size_t contribution_size,
              cl::CommandQueue &queue);
@@ -57,12 +59,17 @@ namespace nnet {
 
     void apply(cl::CommandQueue &queue);
 
-    void clear(cl::CommandQueue& queue);
+    void synchronizeWeights(cl::CommandQueue &queue);
+    void acquireBuffer(cl::CommandQueue &queue);
+
+    void clear(cl::CommandQueue &queue);
 
   protected:
     MLPerceptron *perceptron;
     std::vector<size_t> contributions;
     std::vector<math::clFMatrix> weight_updates;
+    std::vector<math::clFMatrix> weight_copy;
+    std::vector<math::clFMatrix> biases_copy;
 
   private:
     Optimization *optimization;

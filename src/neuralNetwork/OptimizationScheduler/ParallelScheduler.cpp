@@ -44,7 +44,7 @@ namespace nnet {
 
     private:
       static void runBatch(size_t thread_rank, BatchProgression progression, size_t count,
-                           cl::CommandQueue &device, Optimizer::Operation &op);
+                           cl::CommandQueue queue, Optimizer::Operation &op);
 
       std::unique_ptr<asio::thread_pool> worker_pool;
       std::vector<DeviceResource> resources;
@@ -54,7 +54,6 @@ namespace nnet {
     DefaultDispatcher::DefaultDispatcher(const ParallelScheduler::Policy &policy) {
       size_t total_thread = policy.getMaxThread();
       if (total_thread == 0) { total_thread = std::thread::hardware_concurrency(); }
-      worker_pool = std::make_unique<asio::thread_pool>(total_thread);
 
 
       std::vector<cl::Device> devices =
@@ -62,6 +61,7 @@ namespace nnet {
 
       size_t thread_per_device = total_thread / devices.size();
       size_t remainder = total_thread % devices.size();
+
       if (not policy.hasMultipleThreadPerDevice()) {
         thread_per_device = 1;
         remainder = 0;
@@ -70,6 +70,7 @@ namespace nnet {
         resources.emplace_back(thread_per_device + (i < remainder ? 1 : 0), devices[i]);
       }
       thread_pool_size = thread_per_device * devices.size() + remainder;
+      worker_pool = std::make_unique<asio::thread_pool>(thread_pool_size);
     }
 
     void DefaultDispatcher::dispatch(BatchProgression &progression, size_t batch_size,
@@ -78,8 +79,6 @@ namespace nnet {
       size_t remainder = batch_size % thread_pool_size;
       std::vector<std::future<void>> futures;
 
-      auto lambda = [](size_t thread_rank, BatchProgression p, size_t count, cl::CommandQueue &c,
-                       Optimizer::Operation &op) { runBatch(thread_rank, p, count, c, op); };
       // Ensure we have enough caches for all the threads
       op.reserveCaches(thread_pool_size);
       size_t thread_rank = 0;
@@ -95,10 +94,10 @@ namespace nnet {
 
           // If there isn't enough data to fill the thread pool, break
           if (thread_work == 0) break;
-          auto task = [lambda, thread_rank, thread_work, p = progression, &c = resource.getQueue(j),
-                       &op] { return lambda(thread_rank, p, thread_work, c, op); };
-          auto future = asio::post(*worker_pool, std::packaged_task<void()>(task));
-          futures.push_back(std::move(future));
+          auto thread_lambda = [thread_rank, thread_work, p = progression, c = resource.getQueue(j),
+                                &op] { return runBatch(thread_rank, p, thread_work, c, op); };
+          futures.emplace_back(
+                  asio::post(*worker_pool, std::packaged_task<void(void)>(thread_lambda)));
           progression.progress(local_work_size);
           thread_rank++;
         }
@@ -109,7 +108,7 @@ namespace nnet {
     }
 
     void DefaultDispatcher::runBatch(size_t thread_rank, BatchProgression progression, size_t count,
-                                     cl::CommandQueue &queue, Optimizer::Operation &op) {
+                                     cl::CommandQueue queue, Optimizer::Operation &op) {
       for (size_t i = 0; i < count;) {
         size_t work_size = std::min(count - i, progression.getBatchRemainder());
 

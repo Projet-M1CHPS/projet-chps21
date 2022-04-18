@@ -56,13 +56,13 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   // Maximum number of thread
   // The scheduler is free to use less if it judges necessary
-  constexpr size_t kMaxThread = 1;
+  constexpr size_t kMaxThread = 4;
   constexpr bool kAllowMultipleThreadPerDevice = false;
   constexpr size_t kMaxEpoch = 75;
   // If set to true, the scheduler will move batches around to ensure each batch used for
   // computation is of size kBatchSize
   constexpr bool kAllowBatchDefragmentation = false;
-  constexpr size_t kMaxDeviceCount = 1;
+  constexpr size_t kMaxDeviceCount = 4;
 
   // utils::clPlatformSelector::initOpenCL();
   // Uncomment to display a ncurses-based UI for platform selection
@@ -109,11 +109,14 @@ bool createAndTrain(std::filesystem::path const &input_path,
   if (kOptimType == kUseSGD)
     optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(*model, kLearningRate);
   else if (kOptimType == kUseMomentum)
-    optimizer = nnet::MLPOptimizer::make<nnet::MomentumOptimization>(*model, kLearningRate, kMomentum);
+    optimizer =
+            nnet::MLPOptimizer::make<nnet::MomentumOptimization>(*model, kLearningRate, kMomentum);
   else if (kOptimType == kUseDecay)
-    optimizer = nnet::MLPOptimizer::make<nnet::DecayOptimization>(*model, kLearningRate, kDecayRate);
+    optimizer =
+            nnet::MLPOptimizer::make<nnet::DecayOptimization>(*model, kLearningRate, kDecayRate);
   else if (kOptimType == kUseDecayMomentum)
-    optimizer = nnet::MLPOptimizer::make<nnet::DecayMomentumOptimization>(*model, kLearningRate, kDecayRate, kMomentum);
+    optimizer = nnet::MLPOptimizer::make<nnet::DecayMomentumOptimization>(*model, kLearningRate,
+                                                                          kDecayRate, kMomentum);
 
   // ParallelScheduler scheduler(batch, input, target);
 

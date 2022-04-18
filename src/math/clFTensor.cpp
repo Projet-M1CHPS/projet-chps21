@@ -6,7 +6,8 @@ namespace math {
     // clblast batched operations takes a vector of offsets
     // Define a few helper functions to make the code more readable
     std::vector<size_t> makeOffsetVector(const clFTensor &tensor) {
-      std::vector<size_t> res(tensor.getDepth());
+      std::vector<size_t> res;
+      res.reserve(tensor.getDepth());
       for (size_t i = 0; i < tensor.getDepth(); i++) { res[i] = tensor.getOffsetOf(i); }
       return res;
     }
@@ -47,7 +48,7 @@ namespace math {
     if (size() != 0) {
       cl::Event evt;
       queue.enqueueCopyBuffer(other.data, data, other.getOffsetInBytes(), getOffsetInBytes(),
-                              sizeInBytes(), nullptr, &evt);
+                              sizeInBytes(), nullptr, nullptr);
       if (blocking) evt.wait();
     }
     return *this;
@@ -67,13 +68,15 @@ namespace math {
 
   std::vector<clFMatrix> clFTensor::getMatrices() {
     std::vector<clFMatrix> matrices;
-    for (size_t i = 0; i < depth; i++) { matrices.push_back((*this)[i]); }
+    matrices.reserve(depth);
+    for (size_t i = 0; i < depth; i++) { matrices.emplace_back((*this)[i]); }
     return matrices;
   }
 
   [[nodiscard]] std::vector<clFMatrix> clFTensor::getMatrices() const {
     std::vector<clFMatrix> matrices;
-    for (size_t i = 0; i < depth; i++) { matrices.push_back((*this)[i]); }
+    matrices.reserve(depth);
+    for (size_t i = 0; i < depth; i++) { matrices.emplace_back((*this)[i]); }
     return matrices;
   }
 
@@ -98,6 +101,7 @@ namespace math {
       clFTensor part = shallowCopy();
       part.depth = i < z_dim_remainder ? z_dim_part + 1 : z_dim_part;
       part.offset = local_offset;
+      part.is_view = true;
       local_offset += part.depth;
       parts.push_back(std::move(part));
     }
@@ -111,6 +115,7 @@ namespace math {
     clFTensor slice = shallowCopy();
     slice.depth = end - begin;
     slice.offset = begin;
+    slice.is_view = true;
     return slice;
   }
 
@@ -159,6 +164,7 @@ namespace math {
     size_t k = (transpose_a ? A_rows : A_cols);
 
     clFTensor res((transpose_a ? A_cols : A_rows), (transpose_b ? B_rows : B_cols), B.depth);
+    res.fill(0, queue, blocking);
     cl::Event evt;
 
     std::vector<float> alphas(B.depth, alpha);
@@ -196,24 +202,23 @@ namespace math {
     // R_t = alpha * A * B_t + beta * C
     // Since gemm will use R_t as the output, we must fill C to R_t
     clFTensor res(C_rows, C_cols, B.depth);
-    for (size_t i = 0; i < res.depth; i++) { res[i].copy(C, queue, false); }
-
+    res.fill(0.0f, queue, false);
 
     std::vector<float> alphas(B.depth, alpha);
     std::vector<float> betas(B.depth, 1.0f);
     std::vector<size_t> a_offset(B.depth, A.getOffset());
 
-    std::vector<size_t> b_offsets(B.depth);
-    for (size_t i = 0; i < B.depth; i++) b_offsets[i] = B.getOffsetOf(i);
-
-    std::vector<size_t> c_offset(B.depth);
-    for (size_t i = 0; i < B.depth; i++) c_offset[i] = res.getOffsetOf(i);
+    auto b_offsets = makeOffsetVector(B);
+    auto res_offset = makeOffsetVector(res);
 
     cl::Event evt;
     clblast::GemmBatched<float>(clblast::Layout::kRowMajor, ta, tb, m, n, k, alphas.data(),
                                 A.getBuffer()(), a_offset.data(), A_cols, B.data(),
-                                b_offsets.data(), B_cols, betas.data(), res.data(), c_offset.data(),
-                                C_cols, res.depth, &queue(), &evt());
+                                b_offsets.data(), B_cols, betas.data(), res.data(),
+                                res_offset.data(), C_cols, res.depth, &queue());
+    auto c_offset = makeNullOffsetVector(C, res.depth);
+    clblast::AxpyBatched<float>(res.rows * res.cols, betas.data(), C.getBuffer()(), c_offset.data(),
+                                1, res.data(), res_offset.data(), 1, res.depth, &queue(), &evt());
     if (blocking) evt.wait();
 
     return res;
@@ -236,6 +241,7 @@ namespace math {
     size_t k = (transpose_a ? A_rows : A_cols);
 
     clFTensor res((transpose_a ? A_cols : A_rows), (transpose_b ? B_rows : B_cols), B.depth);
+    res.fill(0.0f, queue, false);
     cl::Event evt;
 
     std::vector<float> alphas(A.depth, alpha);
@@ -257,10 +263,11 @@ namespace math {
   clFMatrix clFTensor::sumCollapse(cl::CommandQueue &queue, bool blocking) const {
     clFMatrix result(rows, cols);
     result.fill(0.0f, queue, false);
+
     if (depth == 0) { return result; }
 
     for (size_t i = 0; i < depth; i++) {
-      const clFMatrix& mat = (*this)[i];
+      clFMatrix mat = (*this)[i];
       if (i == depth - 1) {
         result.ipadd(1.0f, mat, queue, blocking);
       } else {
