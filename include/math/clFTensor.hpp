@@ -44,6 +44,12 @@ namespace math {
      */
     clFTensor shallowCopy() const;
 
+    void fill(float elem, cl::CommandQueue &queue, bool blocking) {
+      cl::Event event;
+      queue.enqueueFillBuffer(data, elem, getOffsetInBytes(), sizeInBytes(), nullptr, &event);
+      if (blocking) event.wait();
+    }
+
     std::vector<clFTensor> slice(size_t ndiv) const;
 
     /**
@@ -66,7 +72,9 @@ namespace math {
      * @param index
      * @return
      */
-    size_t getOffsetOfInBytes(size_t matrix_index) const { return getOffsetOf(matrix_index) * sizeof(float); }
+    size_t getOffsetOfInBytes(size_t matrix_index) const {
+      return getOffsetOf(matrix_index) * sizeof(float);
+    }
 
     /**
      * @brief Returns the offset in matrix of this tensor.
@@ -187,8 +195,7 @@ namespace math {
                                  bool transpose_b, const clFTensor &B, cl::CommandQueue &queue,
                                  bool blocking = false);
 
-    clFMatrix sumCollapse(cl::CommandQueue &queue,
-                              bool blocking = false) const;
+    clFMatrix sumCollapse(cl::CommandQueue &queue, bool blocking = false) const;
 
     clFTensor &iphadamard(const clFTensor &other, cl::CommandQueue &queue, bool blocking = false);
 

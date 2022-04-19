@@ -43,18 +43,14 @@ namespace nnet {
 
 
   bool MLPModel::load(const std::filesystem::path &path) {
-    try {
-      auto tmp = MLPModelSerializer::readFromFile(path);
-      *this = std::move(tmp);
-      return true;
-    } catch (std::exception &e) { return false; }
+    auto tmp = MLPModelSerializer::readFromFile(path);
+    *this = std::move(tmp);
+    return true;
   }
 
   bool MLPModel::save(const std::filesystem::path &path) const {
-    try {
-      MLPModelSerializer::writeToFile(path, *this);
-      return true;
-    } catch (std::exception &e) { return false; }
+    MLPModelSerializer::writeToFile(path, *this);
+    return true;
   }
 
 }   // namespace nnet

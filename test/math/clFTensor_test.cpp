@@ -228,12 +228,12 @@ TEST(clFTensor, canSumCollapse) {
   }
 
   cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
-  FloatMatrix tmp = tensor.meanSumCollapse(queue, true).toFloatMatrix();
+  FloatMatrix tmp = tensor.sumCollapse(queue, true).toFloatMatrix();
   FloatMatrix exact(5, 5);
   exact.fill(0);
   for (auto &buf : a) { exact += buf; }
   for (size_t j = 0; j < exact.getSize(); j++) {
-    EXPECT_NEAR(tmp.getData()[j], exact.getData()[j] / 100, 0.1);
+    EXPECT_NEAR(tmp.getData()[j], exact.getData()[j], 0.1);
   }
 }
 

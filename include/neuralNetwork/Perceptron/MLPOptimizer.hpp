@@ -50,6 +50,8 @@ namespace nnet {
     math::clFMatrix &operator[](size_t i) { return weight_updates[i]; }
 
     const math::clFMatrix &operator[](size_t i) const { return weight_updates[i]; }
+    const std::vector<math::clFMatrix> &getWeightsCopy() const { return weight_copy; }
+    const std::vector<math::clFMatrix> &getBiasesCopy() const { return biases_copy; }
 
     void add(size_t index, const math::clFMatrix &delta, size_t contribution_size,
              cl::CommandQueue &queue);
@@ -57,12 +59,17 @@ namespace nnet {
 
     void apply(cl::CommandQueue &queue);
 
-    void clear(cl::CommandQueue& queue);
+    void synchronizeWeights(cl::CommandQueue &queue);
+    void acquireBuffer(cl::CommandQueue &queue);
+
+    void clear(cl::CommandQueue &queue);
 
   protected:
     MLPerceptron *perceptron;
     std::vector<size_t> contributions;
     std::vector<math::clFMatrix> weight_updates;
+    std::vector<math::clFMatrix> weight_copy;
+    std::vector<math::clFMatrix> biases_copy;
 
   private:
     Optimization *optimization;
@@ -75,12 +82,12 @@ namespace nnet {
     ~Operation() override = default;
 
     void operator()(size_t thread_rank, const math::clFTensor &inputs,
-                    const math::clFTensor &targets, cl::CommandQueue &batch_queue) override {
+                    const math::clFTensor &targets, cl::CommandQueue batch_queue) override {
       computeGradient(thread_rank, inputs, targets, batch_queue);
     }
 
     math::clFTensor computeGradient(size_t thread_rank, const math::clFTensor &inputs,
-                                    const math::clFTensor &targets, cl::CommandQueue &batch_queue);
+                                    const math::clFTensor &targets, cl::CommandQueue batch_queue);
 
     void reserveCaches(size_t num_threads) override;
 

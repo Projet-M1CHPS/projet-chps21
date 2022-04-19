@@ -2,10 +2,17 @@
 
 namespace nnet {
 
-  BatchOptimizationScheduler::BatchOptimizationScheduler(
-          size_t batch_size, Optimizer &optimizer, const std::vector<math::clFTensor> &inputs,
-          const std::vector<math::clFTensor> &targets)
-      : batch_size(batch_size), input_tensors(&inputs), target_tensors(&targets),
-        optimizer_operation(optimizer.makeBatchOperation()), optimizer(&optimizer) {}
+  BatchSchedulerJob::BatchSchedulerJob(size_t batch_size,
+                                       const std::vector<math::clFTensor> &inputs,
+                                       const std::vector<math::clFTensor> &targets)
+      : batch_size(batch_size), inputs(&inputs), targets(&targets) {}
+
+  size_t BatchSchedulerJob::getGlobalWorkSize() const {
+    size_t res = 0;
+    for (const auto &t : *inputs) { res += t.getDepth(); }
+    return res;
+  }
+
+  BatchOptimizationScheduler::BatchOptimizationScheduler(const BatchSchedulerJob &job) : job(job) {}
 
 }   // namespace nnet

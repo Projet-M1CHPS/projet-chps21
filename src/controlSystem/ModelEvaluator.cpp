@@ -95,7 +95,8 @@ namespace control {
     fs::path target_path = output_path / subdir;
     if (not fs::exists(target_path)) fs::create_directories(target_path);
     if (not fs::exists(target_path / "f1")) fs::create_directories(target_path / "f1");
-    if (not fs::exists(target_path / "precision")) fs::create_directories(target_path / "precision");
+    if (not fs::exists(target_path / "precision"))
+      fs::create_directories(target_path / "precision");
     if (not fs::exists(target_path / "recall")) fs::create_directories(target_path / "recall");
 
     // If something fails, just throw an exception

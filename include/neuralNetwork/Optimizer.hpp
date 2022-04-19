@@ -58,7 +58,7 @@ namespace nnet {
      * @param batch_device The device that must be used to run this operation.
      */
     virtual void operator()(size_t thread_rank, const math::clFTensor &inputs,
-                            const math::clFTensor &targets, cl::CommandQueue &queue) = 0;
+                            const math::clFTensor &targets, cl::CommandQueue queue) = 0;
 
     /**
      * @brief The number of caches to reserve for this operation. This is used to reserve memory for

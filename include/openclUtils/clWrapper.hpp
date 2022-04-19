@@ -57,7 +57,9 @@ namespace utils {
     cl::CommandQueue &getDefaultQueue() { return default_queue; }
 
     // Helper function to disable some devices
-    void restrictDevicesTo(std::vector<cl::Device> allowed_devices) { this->devices = std::move(allowed_devices); }
+    void restrictDevicesTo(std::vector<cl::Device> allowed_devices) {
+      this->devices = std::move(allowed_devices);
+    }
 
     std::vector<cl::Device> &getDevices() { return devices; }
     const std::vector<cl::Device> &getDevices() const { return devices; }

@@ -10,7 +10,7 @@ target_link_libraries(
         BLAS::BLAS
         Math
         gtest
-        clUtils
+        openclUtils
         clblast
 )
 
