@@ -41,10 +41,10 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // One day, we'll have enough time to make this configurable from a file :c
   constexpr int kImageSize = 32;   // We assume we use square images
   // Size to use for images allocation
-  constexpr int kTensorSize = 512;
+  constexpr int kTensorSize = 256;
   // The size of the batch. We highly recommend using a multiple/dividend of the tensor size
   // to avoid batch fragmentation
-  constexpr int kBatchSize = 64;
+  constexpr int kBatchSize = 16;
 
   constexpr float kLearningRate = 0.08;
   constexpr float kMomentum = 0.9;
@@ -58,7 +58,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // The scheduler is free to use less if it judges necessary
   constexpr size_t kMaxThread = 4;
   constexpr bool kAllowMultipleThreadPerDevice = false;
-  constexpr size_t kMaxEpoch = 75;
+  constexpr size_t kMaxEpoch = 20;
   // If set to true, the scheduler will move batches around to ensure each batch used for
   // computation is of size kBatchSize
   constexpr size_t kMaxDeviceCount = 4;
@@ -77,7 +77,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   utils::cl_wrapper.restrictDevicesTo(allowed_devices);
 
   // Do not add the output size, it is automatically set to the number of classes
-  MLPTopology topology = {kImageSize * kImageSize, 64, 64, 64, 64};
+  MLPTopology topology = {kImageSize * kImageSize, 1024, 1024, 1024, 1024, 512, 256};
 
   logger("Loading dataset", tscl::Log::Debug);
   TrainingCollectionLoader loader(kTensorSize, kImageSize, kImageSize);
