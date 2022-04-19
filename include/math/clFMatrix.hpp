@@ -133,7 +133,7 @@ namespace math {
     [[nodiscard]] size_t getRows() const { return rows; }
     [[nodiscard]] size_t getCols() const { return cols; }
     [[nodiscard]] size_t getOffset() const { return offset; }
-    [[nodiscard]] size_t getOffsetInBytes() const { return offset; }
+    [[nodiscard]] size_t getOffsetInBytes() const { return offset * sizeof(float); }
     [[nodiscard]] size_t size() const { return rows * cols; }
     [[nodiscard]] size_t sizeInBytes() const { return size() * sizeof(float); }
 

@@ -111,6 +111,44 @@ void testConvo() {
   std::cout << "output : " << out << std::endl;
 }
 
+void testAxpyB() {
+  auto queue = utils::cl_wrapper.getDefaultQueue();
+  clFTensor tensor(3, 3, 8);
+
+  tensor[0].fill(1.0f, queue);
+  tensor[1].fill(2.0f, queue);
+  tensor[2].fill(3.0f, queue);
+  tensor[3].fill(4.0f, queue);
+  tensor[4].fill(5.0f, queue);
+  tensor[5].fill(6.0f, queue);
+  tensor[6].fill(7.0f, queue);
+  tensor[7].fill(8.0f, queue);
+
+  queue.finish();
+  std::cout << "before : " << tensor << std::endl;
+
+  clFTensor res(3, 3, 4);
+  for (size_t i = 0; i < res.getDepth(); i++) res[i].fill(100.f, queue);
+
+  const size_t n = tensor.getRows() * tensor.getCols();
+
+  std::vector<float> alpha = {1.f, 1.f, 1.f, 1.f};
+  std::vector<size_t> x_offset = {0, 18, 36, 54};
+  std::vector<size_t> y_offset = {0, 9, 18, 27};
+  //{0, 9, 18, 27, 36, 45, 54, 65};
+  //{0, 1, 2, 3, 4, 5, 6, 7};
+
+  clblast::AxpyBatched<float>(n, alpha.data(), tensor.getBuffer()(), x_offset.data(), 1,
+                              res.getBuffer()(), y_offset.data(), 1, 4, &queue(), nullptr);
+
+  std::vector<size_t> xx_offset = {9, 27, 45, 63};
+
+  clblast::AxpyBatched<float>(n, alpha.data(), tensor.getBuffer()(), xx_offset.data(), 1,
+                               res.getBuffer()(), y_offset.data(), 1, 4, &queue(), nullptr);
+
+  queue.finish();
+  std::cout << "after : " << res << std::endl;
+}
 
 void testConvolutionalLayer1Branch() {
   // 1 branch 2 filter/branch 2 input/branch
@@ -363,9 +401,6 @@ void testConvolutionalLayer1BranchBP() {
   std::cout << "output : " << output_tensor << std::endl;
 
   std::cout << "input storage : " << storage.input << std::endl;
-
-  storage.errorFilter =
-          clFTensor(2, 2, number_filter * number_branch * (number_input / number_branch));
 
   clFTensor errors_tensor(5, 5, number_filter * number_branch * (number_input / number_branch));
   errors_tensor[0].fill(1.f, utils::cl_wrapper.getDefaultQueue(), true);
@@ -1226,9 +1261,6 @@ void foo() {
 
   std::cout << "input storage : " << storage.input << std::endl;
 
-  storage.errorFilter =
-          clFTensor(2, 2, number_filter * number_branch * (number_input / number_branch));
-
   clFTensor errors_tensor(5, 5, number_filter * number_branch * (number_input / number_branch));
   errors_tensor[0].fill(1.f, utils::cl_wrapper.getDefaultQueue(), true);
   errors_tensor[1].fill(2.f, utils::cl_wrapper.getDefaultQueue(), true);
@@ -1265,10 +1297,11 @@ int main() {
   utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault());
 
   // testConvo();
+  testAxpyB();
 
   // testConvolutionalLayer1Branch();
   // testConvolutionalLayer1BranchBP();
-  foo();
+  // foo();
   // testConvolutionalLayerXBranch();
 
   // testMaxPoolingLayer();

@@ -46,9 +46,9 @@ namespace nnet {
     [[nodiscard]] const std::vector<std::shared_ptr<CNNTopologyLayer>> &getTopology() const {
       return layers;
     }
-    [[nodiscard]] const size_t getBranchFinal() const { return n_branch_final; }
+    [[nodiscard]] const size_t getNBranchFinal() const { return n_branch_final; }
 
-    [[nodiscard]] std::vector<std::shared_ptr<CNNLayer>> convertToLayer() const;
+    [[nodiscard]] std::vector<std::unique_ptr<CNNLayer>> convertToLayer() const;
     [[nodiscard]] std::vector<std::unique_ptr<CNNStorageBP>> convertToStorage() const;
 
   private:

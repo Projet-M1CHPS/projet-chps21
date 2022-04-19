@@ -66,7 +66,9 @@ namespace math {
      * @param index
      * @return
      */
-    size_t getOffsetOfInBytes(size_t matrix_index) const { return getOffsetOf(matrix_index) * sizeof(float); }
+    size_t getOffsetOfInBytes(size_t matrix_index) const {
+      return getOffsetOf(matrix_index) * sizeof(float);
+    }
 
     /**
      * @brief Returns the offset in matrix of this tensor.
@@ -170,15 +172,7 @@ namespace math {
 
     cl::Buffer getBuffer() const { return data; }
 
-    void reshape(size_t new_rows, size_t new_cols, size_t new_depth)
-    {
-      if(rows * cols * depth != new_rows * new_cols * new_depth)
-        throw std::invalid_argument("clFTensor::reshape: New size does not match old size");
-
-      rows = new_rows;
-      cols = new_cols;
-      depth = new_depth;
-    }
+    void reshape(size_t new_rows, size_t new_cols, size_t new_depth);
 
     clFTensor sub(float factor, const clFTensor &other, cl::CommandQueue &queue,
                   bool blocking = false) const;
@@ -197,8 +191,8 @@ namespace math {
                                  bool transpose_b, const clFTensor &B, cl::CommandQueue &queue,
                                  bool blocking = false);
 
-    clFMatrix sumCollapse(cl::CommandQueue &queue,
-                              bool blocking = false) const;
+    clFMatrix sumCollapse(cl::CommandQueue &queue, bool blocking = false) const;
+
 
     clFTensor &iphadamard(const clFTensor &other, cl::CommandQueue &queue, bool blocking = false);
 

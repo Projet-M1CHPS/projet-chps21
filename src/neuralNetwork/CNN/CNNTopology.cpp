@@ -4,7 +4,7 @@ namespace nnet {
 
   CNNTopology::CNNTopology()
       : inputSize(0, 0), activationFunction(af::ActivationFunctionType::sigmoid) {}
-  
+
   CNNTopology::CNNTopology(const std::pair<size_t, size_t> &inputSize)
       : inputSize(inputSize), activationFunction(af::ActivationFunctionType::sigmoid) {}
 
@@ -14,18 +14,25 @@ namespace nnet {
     return layers[index];
   }
 
-  std::vector<std::shared_ptr<CNNLayer>> CNNTopology::convertToLayer() const {
-    std::vector<std::shared_ptr<CNNLayer>> res;
+  std::vector<std::unique_ptr<CNNLayer>> CNNTopology::convertToLayer() const {
+    std::vector<std::unique_ptr<CNNLayer>> res;
     for (auto &layer : layers) { res.push_back(layer->convertToLayer()); }
+    return res;
+  }
+
+  std::vector<std::unique_ptr<CNNStorageBP>> CNNTopology::convertToStorage() const {
+    std::vector<std::unique_ptr<CNNStorageBP>> res;
+    for (auto &layer : layers) { res.push_back(layer->convertToStorage()); }
     return res;
   }
 
   void CNNTopology::addConvolution(const std::pair<size_t, size_t> &inputSize,
                                    const size_t features,
                                    const std::pair<size_t, size_t> &filterSize,
-                                   const af::ActivationFunctionType aFunction, const size_t nbranch) {
-    layers.push_back(std::make_shared<CNNTopologyLayerConvolution>(
-            inputSize, features, filterSize, aFunction, nbranch));
+                                   const af::ActivationFunctionType aFunction,
+                                   const size_t nbranch) {
+    layers.push_back(std::make_shared<CNNTopologyLayerConvolution>(inputSize, features, filterSize,
+                                                                   aFunction, nbranch));
   }
 
   void CNNTopology::addPooling(const std::pair<size_t, size_t> &inputSize,
@@ -44,7 +51,6 @@ namespace nnet {
         throw std::invalid_argument("Invalid pooling type");
     }
   }
-
 
   const LayerType stringToLayerType(const std::string &str) {
     if (str == "convolution") return LayerType::CONVOLUTION;
@@ -104,6 +110,7 @@ namespace nnet {
     for (auto &i : nn.layers) { os << *i << "\n"; }
     return os;
   }
+
   std::ostream &operator<<(std::ostream &os, const CNNTopologyLayer &layer) {
     return layer.printTo(os);
   }

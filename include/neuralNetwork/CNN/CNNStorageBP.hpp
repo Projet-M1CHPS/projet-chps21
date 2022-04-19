@@ -22,7 +22,7 @@ namespace nnet {
 
     // private:
     clFTensor input;
-    clFTensor errorFilter;
+    clFTensor error_filter;
   };
 
   class CNNStorageBPPooling : public CNNStorageBP {
@@ -53,5 +53,6 @@ namespace nnet {
         : CNNStorageBPPooling(inputSize) {}
     ~CNNStorageBPAvgPooling() = default;
   };
+
 
 }   // namespace nnet

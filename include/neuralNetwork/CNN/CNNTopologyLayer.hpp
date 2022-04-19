@@ -16,22 +16,17 @@ namespace nnet {
     friend std::ostream &operator<<(std::ostream &os, const CNNTopologyLayer &layer);
 
   public:
-    CNNTopologyLayer(const std::pair<size_t, size_t> filter, const size_t nbranch);
+    CNNTopologyLayer(const std::pair<size_t, size_t> inputSize, const std::pair<size_t, size_t> filter, const size_t nbranch);
     ~CNNTopologyLayer() = default;
 
     [[nodiscard]] const std::pair<size_t, size_t> &getFilterSize() const { return filter; }
     [[nodiscard]] virtual const size_t getFeatures() const { return 1; }
 
-    [[nodiscard]] virtual std::shared_ptr<CNNLayer> convertToLayer() const = 0;
-    [[nodiscard]] virtual std::shared_ptr<CNNStorageBP>
-    createStorage(const std::pair<size_t, size_t> &inputSize) const = 0;
+    [[nodiscard]] virtual std::unique_ptr<CNNLayer> convertToLayer() const = 0;
+    [[nodiscard]] virtual std::unique_ptr<CNNStorageBP> convertToStorage() const = 0;
 
     [[nodiscard]] virtual const std::pair<size_t, size_t>
     getOutputSize(const std::pair<size_t, size_t> &inputSize) const = 0;
-
-    static const bool isValidParameters(const std::pair<size_t, size_t> inputSize,
-                                        const std::pair<size_t, size_t> filterSize,
-                                        const size_t stride, const size_t padding);
 
   protected:
     [[nodiscard]] virtual const std::pair<size_t, size_t>
@@ -39,6 +34,7 @@ namespace nnet {
     virtual std::ostream &printTo(std::ostream &) const = 0;
 
   protected:
+    const std::pair<size_t, size_t> input_size;
     const std::pair<size_t, size_t> filter;
     const size_t n_branch;
   };
@@ -48,15 +44,13 @@ namespace nnet {
   public:
     CNNTopologyLayerConvolution(const std::pair<size_t, size_t> inputSize, const size_t features,
                                 const std::pair<size_t, size_t> filter,
-                                const af::ActivationFunctionType aFunction,
-                                const size_t nBranch);
+                                const af::ActivationFunctionType aFunction, const size_t nBranch);
     ~CNNTopologyLayerConvolution() = default;
 
     [[nodiscard]] const size_t getFeatures() const override { return features; }
 
-    [[nodiscard]] std::shared_ptr<CNNLayer> convertToLayer() const override;
-    [[nodiscard]] std::shared_ptr<CNNStorageBP>
-    createStorage(const std::pair<size_t, size_t> &inputSize) const override;
+    [[nodiscard]] std::unique_ptr<CNNLayer> convertToLayer() const override;
+    [[nodiscard]] std::unique_ptr<CNNStorageBP> convertToStorage() const override;
 
     [[nodiscard]] const std::pair<size_t, size_t>
     getOutputSize(const std::pair<size_t, size_t> &inputSize) const override {
@@ -103,9 +97,8 @@ namespace nnet {
                                const std::pair<size_t, size_t> filter, const size_t nBranch);
     ~CNNTopologyLayerMaxPooling() = default;
 
-    [[nodiscard]] std::shared_ptr<CNNLayer> convertToLayer() const override;
-    [[nodiscard]] std::shared_ptr<CNNStorageBP>
-    createStorage(const std::pair<size_t, size_t> &inputSize) const override;
+    [[nodiscard]] std::unique_ptr<CNNLayer> convertToLayer() const override;
+    [[nodiscard]] std::unique_ptr<CNNStorageBP> convertToStorage() const override;
 
   private:
     std::ostream &printTo(std::ostream &) const override;
@@ -117,9 +110,8 @@ namespace nnet {
                                const std::pair<size_t, size_t> filter, const size_t nBranch);
     ~CNNTopologyLayerAvgPooling() = default;
 
-    [[nodiscard]] std::shared_ptr<CNNLayer> convertToLayer() const override;
-    [[nodiscard]] std::shared_ptr<CNNStorageBP>
-    createStorage(const std::pair<size_t, size_t> &inputSize) const override;
+    [[nodiscard]] std::unique_ptr<CNNLayer> convertToLayer() const override;
+    [[nodiscard]] std::unique_ptr<CNNStorageBP> convertToStorage() const override;
 
   private:
     std::ostream &printTo(std::ostream &) const override;

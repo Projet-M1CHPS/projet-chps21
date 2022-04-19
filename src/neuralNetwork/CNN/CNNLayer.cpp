@@ -3,17 +3,54 @@
 
 namespace nnet {
 
+  namespace {
+    clFTensor reduceFilter(cl::CommandQueue &queue, const clFTensor &tensor,
+                           const size_t reduceSize) {
+      return {1, 1, 1};
+    }
+
+    clFTensor reduceInput(cl::CommandQueue &queue, const clFTensor &tensor,
+                          const size_t reduceSize) {
+      return {1, 1, 1};
+    }
+  }   // namespace
+
   CNNLayer::CNNLayer(const std::pair<size_t, size_t> output) : outputSize(output) {}
 
+  void CNNLayer::getWeight(std::vector<clFTensor> &weights) const {}
+
+  bool CNNLayer::setWeight(const clFTensor &weights) { return false; }
 
   CNNConvolutionLayer::CNNConvolutionLayer(const std::pair<size_t, size_t> outputSize,
                                            const std::pair<size_t, size_t> sizeFilter,
                                            const size_t nFilter,
                                            const af::ActivationFunctionType aFunction,
                                            const size_t nBranch)
-      : CNNLayer(outputSize), n_branch(nBranch), n_filter(nFilter), activationFunction(aFunction),
-        filters(sizeFilter.first, sizeFilter.second, nFilter * nBranch) {}
+      : CNNLayer(outputSize), n_branch(nBranch), n_filter(nFilter),
+        filters(sizeFilter.first, sizeFilter.second, nFilter * nBranch), a_function(aFunction) {}
 
+  CNNConvolutionLayer::CNNConvolutionLayer(const CNNConvolutionLayer &other)
+      : CNNLayer(other.outputSize), n_branch(other.n_branch), n_filter(other.n_filter),
+        a_function(other.a_function) {
+    // TODO : check if the copy is good
+    filters.copy(other.filters, utils::cl_wrapper.getDefaultQueue(), true);
+  }
+
+  std::unique_ptr<CNNLayer> CNNConvolutionLayer::copy() const {
+    return std::make_unique<CNNConvolutionLayer>(*this);
+  }
+
+  void CNNConvolutionLayer::getWeight(std::vector<clFTensor> &weights) const {
+    clFTensor res;
+    // TODO : warning queue !!! + copy or shallow copy ???
+    res.copy(filters, utils::cl_wrapper.getDefaultQueue(), true);
+    weights.push_back(std::move(res));
+  }
+
+  bool CNNConvolutionLayer::setWeight(const clFTensor &weights) {
+    filters.copy(weights, utils::cl_wrapper.getDefaultQueue(), true);
+    return true;
+  }
 
   clFTensor CNNConvolutionLayer::compute(const clFTensor &input) {
     std::cout << "call compute : branch{" << n_branch << "}, filter{" << n_filter << "}"
@@ -42,7 +79,7 @@ namespace nnet {
       }
     }
 
-    applyAF(activationFunction, res, queue);
+    applyAF(a_function, res, queue);
     return res;
   }
 
@@ -77,9 +114,6 @@ namespace nnet {
         for (size_t j = 0; j < n_filter; j++) {
           std::cout << "filter" << std::endl;
           for (size_t k = 0; k < n_input; k++) {
-            //std::cout << "input" << std::endl;
-            //std::cout << "img\n" << sub_input[i][k] << std::endl;
-            //std::cout << "kernel\n" << errors[index] << std::endl;
             clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, height, width,
                                      kernel_h, kernel_w, 0, 0, 1, 1, 1, 1, 1, 1,
                                      sub_input[i][k].getBuffer()(), sub_input[i][k].getOffset(),
@@ -93,7 +127,8 @@ namespace nnet {
     }
 
     // compute input error
-    clFTensor res(convoStorage.input.getRows(), convoStorage.input.getCols(), errors.getDepth());
+    clFTensor res_input(convoStorage.input.getRows(), convoStorage.input.getCols(),
+                        errors.getDepth());
     {
       const size_t height = errors.getRows();
       const size_t width = errors.getCols();
@@ -113,14 +148,16 @@ namespace nnet {
                                    sub_error[i * n_filter + j].getOffsetInFloats(),
                                    sub_filter[i * n_filter + j].getBuffer()(),
                                    sub_filter[i * n_filter + j].getOffsetInFloats(),
-                                   res[index].getBuffer()(), res[index].getOffset(), &queue(),
-                                   nullptr);
+                                   res_input[index].getBuffer()(), res_input[index].getOffset(),
+                                   &queue(), nullptr);
           index += batch_count;
         }
       }
     }
-    //return res;
-    return res_filter;
+    convoStorage.error_filter =
+            reduceFilter(queue, res_filter, errors.getDepth() / filters.getDepth());
+    return res_input;
+    // return reduceInput(queue, res_input, 1000);
   }
 
 
@@ -132,6 +169,13 @@ namespace nnet {
   CNNMaxPoolingLayer::CNNMaxPoolingLayer(const std::pair<size_t, size_t> outputSize,
                                          const std::pair<size_t, size_t> poolSize)
       : CNNPoolingLayer(outputSize, poolSize) {}
+
+  CNNMaxPoolingLayer::CNNMaxPoolingLayer(const CNNMaxPoolingLayer &other)
+      : CNNPoolingLayer(other.outputSize, other.poolingSize) {}
+
+  std::unique_ptr<CNNLayer> CNNMaxPoolingLayer::copy() const {
+    return std::make_unique<CNNMaxPoolingLayer>(*this);
+  }
 
   clFTensor CNNMaxPoolingLayer::compute(const clFTensor &inputs) {
     clFTensor res(outputSize.first, outputSize.second, inputs.getDepth());
@@ -229,6 +273,16 @@ namespace nnet {
       : CNNPoolingLayer(outputSize, poolSize), filter(poolSize.first, poolSize.second, 1) {
     // TODO : faire attention a la queu sur laquel on fait le calcul
     filter[0].fill(1.f, utils::cl_wrapper.getDefaultQueue());
+  }
+
+  CNNAvgPoolingLayer::CNNAvgPoolingLayer(const CNNAvgPoolingLayer &other)
+      : CNNPoolingLayer(other.outputSize, other.poolingSize) {
+    // TODO : je crois je fais de ma merde
+    filter.copy(other.filter, utils::cl_wrapper.getDefaultQueue(), true);
+  }
+
+  std::unique_ptr<CNNLayer> CNNAvgPoolingLayer::copy() const {
+    return std::make_unique<CNNAvgPoolingLayer>(*this);
   }
 
   clFTensor CNNAvgPoolingLayer::compute(const clFTensor &input) {

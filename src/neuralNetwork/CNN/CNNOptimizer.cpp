@@ -18,25 +18,22 @@ namespace nnet {
         output = layers[i]->computeForward(output, *storages[i]);
       }
 
+      reorganizeForward(queue, output, inputs.getDepth(), cnn.getTopology().getNBranchFinal());
 
-      // TODO : reshape output with strange function
-      queue.finish();
-
-      return output.flatten();
+      return output;
     }
 
-    void backward(const CNN &cnn, const clFTensor &inputs, const clFTensor &errorsFlatten,
+    void backward(const CNN &cnn, const clFTensor &inputs, clFTensor &errorsFlatten,
                   std::vector<std::unique_ptr<CNNStorageBP>> &storages, cl::CommandQueue &queue) {
       auto &layers = cnn.getLayers();
+
+      reorganizeBackward(queue, errorsFlatten, errorsFlatten.getDepth(), cnn.getTopology().getDepth(), layers.back()->getOutputSize());
 
       clFTensor output = inputs.shallowCopy();
 
       for (long i = static_cast<long>(layers.size() - 1); i > -1; i--) {
         output = layers[i]->computeForward(output, *storages[i]);
       }
-
-      // TODO : reshape output with strange function
-      queue.finish();
     }
   }   // namespace
 

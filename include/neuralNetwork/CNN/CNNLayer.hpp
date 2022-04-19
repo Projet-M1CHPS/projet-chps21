@@ -18,10 +18,18 @@ namespace nnet {
   class CNNLayer {
   public:
     explicit CNNLayer(const std::pair<size_t, size_t> outputSize);
+    virtual ~CNNLayer() = default;
+
+    virtual std::unique_ptr<CNNLayer> copy() const = 0;
+
+    virtual void getWeight(std::vector<clFTensor> &weights) const;
+    virtual bool setWeight(const clFTensor &weights);
 
     virtual clFTensor compute(const clFTensor &input) = 0;
     virtual clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) = 0;
     virtual clFTensor computeBackward(const clFTensor &input, CNNStorageBP &storage) = 0;
+
+    [[nodiscard]] const std::pair<size_t, size_t> getOutputSize() const { return outputSize; }
 
   protected:
     const std::pair<size_t, size_t> outputSize;
@@ -33,8 +41,15 @@ namespace nnet {
     // nFilter nombre de kernel par branche
     CNNConvolutionLayer(const std::pair<size_t, size_t> outputSize,
                         const std::pair<size_t, size_t> sizeFilter, const size_t nFilter,
-                        const af::ActivationFunctionType aFunction,
-                        const size_t nBranch);
+                        const af::ActivationFunctionType aFunction, const size_t nBranch);
+
+    CNNConvolutionLayer(const CNNConvolutionLayer &other);
+    ~CNNConvolutionLayer() override = default;
+
+    [[nodiscard]] std::unique_ptr<CNNLayer> copy() const override;
+
+    void getWeight(std::vector<clFTensor> &weights) const override;
+    bool setWeight(const clFTensor &weights) override;
 
     [[nodiscard]] const clFTensor &getFilter() const { return filters; }
     [[nodiscard]] clFTensor &getFilter() { return filters; }
@@ -46,9 +61,9 @@ namespace nnet {
   private:
     const size_t n_branch;
     const size_t n_filter;
-    af::ActivationFunctionType activationFunction;
 
     clFTensor filters;
+    af::ActivationFunctionType a_function;
   };
 
 
@@ -56,6 +71,7 @@ namespace nnet {
   public:
     CNNPoolingLayer(const std::pair<size_t, size_t> outputSize,
                     const std::pair<size_t, size_t> PoolSize);
+    ~CNNPoolingLayer() override = default;
 
   protected:
     const std::pair<size_t, size_t> poolingSize;
@@ -66,6 +82,10 @@ namespace nnet {
   public:
     CNNMaxPoolingLayer(const std::pair<size_t, size_t> outputSize,
                        const std::pair<size_t, size_t> PoolSize);
+    CNNMaxPoolingLayer(const CNNMaxPoolingLayer &other);
+    ~CNNMaxPoolingLayer() override = default;
+
+    std::unique_ptr<CNNLayer> copy() const override;
 
     clFTensor compute(const clFTensor &input) override;
     clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) override;
@@ -77,6 +97,10 @@ namespace nnet {
   public:
     CNNAvgPoolingLayer(const std::pair<size_t, size_t> outputSize,
                        const std::pair<size_t, size_t> PoolSize);
+    CNNAvgPoolingLayer(const CNNAvgPoolingLayer &other);
+    ~CNNAvgPoolingLayer() override = default;
+
+    std::unique_ptr<CNNLayer> copy() const override;
 
     clFTensor compute(const clFTensor &input) override;
     clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) override;

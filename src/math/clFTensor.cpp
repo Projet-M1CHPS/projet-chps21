@@ -127,6 +127,15 @@ namespace math {
     return res;
   }
 
+  void clFTensor::reshape(size_t new_rows, size_t new_cols, size_t new_depth) {
+    if (rows * cols * depth != new_rows * new_cols * new_depth)
+      throw std::invalid_argument("clFTensor::reshape: New size does not match old size");
+
+    rows = new_rows;
+    cols = new_cols;
+    depth = new_depth;
+  }
+
   clFTensor clFTensor::sub(float factor, const clFTensor &other, cl::CommandQueue &queue,
                            bool blocking) const {
     if (rows != other.rows || cols != other.cols || depth != other.depth) {
