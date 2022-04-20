@@ -38,7 +38,7 @@ namespace nnet {
 
     clFTensor predict(clFTensor const &input);
 
-  public:
+  private:
     CNNTopology topology;
     std::vector<std::unique_ptr<CNNLayer>> layers;
   };

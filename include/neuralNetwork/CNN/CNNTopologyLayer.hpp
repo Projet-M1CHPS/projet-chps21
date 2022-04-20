@@ -16,17 +16,17 @@ namespace nnet {
     friend std::ostream &operator<<(std::ostream &os, const CNNTopologyLayer &layer);
 
   public:
-    CNNTopologyLayer(const std::pair<size_t, size_t> inputSize, const std::pair<size_t, size_t> filter, const size_t nbranch);
+    CNNTopologyLayer(const std::pair<size_t, size_t> inputSize,
+                     const std::pair<size_t, size_t> filter, const size_t nbranch);
     ~CNNTopologyLayer() = default;
 
-    [[nodiscard]] const std::pair<size_t, size_t> &getFilterSize() const { return filter; }
+    [[nodiscard]] const std::pair<size_t, size_t> &getFilterSize() const { return filter_size; }
     [[nodiscard]] virtual const size_t getFeatures() const { return 1; }
 
     [[nodiscard]] virtual std::unique_ptr<CNNLayer> convertToLayer() const = 0;
     [[nodiscard]] virtual std::unique_ptr<CNNStorageBP> convertToStorage() const = 0;
 
-    [[nodiscard]] virtual const std::pair<size_t, size_t>
-    getOutputSize(const std::pair<size_t, size_t> &inputSize) const = 0;
+    [[nodiscard]] virtual const std::pair<size_t, size_t> getOutputSize() const = 0;
 
   protected:
     [[nodiscard]] virtual const std::pair<size_t, size_t>
@@ -35,7 +35,7 @@ namespace nnet {
 
   protected:
     const std::pair<size_t, size_t> input_size;
-    const std::pair<size_t, size_t> filter;
+    const std::pair<size_t, size_t> filter_size;
     const size_t n_branch;
   };
 
@@ -52,8 +52,7 @@ namespace nnet {
     [[nodiscard]] std::unique_ptr<CNNLayer> convertToLayer() const override;
     [[nodiscard]] std::unique_ptr<CNNStorageBP> convertToStorage() const override;
 
-    [[nodiscard]] const std::pair<size_t, size_t>
-    getOutputSize(const std::pair<size_t, size_t> &inputSize) const override {
+    [[nodiscard]] const std::pair<size_t, size_t> getOutputSize() const override {
       return outputSize;
     };
 
@@ -76,8 +75,7 @@ namespace nnet {
     ~CNNTopologyLayerPooling() = default;
 
 
-    [[nodiscard]] const std::pair<size_t, size_t>
-    getOutputSize(const std::pair<size_t, size_t> &inputSize) const override {
+    [[nodiscard]] const std::pair<size_t, size_t> getOutputSize() const override {
       return outputSize;
     };
 

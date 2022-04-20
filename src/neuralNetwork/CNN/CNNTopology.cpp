@@ -97,7 +97,7 @@ namespace nnet {
       } else {
         throw std::invalid_argument("Invalid type " + type);
       }
-      inputSize = res.layers.back()->getOutputSize(inputSize);
+      inputSize = res.layers.back()->getOutputSize();
     }
     res.n_branch_final = n_branch;
     return res;

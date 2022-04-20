@@ -23,7 +23,7 @@ namespace nnet {
     virtual std::unique_ptr<CNNLayer> copy() const = 0;
 
     // Pretty messy but easiest way to do it for now
-    virtual bool hasWeight() const { return false; }
+    [[nodiscard]] virtual bool hasWeight() const { return false; }
 
     virtual clFTensor &getWeight() {
       throw std::runtime_error("CNNLayer: Tried to acces weight in a layer without one ");

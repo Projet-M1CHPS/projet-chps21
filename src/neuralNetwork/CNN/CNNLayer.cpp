@@ -183,6 +183,8 @@ namespace nnet {
         index += batch_count;
       }
     }
+    std::cout << "error filter before : " << res_filter << std::endl;
+    std::cout << "error input before : " << res_input << std::endl;
     convoStorage.error_filter = reduceFilter(queue, res_filter, n_input, n_filter, n_branch);
     return reduceInput(queue, res_input, n_input, n_filter, n_branch);
   }

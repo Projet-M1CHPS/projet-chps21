@@ -30,7 +30,6 @@ namespace nnet {
   public:
     CNNStorageBPConvolution() = default;
 
-    // Pretty messy but easiest way to do it for now
     bool hasGradient() const override { return true; }
 
     clFTensor &getGradient() override { return error_filter; }

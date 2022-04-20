@@ -43,9 +43,7 @@ namespace nnet {
 
     [[nodiscard]] const std::pair<size_t, size_t> &getInputSize() const { return inputSize; }
     [[nodiscard]] const size_t getDepth() const { return layers.size(); }
-    [[nodiscard]] const std::vector<std::shared_ptr<CNNTopologyLayer>> &getTopology() const {
-      return layers;
-    }
+
     [[nodiscard]] const size_t getNBranchFinal() const { return n_branch_final; }
 
     [[nodiscard]] std::vector<std::unique_ptr<CNNLayer>> convertToLayer() const;

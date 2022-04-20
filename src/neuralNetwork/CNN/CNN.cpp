@@ -18,7 +18,7 @@ namespace nnet {
 
 
   clFTensor CNN::predict(clFTensor const &inputs) {
-    /*if (layers.empty()) { throw std::runtime_error("no layer in cnn"); }
+    if (layers.empty()) { throw std::runtime_error("CNN::predict : No layer in cnn"); }
 
     clFTensor output = inputs.shallowCopy();
 
@@ -27,13 +27,14 @@ namespace nnet {
       std::cout << "output INTERMEDIAIRE : " << output << std::endl;
     }
 
-    reorganizeForward(output, inputs.getDepth(), topology.getBranchFinal());
+    reorganizeForward(utils::cl_wrapper.getDefaultQueue(), output, inputs.getDepth(),
+                      topology.getNBranchFinal());
 
     utils::cl_wrapper.getDefaultQueue().finish();
 
-    return output;*/
+    return output;
 
-    auto queue = utils::cl_wrapper.getDefaultQueue();
+    /*auto queue = utils::cl_wrapper.getDefaultQueue();
     clFTensor tensor(3, 3, 12);
 
     tensor[0].fill(1.1f, queue);
@@ -62,7 +63,7 @@ namespace nnet {
     queue.finish();
     std::cout << "after after : " << tensor << std::endl;
 
-    exit(12);
+    exit(12);*/
   }
 
   void reorganizeForward(cl::CommandQueue &queue, clFTensor &tensor, const size_t nInput,
