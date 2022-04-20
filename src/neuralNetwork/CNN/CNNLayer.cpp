@@ -4,9 +4,31 @@
 namespace nnet {
 
   namespace {
-    clFTensor reduceFilter(cl::CommandQueue &queue, const clFTensor &tensor,
-                           const size_t reduceSize) {
-      return {1, 1, 1};
+    clFTensor reduceFilter(cl::CommandQueue &queue, const clFTensor &tensor, const size_t nInput,
+                           const size_t nFilter, const size_t nBranch) {
+      const size_t n_total_filter = nFilter * nBranch;
+      clFTensor res(tensor.getRows(), tensor.getCols(), n_total_filter);
+      res.fill(0.f, queue, false);
+
+
+      const size_t n = tensor.getRows() * tensor.getCols();
+      std::vector<float> alphas(n_total_filter, 1.f);
+
+      std::vector<size_t> x_offset(n_total_filter);
+      std::vector<size_t> res_offset(n_total_filter);
+      for (size_t i = 0; i < x_offset.size(); i++) {
+        x_offset[i] = nInput * i * n;
+        res_offset[i] = i * n;
+      }
+
+      for (size_t i = 0; i < nInput; i++) {
+        clblast::AxpyBatched<float>(n, alphas.data(), tensor.getBuffer()(), x_offset.data(), 1,
+                                    res.getBuffer()(), res_offset.data(), 1, n_total_filter,
+                                    &queue(), nullptr);
+        for (auto &val : x_offset) val += n;
+      }
+      res.ipscale(1.f / static_cast<float>(nInput), queue);
+      return res;
     }
 
     clFTensor reduceInput(cl::CommandQueue &queue, const clFTensor &tensor, const size_t nInput,
@@ -32,7 +54,6 @@ namespace nnet {
         }
         for (auto &val : res_offset) { val += batch_count * n; }
       }
-
       res.ipscale(1.f / static_cast<float>(nInput), queue);
       return res;
     }
@@ -162,10 +183,8 @@ namespace nnet {
         index += batch_count;
       }
     }
-    convoStorage.error_filter =
-            reduceFilter(queue, res_filter, errors.getDepth() / filters.getDepth());
-    return res_input;
-    // return reduceInput(queue, res_input, 1000);
+    convoStorage.error_filter = reduceFilter(queue, res_filter, n_input, n_filter, n_branch);
+    return reduceInput(queue, res_input, n_input, n_filter, n_branch);
   }
 
 

@@ -1293,25 +1293,6 @@ void foo() {
    * */
 }
 
-void testReduceInput() {
-  constexpr float nBranch = 2;
-  constexpr float nInput = 2;
-  constexpr float nFilter = 2;
-
-  clFTensor x(3, 3, nBranch * nInput * nFilter);
-
-  for (size_t i = 0; i < x.getDepth(); i++) {
-    x[i].fill(static_cast<float>(i + 1), utils::cl_wrapper.getDefaultQueue());
-  }
-
-  std::cout << "x : " << x << std::endl;
-
-  // clFTensor y = nnet::reduceInput(utils::cl_wrapper.getDefaultQueue(), x, nInput, nFilter,
-  // nBranch);
-
-  // std::cout << "y : " << y << std::endl;
-}
-
 int main() {
   utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault());
 
@@ -1331,8 +1312,6 @@ int main() {
 
   // testPrediction1Branch();
   // testPredictionXBranch();
-
-  testReduceInput();
 
   return 0;
 }
