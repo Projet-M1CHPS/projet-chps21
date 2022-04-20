@@ -144,7 +144,7 @@ void testAxpyB() {
   std::vector<size_t> xx_offset = {9, 27, 45, 63};
 
   clblast::AxpyBatched<float>(n, alpha.data(), tensor.getBuffer()(), xx_offset.data(), 1,
-                               res.getBuffer()(), y_offset.data(), 1, 4, &queue(), nullptr);
+                              res.getBuffer()(), y_offset.data(), 1, 4, &queue(), nullptr);
 
   queue.finish();
   std::cout << "after : " << res << std::endl;
@@ -1293,11 +1293,30 @@ void foo() {
    * */
 }
 
+void testReduceInput() {
+  constexpr float nBranch = 2;
+  constexpr float nInput = 2;
+  constexpr float nFilter = 2;
+
+  clFTensor x(3, 3, nBranch * nInput * nFilter);
+
+  for (size_t i = 0; i < x.getDepth(); i++) {
+    x[i].fill(static_cast<float>(i + 1), utils::cl_wrapper.getDefaultQueue());
+  }
+
+  std::cout << "x : " << x << std::endl;
+
+  // clFTensor y = nnet::reduceInput(utils::cl_wrapper.getDefaultQueue(), x, nInput, nFilter,
+  // nBranch);
+
+  // std::cout << "y : " << y << std::endl;
+}
+
 int main() {
   utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault());
 
   // testConvo();
-  testAxpyB();
+  // testAxpyB();
 
   // testConvolutionalLayer1Branch();
   // testConvolutionalLayer1BranchBP();
@@ -1312,6 +1331,8 @@ int main() {
 
   // testPrediction1Branch();
   // testPredictionXBranch();
+
+  testReduceInput();
 
   return 0;
 }

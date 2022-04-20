@@ -9,9 +9,35 @@ namespace nnet {
       return {1, 1, 1};
     }
 
-    clFTensor reduceInput(cl::CommandQueue &queue, const clFTensor &tensor,
-                          const size_t reduceSize) {
-      return {1, 1, 1};
+    clFTensor reduceInput(cl::CommandQueue &queue, const clFTensor &tensor, const size_t nInput,
+                          const size_t nFilter, const size_t nBranch) {
+      clFTensor res(tensor.getRows(), tensor.getCols(), nInput * nBranch);
+      // TODO changer par fill
+      for (size_t i = 0; i < res.getDepth(); i++) res[i].fill(0.f, queue);
+
+      {
+        const size_t n = tensor.getRows() * tensor.getCols();
+        std::vector<float> alphas(nInput);
+        std::fill(alphas.begin(), alphas.end(), 1.f);
+
+        std::vector<size_t> x_offset(nInput);
+        std::vector<size_t> res_offset(nInput);
+        for (size_t i = 0; i < x_offset.size(); i++) { x_offset[i] = res_offset[i] = i * n; }
+
+        const size_t batch_count = nInput;
+
+        for (size_t i = 0; i < nBranch; i++) {
+          for (size_t j = 0; j < nFilter; j++) {
+            clblast::AxpyBatched<float>(n, alphas.data(), tensor.getBuffer()(), x_offset.data(), 1,
+                                        res.getBuffer()(), res_offset.data(), 1, batch_count,
+                                        &queue(), nullptr);
+            for (auto &val : x_offset) { val += batch_count * n; }
+          }
+          for (auto &val : res_offset) { val += batch_count * n; }
+        }
+      }
+      res.ipscale(1.f / static_cast<float>(nInput), queue);
+      return res;
     }
   }   // namespace
 
