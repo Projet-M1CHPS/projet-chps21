@@ -55,10 +55,10 @@ Raw data will be outputted to \<output path\>/.
 
 # Authors
   
-  Ugo Battiston @byjtew93 \
-  Benjamin Lozes @Johnkyky \
-  Mathys JAM @Thukisdo
+  [Benjamin Lozes](https://github.com/byjtew)  \
+  [Ugo Battiston](https://github.com/johnkyky)  \
+  [Mathys JAM](https://github.com/Thukisdo)
 
 # Thanks to
-  Mohammed-Salah Ibnamar, for supervising us during this project \
+  [Mohammed-Salah Ibnamar](https://github.com/yaspr), for supervising us during this project \
   Thomas Dufaud, for providing us access to a GPU cluster
