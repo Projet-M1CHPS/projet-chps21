@@ -14,7 +14,18 @@ namespace nnet {
     layers = topology.convertToLayer();
   }
 
-  void CNN::randomizeWeight() { assert(false && "Not implemented"); }
+  void CNN::randomizeWeight() {   // assert(false && "Not implemented");
+    for (auto &layer : layers) {
+      if (layer->hasWeight()) {
+        FloatMatrix buffer(layer->getWeight().getRows(), layer->getWeight().getCols());
+        for (size_t j = 0; j < layer->getWeight().getDepth(); j++) {
+          math::randomize<float>(buffer, 0.f, 1.f);
+          // TODO : check if we need to block operation
+          layer->getWeight()[j].fromFloatMatrix(buffer, true);
+        }
+      }
+    }
+  }
 
 
   clFTensor CNN::predict(clFTensor const &inputs) {
@@ -33,37 +44,6 @@ namespace nnet {
     utils::cl_wrapper.getDefaultQueue().finish();
 
     return output;
-
-    /*auto queue = utils::cl_wrapper.getDefaultQueue();
-    clFTensor tensor(3, 3, 12);
-
-    tensor[0].fill(1.1f, queue);
-    tensor[1].fill(2.1f, queue);
-    tensor[2].fill(3.1f, queue);
-    tensor[3].fill(1.2f, queue);
-    tensor[4].fill(2.2f, queue);
-    tensor[5].fill(3.2f, queue);
-    tensor[6].fill(1.3f, queue);
-    tensor[7].fill(2.3f, queue);
-    tensor[8].fill(3.3f, queue);
-    tensor[9].fill(1.4f, queue);
-    tensor[10].fill(2.4f, queue);
-    tensor[11].fill(3.4f, queue);
-
-    queue.finish();
-    std::cout << "before : " << tensor << std::endl;
-
-    reorganizeForward(queue, tensor, 3, 4);
-
-    queue.finish();
-    std::cout << "after : " << tensor << std::endl;
-
-    reorganizeBackward(queue, tensor, 3, 4, {3, 3});
-
-    queue.finish();
-    std::cout << "after after : " << tensor << std::endl;
-
-    exit(12);*/
   }
 
   void reorganizeForward(cl::CommandQueue &queue, clFTensor &tensor, const size_t nInput,

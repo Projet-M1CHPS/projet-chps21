@@ -14,8 +14,7 @@ namespace nnet {
 
     auto &cnn = res->getCnn();
     cnn.setTopology(topology);
-    // TODO: Implement random initialization
-    // cnn.randomizeWeight();
+    cnn.randomizeWeight();
 
     const size_t size = cnn.getTopology().getCNNOutputSize();
     mlp_topology.pushFront(size);
