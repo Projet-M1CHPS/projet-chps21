@@ -10,8 +10,6 @@
 
 
 namespace nnet {
-  using namespace math;
-
   enum class LayerType { CONVOLUTION, POOLING };
   enum class PoolingType { MAX, AVERAGE };
 
@@ -25,19 +23,19 @@ namespace nnet {
     // Pretty messy but easiest way to do it for now
     [[nodiscard]] virtual bool hasWeight() const { return false; }
 
-    virtual clFTensor &getWeight() {
+    virtual math::clFTensor &getWeight() {
       throw std::runtime_error("CNNLayer: Tried to acces weight in a layer without one ");
     }
 
-    virtual const clFTensor &getWeight() const {
+    virtual const math::clFTensor &getWeight() const {
       throw std::runtime_error("CNNLayer: Tried to acces weight in a layer without one ");
     }
 
-    virtual void setWeight(const clFTensor &weights);
+    virtual void setWeight(const math::clFTensor &weights);
 
-    virtual clFTensor compute(const clFTensor &input) = 0;
-    virtual clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) = 0;
-    virtual clFTensor computeBackward(const clFTensor &input, CNNStorageBP &storage) = 0;
+    virtual math::clFTensor compute(const math::clFTensor &input) = 0;
+    virtual math::clFTensor computeForward(const math::clFTensor &input, CNNStorageBP &storage) = 0;
+    virtual math::clFTensor computeBackward(const math::clFTensor &input, CNNStorageBP &storage) = 0;
 
     [[nodiscard]] const std::pair<size_t, size_t> getOutputSize() const { return outputSize; }
 
@@ -61,23 +59,23 @@ namespace nnet {
     // Pretty messy but easiest way to do it for now
     bool hasWeight() const override { return true; }
 
-    clFTensor &getWeight() override { return filters; }
+    math::clFTensor &getWeight() override { return filters; }
     //TODO : hum interressant plus de function pour faire la meme chose ?
-    const clFTensor &getWeight() const override { return filters; }
-    void setWeight(const clFTensor &weights) override;
+    const math::clFTensor &getWeight() const override { return filters; }
+    void setWeight(const math::clFTensor &weights) override;
 
-    [[nodiscard]] const clFTensor &getFilter() const { return filters; }
-    [[nodiscard]] clFTensor &getFilter() { return filters; }
+    [[nodiscard]] const math::clFTensor &getFilter() const { return filters; }
+    [[nodiscard]] math::clFTensor &getFilter() { return filters; }
 
-    clFTensor compute(const clFTensor &input) override;
-    clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) override;
-    clFTensor computeBackward(const clFTensor &input, CNNStorageBP &storage) override;
+    math::clFTensor compute(const math::clFTensor &input) override;
+    math::clFTensor computeForward(const math::clFTensor &input, CNNStorageBP &storage) override;
+    math::clFTensor computeBackward(const math::clFTensor &input, CNNStorageBP &storage) override;
 
   private:
     const size_t n_branch;
     const size_t n_filter;
 
-    clFTensor filters;
+    math::clFTensor filters;
     af::ActivationFunctionType a_function;
   };
 
@@ -102,9 +100,9 @@ namespace nnet {
 
     std::unique_ptr<CNNLayer> copy() const override;
 
-    clFTensor compute(const clFTensor &input) override;
-    clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) override;
-    clFTensor computeBackward(const clFTensor &input, CNNStorageBP &storage) override;
+    math::clFTensor compute(const math::clFTensor &input) override;
+    math::clFTensor computeForward(const math::clFTensor &input, CNNStorageBP &storage) override;
+    math::clFTensor computeBackward(const math::clFTensor &input, CNNStorageBP &storage) override;
   };
 
 
@@ -117,12 +115,12 @@ namespace nnet {
 
     std::unique_ptr<CNNLayer> copy() const override;
 
-    clFTensor compute(const clFTensor &input) override;
-    clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) override;
-    clFTensor computeBackward(const clFTensor &input, CNNStorageBP &storage) override;
+    math::clFTensor compute(const math::clFTensor &input) override;
+    math::clFTensor computeForward(const math::clFTensor &input, CNNStorageBP &storage) override;
+    math::clFTensor computeBackward(const math::clFTensor &input, CNNStorageBP &storage) override;
 
   private:
-    clFTensor filter;
+    math::clFTensor filter;
   };
 
 }   // namespace nnet

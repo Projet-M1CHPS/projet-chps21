@@ -7,7 +7,6 @@
 
 
 namespace nnet {
-  using namespace math;
 
   class CNNStorageBP {
   public:
@@ -17,11 +16,11 @@ namespace nnet {
     // Pretty messy but easiest way to do it for now
     virtual bool hasGradient() const { return false; }
 
-    virtual clFTensor &getGradient() {
+    virtual math::clFTensor &getGradient() {
       throw std::runtime_error("CNNStorageBP: Tried to acces gradient in a storage without one");
     }
 
-    virtual const clFTensor &getGradient() const {
+    virtual const math::clFTensor &getGradient() const {
       throw std::runtime_error("CNNStorageBP: Tried to acces gradient in a storage without one");
     }
   };
@@ -32,12 +31,12 @@ namespace nnet {
 
     bool hasGradient() const override { return true; }
 
-    clFTensor &getGradient() override { return error_filter; }
-    const clFTensor &getGradient() const override { return error_filter; }
+    math::clFTensor &getGradient() override { return error_filter; }
+    const math::clFTensor &getGradient() const override { return error_filter; }
 
     // private:
-    clFTensor input;
-    clFTensor error_filter;
+    math::clFTensor input;
+    math::clFTensor error_filter;
   };
 
   class CNNStorageBPPooling : public CNNStorageBP {
@@ -56,8 +55,8 @@ namespace nnet {
 
     // private:
     // Matrix<std::pair<size_t, size_t>> maxIndex;
-    std::vector<Matrix<size_t>> max_rows;
-    std::vector<Matrix<size_t>> max_cols;
+    std::vector<math::Matrix<size_t>> max_rows;
+    std::vector<math::Matrix<size_t>> max_cols;
   };
 
   class CNNStorageBPAvgPooling final : public CNNStorageBPPooling {

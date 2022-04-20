@@ -5,8 +5,6 @@
 #include "neuralNetwork/Perceptron/MLPerceptron.hpp"
 
 namespace nnet {
-  using namespace nnet;
-  using namespace math;
 
   class CNNModel final : public Model {
   public:
@@ -56,8 +54,8 @@ namespace nnet {
     [[nodiscard]] MLPerceptron &getMlp() { return *mlp; }
     [[nodiscard]] MLPerceptron const &getMlp() const { return *mlp; }
 
-    [[nodiscard]] clFTensor predict(clFTensor const &inputs) const override;
-    [[nodiscard]] clFMatrix predict(clFMatrix const &input) const override;
+    [[nodiscard]] math::clFTensor predict(math::clFTensor const &inputs) const override;
+    [[nodiscard]] math::clFMatrix predict(math::clFMatrix const &input) const override;
 
   private:
     std::unique_ptr<CNN> cnn;

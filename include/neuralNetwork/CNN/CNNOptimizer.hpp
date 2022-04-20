@@ -59,7 +59,7 @@ namespace nnet {
 
     WeightUpdateCache(WeightUpdateCache &&other) noexcept = default;
 
-    WeightUpdateCache(CNN *cnn, std::vector<clFTensor> &&weight_updates, size_t contribution);
+    WeightUpdateCache(CNN *cnn, std::vector<math::clFTensor> &&weight_updates, size_t contribution);
 
     void add(size_t index, const math::clFTensor &delta, cl::CommandQueue &queue);
 

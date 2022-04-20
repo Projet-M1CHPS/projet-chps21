@@ -9,8 +9,6 @@
 
 namespace nnet {
 
-  using namespace math;
-
   class CNN {
   public:
     CNN() = default;
@@ -30,16 +28,16 @@ namespace nnet {
 
     void randomizeWeight();
 
-    clFTensor predict(clFTensor const &input);
+    math::clFTensor predict(math::clFTensor const &input);
 
   private:
     CNNTopology topology;
     std::vector<std::unique_ptr<CNNLayer>> layers;
   };
 
-  void reorganizeForward(cl::CommandQueue &queue, clFTensor &tensor, const size_t nInput,
+  void reorganizeForward(cl::CommandQueue &queue, math::clFTensor &tensor, const size_t nInput,
                          const size_t nBranch);
-  void reorganizeBackward(cl::CommandQueue &queue, clFTensor &tensor, const size_t nInput,
+  void reorganizeBackward(cl::CommandQueue &queue, math::clFTensor &tensor, const size_t nInput,
                           const size_t nBranch, const std::pair<size_t, size_t> size);
 
 }   // namespace nnet
