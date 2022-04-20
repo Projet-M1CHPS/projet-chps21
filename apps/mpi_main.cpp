@@ -107,7 +107,8 @@ void receiveTensor(math::clFTensor &tensor, std::string &class_name, std::vector
   int class_name_length;
   MPI_Get_count(&status, MPI_CHAR, &class_name_length);
   class_name.resize(class_name_length);
-  MPI_Recv(class_name.data(), class_name.size(), MPI_CHAR, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  MPI_Recv(class_name.data(), (int) class_name.size(), MPI_CHAR, 0, 0, MPI_COMM_WORLD,
+           MPI_STATUS_IGNORE);
   mpi_put("Received class name: " + class_name);
 
   mpi_put("< receiveTensor(...)");
@@ -133,7 +134,6 @@ void sendTensor(const InputSet &input_set, const std::string &class_name,
   mpi_put("Sending tensor dimensions (" + std::to_string(tensor.getOffset()) + "," +
           std::to_string(rows) + "," + std::to_string(cols) + "," + std::to_string(depth) +
           ") to " + std::to_string(dest));
-  // MPI_Isend(&dims, 4, MPI_UNSIGNED_LONG, dest, 0, MPI_COMM_WORLD, &dimension_request);
   MPI_Send(&dims, 4, MPI_UNSIGNED_LONG, dest, 0, MPI_COMM_WORLD);
 
   // Wait for the dimensions to be sent
@@ -141,6 +141,10 @@ void sendTensor(const InputSet &input_set, const std::string &class_name,
   mpi_put("Sent tensor dimensions to " + std::to_string(dest));
 
   assert(depth == tensor.getMatrices().size());
+
+  auto queue = cl::CommandQueue::getDefault();
+  // Transfer the buffer to the device with a map
+
 
   // Send the tensor
   mpi_put("Sending tensor to " + std::to_string(dest));
@@ -167,7 +171,7 @@ void sendTensor(const InputSet &input_set, const std::string &class_name,
   mpi_put("Sent samples class ids to " + std::to_string(dest));
 
   mpi_put("Sending class name " + class_name + " to " + std::to_string(dest));
-  MPI_Send(class_name.c_str(), class_name.size(), MPI_CHAR, dest, 0, MPI_COMM_WORLD);
+  MPI_Send(class_name.c_str(), (int) class_name.size(), MPI_CHAR, dest, 0, MPI_COMM_WORLD);
   mpi_put("Sent class name to " + std::to_string(dest));
 
   mpi_put("< sendTensor(...)");
@@ -227,7 +231,6 @@ TrainingCollection scatterTrainingCollections(std::vector<TrainingCollection> &s
       recv_collection.getTrainingSet().append(std::move(tensor), ids, class_ids);
     }
     recv_collection.getTrainingSet().updateClasses(class_names);
-    recv_collection.display();
     recv_collection.makeTrainingTargets();
   }
 
@@ -314,8 +317,6 @@ bool createAndTrain(std::filesystem::path const &input_path,
       training_collections.reserve(nprocess);
       full_training_collection.split(nprocess, training_collections);
       mpi_put("Dataset split", tscl::Log::Information);
-
-      for (auto &item : training_collections) item.display();
     }
   }
 
@@ -330,16 +331,13 @@ bool createAndTrain(std::filesystem::path const &input_path,
   assert(!local_training_collection.getTrainingSet().getSamplesIds().empty());
   assert(local_training_collection.getTrainingSet().getClassCount() > 0);
 
-  sleep(rank);
-  local_training_collection.display();
-  return true;
 
   topology.pushBack(local_training_collection.getClassCount());
 
   logger("Training set size: " +
                  std::to_string(local_training_collection.getTrainingSet().getSize()),
          tscl::Log::Trace);
-  logger("Testing set size: " +
+  logger("Evaluation set size: " +
                  std::to_string(local_training_collection.getEvaluationSet().getSize()),
          tscl::Log::Trace);
 
@@ -361,7 +359,6 @@ bool createAndTrain(std::filesystem::path const &input_path,
     optimizer = nnet::MLPOptimizer::make<nnet::DecayMomentumOptimization>(*model, kLearningRate,
                                                                           kDecayRate, kMomentum);
 
-  // ParallelScheduler scheduler(batch, input, target);
 
   logger("Creating scheduler", tscl::Log::Debug);
 
@@ -381,8 +378,13 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // SchedulerProfiler sc_profiler(scheduler_builder.build(), output_path / "scheduler");
   //  sc_profiler.setVerbose(false);
 
-  ModelEvolutionTracker evaluator(output_path / "model_evolution", *model,
+  ModelEvolutionTracker evaluator(output_path / ("model_evolution_" + std::to_string(rank)), *model,
                                   local_training_collection);
+
+  sleep(rank);
+  local_training_collection.display();
+  MPI_Barrier(MPI_COMM_WORLD);
+  sleep(2);
 
   logger("Starting run", tscl::Log::Debug);
   MPITrainingController controller(kMaxEpoch, evaluator, *scheduler);

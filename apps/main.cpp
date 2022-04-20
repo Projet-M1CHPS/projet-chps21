@@ -97,7 +97,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   logger("Training set size: " + std::to_string(training_collection.getTrainingSet().getSize()),
          tscl::Log::Trace);
-  logger("Testing set size: " + std::to_string(training_collection.getEvaluationSet().getSize()),
+  logger("Evaluation set size: " + std::to_string(training_collection.getEvaluationSet().getSize()),
          tscl::Log::Trace);
 
 

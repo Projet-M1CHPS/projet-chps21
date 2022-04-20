@@ -169,9 +169,10 @@ namespace control {
               << std::endl;
 
     auto sub_classes = splitClassNames(nb_sets);
+
     std::vector<size_t> tensor_counts(nb_sets);
     size_t part = getTensorCount() / nb_sets;
-    size_t rest = getTensorCount() % nb_sets;
+    int rest = ((int) getTensorCount()) % nb_sets;
     for (size_t i = 0; i < nb_sets; i++) tensor_counts[i] = part + ((rest-- > 0) ? 1 : 0);
 
     std::cout << "Number of classes: " << getSamplesClassIds().size() << std::endl;
@@ -207,6 +208,7 @@ namespace control {
         current_set.append(item.shallowCopy(), new_ids, new_class_ids);
       }
       current_set.updateClasses(sub_classes.at(i));
+      assert(!current_set.getSamples().empty());
       sub_sets.emplace_back(std::move(current_set));
       std::cout << "InputSet::split() Dimensions of sub-sets: " << std::endl;
       for (auto &item : sub_sets)
@@ -225,7 +227,7 @@ namespace control {
   std::vector<std::vector<std::string>> InputSet::splitClassNames(size_t nb_sets) const {
     std::vector<std::vector<std::string>> new_class_names(nb_sets);
     size_t classes_per_set = class_names.size() / nb_sets;
-    size_t classes_left = class_names.size() % nb_sets;
+    int classes_left = ((int) class_names.size()) % nb_sets;
 
     size_t acc_class_index = 0;
     for (size_t i = 0; i < nb_sets; i++) {
@@ -237,29 +239,6 @@ namespace control {
     return new_class_names;
   }
 
-  std::vector<std::vector<Sample>> InputSet::splitSamples(size_t nb_sets) const {
-    std::vector<std::vector<Sample>> new_samples(nb_sets);
-
-    // Amount of samples per set
-    size_t samples_per_set = samples.size() / nb_sets;
-    size_t samples_left = samples.size() % nb_sets;
-    std::vector<size_t> samples_counts(nb_sets);
-    for (size_t i = 0; i < nb_sets; i++) {
-      samples_counts[i] = (samples_per_set + (samples_left-- > 0 ? 1 : 0));
-    }
-
-    // Split the samples
-    size_t sample_index = 0;
-    for (size_t i = 0; i < nb_sets; i++) {
-      for (size_t j = 0; j < samples_per_set; j++) {
-        auto &s = samples[sample_index++];
-        new_samples[i].emplace_back(s.getId(), s.getClass(), s.getData().flatten());
-      }
-    }
-
-    return new_samples;
-  }
-
   std::vector<std::vector<math::clFTensor>> InputSet::splitTensors(size_t nb_sets) const {
     assert(nb_sets <= getTensorCount());
     assert(nb_sets > 0);
@@ -267,7 +246,7 @@ namespace control {
 
     // Amount of tensors per set
     size_t part = getTensorCount() / nb_sets;
-    size_t remainder = getTensorCount() % nb_sets;
+    int remainder = ((int) getTensorCount()) % nb_sets;
     assert(part > 0);
     for (size_t i = 0; i < nb_sets; i++) new_tensors[i].resize(part + (remainder-- > 0 ? 1 : 0));
 
@@ -290,5 +269,7 @@ namespace control {
 
     return new_tensors;
   }
+
+  const std::vector<Sample> &InputSet::getSamples() const { return samples; }
 
 }   // namespace control

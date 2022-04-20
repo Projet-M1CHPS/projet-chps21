@@ -27,7 +27,9 @@ namespace control {
   }
 
   void TrainingCollection::display() const {
-    tscl::logger("Training set" + std::to_string(training_set.getInputWidth()) + "x" +
+    int rank = 0;
+    tscl::logger("[P" + std::to_string(rank) + "]: Training set {" +
+                 std::to_string(training_set.getInputWidth()) + "x" +
                  std::to_string(training_set.getInputHeight()) + "}: ");
     tscl::logger("  Classes{" + std::to_string(training_set.getClasses().size()) + "}: ");
     for (auto &c : training_set.getClasses()) { tscl::logger(c + " "); }
@@ -39,7 +41,7 @@ namespace control {
     for (auto &t : training_targets)
       tscl::logger("Target[" + std::to_string(t.getRows()) + ";" + std::to_string(t.getCols()) +
                    ";" + std::to_string(t.getDepth()) + "] {" + std::to_string(t.sum()) + "}");
-
+    tscl::logger("  Samples{" + std::to_string(training_set.getSamples().size()) + "}");
     tscl::logger("");
   }
 
@@ -56,16 +58,8 @@ namespace control {
     training_set.split(n, split_training_set);
 
     for (size_t i = 0; i < n; i++) {
-      std::cout << "\t>>TrainingCollection::split() Part " << i << " of " << n - 1 << std::endl;
-      std::cout << "NOTmoved_training_set[" << i
-                << "] dimensions: " << split_training_set.at(i).getInputWidth() << "x"
-                << split_training_set.at(i).getInputHeight() << std::endl;
       sub_collections.at(i).training_set = std::move(split_training_set.at(i));
-      std::cout << "moved_training_set[" << i
-                << "] dimensions: " << sub_collections.at(i).training_set.getInputWidth() << "x"
-                << sub_collections.at(i).training_set.getInputHeight() << std::endl;
       sub_collections.at(i).makeTrainingTargets();
-      std::cout << "\t<<TrainingCollection::split() Part " << i << " done." << std::endl;
     }
 
     std::cout << "< TrainingCollection::split() Training split into " << n << " parts" << std::endl;

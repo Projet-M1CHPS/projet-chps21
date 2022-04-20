@@ -19,7 +19,7 @@ namespace control {
      * @param data The raw data of the sample
      */
     Sample(size_t id, long class_id, math::clFMatrix &&data)
-        : id(id), class_id(class_id), data(std::move(data)) {}
+        : id(id), class_id(class_id), data(std::move(data)){};
 
     size_t getId() const { return id; }
 
@@ -309,12 +309,11 @@ namespace control {
       return class_ids;
     }
 
+    const std::vector<Sample> &getSamples() const;
+
   private:
     // Split the tensors into nb_sets parts.
     std::vector<std::vector<math::clFTensor>> splitTensors(size_t nb_sets) const;
-
-    // Split samples into nb_sets parts.
-    std::vector<std::vector<Sample>> splitSamples(size_t nb_sets) const;
 
     // Split class names into nb_sets parts.
     std::vector<std::vector<std::string>> splitClassNames(size_t nb_sets) const;
