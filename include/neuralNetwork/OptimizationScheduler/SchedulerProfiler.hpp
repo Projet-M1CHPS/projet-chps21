@@ -11,6 +11,10 @@ namespace nnet {
      */
     void run() override;
 
+    void setVerbose(bool v) {
+      verbose = v;
+    }
+
   protected:
     /**
      * @brief Update the model after a batch of training.
@@ -34,5 +38,7 @@ namespace nnet {
      * @param os
      */
     void print(std::ostream &os) const override;
+
+    bool verbose = false;
   };
 }   // namespace nnet

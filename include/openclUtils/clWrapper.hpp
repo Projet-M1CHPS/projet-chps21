@@ -10,6 +10,7 @@
 #include <shared_mutex>
 #include <thread>
 #include <tscl.hpp>
+#include <utility>
 
 namespace utils {
 
@@ -28,7 +29,7 @@ namespace utils {
      */
     static clWrapper &initOpenCL(clWrapper &wrapper) noexcept;
 
-    clWrapper() noexcept = default;
+    clWrapper() = default;
 
     clWrapper(const clWrapper &other) { *this = other; }
     clWrapper &operator=(const clWrapper &other);
@@ -54,6 +55,11 @@ namespace utils {
     cl::Platform getPlatform() { return platform; }
     cl::Context getContext() { return context; }
     cl::CommandQueue &getDefaultQueue() { return default_queue; }
+
+    // Helper function to disable some devices
+    void restrictDevicesTo(std::vector<cl::Device> allowed_devices) {
+      this->devices = std::move(allowed_devices);
+    }
 
     std::vector<cl::Device> &getDevices() { return devices; }
     const std::vector<cl::Device> &getDevices() const { return devices; }

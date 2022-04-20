@@ -17,13 +17,11 @@ namespace nnet {
 
     CNN(const CNN &other) = delete;
     CNN(CNN &&other) = delete;
+
     CNN &operator=(const CNN &) = delete;
     CNN &operator=(CNN &&other) = delete;
 
     std::vector<std::unique_ptr<CNNLayer>> copyLayers();
-
-    std::vector<clFTensor> getWeights();
-    void setWeights(std::vector<clFTensor>& tensors);
 
     void setTopology(CNNTopology const &topology);
     [[nodiscard]] CNNTopology const &getTopology() const { return topology; }

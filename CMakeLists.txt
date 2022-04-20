@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(projet-chps21 VERSION 1.2.0.0 DESCRIPTION "Cancer detection using deep learning" LANGUAGES CXX C)
+project(projet-chps21 VERSION 1.2.2.0 DESCRIPTION "Cancer detection using deep learning" LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -44,11 +44,12 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 find_package(Threads REQUIRED)
 find_package(Boost COMPONENTS system filesystem REQUIRED)
-find_package(TBB REQUIRED)
+# Required for std::algo
 find_package(OpenCL REQUIRED)
-find_package(CLBlast REQUIRED)
-
+find_package(OpenMP REQUIRED)
 find_package(BLAS REQUIRED)
+
+find_package(CLBlast REQUIRED)
 
 set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 # Setup external dependency of the project

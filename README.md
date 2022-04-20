@@ -1,86 +1,64 @@
-# Breast cancer detection through machine learning
+# KRess: Breast cancer detection through machine learning
 
-This project is part of the first year M1CHPS (High Performance Computing Degree) curriculum.
+This project is done in the context of the Master Calcul Haute Performance et Simulation at the Université de Versailles St-Quentin.
 
-The end goal is to implement in C++ a tool capable of cancer detection using various machine learning (ML) algorithms.
-Those algorithms will be implemented natively in C++, and no ML external libraries will be used.
+The goal of this project is to implement a tool for breast cancer detection, and optimize it accordingly.
 
-In the end, the user will have the choice between various training methods, and will be able to interact with the tool
-through a Python api.
+While the first semester focused on the sequential implementation (Versions <= 0.5), the second semester sees us switching to a GPU backend for maximum performance and scalability.
 
-# Requirements
+Furthermore, we also this project as an opportunity to explore software architecture on a real scale.
 
-Manual install :
+# Build: Dependencies
 
-* cmake >= 3.17
-* gcovr
-* doxygen (Optionnal)
+### DNF (Yum)
 
-For versions < 1.0.0
-
-* blas
-
-For versions >= 1.0.0
-
-* OpenCL
-
-Imported by the project :
-
-* GoogleTest (No need to install it, it is imported by the project)
-* TSCL (No need to install it, it is imported by the project)
-
-# Building the project
-
-To build the project, run the following command in the root directory of the project:
-
-```sh
-mkdir build
-cd build
-cmake -DCMAKE_BUILD_TYPE=Release  ..
-
-# Build the project
-make -j 
+```
+sudo dnf install ocl-icd-devel \
+                 opencl-headers \
+                 clblast-devel \
+                 boost-devel \
+                 blas-devel \
 ```
 
-We also recommend you run the tests to ensure everything is working properly
+You will also need a blas implementation, and an OpenCL runtime (we recommend POCL for starter)
+Note that the Cuda toolkit already provides the necessary OpenCL files.
 
 ```sh
-make test
+sudo dnf install pocl \
+                 openblas-devel
+```
+
+# Build:
+
+```sh
+git clone https://github.com/Thukisdo/projet-chps21/ kress-chps21
+cd kress-chps21 && mkdir build
+cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
+make -j
+```
+
+We advise you to run the tests to ensure everything went well:
+
+```
+cd build && make test -j
 ```
 
 # Usage
 
-If everything worked so far, the project is now runnable. Versions <= 1.0 do not provide a python interface, but instead
-an executable for loading a dataset and training a model.
-
 ```sh
 # Build the project if not done already
 cd build
-./bin/main <path todataset> <output path>
+./bin/kress <path todataset> <output path>
 ```
 
-Raw data will be outputted to <output path>/(eval or optimize).
+Raw data will be outputted to \<output path\>/.
 
-# About this project
+# Authors
+  
+  [Benjamin Lozes](https://github.com/byjtew)  \
+  [Ugo Battiston](https://github.com/johnkyky)  \
+  [Mathys JAM](https://github.com/Thukisdo)
 
-## First part
-
-During the first semester, we will focus on exploring and implementing various machine learning algorithms. The main
-objective is to have a functional prototype, and a good understanding of the various challenges of this subject. We will
-also profile the application performance for further work.
-
-## Second part
-
-This second part will focus on the project optimization and new QoL features. No further training algorithm should be
-implemented, except if they provide a significant improvement in the results or performance.
-
-For this, we will use OpenCL and OpenMP to optimize the application in a portable way.
-
-## Features
-
-* A simple and intuitive API (Work in progress)
-* Powerful machine learning algorithms, designed with maximum accuracy and performance in mind
-* A plethora of training algorithms to choose from
-* A clear report of the results, to provide the end-user feedback on his work
-
-# Credits
+# Thanks to
+  [Mohammed-Salah Ibnamar](https://github.com/yaspr), for supervising us during this project \
+  Thomas Dufaud, for providing us access to a GPU cluster

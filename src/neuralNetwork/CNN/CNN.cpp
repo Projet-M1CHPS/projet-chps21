@@ -9,19 +9,6 @@ namespace nnet {
     return res;
   }
 
-  std::vector<clFTensor> CNN::getWeights() {
-    std::vector<clFTensor> res;
-    for (auto &layer : layers) { layer->getWeight(res); }
-    return res;
-  }
-
-  void CNN::setWeights(std::vector<clFTensor> &tensors) {
-    size_t index = 0;
-    for (auto &layer : layers) {
-      if (layer->setWeight(tensors[index])) index++;
-    }
-  }
-
   void CNN::setTopology(CNNTopology const &cnn_topology) {
     topology = cnn_topology;
     layers = topology.convertToLayer();

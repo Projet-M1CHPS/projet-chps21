@@ -3,6 +3,9 @@
 # otherwise, code coverage is disabled and a warning is issued
 function(maybe_enable_coverage)
   set(COVERARE_ENABLED OFF PARENT_SCOPE)
+  if (NOT ENABLE_COVERAGE)
+    return()
+  endif()
   # Coverage are only enabled using GNU G++ / GCC and in debug build
   if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE STREQUAL "Debug")
     # Check if all required dependencies are satisfied

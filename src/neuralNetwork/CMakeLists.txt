@@ -1,7 +1,7 @@
 
 set(CURRENT_INCLUDE_DIR ${INCLUDE_DIR}/neuralNetwork)
 
-add_library(nnet INTERFACE ${INCLUDE_DIR}/NeuralNetwork.hpp ${CURRENT_INCLUDE_DIR}/Model.hpp ${CURRENT_INCLUDE_DIR}/Optimizer.hpp)
+add_library(nnet INTERFACE)
 target_include_directories(nnet INTERFACE "${INCLUDE_DIR}" "${CURRENT_INCLUDE_DIR}")
 target_link_libraries(nnet INTERFACE m openclUtils Math Utils)
 

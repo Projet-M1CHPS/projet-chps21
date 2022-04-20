@@ -22,8 +22,18 @@ namespace nnet {
 
     virtual std::unique_ptr<CNNLayer> copy() const = 0;
 
-    virtual void getWeight(std::vector<clFTensor> &weights) const;
-    virtual bool setWeight(const clFTensor &weights);
+    // Pretty messy but easiest way to do it for now
+    virtual bool hasWeight() const { return false; }
+
+    virtual clFTensor &getWeight() {
+      throw std::runtime_error("CNNLayer: Tried to acces weight in a layer without one ");
+    }
+
+    virtual const clFTensor &getWeight() const {
+      throw std::runtime_error("CNNLayer: Tried to acces weight in a layer without one ");
+    }
+
+    virtual void setWeight(const clFTensor &weights);
 
     virtual clFTensor compute(const clFTensor &input) = 0;
     virtual clFTensor computeForward(const clFTensor &input, CNNStorageBP &storage) = 0;
@@ -48,8 +58,12 @@ namespace nnet {
 
     [[nodiscard]] std::unique_ptr<CNNLayer> copy() const override;
 
-    void getWeight(std::vector<clFTensor> &weights) const override;
-    bool setWeight(const clFTensor &weights) override;
+    // Pretty messy but easiest way to do it for now
+    bool hasWeight() const override { return true; }
+
+    clFTensor &getWeight() override { return filters; }
+    const clFTensor &getWeight() const override { return filters; }
+    void setWeight(const clFTensor &weights) override;
 
     [[nodiscard]] const clFTensor &getFilter() const { return filters; }
     [[nodiscard]] clFTensor &getFilter() { return filters; }

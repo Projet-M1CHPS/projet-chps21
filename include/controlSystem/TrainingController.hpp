@@ -1,25 +1,25 @@
 #pragma once
 #include "Controller.hpp"
+#include "ModelEvaluator.hpp"
 #include "NeuralNetwork.hpp"
 #include "TrainingCollection.hpp"
 
 namespace control {
 
-  class TrainingController : Controller {
+  class TrainingController {
   public:
-    TrainingController(std::filesystem::path const &output_path, nnet::Model &model,
-                       nnet::Optimizer &optimizer, TrainingCollection &trainingCollection,
-                       size_t max_epoch = 10, bool output_stats = true);
+    explicit TrainingController(size_t max_epoch, ModelEvolutionTracker &evaluator,
+                                nnet::OptimizationScheduler &scheduler);
 
-    ControllerResult run() override;
+    virtual ControllerResult run();
+    void setVerbose(bool v) { is_verbose = v; }
+    bool isVerbose() const { return is_verbose; }
 
-  private:
-    nnet::Model *model;
-    nnet::Optimizer *optimizer;
-    TrainingCollection *training_collection;
-
+  protected:
     size_t max_epoch;
-    bool is_outputting_stats;
+    bool is_verbose = false;
+    ModelEvolutionTracker *evaluator;
+    nnet::OptimizationScheduler *scheduler;
   };
 
 }   // namespace control

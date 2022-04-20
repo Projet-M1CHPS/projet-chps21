@@ -16,12 +16,12 @@ namespace control {
 
     /**
      * @brief Runs the model on the input set. This methods feeds the model with tensors inside
-     * the input set for better performance. Tensors are computed asynchronously.
+     * the input set for better performance. Tensors may be computed asynchronously.
      *
      * @param wrapper
      * @return
      */
-    ControllerResult run() override;
+    ControllerResult run() noexcept override;
 
   private:
     nnet::Model *model;

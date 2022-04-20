@@ -26,8 +26,8 @@ namespace math {
     clFTensor(const clFTensor &other) = delete;
     clFTensor &operator=(const clFTensor &other) = delete;
 
-    clFTensor(clFTensor &&other) noexcept = default;
-    clFTensor &operator=(clFTensor &&other) noexcept = default;
+    clFTensor(clFTensor &&other) = default;
+    clFTensor &operator=(clFTensor &&other) = default;
 
     /**
      * @brief Performs a deep copy of the tensor.
@@ -43,6 +43,12 @@ namespace math {
      * @return A shallow copy of this tensor
      */
     clFTensor shallowCopy() const;
+
+    void fill(float elem, cl::CommandQueue &queue, bool blocking) {
+      cl::Event event;
+      queue.enqueueFillBuffer(data, elem, getOffsetInBytes(), sizeInBytes(), nullptr, &event);
+      if (blocking) event.wait();
+    }
 
     std::vector<clFTensor> slice(size_t ndiv) const;
 
@@ -177,6 +183,9 @@ namespace math {
     clFTensor sub(float factor, const clFTensor &other, cl::CommandQueue &queue,
                   bool blocking = false) const;
 
+    void ipadd(float factor, const clFTensor &other, cl::CommandQueue &queue,
+               bool blocking = false);
+
     static clFTensor batchedGemm(float alpha, bool transpose_a, const clFMatrix &A,
                                  bool transpose_b, const clFTensor &B, cl::CommandQueue &queue,
                                  bool blocking = false);
@@ -193,17 +202,16 @@ namespace math {
 
     clFMatrix sumCollapse(cl::CommandQueue &queue, bool blocking = false) const;
 
-
     clFTensor &iphadamard(const clFTensor &other, cl::CommandQueue &queue, bool blocking = false);
 
     /**
      * @brief Inplace Scale every element of the tensor by a factor.
      *
-     * @param scale The factor to scale the matrix with
+     * @param factor The factor to scale the matrix with
      * @param queue The queue to use for this operation
      * @param blocking True if the operation is blocking, false otherwise
      */
-    void ipscale(float scale, cl::CommandQueue &queue, bool blocking = false);
+    void ipscale(float factor, cl::CommandQueue &queue, bool blocking = false);
 
   private:
     cl::Buffer data;

@@ -1,5 +1,4 @@
 #include "InputSetLoader.hpp"
-#include <execution>
 #include <filesystem>
 #include <stack>
 
@@ -155,10 +154,12 @@ namespace control {
       // Add a new class
       classes.push_back(entry.path().filename().string());
 
+      size_t count = 0;
       for (const auto &file : fs::directory_iterator(entry.path())) {
         if (not file.is_regular_file()) continue;
 
         files.push_back({file.path(), files.size(), static_cast<long>(classes.size() - 1)});
+        if (count++ > 16384) break;
       }
     }
 

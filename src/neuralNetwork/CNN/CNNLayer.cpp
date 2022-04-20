@@ -12,30 +12,27 @@ namespace nnet {
     clFTensor reduceInput(cl::CommandQueue &queue, const clFTensor &tensor, const size_t nInput,
                           const size_t nFilter, const size_t nBranch) {
       clFTensor res(tensor.getRows(), tensor.getCols(), nInput * nBranch);
-      // TODO changer par fill
-      for (size_t i = 0; i < res.getDepth(); i++) res[i].fill(0.f, queue);
+      res.fill(0.f, queue, false);
 
-      {
-        const size_t n = tensor.getRows() * tensor.getCols();
-        std::vector<float> alphas(nInput);
-        std::fill(alphas.begin(), alphas.end(), 1.f);
+      const size_t n = tensor.getRows() * tensor.getCols();
+      std::vector<float> alphas(nInput, 1.f);
 
-        std::vector<size_t> x_offset(nInput);
-        std::vector<size_t> res_offset(nInput);
-        for (size_t i = 0; i < x_offset.size(); i++) { x_offset[i] = res_offset[i] = i * n; }
+      std::vector<size_t> x_offset(nInput);
+      std::vector<size_t> res_offset(nInput);
+      for (size_t i = 0; i < x_offset.size(); i++) { x_offset[i] = res_offset[i] = i * n; }
 
-        const size_t batch_count = nInput;
+      const size_t batch_count = nInput;
 
-        for (size_t i = 0; i < nBranch; i++) {
-          for (size_t j = 0; j < nFilter; j++) {
-            clblast::AxpyBatched<float>(n, alphas.data(), tensor.getBuffer()(), x_offset.data(), 1,
-                                        res.getBuffer()(), res_offset.data(), 1, batch_count,
-                                        &queue(), nullptr);
-            for (auto &val : x_offset) { val += batch_count * n; }
-          }
-          for (auto &val : res_offset) { val += batch_count * n; }
+      for (size_t i = 0; i < nBranch; i++) {
+        for (size_t j = 0; j < nFilter; j++) {
+          clblast::AxpyBatched<float>(n, alphas.data(), tensor.getBuffer()(), x_offset.data(), 1,
+                                      res.getBuffer()(), res_offset.data(), 1, batch_count,
+                                      &queue(), nullptr);
+          for (auto &val : x_offset) { val += batch_count * n; }
         }
+        for (auto &val : res_offset) { val += batch_count * n; }
       }
+
       res.ipscale(1.f / static_cast<float>(nInput), queue);
       return res;
     }
@@ -43,9 +40,9 @@ namespace nnet {
 
   CNNLayer::CNNLayer(const std::pair<size_t, size_t> output) : outputSize(output) {}
 
-  void CNNLayer::getWeight(std::vector<clFTensor> &weights) const {}
-
-  bool CNNLayer::setWeight(const clFTensor &weights) { return false; }
+  void CNNLayer::setWeight(const clFTensor &weights) {
+    throw std::runtime_error("CNNLayer::setWeight: called on a filter without weights");
+  }
 
   CNNConvolutionLayer::CNNConvolutionLayer(const std::pair<size_t, size_t> outputSize,
                                            const std::pair<size_t, size_t> sizeFilter,
@@ -66,16 +63,8 @@ namespace nnet {
     return std::make_unique<CNNConvolutionLayer>(*this);
   }
 
-  void CNNConvolutionLayer::getWeight(std::vector<clFTensor> &weights) const {
-    clFTensor res;
-    // TODO : warning queue !!! + copy or shallow copy ???
-    res.copy(filters, utils::cl_wrapper.getDefaultQueue(), true);
-    weights.push_back(std::move(res));
-  }
-
-  bool CNNConvolutionLayer::setWeight(const clFTensor &weights) {
+  void CNNConvolutionLayer::setWeight(const clFTensor &weights) {
     filters.copy(weights, utils::cl_wrapper.getDefaultQueue(), true);
-    return true;
   }
 
   clFTensor CNNConvolutionLayer::compute(const clFTensor &input) {
@@ -93,7 +82,6 @@ namespace nnet {
 
     size_t index_out = 0;
     for (size_t i = 0; i < n_branch; i++) {
-      std::cout << "branch" << std::endl;
       for (size_t j = 0; j < sub_filter[i].getDepth(); j++) {
         clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, input.getRows(),
                                  input.getCols(), filters.getRows(), filters.getCols(), 0, 0, 1, 1,
@@ -124,30 +112,26 @@ namespace nnet {
 
     // compute filter error
     clFTensor res_filter(filters.getRows(), filters.getCols(), errors.getDepth());
-    {
-      const size_t height = convoStorage.input.getRows();
-      const size_t width = convoStorage.input.getCols();
-      const size_t kernel_h = errors.getRows();
-      const size_t kernel_w = errors.getCols();
-      const size_t n_input = convoStorage.input.getDepth() / n_branch;
+    size_t height = convoStorage.input.getRows();
+    size_t width = convoStorage.input.getCols();
+    size_t kernel_h = errors.getRows();
+    size_t kernel_w = errors.getCols();
+    size_t n_input = convoStorage.input.getDepth() / n_branch;
 
-      std::vector<clFTensor> sub_input = convoStorage.input.slice(n_branch);
-      std::vector<clFTensor> sub_error = errors.slice(n_branch * n_filter);
+    std::vector<clFTensor> sub_input = convoStorage.input.slice(n_branch);
+    std::vector<clFTensor> sub_error = errors.slice(n_branch * n_filter);
 
-      size_t index = 0;
-      for (size_t i = 0; i < n_branch; i++) {
-        std::cout << "branch" << std::endl;
-        for (size_t j = 0; j < n_filter; j++) {
-          std::cout << "filter" << std::endl;
-          for (size_t k = 0; k < n_input; k++) {
-            clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, height, width,
-                                     kernel_h, kernel_w, 0, 0, 1, 1, 1, 1, 1, 1,
-                                     sub_input[i][k].getBuffer()(), sub_input[i][k].getOffset(),
-                                     errors[index].getBuffer()(), errors[index].getOffset(),
-                                     res_filter[index].getBuffer()(), res_filter[index].getOffset(),
-                                     &queue(), nullptr);
-            index++;
-          }
+    size_t index = 0;
+    for (size_t i = 0; i < n_branch; i++) {
+      for (size_t j = 0; j < n_filter; j++) {
+        for (size_t k = 0; k < n_input; k++) {
+          clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, height, width,
+                                   kernel_h, kernel_w, 0, 0, 1, 1, 1, 1, 1, 1,
+                                   sub_input[i][k].getBuffer()(), sub_input[i][k].getOffset(),
+                                   errors[index].getBuffer()(), errors[index].getOffset(),
+                                   res_filter[index].getBuffer()(), res_filter[index].getOffset(),
+                                   &queue(), nullptr);
+          index++;
         }
       }
     }
@@ -155,29 +139,27 @@ namespace nnet {
     // compute input error
     clFTensor res_input(convoStorage.input.getRows(), convoStorage.input.getCols(),
                         errors.getDepth());
-    {
-      const size_t height = errors.getRows();
-      const size_t width = errors.getCols();
-      const size_t kernel_h = filters.getRows();
-      const size_t kernel_w = filters.getCols();
-      const size_t batch_count = errors.getDepth() / (n_branch * n_filter);
+    height = errors.getRows();
+    width = errors.getCols();
+    kernel_h = filters.getRows();
+    kernel_w = filters.getCols();
+    size_t batch_count = errors.getDepth() / (n_branch * n_filter);
 
-      std::vector<clFTensor> sub_error = errors.slice(n_branch * n_filter);
-      std::vector<clFTensor> sub_filter = filters.slice(n_branch * n_filter);
+    sub_error = errors.slice(n_branch * n_filter);
+    std::vector<clFTensor> sub_filter = filters.slice(n_branch * n_filter);
 
-      size_t index = 0;
-      for (size_t i = 0; i < n_branch; i++) {
-        for (size_t j = 0; j < n_filter; j++) {
-          clblast::Convgemm<float>(clblast::KernelMode::kConvolution, 1, height, width, kernel_h,
-                                   kernel_w, kernel_h - 1, kernel_w - 1, 1, 1, 1, 1, 1, batch_count,
-                                   sub_error[i * n_filter + j].getBuffer()(),
-                                   sub_error[i * n_filter + j].getOffsetInFloats(),
-                                   sub_filter[i * n_filter + j].getBuffer()(),
-                                   sub_filter[i * n_filter + j].getOffsetInFloats(),
-                                   res_input[index].getBuffer()(), res_input[index].getOffset(),
-                                   &queue(), nullptr);
-          index += batch_count;
-        }
+    index = 0;
+    for (size_t i = 0; i < n_branch; i++) {
+      for (size_t j = 0; j < n_filter; j++) {
+        clblast::Convgemm<float>(clblast::KernelMode::kConvolution, 1, height, width, kernel_h,
+                                 kernel_w, kernel_h - 1, kernel_w - 1, 1, 1, 1, 1, 1, batch_count,
+                                 sub_error[i * n_filter + j].getBuffer()(),
+                                 sub_error[i * n_filter + j].getOffsetInFloats(),
+                                 sub_filter[i * n_filter + j].getBuffer()(),
+                                 sub_filter[i * n_filter + j].getOffsetInFloats(),
+                                 res_input[index].getBuffer()(), res_input[index].getOffset(),
+                                 &queue(), nullptr);
+        index += batch_count;
       }
     }
     convoStorage.error_filter =
@@ -243,7 +225,6 @@ namespace nnet {
       save_cols.fill(0);
 
       size_t rowsPos = 0, colsPos = 0;
-      std::cout << "put" << _input << std::endl;
       for (size_t i = 0; i < _output.getRows(); i++) {
         for (size_t j = 0; j < _output.getCols(); j++) {
           float max = _input(rowsPos, colsPos);
@@ -298,7 +279,7 @@ namespace nnet {
                                          const std::pair<size_t, size_t> poolSize)
       : CNNPoolingLayer(outputSize, poolSize), filter(poolSize.first, poolSize.second, 1) {
     // TODO : faire attention a la queu sur laquel on fait le calcul
-    filter[0].fill(1.f, utils::cl_wrapper.getDefaultQueue());
+    filter[0].fill(1.f, utils::cl_wrapper.getDefaultQueue(), true);
   }
 
   CNNAvgPoolingLayer::CNNAvgPoolingLayer(const CNNAvgPoolingLayer &other)
@@ -339,7 +320,7 @@ namespace nnet {
                   errors.getDepth());
 
     for (size_t ii = 0; ii < errors.getDepth(); ii++) {
-      std::cout << "call" << std::endl;
+      ;
       FloatMatrix error_output = errors[ii].toFloatMatrix(true);
       FloatMatrix error_input = res[ii].toFloatMatrix(true);
       error_input.fill(0.f);

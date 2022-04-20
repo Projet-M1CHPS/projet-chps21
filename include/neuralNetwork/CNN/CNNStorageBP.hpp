@@ -12,13 +12,29 @@ namespace nnet {
   class CNNStorageBP {
   public:
     CNNStorageBP() = default;
-    ~CNNStorageBP() = default;
+    virtual ~CNNStorageBP() = default;
+
+    // Pretty messy but easiest way to do it for now
+    virtual bool hasGradient() const { return false; }
+
+    virtual clFTensor &getGradient() {
+      throw std::runtime_error("CNNStorageBP: Tried to acces gradient in a storage without one");
+    }
+
+    virtual const clFTensor &getGradient() const {
+      throw std::runtime_error("CNNStorageBP: Tried to acces gradient in a storage without one");
+    }
   };
 
   class CNNStorageBPConvolution final : public CNNStorageBP {
   public:
     CNNStorageBPConvolution() = default;
-    ~CNNStorageBPConvolution() = default;
+
+    // Pretty messy but easiest way to do it for now
+    bool hasGradient() const override { return true; }
+
+    clFTensor &getGradient() override { return error_filter; }
+    const clFTensor &getGradient() const override { return error_filter; }
 
     // private:
     clFTensor input;
@@ -29,7 +45,6 @@ namespace nnet {
   public:
     explicit CNNStorageBPPooling(const std::pair<size_t, size_t> inputSize)
         : input_size(inputSize) {}
-    ~CNNStorageBPPooling() = default;
 
     // private:
     std::pair<size_t, size_t> input_size;
@@ -39,7 +54,6 @@ namespace nnet {
   public:
     explicit CNNStorageBPMaxPooling(const std::pair<size_t, size_t> inputSize)
         : CNNStorageBPPooling(inputSize) {}
-    ~CNNStorageBPMaxPooling() = default;
 
     // private:
     // Matrix<std::pair<size_t, size_t>> maxIndex;
@@ -51,7 +65,6 @@ namespace nnet {
   public:
     explicit CNNStorageBPAvgPooling(const std::pair<size_t, size_t> inputSize)
         : CNNStorageBPPooling(inputSize) {}
-    ~CNNStorageBPAvgPooling() = default;
   };
 
 
