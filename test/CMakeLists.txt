@@ -11,7 +11,7 @@ FetchContent_MakeAvailable(googletest)
 include(GoogleTest)
 add_subdirectory(math)
 add_subdirectory(image)
-# add_subdirectory(neuralNetwork)
+#add_subdirectory(neuralNetwork)
 
 if (COVERARE_ENABLED)
     setup_target_for_coverage_gcovr_html(NAME coverage

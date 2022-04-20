@@ -8,8 +8,8 @@ namespace control {
   namespace fs = std::filesystem;
   std::ostream &operator<<(std::ostream &os, const ModelEvaluation &me) {
     os << me.avg_f1score * 100.f << "% Average f1 score" << std::endl;
-    os << "\t- " << me.avg_precision * 100.f << "% Average precision: " << std::endl;
-    os << "\t- " << me.avg_recall * 100.f << "% Average recall " << std::endl;
+    os << "\t- " << me.avg_precision * 100.f << "% Average precision" << std::endl;
+    os << "\t- " << me.avg_recall * 100.f << "% Average recall" << std::endl;
     return os;
   }
 
@@ -20,6 +20,8 @@ namespace control {
     math::Matrix<size_t> confusion_matrix(input_set.getClassCount(), input_set.getClassCount());
     confusion_matrix.fill(0);
 
+    // On huge input sets, the evaluation can take quite some time
+    // No reason not to use OpenMP here
     // On huge input sets, the evaluation can take quite some time
     // No reason not to use OpenMP here
 #pragma omp declare reduction (add_matrix : math::Matrix<size_t> : omp_out += omp_in ) initializer ( omp_priv(omp_orig) )
@@ -38,8 +40,7 @@ namespace control {
             f1s(input_set.getClassCount());
 
 #pragma omp parallel for reduction(+: avg_precision, avg_recall, avg_f1) default(none) \
-        shared(nclass, confusion_matrix, precisions, recalls, f1s) schedule(dynamic)  \
-        num_threads(4)  // 4 max thread to avoid overloading the GPU
+        shared(nclass, confusion_matrix, precisions, recalls, f1s) schedule(dynamic)
     for (size_t i = 0; i < nclass; i++) {
       size_t sum = 0;
       double recall = 0, precision = 0, f1 = 0;
@@ -98,7 +99,8 @@ namespace control {
     fs::path target_path = output_path / subdir;
     if (not fs::exists(target_path)) fs::create_directories(target_path);
     if (not fs::exists(target_path / "f1")) fs::create_directories(target_path / "f1");
-    if (not fs::exists(target_path / "precision")) fs::create_directories(target_path / "precision");
+    if (not fs::exists(target_path / "precision"))
+      fs::create_directories(target_path / "precision");
     if (not fs::exists(target_path / "recall")) fs::create_directories(target_path / "recall");
 
     // If something fails, just throw an exception
@@ -117,10 +119,6 @@ namespace control {
       i++;
     }
 
-    // The average results are located in the top directory
-    avg_streams.s_f1_score.exceptions(std::ifstream::badbit);
-    avg_streams.s_f1_score.open(target_path / "avg_f1.dat");
-    writeHeader(avg_streams.s_f1_score, "t recall");
 
     avg_streams.s_precision.exceptions(std::ifstream::badbit);
     avg_streams.s_precision.open(target_path / "avg_precision.dat");

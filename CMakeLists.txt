@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(projet-chps21 VERSION 1.2.1.0 DESCRIPTION "Cancer detection using deep learning" LANGUAGES CXX C)
+project(projet-chps21 VERSION 1.2.2.0 DESCRIPTION "Cancer detection using deep learning" LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -74,8 +74,8 @@ add_subdirectory(src)
 
 # ! Must be called in the root cmakelist !
 # otherwise, the test target will not be properly set up
-#[[enable_testing()
-add_subdirectory(test)]]
+enable_testing()
+add_subdirectory(test)
 
 # Contains various end executable
 add_subdirectory(apps)

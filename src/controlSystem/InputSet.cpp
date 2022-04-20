@@ -65,11 +65,9 @@ namespace control {
               "InputSet::append: tensor must have same size as input_width and input_height");
     }
 
-    std::filesystem::create_directories("loaded_images");
     for (size_t i = 0; i < new_ids.size(); i++) {
       long class_id = -1;
       if (class_ids.size() == new_ids.size()) class_id = class_ids[i];
-      auto buffer = tensor[i].toFloatMatrix();
       samples.emplace_back(new_ids[i], class_id, tensor[i]);
     }
     tensors.push_back(std::move(tensor));

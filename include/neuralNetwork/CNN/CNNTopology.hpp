@@ -36,9 +36,6 @@ namespace nnet {
 
     const std::shared_ptr<CNNTopologyLayer> &operator()(size_t index) const;
 
-    void setActivationFunction(const af::ActivationFunctionType act_function) {
-      activationFunction = act_function;
-    }
 
     [[nodiscard]] const af::ActivationFunctionType getActivationFunction() const {
       return activationFunction;
@@ -49,28 +46,28 @@ namespace nnet {
     [[nodiscard]] const std::vector<std::shared_ptr<CNNTopologyLayer>> &getTopology() const {
       return layers;
     }
+    [[nodiscard]] const size_t getNBranchFinal() const { return n_branch_final; }
 
-    [[nodiscard]] std::vector<std::shared_ptr<CNNLayer>> convertToLayer() const;
+    [[nodiscard]] std::vector<std::unique_ptr<CNNLayer>> convertToLayer() const;
     [[nodiscard]] std::vector<std::unique_ptr<CNNStorageBP>> convertToStorage() const;
 
   private:
     void addConvolution(const std::pair<size_t, size_t> &inputSize, const size_t features,
                         const std::pair<size_t, size_t> &filterSize,
-                        const af::ActivationFunctionType aFunction, const size_t stride,
-                        const size_t padding, const size_t nbranch);
+                        const af::ActivationFunctionType aFunction, const size_t nbranch);
 
     void addPooling(const std::pair<size_t, size_t> &inputSize, const PoolingType poolingType,
-                    const std::pair<size_t, size_t> &poolSize, const size_t stride,
-                    const size_t nbranch);
+                    const std::pair<size_t, size_t> &poolSize, const size_t nbranch);
 
   private:
     std::pair<size_t, size_t> inputSize;
     std::vector<std::shared_ptr<CNNTopologyLayer>> layers;
     af::ActivationFunctionType activationFunction;
+    size_t n_branch_final;
   };
 
   const CNNTopology stringToTopology(const std::string &str);
 
   std::ostream &operator<<(std::ostream &os, const CNNTopologyLayer &nn);
-  
+
 }   // namespace nnet

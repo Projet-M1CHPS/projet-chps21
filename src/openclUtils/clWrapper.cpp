@@ -1,4 +1,5 @@
 #include "clWrapper.hpp"
+#include <clblast.h>
 #include <fstream>
 #include <ncurses.h>
 
@@ -42,10 +43,6 @@ namespace utils {
         std::cout << "Platform: " << platform.getInfo<CL_PLATFORM_NAME>() << std::endl;
         for (size_t i = 0; i < devices.size(); i++) {
           std::cout << "\t d" << i << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
-          std::cout << "\t Memory alignment" << devices[i].getInfo<CL_DEVICE_MEM_BASE_ADDR_ALIGN>()
-                    << std::endl;
-          std::cout << "device fission: " << devices[i].getInfo<CL_DEVICE_PARTITION_MAX_SUB_DEVICES>()
-                    << std::endl;
         }
         if (!devices.empty()) { gpu_platforms.push_back(platform); }
       }

@@ -11,7 +11,7 @@ namespace control {
   public:
     friend class TrainingCollectionLoader;
 
-    TrainingCollection() = default;
+
     TrainingCollection(size_t input_width, size_t input_height)
         : training_set(input_width, input_height), eval_set(input_width, input_height) {}
 
@@ -78,15 +78,13 @@ namespace control {
       makeTrainingTargets();
     }
 
-    const std::vector<math::clFTensor> &getTargets() const { return training_targets; }
-
-    std::vector<TrainingCollection> split(size_t n);
-
-    void display() const;
-
-    void makeTrainingTargets();
+    const std::vector<math::clFTensor>& getTargets() {
+      return training_targets;
+    }
 
   private:
+    void makeTrainingTargets();
+
     InputSet training_set;
     InputSet eval_set;
     // Temporary solution, this should probably moved elsewhere

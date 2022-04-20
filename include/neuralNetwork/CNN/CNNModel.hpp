@@ -8,9 +8,15 @@ namespace nnet {
   using namespace nnet;
   using namespace math;
 
-  class CNNModel : public Model {
+  class CNNModel final : public Model {
   public:
     CNNModel();
+
+    CNNModel(CNNModel const &other) = delete;
+    CNNModel &operator=(CNNModel const &other) = delete;
+
+    CNNModel(CNNModel &&other) noexcept = default;
+    CNNModel &operator=(CNNModel &&other) noexcept = default;
 
     /**
      * @brief Builds a new CNN model with the given topology
@@ -20,13 +26,6 @@ namespace nnet {
      * @return
      */
     static std::unique_ptr<CNNModel> random(CNNTopology const &topology, MLPTopology &mlp_topology);
-
-    CNNModel(const CNNModel &) = delete;
-    CNNModel(CNNModel &&other) noexcept : Model(std::move(other)) {
-      cnn = std::move(other.cnn);
-      mlp = std::move(other.mlp);
-      flatten = std::move(other.flatten);
-    };
 
     /**
      * @brief Save the model to the given path
@@ -50,23 +49,19 @@ namespace nnet {
       return false;
     }
 
-    [[nodiscard]] math::clFMatrix predict(math::clFMatrix const &input) const override;
-
     [[nodiscard]] CNN &getCnn() { return *cnn; }
     [[nodiscard]] CNN const &getCnn() const { return *cnn; }
 
-    [[nodiscard]] clFMatrix &getFlatten() { return flatten; }
-    [[nodiscard]] clFMatrix const &getFlatten() const { return flatten; }
 
     [[nodiscard]] MLPerceptron &getMlp() { return *mlp; }
     [[nodiscard]] MLPerceptron const &getMlp() const { return *mlp; }
 
+    [[nodiscard]] clFTensor predict(clFTensor const &inputs) const override;
+    [[nodiscard]] clFMatrix predict(clFMatrix const &input) const override;
+
   private:
     std::unique_ptr<CNN> cnn;
     std::unique_ptr<MLPerceptron> mlp;
-
-    // TODO : Remove me
-    clFMatrix flatten;
   };
 
-}   // namespace cnnet
+}   // namespace nnet

@@ -25,7 +25,7 @@ namespace control {
     explicit Controller(std::filesystem::path ouput_path);
 
     virtual ~Controller() = default;
-    virtual ControllerResult run() = 0;
+    virtual ControllerResult run() noexcept = 0;
 
     std::filesystem::path getOutputPath() const { return output_path; }
 

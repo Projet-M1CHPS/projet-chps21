@@ -15,15 +15,18 @@ namespace nnet {
   public:
     CNN() = default;
 
-    CNN(const CNN &other) = default;
-    CNN(CNN &&other) = default;
-    CNN &operator=(const CNN &) = default;
-    CNN &operator=(CNN &&other) = default;
+    CNN(const CNN &other) = delete;
+    CNN(CNN &&other) = delete;
+
+    CNN &operator=(const CNN &) = delete;
+    CNN &operator=(CNN &&other) = delete;
+
+    std::vector<std::unique_ptr<CNNLayer>> copyLayers();
 
     void setTopology(CNNTopology const &topology);
     [[nodiscard]] CNNTopology const &getTopology() const { return topology; }
 
-    [[nodiscard]] const std::vector<std::shared_ptr<CNNLayer>> &getLayers() const { return layers; }
+    [[nodiscard]] const std::vector<std::unique_ptr<CNNLayer>> &getLayers() const { return layers; }
 
     [[nodiscard]] size_t getOutputSize() const {
       // TODO : warning
@@ -37,7 +40,12 @@ namespace nnet {
 
   public:
     CNNTopology topology;
-    std::vector<std::shared_ptr<CNNLayer>> layers;
+    std::vector<std::unique_ptr<CNNLayer>> layers;
   };
+
+  void reorganizeForward(cl::CommandQueue &queue, clFTensor &tensor, const size_t nInput,
+                         const size_t nBranch);
+  void reorganizeBackward(cl::CommandQueue &queue, clFTensor &tensor, const size_t nInput,
+                          const size_t nBranch, const std::pair<size_t, size_t> size);
 
 }   // namespace nnet

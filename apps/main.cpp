@@ -1,3 +1,5 @@
+#include "CNN.hpp"
+#include "CNNOptimizer.hpp"
 #include "EvalController.hpp"
 #include "ModelEvaluator.hpp"
 #include "NeuralNetwork.hpp"
@@ -41,12 +43,12 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // One day, we'll have enough time to make this configurable from a file :c
   constexpr int kImageSize = 32;   // We assume we use square images
   // Size to use for images allocation
-  constexpr int kTensorSize = 512;
+  constexpr int kTensorSize = 256;
   // The size of the batch. We highly recommend using a multiple/dividend of the tensor size
   // to avoid batch fragmentation
   constexpr int kBatchSize = 16;
 
-  constexpr float kLearningRate = 0.01;
+  constexpr float kLearningRate = 0.08;
   constexpr float kMomentum = 0.9;
   constexpr float kDecayRate = 0.001;
 
@@ -56,13 +58,12 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   // Maximum number of thread
   // The scheduler is free to use less if it judges necessary
-  constexpr size_t kMaxThread = 1;
+  constexpr size_t kMaxThread = 4;
   constexpr bool kAllowMultipleThreadPerDevice = false;
-  constexpr size_t kMaxEpoch = 100;
+  constexpr size_t kMaxEpoch = 20;
   // If set to true, the scheduler will move batches around to ensure each batch used for
   // computation is of size kBatchSize
-  constexpr bool kAllowBatchDefragmentation = false;
-  constexpr size_t kMaxDeviceCount = 1;
+  constexpr size_t kMaxDeviceCount = 4;
 
   // utils::clPlatformSelector::initOpenCL();
   // Uncomment to display a ncurses-based UI for platform selection
@@ -72,13 +73,13 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   // Just truncate the list of devices to kMaxDeviceCount (We assume every device is the same for
   // the sake of simplicity)
-  allowed_devices.resize(kMaxDeviceCount);
+  allowed_devices.resize(std::min(kMaxDeviceCount, allowed_devices.size()));
   // This is pretty bad design, but it'll simplify the benchmarking process
   // Not intended for production code
   utils::cl_wrapper.restrictDevicesTo(allowed_devices);
 
   // Do not add the output size, it is automatically set to the number of classes
-  MLPTopology topology = {kImageSize * kImageSize, 64, 64, 64, 64};
+  MLPTopology topology = {kImageSize * kImageSize, 1024, 1024, 1024, 1024, 512, 256};
 
   logger("Loading dataset", tscl::Log::Debug);
   TrainingCollectionLoader loader(kTensorSize, kImageSize, kImageSize);
@@ -97,39 +98,47 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   logger("Training set size: " + std::to_string(training_collection.getTrainingSet().getSize()),
          tscl::Log::Trace);
-  logger("Evaluation set size: " + std::to_string(training_collection.getEvaluationSet().getSize()),
+  logger("Testing set size: " + std::to_string(training_collection.getEvaluationSet().getSize()),
          tscl::Log::Trace);
 
 
   // auto model = nnet::MLPModel::randomReluSigmoid(topology);
-  auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
-  // auto model = std::make_unique<nnet::MLPModel>();
-  // model->load("michal.nnet");
+  // auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
+  auto model = std::make_unique<nnet::MLPModel>();
+  model->load("michal.nnet");
   std::unique_ptr<Optimizer> optimizer;
   if (kOptimType == kUseSGD)
     optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(*model, kLearningRate);
   else if (kOptimType == kUseMomentum)
-    optimizer = nnet::MLPOptimizer::make<nnet::MomentumOptimization>(*model, kLearningRate, kMomentum);
+    optimizer =
+            nnet::MLPOptimizer::make<nnet::MomentumOptimization>(*model, kLearningRate, kMomentum);
   else if (kOptimType == kUseDecay)
-    optimizer = nnet::MLPOptimizer::make<nnet::DecayOptimization>(*model, kLearningRate, kDecayRate);
+    optimizer =
+            nnet::MLPOptimizer::make<nnet::DecayOptimization>(*model, kLearningRate, kDecayRate);
   else if (kOptimType == kUseDecayMomentum)
-    optimizer = nnet::MLPOptimizer::make<nnet::DecayMomentumOptimization>(*model, kLearningRate, kDecayRate, kMomentum);
+    optimizer = nnet::MLPOptimizer::make<nnet::DecayMomentumOptimization>(*model, kLearningRate,
+                                                                          kDecayRate, kMomentum);
 
   // ParallelScheduler scheduler(batch, input, target);
+
+  std::string str_topology("6 6 relu convolution 2 2 2 convolution 2 2 2 pooling max 2 2");
+  auto cnn_topology = nnet::stringToTopology(str_topology);
+  std::cout << cnn_topology << std::endl;
+
+  auto cnn_model = CNNModel::random(cnn_topology, topology);
+  auto cnn_optimizer = std::make_unique<nnet::CNNOptimizer>(
+          *cnn_model, std::make_unique<SGDOptimization>(cnn_model->getMlp(), 0.8f));
 
   logger("Creating scheduler", tscl::Log::Debug);
 
   ParallelScheduler::Builder scheduler_builder;
-  scheduler_builder.setTrainingSets(training_collection.getTrainingSet().getTensors(),
-                                    training_collection.getTargets());
+  scheduler_builder.setJob({kBatchSize, training_collection.getTrainingSet().getTensors(),
+                            training_collection.getTargets()});
   // Set the resources for the scheduler
   scheduler_builder.setMaxThread(kMaxThread, kAllowMultipleThreadPerDevice);
   scheduler_builder.setDevices(utils::cl_wrapper.getDevices());
 
-  scheduler_builder.setOptimizer(*optimizer);
-
-  // Set the batch size, and allow/disallow batch optimization
-  scheduler_builder.setBatchSize(kBatchSize, kAllowBatchDefragmentation);
+  scheduler_builder.setOptimizer(*cnn_optimizer);
 
   auto scheduler = scheduler_builder.build();
   // SchedulerProfiler sc_profiler(scheduler_builder.build(), output_path / "scheduler");
