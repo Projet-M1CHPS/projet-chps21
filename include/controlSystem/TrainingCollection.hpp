@@ -80,7 +80,7 @@ namespace control {
 
     const std::vector<math::clFTensor> &getTargets() const { return training_targets; }
 
-    void split(int n, std::vector<TrainingCollection> &sub_collections) const;
+    std::vector<TrainingCollection> split(size_t n);
 
     void display() const;
 

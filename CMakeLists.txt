@@ -24,13 +24,13 @@ endif ()
 
 
 ## MPI support
-set(USE_MPI OFF)
-message(STATUS "Looking for mpicxx...")
-if (CMAKE_CXX_COMPILER MATCHES ".*mpicxx")
-    set(USE_MPI ON)
-    message(STATUS "Found mpicxx: ${CMAKE_CXX_COMPILER}")
-else ()
-    message(STATUS "No mpicxx found.")
+if (USE_MPI)
+    message(STATUS "Looking for mpicxx...")
+    if (CMAKE_CXX_COMPILER MATCHES ".*mpicxx")
+        message(STATUS "Found mpicxx: ${CMAKE_CXX_COMPILER}")
+    else ()
+        message(FATAL_ERROR "USE_MPI enabled, but mpicxx wasn't found.\nSet CMAKE_CXX_COMPILER to the path of your mpicxx.")
+    endif ()
 endif ()
 
 include(check_coverage)

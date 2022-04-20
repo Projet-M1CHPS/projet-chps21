@@ -177,67 +177,6 @@ void sendTensor(const InputSet &input_set, const std::string &class_name,
   mpi_put("< sendTensor(...)");
 }
 
-TrainingCollection scatterTrainingCollections(std::vector<TrainingCollection> &send_collections) {
-  std::array<unsigned long, 2> collection_dim{};
-  if (rank == 0) {
-    auto &set = send_collections.at(0).getTrainingSet();
-    collection_dim = {set.getInputWidth(), set.getInputHeight()};
-    assert(std::all_of(collection_dim.cbegin(), collection_dim.cend(),
-                       [](const auto &e) { return e > 0; }));
-    mpi_put("Sending collection dimensions: " + std::to_string(collection_dim.at(0)) + "x" +
-            std::to_string(collection_dim.at(1)));
-    for (int p = 1; p < nprocess; p++)
-      MPI_Send(collection_dim.data(), 2, MPI_UNSIGNED_LONG, p, 0, MPI_COMM_WORLD);
-  } else {
-    MPI_Recv(collection_dim.data(), 2, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-  }
-  TrainingCollection recv_collection(collection_dim.at(0), collection_dim.at(1));
-
-  mpi_put("Recv_collection.dimensions: " + std::to_string(collection_dim.at(0)) + "x" +
-          std::to_string(collection_dim.at(1)));
-
-  if (rank == 0) {
-    for (int p = 1; p < nprocess; p++) {
-      const TrainingCollection &current_collection = send_collections.at(p);
-      assert(!current_collection.getTargets().empty());
-
-      // Send the collection size
-      mpi_put("Sending collection size (" + std::to_string(current_collection.getTargets().size()) +
-              ") to " + std::to_string(p));
-      const unsigned long current_targets_count = current_collection.getTargets().size();
-      MPI_Send(&current_targets_count, 1, MPI_UNSIGNED_LONG, p, 0, MPI_COMM_WORLD);
-
-      for (size_t t = 0; t < current_collection.getTrainingSet().getTensorCount(); t++)
-        sendTensor(current_collection.getTrainingSet(),
-                   current_collection.getTrainingSet().getClasses().at(t),
-                   current_collection.getTrainingSet().getTensor(t), p, t);
-    }
-  } else {
-    unsigned long nb_targets = 0;
-    MPI_Recv(&nb_targets, 1, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    mpi_put("Received " + std::to_string(nb_targets) + ", the targets count, from process 0");
-
-
-    std::vector<size_t> ids;
-    std::vector<long> class_ids;
-    math::clFTensor tensor;
-    std::vector<std::string> class_names(nb_targets);
-
-    for (size_t t = 0; t < nb_targets; t++) {
-      receiveTensor(tensor, class_names.at(t), ids, class_ids, t);
-      mpi_put("Received tensor " + std::to_string(t) + " from process 0");
-      mpi_put("Received tensor ids: " + std::to_string(ids.size()));
-      mpi_put("Received tensor class ids: " + std::to_string(class_ids.size()));
-      recv_collection.getTrainingSet().append(std::move(tensor), ids, class_ids);
-    }
-    recv_collection.getTrainingSet().updateClasses(class_names);
-    recv_collection.makeTrainingTargets();
-  }
-
-  if (rank == 0) recv_collection = std::move(send_collections.at(0));
-  return recv_collection;
-}
-
 // This function is quite big, but it allows the user to trivially specify the hyperparameters in
 // one place. This is especially useful for debugging or benchmarking. This function is not intended
 // for production use.
