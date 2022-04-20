@@ -28,12 +28,6 @@ namespace nnet {
 
     [[nodiscard]] const std::vector<std::unique_ptr<CNNLayer>> &getLayers() const { return layers; }
 
-    [[nodiscard]] size_t getOutputSize() const {
-      // TODO : warning
-      assert(0 && "A voir si on en a besoin");
-      return 0;
-    }
-
     void randomizeWeight();
 
     clFTensor predict(clFTensor const &input);

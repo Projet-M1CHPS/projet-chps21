@@ -43,6 +43,7 @@ TEST(CNNTopologyTest, canCreateTopology) {
   ASSERT_EQ(6, topology.getInputSize().second);
   ASSERT_EQ(3, topology.getDepth());
   ASSERT_EQ(4, topology.getNBranchFinal());
+  ASSERT_EQ(36, topology.getCNNOutputSize());
 }
 
 TEST(CNNTopologyTest, throwInvalidTopology) {

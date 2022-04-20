@@ -62,6 +62,7 @@ namespace nnet {
     bool hasWeight() const override { return true; }
 
     clFTensor &getWeight() override { return filters; }
+    //TODO : hum interressant plus de function pour faire la meme chose ?
     const clFTensor &getWeight() const override { return filters; }
     void setWeight(const clFTensor &weights) override;
 

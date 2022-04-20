@@ -45,6 +45,10 @@ namespace nnet {
     [[nodiscard]] const size_t getDepth() const { return layers.size(); }
 
     [[nodiscard]] const size_t getNBranchFinal() const { return n_branch_final; }
+    [[nodiscard]] size_t getCNNOutputSize() const {
+      return n_branch_final * layers.back()->getOutputSize().first *
+             layers.back()->getOutputSize().second;
+    }
 
     [[nodiscard]] std::vector<std::unique_ptr<CNNLayer>> convertToLayer() const;
     [[nodiscard]] std::vector<std::unique_ptr<CNNStorageBP>> convertToStorage() const;
