@@ -29,15 +29,17 @@ namespace nnet {
               model, std::make_unique<optim>(model.getPerceptron(), std::forward<Args>(args)...));
     }
 
+    virtual std::unique_ptr<Operation> makeMLPOperation();
+
     math::clFTensor optimize(const math::clFTensor &inputs, const math::clFTensor &targets,
-                             WeightUpdateCache &updater, cl::CommandQueue &queue);
+                             WeightUpdateCache &cache, cl::CommandQueue &queue);
 
-    std::unique_ptr<Optimizer::Operation> makeBatchOperation() override;
-
-    virtual std::unique_ptr<WeightUpdateCache> makeCache(size_t ncache);
+    virtual std::unique_ptr<WeightUpdateCache> makeCache();
     virtual std::vector<std::unique_ptr<WeightUpdateCache>> makeCaches(size_t ncache);
 
   private:
+    std::unique_ptr<Optimizer::Operation> makeOperationImpl() override;
+
     MLPerceptron *neural_network;
     std::unique_ptr<Optimization> opti_meth;
   };
@@ -45,6 +47,8 @@ namespace nnet {
   class MLPOptimizer::WeightUpdateCache {
   public:
     explicit WeightUpdateCache(MLPOptimizer &optimizer);
+    WeightUpdateCache(std::vector<math::clFMatrix> weight_updates, size_t contributions);
+
     virtual ~WeightUpdateCache() = default;
 
     math::clFMatrix &operator[](size_t i) { return weight_updates[i]; }
@@ -59,6 +63,8 @@ namespace nnet {
 
     void apply(cl::CommandQueue &queue);
 
+    void increaseContribution(size_t contrib) { contribution += contrib; }
+
     void synchronizeWeights(cl::CommandQueue &queue);
     void acquireBuffer(cl::CommandQueue &queue);
 
@@ -66,7 +72,7 @@ namespace nnet {
 
   protected:
     MLPerceptron *perceptron;
-    std::vector<size_t> contributions;
+    size_t contribution;
     std::vector<math::clFMatrix> weight_updates;
     std::vector<math::clFMatrix> weight_copy;
     std::vector<math::clFMatrix> biases_copy;
@@ -79,8 +85,6 @@ namespace nnet {
   public:
     explicit Operation(MLPOptimizer &optimizer) : optimizer(&optimizer) {}
 
-    ~Operation() override = default;
-
     void operator()(size_t thread_rank, const math::clFTensor &inputs,
                     const math::clFTensor &targets, cl::CommandQueue batch_queue) override {
       computeGradient(thread_rank, inputs, targets, batch_queue);
@@ -90,6 +94,14 @@ namespace nnet {
                                     const math::clFTensor &targets, cl::CommandQueue batch_queue);
 
     void reserveCaches(size_t num_threads) override;
+
+    WeightUpdateCache &getCache(size_t thread_rank) {
+      if (thread_rank >= caches.size()) {
+        throw std::runtime_error("Cache not allocated for thread " + std::to_string(thread_rank));
+      }
+      return *caches[thread_rank];
+    }
+
 
   protected:
     std::vector<std::unique_ptr<WeightUpdateCache>> caches;

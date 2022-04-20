@@ -23,7 +23,9 @@ namespace nnet {
      * should be fed to a OptimizationScheduler.
      * @return A pointer to an OptimizationScheduler.
      */
-    virtual std::unique_ptr<Operation> makeBatchOperation() = 0;
+    std::unique_ptr<Operation> makeOperation() {
+      return makeOperationImpl();
+    }
 
     /**
      * @brief The optimizer may hold some internal state that needs updating after each epoch
@@ -31,6 +33,10 @@ namespace nnet {
      * Before updating
      */
     virtual void update() = 0;
+
+  private:
+
+    virtual std::unique_ptr<Operation> makeOperationImpl() = 0;
   };
 
   /**

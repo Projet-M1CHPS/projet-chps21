@@ -23,6 +23,12 @@ namespace nnet {
      */
     math::clFMatrix predict(math::clFMatrix const &input) const override;
 
+    math::clFTensor predict(math::clFTensor const &input) const override {
+      // TODO : Implement me
+      assert(0 && "implement me");
+      return {1, 1, 1};
+    }
+
     bool load(const std::filesystem::path &path) override;
     bool save(const std::filesystem::path &path) const override;
 

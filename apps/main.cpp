@@ -1,3 +1,5 @@
+#include "CNN.hpp"
+#include "CNNOptimizer.hpp"
 #include "EvalController.hpp"
 #include "ModelEvaluator.hpp"
 #include "NeuralNetwork.hpp"
@@ -119,6 +121,14 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   // ParallelScheduler scheduler(batch, input, target);
 
+  std::string str_topology("6 6 relu convolution 2 2 2 convolution 2 2 2 pooling max 2 2");
+  auto cnn_topology = nnet::stringToTopology(str_topology);
+  std::cout << cnn_topology << std::endl;
+
+  auto cnn_model = CNNModel::random(cnn_topology, topology);
+  auto cnn_optimizer = std::make_unique<nnet::CNNOptimizer>(
+          *cnn_model, std::make_unique<SGDOptimization>(cnn_model->getMlp(), 0.8f));
+
   logger("Creating scheduler", tscl::Log::Debug);
 
   ParallelScheduler::Builder scheduler_builder;
@@ -128,7 +138,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   scheduler_builder.setMaxThread(kMaxThread, kAllowMultipleThreadPerDevice);
   scheduler_builder.setDevices(utils::cl_wrapper.getDevices());
 
-  scheduler_builder.setOptimizer(*optimizer);
+  scheduler_builder.setOptimizer(*cnn_optimizer);
 
   auto scheduler = scheduler_builder.build();
   // SchedulerProfiler sc_profiler(scheduler_builder.build(), output_path / "scheduler");

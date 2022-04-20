@@ -178,8 +178,13 @@ namespace math {
 
     cl::Buffer getBuffer() const { return data; }
 
+    void reshape(size_t new_rows, size_t new_cols, size_t new_depth);
+
     clFTensor sub(float factor, const clFTensor &other, cl::CommandQueue &queue,
                   bool blocking = false) const;
+
+    void ipadd(float factor, const clFTensor &other, cl::CommandQueue &queue,
+               bool blocking = false);
 
     static clFTensor batchedGemm(float alpha, bool transpose_a, const clFMatrix &A,
                                  bool transpose_b, const clFTensor &B, cl::CommandQueue &queue,
@@ -198,6 +203,15 @@ namespace math {
     clFMatrix sumCollapse(cl::CommandQueue &queue, bool blocking = false) const;
 
     clFTensor &iphadamard(const clFTensor &other, cl::CommandQueue &queue, bool blocking = false);
+
+    /**
+     * @brief Inplace Scale every element of the tensor by a factor.
+     *
+     * @param factor The factor to scale the matrix with
+     * @param queue The queue to use for this operation
+     * @param blocking True if the operation is blocking, false otherwise
+     */
+    void ipscale(float factor, cl::CommandQueue &queue, bool blocking = false);
 
   private:
     cl::Buffer data;

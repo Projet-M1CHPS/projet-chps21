@@ -135,7 +135,7 @@ namespace nnet {
     if (not tensors_ok or not job.isValid()) {
       throw std::runtime_error("ParallelScheduler::ParallelScheduler: Tensors size mismatch");
     }
-    optimizer_operation = optimizer.makeBatchOperation();
+    optimizer_operation = optimizer.makeOperation();
   }
 
   ParallelScheduler ParallelScheduler::makeWithDefaultDispatcher(const BatchSchedulerJob &job,

@@ -103,7 +103,7 @@ namespace nnet {
   WeightUpdateCache::WeightUpdateCache(MLPOptimizer &optimizer)
       : perceptron(optimizer.neural_network), optimization(optimizer.opti_meth.get()) {
     weight_updates.resize(perceptron->getWeights().size());
-    contributions.resize(perceptron->getWeights().size(), 0);
+    contribution = 0;
 
     auto queue = utils::cl_wrapper.getDefaultQueue();
     for (size_t i = 0; auto &w : perceptron->getWeights()) {
@@ -114,28 +114,29 @@ namespace nnet {
     queue.finish();
   }
 
+  WeightUpdateCache::WeightUpdateCache(std::vector<math::clFMatrix> weight_updates,
+                                       size_t contributions)
+      : contribution(contributions), weight_updates(std::move(weight_updates)) {}
+
   void WeightUpdateCache::add(size_t index, const clFMatrix &delta, size_t contribution_size,
                               cl::CommandQueue &queue) {
     weight_updates[index].ipadd(1.0f, delta, queue);
-    contributions[index] += contribution_size;
   }
 
   void WeightUpdateCache::reduce(WeightUpdateCache &other, cl::CommandQueue &queue) {
     for (size_t i = 0; i < weight_updates.size(); i++) {
       weight_updates[i].ipadd(1.0f, other[i], queue);
-      contributions[i] += other.contributions[i];
     }
   }
 
   void WeightUpdateCache::clear(cl::CommandQueue &queue) {
     for (auto &w : weight_updates) { w.fill(0.0f, queue); }
-
-    for (auto &c : contributions) { c = 0; }
+    contribution = 0;
   }
 
   void WeightUpdateCache::apply(cl::CommandQueue &queue) {
     for (size_t i = 0; i < weight_updates.size(); i++) {
-      float mean_factor = 1.0f / static_cast<float>(contributions[i]);
+      float mean_factor = 1.0f / static_cast<float>(contribution);
       weight_updates[i].ipscale(mean_factor, queue);
       optimization->optimize(weight_updates[i], perceptron->getWeights()[i], i, queue);
       weight_updates[i].fill(0.0f, queue);
@@ -170,41 +171,35 @@ namespace nnet {
     queue.enqueueMigrateMemObjects(buffers, 0);
   }
 
-  std::unique_ptr<WeightUpdateCache> MLPOptimizer::makeCache(size_t ncache) {
+  std::unique_ptr<WeightUpdateCache> MLPOptimizer::makeCache() {
     return std::make_unique<WeightUpdateCache>(*this);
   }
 
   std::vector<std::unique_ptr<WeightUpdateCache>> MLPOptimizer::makeCaches(size_t ncache) {
     std::vector<std::unique_ptr<WeightUpdateCache>> caches;
     caches.reserve(ncache);
-    for (size_t i = 0; i < ncache; i++) { caches.emplace_back(makeCache(ncache)); }
+    for (size_t i = 0; i < ncache; i++) { caches.emplace_back(makeCache()); }
     return caches;
   }
 
-  std::unique_ptr<Optimizer::Operation> MLPOptimizer::makeBatchOperation() {
+  std::unique_ptr<MLPOptimizer::Operation> MLPOptimizer::makeMLPOperation() {
+    return std::make_unique<Operation>(*this);
+  }
+
+  std::unique_ptr<Optimizer::Operation> MLPOptimizer::makeOperationImpl() {
     return std::make_unique<Operation>(*this);
   }
 
   clFTensor MLPOptimizer::optimize(const clFTensor &inputs, const clFTensor &targets,
-                                   WeightUpdateCache &updater, cl::CommandQueue &queue) {
+                                   WeightUpdateCache &cache, cl::CommandQueue &queue) {
     std::vector<clFTensor> layers_output(neural_network->getWeights().size() + 1);
     std::vector<clFTensor> layers_af_output(neural_network->getWeights().size() + 1);
 
-    // auto start = std::chrono::high_resolution_clock::now();
-    forward(*neural_network, inputs.flatten(), layers_output, layers_af_output, updater, queue);
-    // auto end = std::chrono::high_resolution_clock::now();
-    // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    forward(*neural_network, inputs.flatten(), layers_output, layers_af_output, cache, queue);
 
-    // std::stringstream ss;
-    // ss << queue() << ": " << inputs.getDepth() << " depth" << std::endl;
-    // ss << queue() << ": Forward pass took " << duration.count() << " microseconds" << std::endl;
-    // start = std::chrono::high_resolution_clock::now();
-    auto res = backward(*neural_network, targets.flatten(), layers_output, layers_af_output,
-                        updater, queue);
-    // end = std::chrono::high_resolution_clock::now();
-    // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // ss << queue() << ": Backward pass took " << duration.count() << " microseconds" << std::endl;
-    // std::cout << ss.str();
+    auto res = backward(*neural_network, targets.flatten(), layers_output, layers_af_output, cache,
+                        queue);
+    cache.increaseContribution(inputs.getDepth());
     return res;
   }
 
