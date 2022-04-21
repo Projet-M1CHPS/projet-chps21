@@ -11,8 +11,9 @@
 #include <unordered_map>
 
 namespace utils {
-  /*
-   * @brief Class for managing OpenCL kernels
+
+  /**
+   * @brief A lazily loaded map of all the cl::Kernel available in the program
    */
   class clKernelMap {
   public:

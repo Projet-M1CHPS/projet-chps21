@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ActivationFunction.hpp"
-#include "math/Matrix.hpp"
 #include "Utils.hpp"
+#include "math/Matrix.hpp"
 #include "math/clFMatrix.hpp"
 #include "math/clFTensor.hpp"
 #include "openclUtils/clWrapper.hpp"
@@ -16,12 +16,19 @@
 namespace nnet {
 
   /**
-   * @brief Wrapper around an std::vector used to describe the layers of an MLP
+   * @brief Describes the layers of a multilayer perceptron.
    */
   class MLPTopology {
     friend std::ostream &operator<<(std::ostream &os, const MLPTopology &topology);
 
   public:
+    /**
+     * @brief Builds a topology from a space separated string
+     * @param str
+     * @return
+     */
+    static MLPTopology fromString(const std::string &str);
+
     MLPTopology() = default;
     MLPTopology(std::initializer_list<size_t> list) : layers(list) {}
 
@@ -56,10 +63,28 @@ namespace nnet {
       }
     }
 
+    /**
+     * @brief Insert a layer to the front of the topology
+     * @param i
+     */
     void pushFront(size_t i) { layers.insert(layers.begin(), i); }
+
+    /**
+     * @brief Append a layer to the back of the topology
+     * @param i
+     */
     void pushBack(size_t i) { layers.push_back(i); }
 
+    /**
+     * @brief Returns true if the topology is empty
+     * @return
+     */
     [[nodiscard]] bool empty() const { return layers.empty(); }
+
+    /**
+     * @brief Returns the number of layers in the topology
+     * @return
+     */
     [[nodiscard]] size_t size() const { return layers.size(); }
 
     using iterator = std::vector<size_t>::iterator;
@@ -68,7 +93,6 @@ namespace nnet {
     iterator begin() { return layers.begin(); }
     iterator end() { return layers.end(); }
 
-    static MLPTopology fromString(const std::string &str);
     [[nodiscard]] const_iterator begin() const { return layers.begin(); }
     [[nodiscard]] const_iterator end() const { return layers.end(); }
 
@@ -77,8 +101,7 @@ namespace nnet {
   };
 
   /**
-   * @brief A neural network that supports most fp precision as template
-   * parameters
+   * @brief A multilayer Perceptron neural network
    *
    */
   class MLPerceptron final {

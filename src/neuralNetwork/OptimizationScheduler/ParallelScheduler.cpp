@@ -39,11 +39,11 @@ namespace nnet {
     class DefaultDispatcher final : public ParallelScheduler::Dispatcher {
     public:
       explicit DefaultDispatcher(const ParallelScheduler::Policy &policy);
-      void dispatch(BatchProgression &progression, size_t batch_size,
+      void dispatch(BatchLocation &progression, size_t batch_size,
                     Optimizer::Operation &op) override;
 
     private:
-      static void runBatch(size_t thread_rank, BatchProgression progression, size_t count,
+      static void runBatch(size_t thread_rank, BatchLocation progression, size_t count,
                            cl::CommandQueue queue, Optimizer::Operation &op);
 
       std::unique_ptr<asio::thread_pool> worker_pool;
@@ -73,7 +73,7 @@ namespace nnet {
       worker_pool = std::make_unique<asio::thread_pool>(thread_pool_size);
     }
 
-    void DefaultDispatcher::dispatch(BatchProgression &progression, size_t batch_size,
+    void DefaultDispatcher::dispatch(BatchLocation &progression, size_t batch_size,
                                      Optimizer::Operation &op) {
       size_t local_work_size = batch_size / thread_pool_size;
       size_t remainder = batch_size % thread_pool_size;
@@ -110,7 +110,7 @@ namespace nnet {
       for (auto &f : futures) { f.get(); }
     }
 
-    void DefaultDispatcher::runBatch(size_t thread_rank, BatchProgression progression, size_t count,
+    void DefaultDispatcher::runBatch(size_t thread_rank, BatchLocation progression, size_t count,
                                      cl::CommandQueue queue, Optimizer::Operation &op) {
       for (size_t i = 0; i < count;) {
         size_t work_size = std::min(count - i, progression.getBatchRemainder());
@@ -150,7 +150,7 @@ namespace nnet {
     size_t global_work_size = getJob().getGlobalWorkSize();
     size_t batch_size = getJob().getBatchSize();
 
-    BatchProgression progression(getJob().getInputs(), getJob().getTargets());
+    BatchLocation progression(getJob().getInputs(), getJob().getTargets());
 
     for (size_t current_size = 0; current_size < global_work_size; current_size += batch_size) {
       size_t current_batch_size = std::min(global_work_size - current_size, batch_size);

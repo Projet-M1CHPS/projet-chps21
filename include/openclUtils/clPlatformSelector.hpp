@@ -4,7 +4,7 @@
 
 namespace utils {
   /**
-   * @brief Class providing a simple interface to select a platform and default device
+   * @brief Provides a simple interface to select a platform and default device
    *
    */
   class clPlatformSelector {
@@ -16,6 +16,8 @@ namespace utils {
      */
     static std::unique_ptr<clWrapper> execute();
 
+    ~clPlatformSelector();
+
     /**
      * @brief Display a cli interface to select a platform and default device. When the user exit
      * the cli, calls initOpenCL() on the selected platform
@@ -24,8 +26,6 @@ namespace utils {
       auto wrapper = execute();
       clWrapper::initOpenCL(*wrapper);
     }
-
-    ~clPlatformSelector();
 
 
   private:

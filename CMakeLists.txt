@@ -20,8 +20,6 @@ else ()
     endif ()
 endif ()
 
-message(STATUS ${CMAKE_MODULE_PATH})
-
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 include(check_coverage)
 maybe_enable_coverage()

@@ -16,6 +16,11 @@ extern "C" {
 
 namespace math {
 
+  /**
+   * @brief A generic matrix class, optimized for float or double types. Others types are supported,
+   * but performance is not guaranteed.
+   * @tparam T
+   */
   template<typename T>
   class Matrix {
   public:
@@ -25,61 +30,38 @@ namespace math {
     // especially when storing them in an array
     Matrix() = default;
 
+    ~Matrix() = default;
+
+    /**
+     * @brief Builds a matrix of size rows x cols
+     * @param rows
+     * @param cols
+     */
     Matrix(size_t rows, size_t cols) : rows(rows), cols(cols) {
       if (rows == 0 || cols == 0) { return; }
 
       data = std::make_unique<T[]>(rows * cols);
     }
 
-    Matrix(const std::pair<size_t, size_t> size) : rows(size.first), cols(size.second) {
+    /**
+     * @brief Builds a matrix of dimensions rows x cols
+     * @param dimensions
+     */
+    Matrix(const std::pair<size_t, size_t> dimensions)
+        : rows(dimensions.first), cols(dimensions.second) {
       if (rows == 0 || cols == 0) { return; }
 
       data = std::make_unique<T[]>(rows * cols);
     }
 
+    /**
+     * @brief Builds a column matrix using list initialization
+     * @param l
+     */
     Matrix(std::initializer_list<T> l) : Matrix(l.size(), 1) {
       std::copy(l.begin(), l.end(), begin());
     }
 
-    ~Matrix() = default;
-
-    T *begin() { return data.get(); }
-
-    const T *begin() const { return data.get(); }
-
-    const T *cbegin() const { return data.get(); }
-
-    T *end() { return data.get() + (rows * cols); }
-
-    const T *end() const { return data.get() + (rows * cols); }
-
-    const T *cend() const { return data.get() + (rows * cols); }
-
-    const T *getData() const { return data.get(); }
-
-    T *getData() { return data.get(); }
-
-    [[nodiscard]] size_t getRows() const { return rows; }
-
-    [[nodiscard]] size_t getCols() const { return cols; }
-
-    [[nodiscard]] size_t getSize() const { return cols * rows; }
-
-    /** @brief Returns element (i, j). Does not perform bound checking
-     *
-     * @param i
-     * @param j
-     * @return
-     */
-    T &operator()(size_t i, size_t j) { return data[i * cols + j]; };
-
-    /** @brief Returns element (i, j). Does not perform bound checking
-     *
-     * @param i
-     * @param j
-     * @return
-     */
-    T const &operator()(size_t i, size_t j) const { return data[i * cols + j]; };
 
     Matrix(const Matrix &other) { *this = other; }
 
@@ -122,6 +104,46 @@ namespace math {
       return *this;
     }
 
+    T *begin() { return data.get(); }
+
+    const T *begin() const { return data.get(); }
+
+    const T *cbegin() const { return data.get(); }
+
+    T *end() { return data.get() + (rows * cols); }
+
+    const T *end() const { return data.get() + (rows * cols); }
+
+    const T *cend() const { return data.get() + (rows * cols); }
+
+    const T *getData() const { return data.get(); }
+
+    T *getData() { return data.get(); }
+
+    [[nodiscard]] size_t getRows() const { return rows; }
+
+    [[nodiscard]] size_t getCols() const { return cols; }
+
+    [[nodiscard]] size_t getSize() const { return cols * rows; }
+
+    /** @brief Returns element (i, j). Does not perform bound checking
+     * @param i
+     * @param j
+     * @return
+     */
+    T &operator()(size_t i, size_t j) { return data[i * cols + j]; };
+
+    /** @brief Returns element (i, j). Does not perform bound checking
+     * @param i
+     * @param j
+     * @return
+     */
+    T const &operator()(size_t i, size_t j) const { return data[i * cols + j]; };
+
+    /**
+     * @brief Sums every element in the matrix and returns the result
+     * @return
+     */
     [[nodiscard]] T sumReduce() const {
       if (not data) { throw std::runtime_error("Cannot sum-reduce a null-sized matrix"); }
 
@@ -133,6 +155,11 @@ namespace math {
       return sum;
     }
 
+    /**
+     * @brief Sums the square of every element in the matrix and returns the square root  of the
+     * result
+     * @return
+     */
     [[nodiscard]] T l2norm() const {
       if (not data) { throw std::runtime_error("Cannot sum-reduce a null-sized matrix"); }
 
@@ -145,6 +172,10 @@ namespace math {
     }
 
 
+    /**
+     * @brief Returns the transposed matrix
+     * @return
+     */
     [[nodiscard]] Matrix transpose() const {
       Matrix transposed(cols, rows);
 
@@ -156,6 +187,11 @@ namespace math {
       return transposed;
     }
 
+    /**
+     * @brief Add in place, element-wise, to the matrix
+     * @param other
+     * @return
+     */
     Matrix &operator+=(const Matrix &other) {
       if (rows != other.rows or cols != other.cols) {
         throw std::invalid_argument("Matrix dimensions do not match");
@@ -173,6 +209,11 @@ namespace math {
       return *this;
     }
 
+    /**
+     * @brief Add two matrices and return the result
+     * @param other
+     * @return
+     */
     [[nodiscard]] Matrix operator+(const Matrix &other) const {
       // To avoid copies, we need not to use the += operator
       // and directly perform the substraction in the result matrix
@@ -200,6 +241,11 @@ namespace math {
       return res;
     }
 
+    /**
+     * @brief Substract in place, element-wise, to the matrix
+     * @param other
+     * @return
+     */
     Matrix &operator-=(const Matrix &other) {
       if (rows != other.rows or cols != other.cols) {
         throw std::invalid_argument("Matrix dimensions do not match");
@@ -221,6 +267,11 @@ namespace math {
       return *this;
     }
 
+    /**
+     * @brief Substract two matrices and return the result
+     * @param other
+     * @return
+     */
     [[nodiscard]] Matrix operator-(const Matrix &other) const {
       // To avoid copies, we need not use the -= operator
       // and directly perform the subtraction in the result matrix
@@ -248,6 +299,11 @@ namespace math {
       return res;
     }
 
+    /**
+     * @brief Multiply two matrices and return the result
+     * @param other
+     * @return
+     */
     [[nodiscard]] Matrix operator*(const Matrix &other) const {
       const size_t other_rows = other.rows, other_cols = other.cols;
       if (cols != other_rows) { throw std::invalid_argument("Matrix dimensions do not match"); }
@@ -281,6 +337,11 @@ namespace math {
       return res;
     }
 
+    /**
+     * @brief Scale the matrix by a scalar
+     * @param scale
+     * @return
+     */
     [[nodiscard]] Matrix operator*(const T scale) const {
       Matrix res(*this);
 
@@ -303,6 +364,11 @@ namespace math {
       return res;
     }
 
+    /**
+     * brief in-place multiply by a scalar
+     * @param scale
+     * @return
+     */
     Matrix &operator*=(const T scale) {
       T *raw_mat = data.get();
 
@@ -320,6 +386,10 @@ namespace math {
       return *this;
     }
 
+    /**
+     * @brief In place hadamard product of two matrices
+     * @param other
+     */
     void hadamardProd(const Matrix &other) const {
       if (rows != other.rows or cols != other.cols) {
         throw std::invalid_argument("Matrix dimensions do not match");
@@ -331,6 +401,7 @@ namespace math {
       const size_t size{rows * cols};
       for (size_t i = 0; i < size; i++) { raw_data[i] *= raw_data_other[i]; }
     }
+
 
     [[nodiscard]] static Matrix matMatProdMatAdd(const Matrix &A, const Matrix &B,
                                                  const Matrix &C) {
@@ -357,6 +428,13 @@ namespace math {
       return res;
     }
 
+    /**
+     * @brief C = A` * B
+     * TODO: Discard me, implement gemm instead
+     * @param A
+     * @param B
+     * @return
+     */
     [[nodiscard]] static Matrix matTransMatProd(const Matrix &A, const Matrix &B) {
       const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
 
@@ -378,6 +456,13 @@ namespace math {
       return res;
     }
 
+    /**
+     * @brief C = A * B`
+     * TODO: Discard me, implement gemm instead
+     * @param A
+     * @param B
+     * @return
+     */
     [[nodiscard]] static Matrix matMatTransProd(const Matrix &A, const Matrix &B) {
       const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
 
@@ -399,6 +484,15 @@ namespace math {
       return res;
     }
 
+    /**
+     * @brief C = A * B
+     * @param transpose_a If true, transposes A
+     * @param A
+     * @param transpose_b If true, transposes B
+     * @param B
+     * @param alpha
+     * @return
+     */
     [[nodiscard]] static Matrix mul(const bool transpose_a, const Matrix &A, const bool transpose_b,
                                     const Matrix &B, const T alpha = 1.0) {
       const size_t A_rows = A.rows, A_cols = A.cols, B_rows = B.rows, B_cols = B.cols;
@@ -463,6 +557,13 @@ namespace math {
   }
 
 
+  /**
+   * @brief Randomizes the matrix
+   * @tparam T
+   * @param matrix
+   * @param min The minimum value for the randomization
+   * @param max The maximum value for the randomization
+   */
   template<typename T, typename = std::enable_if<std::is_floating_point_v<T>>>
   void randomize(math::Matrix<T> &matrix, T min, T max) {
     std::mt19937 gen(std::random_device{}());
@@ -478,6 +579,14 @@ namespace math {
   }
 
 
+  /**
+   * @brief Randomizes the matrix, includes a padding
+   * @tparam T
+   * @param matrix
+   * @param min
+   * @param max
+   * @param padding
+   */
   template<typename T, typename = std::enable_if<std::is_floating_point_v<T>>>
   void randomize(math::Matrix<T> &matrix, T min, T max, const size_t padding) {
     if (not padding) {

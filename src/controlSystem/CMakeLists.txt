@@ -2,7 +2,7 @@
 
 set(CURRENT_INCLUDE_DIR ${INCLUDE_DIR}/controlSystem)
 add_library(ControlSystem
-        Controller.cpp ${CURRENT_INCLUDE_DIR}/Controller.hpp
+        ControllerResult.cpp ${CURRENT_INCLUDE_DIR}/ControllerResult.hpp
         TrainingController.cpp ${CURRENT_INCLUDE_DIR}/TrainingController.hpp
         EvalController.cpp ${CURRENT_INCLUDE_DIR}/EvalController.hpp
         InputSet.cpp ${CURRENT_INCLUDE_DIR}/InputSet.hpp

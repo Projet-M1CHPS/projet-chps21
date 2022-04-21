@@ -1,4 +1,4 @@
-#include "Controller.hpp"
+#include "ControllerResult.hpp"
 
 namespace control {
   ControllerResult::ControllerResult(int code, const std::string &message)
@@ -7,5 +7,4 @@ namespace control {
   ControllerResult::ControllerResult(int code, const std::runtime_error &exception)
       : message(exception.what()), return_code(code) {}
 
-  Controller::Controller(std::filesystem::path output_path) : output_path(std::move(output_path)) {}
 }   // namespace control

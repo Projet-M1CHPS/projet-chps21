@@ -1,5 +1,3 @@
-#include "CNN.hpp"
-#include "CNNOptimizer.hpp"
 #include "EvalController.hpp"
 #include "ModelEvaluator.hpp"
 #include "NeuralNetwork.hpp"
@@ -60,7 +58,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // The scheduler is free to use less if it judges necessary
   constexpr size_t kMaxThread = 4;
   constexpr bool kAllowMultipleThreadPerDevice = false;
-  constexpr size_t kMaxEpoch = 20;
+  constexpr size_t kMaxEpoch = 75;
   // If set to true, the scheduler will move batches around to ensure each batch used for
   // computation is of size kBatchSize
   constexpr size_t kMaxDeviceCount = 4;
@@ -119,15 +117,6 @@ bool createAndTrain(std::filesystem::path const &input_path,
     optimizer = nnet::MLPOptimizer::make<nnet::DecayMomentumOptimization>(*model, kLearningRate,
                                                                           kDecayRate, kMomentum);
 
-  // ParallelScheduler scheduler(batch, input, target);
-
-  std::string str_topology("6 6 relu convolution 2 2 2 convolution 2 2 2 pooling max 2 2");
-  auto cnn_topology = nnet::stringToTopology(str_topology);
-  std::cout << cnn_topology << std::endl;
-
-  auto cnn_model = CNNModel::random(cnn_topology, topology);
-  auto cnn_optimizer = std::make_unique<nnet::CNNOptimizer>(
-          *cnn_model, std::make_unique<SGDOptimization>(cnn_model->getMlp(), 0.8f));
 
   logger("Creating scheduler", tscl::Log::Debug);
 
@@ -138,11 +127,11 @@ bool createAndTrain(std::filesystem::path const &input_path,
   scheduler_builder.setMaxThread(kMaxThread, kAllowMultipleThreadPerDevice);
   scheduler_builder.setDevices(utils::cl_wrapper.getDevices());
 
-  scheduler_builder.setOptimizer(*cnn_optimizer);
+  scheduler_builder.setOptimizer(*optimizer);
 
   auto scheduler = scheduler_builder.build();
   // SchedulerProfiler sc_profiler(scheduler_builder.build(), output_path / "scheduler");
-  //  sc_profiler.setVerbose(false);
+  // sc_profiler.setVerbose(false);
 
   ModelEvolutionTracker evaluator(output_path / "model_evolution", *model, training_collection);
 
@@ -150,8 +139,6 @@ bool createAndTrain(std::filesystem::path const &input_path,
   TrainingController controller(kMaxEpoch, evaluator, *scheduler);
   controller.setVerbose(true);
   ControllerResult res = controller.run();
-  // Ensure the profiler dumps to disk cleanly
-  // sc_profiler.finish();
 
   if (not res) {
     tscl::logger("Controller failed with an exception", tscl::Log::Error);

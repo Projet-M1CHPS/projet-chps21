@@ -11,14 +11,18 @@
 namespace nnet {
 
   /**
-   * @brief An optimizer for MLP models, usable with the scheduler module
+   * @brief An Optimizer for MLP models
    */
   class MLPOptimizer : public Optimizer {
   public:
+    /**
+     * @brief Local caches for the weight updates, along a copy of the weights and the biases
+     */
     class WeightUpdateCache;
 
+
     /**
-     * @brief A delegate class to run the optimizer
+     * @brief A delegate class to run the Optimizer
      */
     class Operation : public Optimizer::Operation {
     public:
@@ -96,7 +100,7 @@ namespace nnet {
 
     /**
      * @brief Helper method, creates a new optimizer and optimization method and return the
-     * optimizzer
+     * optimizer
      * @tparam optim The type of optimization method to use
      * @tparam Args The arguments to pass to the optimization method
      * @param model The model to optimize

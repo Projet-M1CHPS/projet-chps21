@@ -24,13 +24,4 @@ namespace utils {
    */
   [[noreturn]] void error(const char *msg) noexcept;
 
-  std::string timestampAsStr();
-
-  // Generic IO exception
-  class IOException : public std::runtime_error {
-  public:
-    explicit IOException(const std::string &msg) noexcept;
-    explicit IOException(const char *msg) noexcept;
-  };
-
 }   // namespace utils

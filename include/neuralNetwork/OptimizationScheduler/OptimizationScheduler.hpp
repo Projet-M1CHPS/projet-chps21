@@ -1,14 +1,13 @@
 #pragma once
 #include <iostream>
+#include <memory>
 #include <utility>
 #include <vector>
-#include <memory>
 
 namespace nnet {
 
   /**
-   * @brief Interface for all scheduler. Allows to wrap and schedule the optimization process,
-   * distributing the work on the available resources.
+   * @brief Interface class for all scheduler. Allows to wrap and schedule the optimization process.
    */
   class OptimizationScheduler {
   public:
@@ -25,7 +24,6 @@ namespace nnet {
     virtual void run() = 0;
 
   protected:
-
     // TODO Refactor me!
     // Implementing those methods as protected, and not implementing them in as a non-virtual method
     // provides no guarantee that the scheduler will be used/inherited correctly

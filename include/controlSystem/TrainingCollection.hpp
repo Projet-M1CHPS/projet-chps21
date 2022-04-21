@@ -4,8 +4,8 @@
 namespace control {
 
   /**
-   * @brief A collection of samples that can be used for training a model. Provides a training set
-   * and an evaluation set.
+   * @brief A collection of samples that can be used for training a model. Provides a training
+   * InputSet and an evaluation InputSet.
    */
   class TrainingCollection {
   public:
@@ -53,6 +53,7 @@ namespace control {
       training_set.updateClasses(class_names);
       eval_set.updateClasses(class_names);
     }
+
 
     const std::vector<std::string> &getClassNames() const { return eval_set.getClasses(); }
 

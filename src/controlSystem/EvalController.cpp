@@ -4,7 +4,7 @@ namespace control {
 
   EvalController::EvalController(const std::filesystem::path &output_path, nnet::Model *model,
                                  InputSet *input_set)
-      : Controller(output_path), model(model), input_set(input_set) {}
+      : output_path(output_path), model(model), input_set(input_set) {}
 
 
   ControllerResult EvalController::run() noexcept {

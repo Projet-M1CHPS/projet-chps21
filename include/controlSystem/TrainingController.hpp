@@ -1,5 +1,5 @@
 #pragma once
-#include "Controller.hpp"
+#include "ControllerResult.hpp"
 #include "ModelEvaluator.hpp"
 #include "NeuralNetwork.hpp"
 #include "TrainingCollection.hpp"

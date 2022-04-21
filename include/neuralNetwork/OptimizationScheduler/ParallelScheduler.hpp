@@ -1,6 +1,6 @@
 #pragma once
+#include "BatchLocation.hpp"
 #include "BatchOptimizationScheduler.hpp"
-#include "BatchProgression.hpp"
 
 namespace nnet {
 
@@ -56,15 +56,18 @@ namespace nnet {
     std::unique_ptr<Optimizer::Operation> optimizer_operation;
   };
 
+  /**
+   * @brief A dispatcher that can dispatch batches to multiple computing devices.
+   */
   class ParallelScheduler::Dispatcher {
   public:
     virtual ~Dispatcher() = default;
-    virtual void dispatch(BatchProgression &progression, size_t work_size,
+    virtual void dispatch(BatchLocation &starting_location, size_t work_size,
                           Optimizer::Operation &op) = 0;
   };
 
   /**
-   * @brief Describes the resources allocated to the parallel scheduler. Lightweight class.
+   * @brief Describes the resources allocated to the parallel scheduler.
    */
   class ParallelScheduler::Policy {
   public:
@@ -82,20 +85,44 @@ namespace nnet {
     std::vector<cl::Device> devices;
   };
 
+  /**
+   * @brief Concrete builder for ParallelScheduler
+   */
   class ParallelScheduler::Builder {
   public:
+    /**
+     * @brief Define the job that needs to be scheduled
+     * @param njob
+     */
     void setJob(const BatchSchedulerJob &njob) { job = njob; }
 
-    // Set the resources for the scheduler
+    /**
+     * @brief Define the allocated threads for the parallel scheduler
+     * @param nmax_thread
+     * @param nallow_multiple_thread_per_device
+     */
     void setMaxThread(size_t nmax_thread, bool nallow_multiple_thread_per_device) {
       max_thread = nmax_thread;
       multiple_thread_per_device = nallow_multiple_thread_per_device;
     }
 
+    /**
+     * @brief Defines the allowed devices for the parallel scheduler. If not set, all devices in the
+     * clWrapper are used.
+     * @param ndevices
+     */
     void setDevices(const std::vector<cl::Device> &ndevices) { devices = ndevices; }
 
+    /**
+     * @brief Defines the optimizer that the scheduler will use
+     * @param new_optimizer
+     */
     void setOptimizer(Optimizer &new_optimizer) { this->optimizer = &new_optimizer; }
 
+    /**
+     * @brielf Builds the parallel scheduler
+     * @return
+     */
     std::unique_ptr<ParallelScheduler> build() const;
 
   private:

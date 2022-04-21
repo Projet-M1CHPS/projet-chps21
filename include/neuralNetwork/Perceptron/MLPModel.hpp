@@ -11,7 +11,7 @@ namespace nnet {
   class MLPModel : public Model {
   public:
     MLPModel();
-    MLPModel(std::unique_ptr<MLPerceptron> &&perceptron);
+    explicit MLPModel(std::unique_ptr<MLPerceptron> &&perceptron);
 
     [[nodiscard]] MLPerceptron &getPerceptron() { return *perceptron; }
     [[nodiscard]] MLPerceptron const &getPerceptron() const { return *perceptron; }
@@ -25,7 +25,19 @@ namespace nnet {
 
     math::clFTensor predict(cl::CommandQueue &queue, math::clFTensor const &inputs) const override;
 
+    /**
+     * @brief Loads an MLPModel from a file
+     * TODO: Replace me by an abstract factory
+     * @param path
+     * @return
+     */
     bool load(const std::filesystem::path &path) override;
+
+    /**
+     * @brief Saves the MLPModel to a file
+     * @param path
+     * @return
+     */
     bool save(const std::filesystem::path &path) const override;
 
     /**

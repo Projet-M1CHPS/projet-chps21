@@ -1,5 +1,5 @@
 #pragma once
-#include "Controller.hpp"
+#include "ControllerResult.hpp"
 #include "InputSet.hpp"
 #include "NeuralNetwork.hpp"
 
@@ -9,7 +9,7 @@ namespace control {
    * @brief Evaluator that runs a model on a set of inputs and assign each sample its label
    * according to the output of the model.
    */
-  class EvalController : Controller {
+  class EvalController {
   public:
     EvalController(const std::filesystem::path &output_path, nnet::Model *model,
                    InputSet *input_set);
@@ -21,9 +21,10 @@ namespace control {
      * @param wrapper
      * @return
      */
-    ControllerResult run() noexcept override;
+    ControllerResult run() noexcept;
 
   private:
+    std::filesystem::path output_path;
     nnet::Model *model;
     InputSet *input_set;
   };

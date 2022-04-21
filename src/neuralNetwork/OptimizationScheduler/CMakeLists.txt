@@ -2,7 +2,7 @@
 set(CURRENT_INCLUDE_DIR ${INCLUDE_DIR}/neuralNetwork/OptimizationScheduler)
 add_library(OptimizationScheduler STATIC
         ${CURRENT_INCLUDE_DIR}/OptimizationScheduler.hpp
-        BatchProgression.cpp ${CURRENT_INCLUDE_DIR}/BatchProgression.hpp
+        BatchLocation.cpp ${CURRENT_INCLUDE_DIR}/BatchLocation.hpp
         BatchOptimizationScheduler.cpp ${CURRENT_INCLUDE_DIR}/BatchOptimizationScheduler.hpp
         SchedulerProfiler.cpp ${CURRENT_INCLUDE_DIR}/SchedulerProfiler.hpp
         ParallelScheduler.cpp ${CURRENT_INCLUDE_DIR}/ParallelScheduler.hpp

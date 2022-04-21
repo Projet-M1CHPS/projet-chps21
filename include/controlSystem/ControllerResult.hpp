@@ -35,18 +35,4 @@ namespace control {
     std::string message;
     int return_code;
   };
-
-  class Controller {
-  public:
-    explicit Controller(std::filesystem::path ouput_path);
-    virtual ~Controller() = default;
-
-    virtual ControllerResult run() noexcept = 0;
-
-    std::filesystem::path getOutputPath() const { return output_path; }
-
-  private:
-    std::filesystem::path output_path;
-  };
-
 }   // namespace control
