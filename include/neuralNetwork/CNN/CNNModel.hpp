@@ -6,6 +6,9 @@
 
 namespace nnet {
 
+  /**
+   * @brief A model for a Convolutional neural network.
+   */
   class CNNModel final : public Model {
   public:
     CNNModel();
@@ -54,7 +57,20 @@ namespace nnet {
     [[nodiscard]] MLPerceptron &getMlp() { return *mlp; }
     [[nodiscard]] MLPerceptron const &getMlp() const { return *mlp; }
 
+    /**
+     * @brief Feed the given input to the cnn
+     * @param queue Queue for gpu calculs
+     * @param inputs The tensor to be fed to the perceptron
+     * @return The output of the cnn
+     */
     [[nodiscard]] math::clFTensor predict(cl::CommandQueue &queue, math::clFTensor const &inputs) const override;
+
+    /**
+     * @brief Feed the given input to the cnn
+     * @param queue Queue for gpu calculs
+     * @param inputs The matrix to be fed to the perceptron
+     * @return The output of the cnn
+     */
     [[nodiscard]] math::clFMatrix predict(cl::CommandQueue &queue, math::clFMatrix const &input) const override;
 
   private:

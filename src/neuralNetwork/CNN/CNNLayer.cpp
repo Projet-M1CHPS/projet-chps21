@@ -134,55 +134,8 @@ namespace nnet {
     const size_t n_input = convoStorage.input.getDepth() / n_branch;
 
     math::clFTensor res_filter = computeErrorFilter(queue, errors, convoStorage);
-    // compute filter error
-    /*size_t height = convoStorage.input.getRows();
-    size_t width = convoStorage.input.getCols();
-    size_t kernel_h = errors.getRows();
-    size_t kernel_w = errors.getCols();
-
-    std::vector<math::clFTensor> sub_input = convoStorage.input.slice(n_branch);
-    std::vector<math::clFTensor> sub_error = errors.slice(n_branch * n_filter);
-
-    size_t index = 0;
-    for (size_t i = 0; i < n_branch; i++) {
-      for (size_t j = 0; j < n_filter; j++) {
-        for (size_t k = 0; k < n_input; k++) {
-          clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, height, width,
-                                   kernel_h, kernel_w, 0, 0, 1, 1, 1, 1, 1, 1,
-                                   sub_input[i][k].getBuffer()(), sub_input[i][k].getOffset(),
-                                   errors[index].getBuffer()(), errors[index].getOffset(),
-                                   res_filter[index].getBuffer()(), res_filter[index].getOffset(),
-                                   &queue(), nullptr);
-          index++;
-        }
-      }
-    }*/
 
     math::clFTensor res_input = computeErrorInput(queue, errors, convoStorage);
-    // compute input error
-    /*height = errors.getRows();
-    width = errors.getCols();
-    kernel_h = filters.getRows();
-    kernel_w = filters.getCols();
-    size_t batch_count = errors.getDepth() / (n_branch * n_filter);
-
-    sub_error = errors.slice(n_branch * n_filter);
-    std::vector<math::clFTensor> sub_filter = filters.slice(n_branch * n_filter);
-
-    index = 0;
-    for (size_t i = 0; i < n_branch; i++) {
-      for (size_t j = 0; j < n_filter; j++) {
-        clblast::Convgemm<float>(clblast::KernelMode::kConvolution, 1, height, width, kernel_h,
-                                 kernel_w, kernel_h - 1, kernel_w - 1, 1, 1, 1, 1, 1, batch_count,
-                                 sub_error[i * n_filter + j].getBuffer()(),
-                                 sub_error[i * n_filter + j].getOffsetInFloats(),
-                                 sub_filter[i * n_filter + j].getBuffer()(),
-                                 sub_filter[i * n_filter + j].getOffsetInFloats(),
-                                 res_input[index].getBuffer()(), res_input[index].getOffset(),
-                                 &queue(), nullptr);
-        index += batch_count;
-      }
-    }*/
     convoStorage.error_filter = reduceFilter(queue, res_filter, n_input, n_filter, n_branch);
     return reduceInput(queue, res_input, n_input, n_filter, n_branch);
   }
