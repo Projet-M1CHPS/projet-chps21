@@ -145,14 +145,25 @@ namespace nnet {
   }
 
   void ParallelScheduler::run() {
+    std::cout << "ParallelScheduler::run: Starting" << std::endl;
     // TODO: Refactor me!
     epochStart();
     size_t global_work_size = getJob().getGlobalWorkSize();
     size_t batch_size = getJob().getBatchSize();
+    std::cout << "Global work size: " << global_work_size << std::endl;
 
     BatchProgression progression(getJob().getInputs(), getJob().getTargets());
+    std::cout << "Batch progression done" << std::endl;
 
+    // Todo: Synchronize to the same global_work_size between all processes
+    tscl::logger("global_work_size: " + std::to_string(global_work_size), tscl::Log::Warning);
+    // Todo: remove this
+    global_work_size = 4000;
+    //
     for (size_t current_size = 0; current_size < global_work_size; current_size += batch_size) {
+      tscl::logger("current_size: " + std::to_string(current_size) + "/" +
+                           std::to_string(global_work_size),
+                   tscl::Log::Warning);
       size_t current_batch_size = std::min(global_work_size - current_size, batch_size);
       batch_dispatcher->dispatch(progression, current_batch_size, *optimizer_operation);
       updateModel();

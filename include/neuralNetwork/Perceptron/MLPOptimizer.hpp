@@ -50,13 +50,22 @@ namespace nnet {
     explicit WeightUpdateCache(MLPOptimizer &optimizer);
     WeightUpdateCache(std::vector<math::clFMatrix> weight_updates, size_t contributions);
 
+    WeightUpdateCache(WeightUpdateCache &&other) = default;
+
+
     virtual ~WeightUpdateCache() = default;
 
     math::clFMatrix &operator[](size_t i) { return weight_updates[i]; }
 
-    const math::clFMatrix &operator[](size_t i) const { return weight_updates[i]; }
-    const std::vector<math::clFMatrix> &getWeightsCopy() const { return weight_copy; }
-    const std::vector<math::clFMatrix> &getBiasesCopy() const { return biases_copy; }
+    [[nodiscard]] const math::clFMatrix &operator[](size_t i) const { return weight_updates[i]; }
+    [[nodiscard]] const std::vector<math::clFMatrix> &getWeightsCopy() const { return weight_copy; }
+    [[nodiscard]] const std::vector<math::clFMatrix> &getBiasesCopy() const { return biases_copy; }
+    [[nodiscard]] const std::vector<math::clFMatrix> &getWeightUpdates() const {
+      return weight_updates;
+    }
+    [[nodiscard]] size_t getContribution() const { return contribution; }
+
+    void setContribution(size_t new_contribution) { contribution = new_contribution; }
 
     void add(size_t index, const math::clFMatrix &delta, size_t contribution_size,
              cl::CommandQueue &queue);
@@ -72,14 +81,14 @@ namespace nnet {
     void clear(cl::CommandQueue &queue);
 
   protected:
-    MLPerceptron *perceptron;
-    size_t contribution;
+    MLPerceptron *perceptron{};
+    size_t contribution{};
     std::vector<math::clFMatrix> weight_updates;
     std::vector<math::clFMatrix> weight_copy;
     std::vector<math::clFMatrix> biases_copy;
 
   private:
-    Optimization *optimization;
+    Optimization *optimization{};
   };
 
   class MLPOptimizer::Operation : public Optimizer::Operation {
@@ -108,9 +117,9 @@ namespace nnet {
     std::vector<std::unique_ptr<WeightUpdateCache>> caches;
     MLPOptimizer *optimizer;
 
-    void reduceAll(cl::CommandQueue &queue) override;
-    void applyChanges(cl::CommandQueue &queue) override;
-    void clearChanges(cl::CommandQueue &queue) override;
+    virtual void reduceAll(cl::CommandQueue &queue);
+    virtual void applyChanges(cl::CommandQueue &queue);
+    virtual void clearChanges(cl::CommandQueue &queue);
   };
 
 }   // namespace nnet

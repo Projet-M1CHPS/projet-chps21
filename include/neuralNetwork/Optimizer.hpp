@@ -18,12 +18,14 @@ namespace nnet {
 
     virtual ~Optimizer() = default;
 
-    /**
-     * @brief Return an operation that can be used to handle the optimization process. This object
-     * should be fed to a OptimizationScheduler.
-     * @return A pointer to an OptimizationScheduler.
-     */
-    std::unique_ptr<Operation> makeOperation() {
+    virtual /**
+             * @brief Return an operation that can be used to handle the optimization process. This
+             * object should be fed to a OptimizationScheduler.
+             * @return A pointer to an OptimizationScheduler.
+             */
+            std::unique_ptr<Operation>
+            makeOperation() {
+      std::cout << "Optimizer::makeOperation()" << std::endl;
       return makeOperationImpl();
     }
 
@@ -82,6 +84,7 @@ namespace nnet {
      * @param queue The queue to use for the model update
      */
     void updateModel(cl::CommandQueue &queue) {
+      std::cout << "Optimizer::Operation::updateModel()" << std::endl;
       reduceAll(queue);
       applyChanges(queue);
       clearChanges(queue);

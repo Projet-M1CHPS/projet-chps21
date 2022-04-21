@@ -156,6 +156,7 @@ namespace nnet {
   }
 
   std::unique_ptr<Optimizer::Operation> MLPOptimizer::makeOperationImpl() {
+    std::cout << "MLPOptimizer::makeOperationImpl()" << std::endl;
     return std::make_unique<Operation>(*this);
   }
 

@@ -1,7 +1,7 @@
 #include "EvalController.hpp"
+#include "MPINeuralNetwork.hpp"
 #include "MPITrainingController.hpp"
 #include "ModelEvaluator.hpp"
-#include "NeuralNetwork.hpp"
 #include "ParallelScheduler.hpp"
 #include "ProjectVersion.hpp"
 #include "controlSystem/TrainingCollection.hpp"
@@ -59,7 +59,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // The scheduler is free to use less if it judges necessary
   constexpr size_t kMaxThread = 1;
   constexpr bool kAllowMultipleThreadPerDevice = false;
-  constexpr size_t kMaxEpoch = 100;
+  constexpr size_t kMaxEpoch = 30;
   // If set to true, the scheduler will move batches around to ensure each batch used for
   // computation is of size kBatchSize
   constexpr bool kAllowBatchDefragmentation = false;
@@ -108,13 +108,13 @@ bool createAndTrain(std::filesystem::path const &input_path,
   std::cout << rank << " Saving to "
             << "tmp_" + std::to_string(rank)
             << " count: " << local_collection->getTrainingSet().getSize() << std::endl;
-  for (auto &im : local_collection->getTrainingSet()) {
-    image::ImageSerializer::save("tmp_" + std::to_string(rank) + "/" + std::to_string(im.getId()) +
-                                         ".png",
-                                 im.getData(), 255);
-  }
-  MPI_Finalize();
-  std::abort();
+  /*
+   for (auto &im : local_collection->getTrainingSet()) {
+     image::ImageSerializer::save("tmp_" + std::to_string(rank) + "/" + std::to_string(im.getId()) +
+                                          ".png",
+                                  im.getData(), 255);
+   }
+   */
 
 
   topology.pushBack(local_collection->getClassCount());
@@ -132,19 +132,18 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // model->load("michal.nnet");
   std::unique_ptr<Optimizer> optimizer;
   if (kOptimType == kUseSGD)
-    optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(*model, kLearningRate);
+    optimizer = nnet::MPIMLPOptimizer::make<nnet::SGDOptimization>(*model, kLearningRate);
   else if (kOptimType == kUseMomentum)
-    optimizer =
-            nnet::MLPOptimizer::make<nnet::MomentumOptimization>(*model, kLearningRate, kMomentum);
+    optimizer = nnet::MPIMLPOptimizer::make<nnet::MomentumOptimization>(*model, kLearningRate,
+                                                                        kMomentum);
   else if (kOptimType == kUseDecay)
     optimizer =
-            nnet::MLPOptimizer::make<nnet::DecayOptimization>(*model, kLearningRate, kDecayRate);
+            nnet::MPIMLPOptimizer::make<nnet::DecayOptimization>(*model, kLearningRate, kDecayRate);
   else if (kOptimType == kUseDecayMomentum)
-    optimizer = nnet::MLPOptimizer::make<nnet::DecayMomentumOptimization>(*model, kLearningRate,
-                                                                          kDecayRate, kMomentum);
+    optimizer = nnet::MPIMLPOptimizer::make<nnet::DecayMomentumOptimization>(*model, kLearningRate,
+                                                                             kDecayRate, kMomentum);
+  logger("[P" + std::to_string(rank) + "]: " + "Creating scheduler", tscl::Log::Debug);
 
-
-  logger("Creating scheduler", tscl::Log::Debug);
 
   ParallelScheduler::Builder scheduler_builder;
   auto targets = local_collection->makeTargets();
@@ -162,18 +161,18 @@ bool createAndTrain(std::filesystem::path const &input_path,
   ModelEvolutionTracker evaluator(output_path / ("model_evolution_" + std::to_string(rank)), *model,
                                   *local_collection);
 
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  logger("Starting run", tscl::Log::Debug);
+  logger("[P" + std::to_string(rank) + "]: Starting run", tscl::Log::Debug);
   MPITrainingController controller(kMaxEpoch, evaluator, *scheduler);
   controller.setVerbose(true);
+
   ControllerResult res = controller.run();
   // Ensure the profiler dumps to disk cleanly
   // sc_profiler.finish();
 
   if (not res) {
-    tscl::logger("Controller failed with an exception", tscl::Log::Error);
-    tscl::logger(res.getMessage(), tscl::Log::Error);
+    logger("[P" + std::to_string(rank) + "]: Controller failed with an exception",
+           tscl::Log::Error);
+    logger("[P" + std::to_string(rank) + "]: " + res.getMessage(), tscl::Log::Error);
     return false;
   }
   return true;
