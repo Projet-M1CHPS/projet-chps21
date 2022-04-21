@@ -20,7 +20,6 @@ namespace math {
 
   std::ostream &operator<<(std::ostream &os, const clFTensor &t) {
     if (t.is_view) std::cout << "(View) ";
-    std::cout << "clFTensor(" << t.rows << ", " << t.cols << ", " << t.depth << "):" << std::endl;
     for (size_t i = 0; i < t.depth; i++) { std::cout << t[i] << std::endl; }
     return os;
   }
@@ -176,16 +175,9 @@ namespace math {
                  B_cols = B.getCols();
 
     if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows)) {
-      std::cerr << "clFTensor::batchedGemm 1: Matrix size do not match" << std::endl;
-      std::cerr << "A_rows: " << A_rows << " A_cols: " << A_cols << std::endl;
-      std::cerr << "B_rows: " << B_rows << " B_cols: " << B_cols << std::endl;
       throw std::invalid_argument("clFTensor::batchedGemm: Matrix size do not match");
-    } else {
-      std::cout << "clFTensor::batchedGemm 1: Matrix size match" << std::endl;
-      std::cout << "A_rows: " << A_rows << " A_cols: " << A_cols << std::endl;
-      std::cout << "B_rows: " << B_rows << " B_cols: " << B_cols << std::endl;
     }
-
+    
     auto ta = transpose_a ? clblast::Transpose::kYes : clblast::Transpose::kNo;
     auto tb = transpose_b ? clblast::Transpose::kYes : clblast::Transpose::kNo;
     size_t m = (transpose_a ? A_cols : A_rows);
@@ -219,14 +211,7 @@ namespace math {
                  B_cols = B.getCols(), C_rows = C.getRows(), C_cols = C.getCols();
 
     if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows)) {
-      std::cerr << "clFTensor::batchedGemm 2: Matrix size do not match" << std::endl;
-      std::cerr << "A_rows: " << A_rows << " A_cols: " << A_cols << std::endl;
-      std::cerr << "B_rows: " << B_rows << " B_cols: " << B_cols << std::endl;
       throw std::invalid_argument("clFTensor::batchedGemm: Matrix size do not match");
-    } else {
-      std::cout << "clFTensor::batchedGemm 2: Matrix size match" << std::endl;
-      std::cout << "A_rows: " << A_rows << " A_cols: " << A_cols << std::endl;
-      std::cout << "B_rows: " << B_rows << " B_cols: " << B_cols << std::endl;
     }
 
     auto ta = transpose_a ? clblast::Transpose::kYes : clblast::Transpose::kNo;
@@ -269,14 +254,7 @@ namespace math {
                  B_cols = B.getCols();
 
     if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows)) {
-      std::cerr << "clFTensor::batchedGemm 3: Matrix size do not match" << std::endl;
-      std::cerr << "A_rows: " << A_rows << " A_cols: " << A_cols << std::endl;
-      std::cerr << "B_rows: " << B_rows << " B_cols: " << B_cols << std::endl;
       throw std::invalid_argument("clFTensor::batchedGemm: Matrix size do not match");
-    } else {
-      std::cout << "clFTensor::batchedGemm 3: Matrix size match" << std::endl;
-      std::cout << "A_rows: " << A_rows << " A_cols: " << A_cols << std::endl;
-      std::cout << "B_rows: " << B_rows << " B_cols: " << B_cols << std::endl;
     }
 
     auto ta = transpose_a ? clblast::Transpose::kYes : clblast::Transpose::kNo;

@@ -162,8 +162,8 @@ namespace control {
 
   void InputSet::split(size_t nb_sets, std::vector<InputSet> &sub_sets) const {
     assert(sub_sets.empty());
-    std::cout << "InputSet::split() Splitting InputSet intro " + std::to_string(nb_sets) +
-                         " sub-sets."
+    std::cout << "InputSet::splitTrainingSet() Splitting InputSet intro " +
+                         std::to_string(nb_sets) + " sub-sets."
               << std::endl;
 
     auto sub_classes = splitClassNames(nb_sets);
@@ -183,17 +183,18 @@ namespace control {
     size_t current_sample_index = 0;
     for (size_t i = 0; i < nb_sets; i++) {
       InputSet current_set(input_width, input_height);
-      std::cout << "InputSet::split() Creating sub-set " + std::to_string(i) + "." << std::endl;
-      std::cout << "InputSet::split() Sub-set " + std::to_string(i) +
+      std::cout << "InputSet::splitTrainingSet() Creating sub-set " + std::to_string(i) + "."
+                << std::endl;
+      std::cout << "InputSet::splitTrainingSet() Sub-set " + std::to_string(i) +
                            " dimensions: " + std::to_string(current_set.getInputWidth()) + "x" +
                            std::to_string(current_set.getInputHeight()) + "x" +
                            std::to_string(current_set.getTensorCount())
                 << std::endl;
 
-      std::cout << "InputSet::split() Dimensions of sub-sets: " << std::endl;
+      std::cout << "InputSet::splitTrainingSet() Dimensions of sub-sets: " << std::endl;
       for (auto &item : sub_sets)
-        std::cout << "InputSet::split() " << item.getInputWidth() << "x" << item.getInputHeight()
-                  << std::endl;
+        std::cout << "InputSet::splitTrainingSet() " << item.getInputWidth() << "x"
+                  << item.getInputHeight() << std::endl;
       for (size_t j = 0; j < tensor_counts.at(i); j++) {
         auto &item = getTensor(current_tensor_index++);
         std::vector<size_t> new_ids(item.getDepth());
@@ -208,18 +209,19 @@ namespace control {
       current_set.updateClasses(sub_classes.at(i));
       assert(!current_set.getSamples().empty());
       sub_sets.emplace_back(std::move(current_set));
-      std::cout << "InputSet::split() Dimensions of sub-sets: " << std::endl;
+      std::cout << "InputSet::splitTrainingSet() Dimensions of sub-sets: " << std::endl;
       for (auto &item : sub_sets)
-        std::cout << "InputSet::split() " << item.getInputWidth() << "x" << item.getInputHeight()
-                  << std::endl;
+        std::cout << "InputSet::splitTrainingSet() " << item.getInputWidth() << "x"
+                  << item.getInputHeight() << std::endl;
     }
 
-    std::cout << "InputSet::split() Done." << std::endl;
-    std::cout << "InputSet::split() Number of sub-sets: " << sub_sets.size() << std::endl;
-    std::cout << "InputSet::split() Dimensions of sub-sets: " << std::endl;
+    std::cout << "InputSet::splitTrainingSet() Done." << std::endl;
+    std::cout << "InputSet::splitTrainingSet() Number of sub-sets: " << sub_sets.size()
+              << std::endl;
+    std::cout << "InputSet::splitTrainingSet() Dimensions of sub-sets: " << std::endl;
     for (auto &item : sub_sets)
-      std::cout << "InputSet::split() " << item.getInputWidth() << "x" << item.getInputHeight()
-                << std::endl;
+      std::cout << "InputSet::splitTrainingSet() " << item.getInputWidth() << "x"
+                << item.getInputHeight() << std::endl;
   }
 
   std::vector<std::vector<std::string>> InputSet::splitClassNames(size_t nb_sets) const {
@@ -248,7 +250,7 @@ namespace control {
     assert(part > 0);
     for (size_t i = 0; i < nb_sets; i++) new_tensors[i].resize(part + (remainder-- > 0 ? 1 : 0));
 
-    // OpenCl queues (todo: split in threads, each with their own queue)
+    // OpenCl queues (todo: splitTrainingSet in threads, each with their own queue)
     std::vector<cl::CommandQueue> queues(nb_sets);
     for (size_t i = 0; i < nb_sets; i++)
       queues[i] = cl::CommandQueue(utils::cl_wrapper.getContext(),
