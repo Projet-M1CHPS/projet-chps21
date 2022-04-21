@@ -19,7 +19,7 @@ sudo dnf install ocl-icd-devel \
                  opencl-headers \
                  clblast-devel \
                  boost-devel \
-                 blas-devel \
+                 blas-devel
 ```
 
 You will also need a blas implementation, and an OpenCL runtime (we recommend POCL for starter)
