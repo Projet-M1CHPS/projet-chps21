@@ -17,6 +17,10 @@ namespace nnet {
     return perceptron->predict(input);
   }
 
+  math::clFTensor MLPModel::predict(cl::CommandQueue &queue, math::clFTensor const &inputs) const {
+    return perceptron->predict(inputs);
+  }
+
   std::unique_ptr<MLPModel> MLPModel::random(MLPTopology const &topology,
                                              af::ActivationFunctionType af) {
     auto res = std::make_unique<MLPModel>();

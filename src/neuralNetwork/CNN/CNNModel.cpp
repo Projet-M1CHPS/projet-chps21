@@ -22,25 +22,26 @@ namespace nnet {
     auto &mlp = res->getMlp();
     mlp.setTopology(mlp_topology);
     // TODO : check comment on init la fonction d activation
-    mlp.setActivationFunction(af::ActivationFunctionType::sigmoid);
+    mlp.setActivationFunction(af::ActivationFunctionType::relu);
     mlp.randomizeWeight();
 
     return res;
   }
 
   math::clFTensor CNNModel::predict(cl::CommandQueue &queue, math::clFTensor const &inputs) const {
-    math::clFTensor flatten = cnn->predict(queue, inputs);
-    // TODO : C est quoi ca ???
-    // return mlp->predict(flatten);
+    math::clFTensor flattens = cnn->predict(queue, inputs);
 
-    return {1, 1, 1};
+    std::cout << "output cnn : " << flattens << std::endl; 
+
+    return mlp->predict(flattens);
   }
 
   math::clFMatrix CNNModel::predict(cl::CommandQueue &queue, math::clFMatrix const &input) const {
     math::clFTensor buffer(input.getRows(), input.getCols(), 1);
     buffer[0].copy(input, queue, true);
 
-    return cnn->predict(queue, buffer)[0];
+    math::clFTensor flattens = cnn->predict(queue, buffer);
+    return mlp->predict(flattens)[0];
   }
 
 }   // namespace nnet

@@ -3,6 +3,9 @@
 #include "CNNTopology.hpp"
 #include "math/Matrix.hpp"
 #include "math/clFMatrix.hpp"
+#include "MLPModel.hpp"
+#include "CNNModel.hpp"
+#include "ActivationFunction.hpp"
 #include <iostream>
 
 using namespace math;
@@ -1131,7 +1134,6 @@ void testPredictionXBranch() {
    * */
 }
 
-
 void foo() {
   // 1 branch 2 filter/branch 2 input
   const size_t number_input = 4;
@@ -1309,6 +1311,147 @@ void foo() {
    * */
 }
 
+
+void testPredictionMLP()
+{
+  cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
+
+  nnet::MLPTopology topology({36, 5, 1});
+
+  nnet::MLPerceptron mlp(topology);
+  mlp.setActivationFunction(af::ActivationFunctionType::relu);
+  mlp.randomizeWeight();
+
+  math::FloatMatrix input1(6, 6);
+  {
+    input1(0, 0) = 1.f;
+    input1(0, 1) = 2.f;
+    input1(0, 2) = 1.f;
+    input1(0, 3) = 1.f;
+    input1(0, 4) = 4.f;
+    input1(0, 5) = 1.f;
+    input1(1, 0) = 2.f;
+    input1(1, 1) = 1.f;
+    input1(1, 2) = 1.f;
+    input1(1, 3) = 2.f;
+    input1(1, 4) = 2.f;
+    input1(1, 5) = 1.f;
+    input1(2, 0) = 4.f;
+    input1(2, 1) = 3.f;
+    input1(2, 2) = 2.f;
+    input1(2, 3) = 1.f;
+    input1(2, 4) = 2.f;
+    input1(2, 5) = 1.f;
+    input1(3, 0) = 1.f;
+    input1(3, 1) = 5.f;
+    input1(3, 2) = 1.f;
+    input1(3, 3) = 1.f;
+    input1(3, 4) = 2.f;
+    input1(3, 5) = 1.f;
+    input1(4, 0) = 2.f;
+    input1(4, 1) = 1.f;
+    input1(4, 2) = 1.f;
+    input1(4, 3) = 4.f;
+    input1(4, 4) = 1.f;
+    input1(4, 5) = 1.f;
+    input1(5, 0) = 2.f;
+    input1(5, 1) = 1.f;
+    input1(5, 2) = 4.f;
+    input1(5, 3) = 2.f;
+    input1(5, 4) = 4.f;
+    input1(5, 5) = 1.f;
+  }
+  math::FloatMatrix input2(6, 6);
+  {
+    input2(0, 0) = 10.f;
+    input2(0, 1) = 2.f;
+    input2(0, 2) = 1.f;
+    input2(0, 3) = 1.f;
+    input2(0, 4) = 4.f;
+    input2(0, 5) = 1.f;
+    input2(1, 0) = 10.f;
+    input2(1, 1) = 1.f;
+    input2(1, 2) = 1.f;
+    input2(1, 3) = 2.f;
+    input2(1, 4) = 2.f;
+    input2(1, 5) = 10.f;
+    input2(2, 0) = 4.f;
+    input2(2, 1) = 3.f;
+    input2(2, 2) = 2.f;
+    input2(2, 3) = 10.f;
+    input2(2, 4) = 2.f;
+    input2(2, 5) = 1.f;
+    input2(3, 0) = 1.f;
+    input2(3, 1) = 5.f;
+    input2(3, 2) = 1.f;
+    input2(3, 3) = 1.f;
+    input2(3, 4) = 10.f;
+    input2(3, 5) = 1.f;
+    input2(4, 0) = 2.f;
+    input2(4, 1) = 1.f;
+    input2(4, 2) = 1.f;
+    input2(4, 3) = 4.f;
+    input2(4, 4) = 10.f;
+    input2(4, 5) = 1.f;
+    input2(5, 0) = 2.f;
+    input2(5, 1) = 10.f;
+    input2(5, 2) = 4.f;
+    input2(5, 3) = 2.f;
+    input2(5, 4) = 4.f;
+    input2(5, 5) = 1.f;
+  }
+  math::clFTensor input_tensor(6, 6, 2);
+  input_tensor[0] = input1;
+  input_tensor[1] = input2;
+
+  auto res = mlp.predict(queue, input_tensor[0]);
+  queue.finish();
+  std::cout << "predict1\n" << res << std::endl;
+
+  res = mlp.predict( input_tensor[1]);
+  queue.finish();
+  std::cout << "predict2\n" << res << std::endl;
+
+  auto res_tensor = mlp.predict( input_tensor);
+  queue.finish();
+  std::cout << "predict3\n" << res_tensor << std::endl;
+}
+
+
+void  testPredictionCNN()
+{
+  cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
+
+  std::string str_topology("5 5 relu convolution 2 2 2 pooling avg 2 2");
+  auto topology_cnn = nnet::stringToTopology(str_topology);
+  std::cout << topology_cnn << std::endl;
+
+  nnet::MLPTopology topology_mlp({5, 1});
+
+  auto cnn = nnet::CNNModel::random(topology_cnn, topology_mlp);
+  
+  cnn->getCnn().printWeights();
+
+  math::clFTensor inputs(5, 5, 1);
+
+  math::FloatMatrix buffer(5, 5);
+  for(size_t i = 0; i < inputs.getDepth(); i++)
+  {
+    math::randomize<float>(buffer, 0.f, 2.f);
+    inputs[i] = buffer;
+  }
+
+  std::cout << "inputs : " << inputs << std::endl;
+
+  auto outputs = cnn->predict(queue, inputs);
+  queue.finish();
+  std::cout << "outputs : " << outputs << std::endl;
+
+  std::cout << cnn->getMlp() << std::endl;
+}
+
+
+
 int main() {
   utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault());
 
@@ -1317,7 +1460,7 @@ int main() {
 
   // testConvolutionalLayer1Branch();
   // testConvolutionalLayer1BranchBP();
-  foo();
+  //foo();
   // testConvolutionalLayerXBranch();
 
   // testMaxPoolingLayer();
@@ -1328,6 +1471,9 @@ int main() {
 
   // testPrediction1Branch();
   // testPredictionXBranch();
+
+  //testPredictionMLP();
+  testPredictionCNN();
 
   return 0;
 }

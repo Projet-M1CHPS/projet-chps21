@@ -15,15 +15,14 @@ namespace nnet {
     if (not topology.empty()) { setTopology(topology); }
   }
 
-  math::clFMatrix MLPerceptron::predict(math::clFMatrix const &input) const {
+  math::clFMatrix MLPerceptron::predict(cl::CommandQueue &queue,
+                                        math::clFMatrix const &input) const {
     auto flattened_input = input.flatten();
     const size_t nbInput = flattened_input.getRows();
 
     if (nbInput != weights.front().getCols()) {
       throw std::invalid_argument("Invalid number of input");
     }
-
-    cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
 
     auto current_layer = math::clFMatrix::gemm(1.0f, false, weights[0], false, flattened_input,
                                                1.0f, biases[0], queue);
@@ -35,9 +34,49 @@ namespace nnet {
 
       af::applyAF(activation_functions[i], current_layer, queue);
     }
-    queue.finish();
     return current_layer;
   }
+
+  math::clFMatrix MLPerceptron::predict(math::clFMatrix const &input) const {
+    cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
+    math::clFMatrix res = predict(queue, input);
+    queue.finish();
+    return res;
+  }
+
+
+  math::clFTensor MLPerceptron::predict(cl::CommandQueue &queue,
+                                        math::clFTensor const &inputs) const {
+    auto flattened_inputs = inputs.flatten();
+    const size_t nbInput = flattened_inputs.getRows();
+
+    if (nbInput != weights.front().getCols()) {
+      throw std::invalid_argument("Invalid number of input");
+    }
+
+    math::clFTensor current_layer = math::clFTensor::batchedGemm(
+            1.0f, false, weights[0], false, flattened_inputs, 1.0f, biases[0], queue);
+
+    af::applyAF(activation_functions[0], current_layer, queue);
+
+    for (size_t k = 1; k < weights.size(); k++) {
+      // C = W * C + B
+      current_layer = math::clFTensor::batchedGemm(1.0f, false, weights[k], false, current_layer,
+                                                   1.0f, biases[k], queue);
+
+      // Apply activation function on every element of the matrix
+      af::applyAF(activation_functions[k], current_layer, queue);
+    }
+    return current_layer;
+  }
+
+  math::clFTensor MLPerceptron::predict(math::clFTensor const &inputs) const {
+    cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
+    math::clFTensor res = predict(queue, inputs);
+    queue.finish();
+    return res;
+  }
+
 
   void MLPerceptron::setTopology(MLPTopology const &topology) {
     if (topology.empty()) return;

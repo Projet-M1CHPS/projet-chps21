@@ -99,10 +99,22 @@ namespace nnet {
      * @brief Predict the output of the neural network on the given input
      * Uses the next available queue
      * @param input
-     * @param qhandler
      * @return
      */
+    math::clFMatrix predict(cl::CommandQueue &queue, math::clFMatrix const &input) const;
+
     math::clFMatrix predict(math::clFMatrix const &input) const;
+
+
+    /**
+     * @brief Predict the output of the neural network on the given input
+     * Uses the next available queue
+     * @param input
+     * @return
+     */
+    math::clFTensor predict(cl::CommandQueue &queue, math::clFTensor const &input) const;
+    math::clFTensor predict(math::clFTensor const &input) const;
+
 
     [[nodiscard]] MLPTopology const &getTopology() const { return topology; }
 

@@ -23,11 +23,7 @@ namespace nnet {
      */
     math::clFMatrix predict(cl::CommandQueue &queue, math::clFMatrix const &input) const override;
 
-    math::clFTensor predict(cl::CommandQueue &queue, math::clFTensor const &input) const override {
-      // TODO : Implement me
-      assert(0 && "implement me");
-      return {1, 1, 1};
-    }
+    math::clFTensor predict(cl::CommandQueue &queue, math::clFTensor const &inputs) const override;
 
     bool load(const std::filesystem::path &path) override;
     bool save(const std::filesystem::path &path) const override;

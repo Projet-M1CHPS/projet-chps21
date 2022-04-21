@@ -35,6 +35,7 @@ namespace nnet {
 
     for (auto &layer : layers) {
       output = layer->compute(queue, output);
+      queue.finish();
       std::cout << "output INTERMEDIAIRE : " << output << std::endl;
     }
 
@@ -48,7 +49,11 @@ namespace nnet {
 
   void reorganizeForward(cl::CommandQueue &queue, math::clFTensor &tensor, const size_t nInput,
                          const size_t nBranch) {
-    if (nInput < 2 || nBranch < 2) return;
+    if (nInput < 2 || nBranch < 2)
+    {
+      tensor.reshape(nBranch * tensor.getRows() * tensor.getCols(), 1, nInput);
+      return;
+    }
 
     const size_t size_matrix = tensor.getRows() * tensor.getRows() * sizeof(float);
     math::clFTensor buffer(tensor.getRows(), tensor.getCols(), (nInput - 1) * nBranch);

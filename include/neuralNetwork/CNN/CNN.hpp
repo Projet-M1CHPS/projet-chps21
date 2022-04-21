@@ -58,6 +58,17 @@ namespace nnet {
      */
     math::clFTensor predict(cl::CommandQueue &queue, math::clFTensor const &input);
 
+    void printWeights()
+    {
+      for(auto& layer : layers)
+      {
+        if(layer->hasWeight())
+        {
+          std::cout << "filter : " << layer->getWeight() << std::endl;
+        }
+      }
+    }
+
   private:
     CNNTopology topology;
     std::vector<std::unique_ptr<CNNLayer>> layers;
