@@ -8,4 +8,4 @@ add_library(openclUtils STATIC
         clPlatformSelector.cpp ${CURRENT_INCLUDE_DIR}/clPlatformSelector.hpp
         )
 target_include_directories(openclUtils PUBLIC ${CURRENT_INCLUDE_DIR})
-target_link_libraries(openclUtils PUBLIC OpenCL::OpenCL tscl::tscl clblast ncurses Boost::boost Boost::filesystem)
+target_link_libraries(openclUtils PUBLIC dl OpenCL::OpenCL tscl::tscl clblast ncurses Boost::boost Boost::filesystem)

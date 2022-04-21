@@ -7,7 +7,7 @@ add_executable(
 target_link_libraries(
         Math_test PUBLIC
         Utils
-        BLAS::BLAS
+        ${BLAS_LIBRARIES}
         Math
         gtest
         openclUtils

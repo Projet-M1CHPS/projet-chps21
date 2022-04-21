@@ -1,5 +1,7 @@
 # KRess: Breast cancer detection through machine learning
 
+[![Run Test](https://github.com/Thukisdo/projet-chps21/actions/workflows/cmake.yml/badge.svg)](https://github.com/Thukisdo/projet-chps21/actions/workflows/cmake.yml)
+
 This project is done in the context of the Master Calcul Haute Performance et Simulation at the Université de Versailles St-Quentin.
 
 The goal of this project is to implement a tool for breast cancer detection, and optimize it accordingly.
