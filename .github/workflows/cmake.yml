@@ -19,49 +19,74 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build_dir: ${{github.workspace}}/build
-      
+
 
     steps:
-    - uses: actions/checkout@v2
-    
-    - name: install dependency
-      run: sudo apt-get install -y doxygen gcovr libopenblas-dev libboost-all-dev libtbb-dev
-      
-    - name: install opencl
-      run: sudo apt-get install -y ocl-icd-opencl-dev opencl-clhpp-headers
+      - uses: actions/checkout@v2
 
-    - name: install clblast
-      run: | 
-           git clone https://github.com/CNugteren/CLBlast ./clblast
-           cd ./clblast && mkdir build && cd build
-           cmake .. -DCMAKE_BUILD_TYPE=RELEASE
-           make -j
-           sudo make install
-      
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      - name: install dependency
+        run: |
+             sudo apt-get install -y doxygen gcovr libopenblas-dev libboost-all-dev \
+             libtbb-dev libblas-dev libncurses5-dev libncurses5 libcmocka-dev g++ pocl-opencl-icd libpocl-dev
 
-    - name: Build
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j
+      - name: install opencl
+        run: |
+          sudo apt-get install -y ocl-icd-opencl-dev opencl-clhpp-headers opencl-c-headers opencl-headers
+          
+          if [ ! -d openclloader ]; then
+             git clone https://github.com/KhronosGroup/OpenCL-ICD-Loader ./openclloader
+          fi
+          cd ./openclloader && mkdir -p build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_TESTING=OFF
+          sudo make install
+          
+          if [ ! -d openclh ]; then
+             git clone https://github.com/KhronosGroup/OpenCL-Headers ./openclh
+          fi
+          cd ./openclh && mkdir -p build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_TESTING=OFF
+          sudo make install
+          
+          if [ ! -d openclhpp ]; then
+             git clone https://github.com/KhronosGroup/OpenCL-CLHPP ./openclhpp
+          fi
+          cd ./openclhpp && mkdir -p build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_TESTING=OFF
+          sudo make install
 
-    - name: test
-      working-directory: ${{github.workspace}}/build
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest -C ${{env.BUILD_TYPE}}
-      
-    - name: coverage
-      working-directory: ${{github.workspace}}/build
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: make coverage
-      
-    - name: Upload code coverage
-      uses: actions/upload-artifact@v2
-      with:
+      - name: install clblast
+        run: |
+          if [ ! -d clblast ]; then
+             git clone https://github.com/CNugteren/CLBlast ./clblast
+          fi
+          cd ./clblast && mkdir -p build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=RELEASE
+          sudo make -j install
+
+      - name: Configure CMake
+        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Build
+        # Build your program with the given configuration
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j
+
+      - name: test
+        working-directory: ${{github.workspace}}/build
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ctest -C ${{env.BUILD_TYPE}}
+
+      - name: coverage
+        working-directory: ${{github.workspace}}/build
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: make coverage
+
+      - name: Upload code coverage
+        uses: actions/upload-artifact@v2
+        with:
           name: code-coverage-report
           path: build/coverage
       

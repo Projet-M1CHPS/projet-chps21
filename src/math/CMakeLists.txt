@@ -6,4 +6,4 @@ add_library(Math STATIC
         ${CURRENT_INCLUDE_DIR}/Matrix.hpp
         )
 target_include_directories(Math PUBLIC ${CURRENT_INCLUDE_DIR})
-target_link_libraries(Math PUBLIC OpenCL::OpenCL openclUtils)
+target_link_libraries(Math PUBLIC OpenCL::OpenCL openclUtils ${BLAS_LIBRARIES})
