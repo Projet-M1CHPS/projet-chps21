@@ -82,6 +82,7 @@ TEST(CNNLayerTest, canCopyConvolutionLayer) {
 }
 
 TEST(CNNLayerTest, canComputeConvolutionLayer) {
+  auto &queue = utils::cl_wrapper.getDefaultQueue();
   CNNConvolutionLayer layer({5, 5}, {2, 2}, 2, af::ActivationFunctionType::relu, 2);
 
   FloatMatrix f1(2, 2);
@@ -166,7 +167,9 @@ TEST(CNNLayerTest, canComputeConvolutionLayer) {
   input_tensor[2] = input1;
   input_tensor[3] = input2;
 
-  clFTensor output_tensor = layer.compute(input_tensor);
+  clFTensor output_tensor = layer.compute(queue, input_tensor);
+
+  queue.finish();
 
   std::array<FloatMatrix, 8> valid_matrix;
   for (auto &matrix : valid_matrix) matrix = FloatMatrix(5, 5);
@@ -390,6 +393,7 @@ TEST(CNNLayerTest, canComputeConvolutionLayer) {
 }
 
 TEST(CNNLayerTest, canComputeBPConvolutionLayer) {
+  auto &queue = utils::cl_wrapper.getDefaultQueue();
   nnet::CNNConvolutionLayer layer({5, 5}, {2, 2}, 2, af::ActivationFunctionType::relu, 2);
   nnet::CNNStorageBPConvolution storage;
 
@@ -475,7 +479,9 @@ TEST(CNNLayerTest, canComputeBPConvolutionLayer) {
   input_tensor[2] = input[0];
   input_tensor[3] = input[1];
 
-  clFTensor output_tensor = layer.computeForward(input_tensor, storage);
+  clFTensor output_tensor = layer.computeForward(queue, input_tensor, storage);
+
+  queue.finish();
 
   std::array<FloatMatrix, 8> valid_matrix_output;
   for (auto &matrix : valid_matrix_output) matrix = FloatMatrix(5, 5);
@@ -717,7 +723,9 @@ TEST(CNNLayerTest, canComputeBPConvolutionLayer) {
   errors_tensor[6].fill(7.f, utils::cl_wrapper.getDefaultQueue(), true);
   errors_tensor[7].fill(8.f, utils::cl_wrapper.getDefaultQueue(), true);
 
-  clFTensor errors_input = layer.computeBackward(errors_tensor, storage);
+  clFTensor errors_input = layer.computeBackward(queue, errors_tensor, storage);
+
+  queue.finish();
 
   std::array<FloatMatrix, 4> valid_matrix_error_input;
   for (auto &matrix : valid_matrix_error_input) matrix = FloatMatrix(6, 6);
@@ -940,6 +948,7 @@ TEST(CNNLayerTest, throwInvalidPoolingLayerWeight) {
 }
 
 TEST(CNNLayerTest, canComputeAvgPoolingLayer) {
+  auto& queue = utils::cl_wrapper.getDefaultQueue();
   CNNAvgPoolingLayer layer({4, 4}, {3, 3});
 
   math::FloatMatrix input1(6, 6);
@@ -988,7 +997,9 @@ TEST(CNNLayerTest, canComputeAvgPoolingLayer) {
   input_tensor[0] = input1;
   input_tensor[1] = input2;
 
-  clFTensor output_tensor = layer.compute(input_tensor);
+  clFTensor output_tensor = layer.compute(queue, input_tensor);
+
+  queue.finish();
 
   std::array<FloatMatrix, 2> valid_matrix;
   for (auto &matrix : valid_matrix) matrix = FloatMatrix(4, 4);
@@ -1038,6 +1049,7 @@ TEST(CNNLayerTest, canComputeAvgPoolingLayer) {
 }
 
 TEST(CNNLayerTest, canComputeBPAvgPoolingLayer) {
+  auto &queue = utils::cl_wrapper.getDefaultQueue();
   CNNAvgPoolingLayer layer({4, 4}, {3, 3});
   CNNStorageBPAvgPooling storage({6, 6});
 
@@ -1087,7 +1099,9 @@ TEST(CNNLayerTest, canComputeBPAvgPoolingLayer) {
   input_tensor[0] = input1;
   input_tensor[1] = input2;
 
-  clFTensor output_tensor = layer.computeForward(input_tensor, storage);
+  clFTensor output_tensor = layer.computeForward(queue, input_tensor, storage);
+
+  queue.finish();
 
   std::array<FloatMatrix, 2> valid_matrix_output;
   for (auto &matrix : valid_matrix_output) matrix = FloatMatrix(4, 4);
@@ -1140,7 +1154,9 @@ TEST(CNNLayerTest, canComputeBPAvgPoolingLayer) {
   errors_tensor[0].fill(1.f, utils::cl_wrapper.getDefaultQueue(), true);
   errors_tensor[1].fill(2.f, utils::cl_wrapper.getDefaultQueue(), true);
 
-  clFTensor errors_input = layer.computeBackward(errors_tensor, storage);
+  clFTensor errors_input = layer.computeBackward(queue, errors_tensor, storage);
+
+  queue.finish();
 
   std::array<FloatMatrix, 2> valid_matrix_error_input;
   for (auto &matrix : valid_matrix_error_input) matrix = FloatMatrix(6, 6);
@@ -1257,6 +1273,7 @@ TEST(CNNTest, canCreateCnn) {
 }
 
 TEST(CNNTest, canPredictCnn) {
+  auto &queue = utils::cl_wrapper.getDefaultQueue();
   std::string str_topology("6 6 relu convolution 2 2 2 convolution 2 2 2 pooling avg 2 2");
   auto topology = stringToTopology(str_topology);
 
@@ -1335,7 +1352,9 @@ TEST(CNNTest, canPredictCnn) {
   input_tensor[0] = input1;
   input_tensor[1] = input2;
 
-  clFTensor output_tensor = cnn.predict(input_tensor);
+  clFTensor output_tensor = cnn.predict(queue, input_tensor);
+
+  queue.finish();
 
   std::array<FloatMatrix, 2> valid_matrix;
   for (auto &matrix : valid_matrix) matrix = FloatMatrix(36, 1);

@@ -30,9 +30,9 @@ namespace nnet {
      * @param input The model's input
      * @return The model's output
      */
-    [[nodiscard]] virtual math::clFMatrix predict(math::clFMatrix const &input) const = 0;
+    [[nodiscard]] virtual math::clFMatrix predict(cl::CommandQueue &queue, math::clFMatrix const &input) const = 0;
 
-    [[nodiscard]] virtual math::clFTensor predict(math::clFTensor const &input) const = 0;
+    [[nodiscard]] virtual math::clFTensor predict(cl::CommandQueue &queue, math::clFTensor const &input) const = 0;
 
     /**
      * @brief Save the model to the given path

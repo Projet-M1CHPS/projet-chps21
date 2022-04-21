@@ -88,11 +88,9 @@ namespace nnet {
     filters.copy(weights, utils::cl_wrapper.getDefaultQueue(), true);
   }
 
-  math::clFTensor CNNConvolutionLayer::compute(const math::clFTensor &input) {
+  math::clFTensor CNNConvolutionLayer::compute(cl::CommandQueue &queue, const math::clFTensor &input) {
     std::cout << "call compute : branch{" << n_branch << "}, filter{" << n_filter << "}"
               << std::endl;
-
-    cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
     const size_t output_size_z = n_branch * n_filter * input.getDepth() / n_branch;
     math::clFTensor res(outputSize.first, outputSize.second, output_size_z);
@@ -119,17 +117,15 @@ namespace nnet {
   }
 
 
-  math::clFTensor CNNConvolutionLayer::computeForward(const math::clFTensor &input, CNNStorageBP &storage) {
+  math::clFTensor CNNConvolutionLayer::computeForward(cl::CommandQueue &queue, const math::clFTensor &inputs, CNNStorageBP &storage) {
     auto &convoStorage = static_cast<CNNStorageBPConvolution &>(storage);
-    convoStorage.input = input.shallowCopy();
-    return compute(input);
+    convoStorage.input = inputs.shallowCopy();
+    return compute(queue, inputs);
   }
 
 
-  math::clFTensor CNNConvolutionLayer::computeBackward(const math::clFTensor &errors, CNNStorageBP &storage) {
+  math::clFTensor CNNConvolutionLayer::computeBackward(cl::CommandQueue &queue, const math::clFTensor &errors, CNNStorageBP &storage) {
     auto &convoStorage = static_cast<CNNStorageBPConvolution &>(storage);
-
-    cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
     // compute filter error
     math::clFTensor res_filter(filters.getRows(), filters.getCols(), errors.getDepth());
@@ -206,7 +202,7 @@ namespace nnet {
     return std::make_unique<CNNMaxPoolingLayer>(*this);
   }
 
-  math::clFTensor CNNMaxPoolingLayer::compute(const math::clFTensor &inputs) {
+  math::clFTensor CNNMaxPoolingLayer::compute(cl::CommandQueue &queue, const math::clFTensor &inputs) {
     math::clFTensor res(outputSize.first, outputSize.second, inputs.getDepth());
     for (size_t ii = 0; ii < inputs.getDepth(); ii++) {
       math::FloatMatrix _input = inputs[ii].toFloatMatrix(true);
@@ -233,7 +229,7 @@ namespace nnet {
     return res;
   }
 
-  math::clFTensor CNNMaxPoolingLayer::computeForward(const math::clFTensor &inputs, CNNStorageBP &storage) {
+  math::clFTensor CNNMaxPoolingLayer::computeForward(cl::CommandQueue &queue, const math::clFTensor &inputs, CNNStorageBP &storage) {
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
     math::clFTensor res(outputSize.first, outputSize.second, inputs.getDepth());
     for (size_t ii = 0; ii < inputs.getDepth(); ii++) {
@@ -273,7 +269,7 @@ namespace nnet {
     return res;
   }
 
-  math::clFTensor CNNMaxPoolingLayer::computeBackward(const math::clFTensor &errors, CNNStorageBP &storage) {
+  math::clFTensor CNNMaxPoolingLayer::computeBackward(cl::CommandQueue &queue, const math::clFTensor &errors, CNNStorageBP &storage) {
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
 
     math::clFTensor res(poolingStorage.input_size.first, poolingStorage.input_size.second,
@@ -313,10 +309,8 @@ namespace nnet {
     return std::make_unique<CNNAvgPoolingLayer>(*this);
   }
 
-  math::clFTensor CNNAvgPoolingLayer::compute(const math::clFTensor &input) {
+  math::clFTensor CNNAvgPoolingLayer::compute(cl::CommandQueue &queue, const math::clFTensor &input) {
     math::clFTensor res(outputSize.first, outputSize.second, input.getDepth());
-
-    cl::CommandQueue queue = utils::cl_wrapper.getDefaultQueue();
 
     clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, input.getRows(),
                              input.getCols(), filter.getRows(), filter.getCols(), 0, 0, 1, 1, 1, 1,
@@ -330,11 +324,11 @@ namespace nnet {
     return res;
   }
 
-  math::clFTensor CNNAvgPoolingLayer::computeForward(const math::clFTensor &input, CNNStorageBP &storages) {
-    return compute(input);
+  math::clFTensor CNNAvgPoolingLayer::computeForward(cl::CommandQueue &queue, const math::clFTensor &inputs, CNNStorageBP &storages) {
+    return compute(queue, inputs);
   }
 
-  math::clFTensor CNNAvgPoolingLayer::computeBackward(const math::clFTensor &errors, CNNStorageBP &storages) {
+  math::clFTensor CNNAvgPoolingLayer::computeBackward(cl::CommandQueue &queue, const math::clFTensor &errors, CNNStorageBP &storages) {
     auto &poolingStorage = static_cast<CNNStorageBPAvgPooling &>(storages);
 
     math::clFTensor res(poolingStorage.input_size.first, poolingStorage.input_size.second,

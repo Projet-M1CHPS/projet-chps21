@@ -28,7 +28,7 @@ namespace nnet {
 
     void randomizeWeight();
 
-    math::clFTensor predict(math::clFTensor const &input);
+    math::clFTensor predict(cl::CommandQueue &queue, math::clFTensor const &input);
 
   private:
     CNNTopology topology;

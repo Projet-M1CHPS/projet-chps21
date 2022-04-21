@@ -28,20 +28,20 @@ namespace nnet {
   }
 
 
-  math::clFTensor CNN::predict(math::clFTensor const &inputs) {
+  math::clFTensor CNN::predict(cl::CommandQueue &queue, math::clFTensor const &inputs) {
     if (layers.empty()) { throw std::runtime_error("CNN::predict : No layer in cnn"); }
 
     math::clFTensor output = inputs.shallowCopy();
 
     for (auto &layer : layers) {
-      output = layer->compute(output);
+      output = layer->compute(queue, output);
       std::cout << "output INTERMEDIAIRE : " << output << std::endl;
     }
 
-    reorganizeForward(utils::cl_wrapper.getDefaultQueue(), output, inputs.getDepth(),
+    reorganizeForward(queue, output, inputs.getDepth(),
                       topology.getNBranchFinal());
 
-    utils::cl_wrapper.getDefaultQueue().finish();
+    queue.finish();
 
     return output;
   }

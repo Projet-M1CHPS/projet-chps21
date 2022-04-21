@@ -21,9 +21,9 @@ namespace nnet {
      * @param input The matrix to be fed to the perceptron
      * @return The output of the perceptron
      */
-    math::clFMatrix predict(math::clFMatrix const &input) const override;
+    math::clFMatrix predict(cl::CommandQueue &queue, math::clFMatrix const &input) const override;
 
-    math::clFTensor predict(math::clFTensor const &input) const override {
+    math::clFTensor predict(cl::CommandQueue &queue, math::clFTensor const &input) const override {
       // TODO : Implement me
       assert(0 && "implement me");
       return {1, 1, 1};

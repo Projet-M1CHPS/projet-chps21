@@ -24,7 +24,7 @@ namespace control {
     // No reason not to use OpenMP here
     for (auto &input : input_set) {
       long true_class = input.getClass();
-      auto buf = model.predict(input.getData());
+      auto buf = model.predict(utils::cl_wrapper.getDefaultQueue(), input.getData());
       size_t predicted_class = buf.imax();
 
       confusion_matrix(predicted_class, true_class)++;

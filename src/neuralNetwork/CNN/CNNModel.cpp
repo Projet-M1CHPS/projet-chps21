@@ -28,19 +28,19 @@ namespace nnet {
     return res;
   }
 
-  math::clFTensor CNNModel::predict(math::clFTensor const &inputs) const {
-    math::clFTensor flatten = cnn->predict(inputs);
-
+  math::clFTensor CNNModel::predict(cl::CommandQueue &queue, math::clFTensor const &inputs) const {
+    math::clFTensor flatten = cnn->predict(queue, inputs);
+    // TODO : C est quoi ca ???
     // return mlp->predict(flatten);
 
-    return math::clFTensor(1, 1, 1);
+    return {1, 1, 1};
   }
 
-  math::clFMatrix CNNModel::predict(math::clFMatrix const &input) const {
+  math::clFMatrix CNNModel::predict(cl::CommandQueue &queue, math::clFMatrix const &input) const {
     math::clFTensor buffer(input.getRows(), input.getCols(), 1);
-    buffer[0].copy(input, true);
+    buffer[0].copy(input, queue, true);
 
-    return cnn->predict(buffer)[0];
+    return cnn->predict(queue, buffer)[0];
   }
 
 }   // namespace nnet

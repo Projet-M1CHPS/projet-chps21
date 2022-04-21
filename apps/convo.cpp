@@ -224,7 +224,9 @@ void testConvolutionalLayer1Branch() {
   for (size_t i = 0; i < input_tensor.getDepth(); i++)
     std::cout << "input " << i << " : \n" << input_tensor[i].toFloatMatrix(true) << std::endl;
 
-  clFTensor output_tensor = layer.compute(input_tensor);
+  clFTensor output_tensor = layer.compute(utils::cl_wrapper.getDefaultQueue(), input_tensor);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   for (size_t i = 0; i < output_tensor.getDepth(); i++)
     std::cout << "output " << i << " : \n" << output_tensor[i].toFloatMatrix(true) << std::endl;
@@ -396,7 +398,9 @@ void testConvolutionalLayer1BranchBP() {
   input_tensor[5] = input2;
   std::cout << "input : " << input_tensor << std::endl;
 
-  clFTensor output_tensor = layer.computeForward(input_tensor, storage);
+  clFTensor output_tensor = layer.computeForward(utils::cl_wrapper.getDefaultQueue(), input_tensor, storage);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   std::cout << "output : " << output_tensor << std::endl;
 
@@ -418,7 +422,9 @@ void testConvolutionalLayer1BranchBP() {
 
   std::cout << "error : " << errors_tensor << std::endl;
 
-  clFTensor errors_input = layer.computeBackward(errors_tensor, storage);
+  clFTensor errors_input = layer.computeBackward(utils::cl_wrapper.getDefaultQueue(), errors_tensor, storage);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   // std::cout << "error filter : " << storage.errorFilter << std::endl;
   std::cout << "error input : " << errors_input << std::endl;
@@ -527,7 +533,9 @@ void testConvolutionalLayerXBranch() {
   input_tensor[3] = input2;
   std::cout << "input : " << input_tensor << std::endl;
 
-  clFTensor output_tensor = layer.compute(input_tensor);
+  clFTensor output_tensor = layer.compute(utils::cl_wrapper.getDefaultQueue(), input_tensor);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   std::cout << "output : " << output_tensor << std::endl;
 
@@ -600,7 +608,9 @@ void testMaxPoolingLayer() {
   for (size_t i = 0; i < input_tensor.getDepth(); i++)
     std::cout << "input " << i << " : \n" << input_tensor[i].toFloatMatrix(true) << std::endl;
 
-  clFTensor output_tensor = layer.compute(input_tensor);
+  clFTensor output_tensor = layer.compute(utils::cl_wrapper.getDefaultQueue(), input_tensor);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   for (size_t i = 0; i < output_tensor.getDepth(); i++)
     std::cout << "output " << i << " : \n" << output_tensor[i].toFloatMatrix(true) << std::endl;
@@ -670,7 +680,9 @@ void testMaxPoolingLayerBP() {
   for (size_t i = 0; i < input_tensor.getDepth(); i++)
     std::cout << "input " << i << " : \n" << input_tensor[i].toFloatMatrix(true) << std::endl;
 
-  clFTensor output_tensor = layer.computeForward(input_tensor, storage);
+  clFTensor output_tensor = layer.computeForward(utils::cl_wrapper.getDefaultQueue(), input_tensor, storage);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   for (size_t i = 0; i < output_tensor.getDepth(); i++)
     std::cout << "output " << i << " : \n" << output_tensor[i].toFloatMatrix(true) << std::endl;
@@ -681,7 +693,9 @@ void testMaxPoolingLayerBP() {
     errors_tensor[i].fill(1.f, utils::cl_wrapper.getDefaultQueue(), true);
   }
 
-  clFTensor errors_input = layer.computeBackward(errors_tensor, storage);
+  clFTensor errors_input = layer.computeBackward(utils::cl_wrapper.getDefaultQueue(), errors_tensor, storage);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   for (size_t i = 0; i < errors_input.getDepth(); i++)
     std::cout << "output " << i << " : \n" << errors_input[i].toFloatMatrix(true) << std::endl;
@@ -747,7 +761,9 @@ void testAvgPoolingLayer() {
   for (size_t i = 0; i < input_tensor.getDepth(); i++)
     std::cout << "input " << i << " : \n" << input_tensor[i].toFloatMatrix(true) << std::endl;
 
-  clFTensor output_tensor = layer.compute(input_tensor);
+  clFTensor output_tensor = layer.compute(utils::cl_wrapper.getDefaultQueue(), input_tensor);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   for (size_t i = 0; i < output_tensor.getDepth(); i++)
     std::cout << "output " << i << " : \n" << output_tensor[i].toFloatMatrix(true) << std::endl;
@@ -820,7 +836,9 @@ void testAvgPoolingLayerBP() {
   for (size_t i = 0; i < input_tensor.getDepth(); i++)
     std::cout << "input " << i << " : \n" << input_tensor[i].toFloatMatrix(true) << std::endl;
 
-  clFTensor output_tensor = layer.computeForward(input_tensor, storage);
+  clFTensor output_tensor = layer.computeForward(utils::cl_wrapper.getDefaultQueue(), input_tensor, storage);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   for (size_t i = 0; i < output_tensor.getDepth(); i++)
     std::cout << "output " << i << " : \n" << output_tensor[i].toFloatMatrix(true) << std::endl;
@@ -830,7 +848,9 @@ void testAvgPoolingLayerBP() {
     errors_tensor[i].fill(static_cast<float>(i + 1), utils::cl_wrapper.getDefaultQueue(), true);
   }
 
-  clFTensor errors_input = layer.computeBackward(errors_tensor, storage);
+  clFTensor errors_input = layer.computeBackward(utils::cl_wrapper.getDefaultQueue(), errors_tensor, storage);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   for (size_t i = 0; i < errors_input.getDepth(); i++)
     std::cout << "output " << i << " : \n" << errors_input[i].toFloatMatrix(true) << std::endl;
@@ -912,7 +932,9 @@ void testPrediction1Branch() {
     std::cout << "input " << i << " : \n" << input_tensor[i].toFloatMatrix(true) << std::endl;
 
 
-  clFTensor output_tensor = cnn.predict(input_tensor);
+  clFTensor output_tensor = cnn.predict(utils::cl_wrapper.getDefaultQueue(), input_tensor);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   for (size_t i = 0; i < output_tensor.getDepth(); i++)
     std::cout << "output " << i << " : \n" << output_tensor[i].toFloatMatrix(true) << std::endl;
@@ -1071,7 +1093,9 @@ void testPredictionXBranch() {
 
   std::cout << "input : " << input_tensor << std::endl;
 
-  clFTensor output_tensor = cnn.predict(input_tensor);
+  clFTensor output_tensor = cnn.predict(utils::cl_wrapper.getDefaultQueue(), input_tensor);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   std::cout << "output : " << output_tensor << std::endl;
 
@@ -1242,7 +1266,9 @@ void foo() {
   input_tensor[3] = input2;
   std::cout << "input : " << input_tensor << std::endl;
 
-  clFTensor output_tensor = layer.computeForward(input_tensor, storage);
+  clFTensor output_tensor = layer.computeForward(utils::cl_wrapper.getDefaultQueue(), input_tensor, storage);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   std::cout << "output : " << output_tensor << std::endl;
 
@@ -1261,7 +1287,9 @@ void foo() {
 
   std::cout << "error : " << errors_tensor << std::endl;
 
-  clFTensor errors_input = layer.computeBackward(errors_tensor, storage);
+  clFTensor errors_input = layer.computeBackward(utils::cl_wrapper.getDefaultQueue(), errors_tensor, storage);
+
+  utils::cl_wrapper.getDefaultQueue().finish();
 
   std::cout << "error input : " << errors_input << std::endl;
   std::cout << "error filter : " << storage.error_filter << std::endl;

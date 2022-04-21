@@ -7,16 +7,11 @@
 #include "Perceptron/Optimization/Optimization.hpp"
 #include "neuralNetwork/CNN/CNN.hpp"
 #include "neuralNetwork/CNN/CNNStorageBP.hpp"
+#include "CNNOptimization.hpp"
+#include "CNNSGDOptimization.hpp"
 #include <iostream>
 #include <utility>
 
-// TODO : implement me correctly
-class CNNOptimization {
-public:
-  virtual void update(math::clFTensor &weight, math::clFTensor &gradient, cl::CommandQueue &queue) {
-
-  }
-};
 
 namespace nnet {
 

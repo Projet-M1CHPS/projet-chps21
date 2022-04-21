@@ -54,8 +54,8 @@ namespace nnet {
     [[nodiscard]] MLPerceptron &getMlp() { return *mlp; }
     [[nodiscard]] MLPerceptron const &getMlp() const { return *mlp; }
 
-    [[nodiscard]] math::clFTensor predict(math::clFTensor const &inputs) const override;
-    [[nodiscard]] math::clFMatrix predict(math::clFMatrix const &input) const override;
+    [[nodiscard]] math::clFTensor predict(cl::CommandQueue &queue, math::clFTensor const &inputs) const override;
+    [[nodiscard]] math::clFMatrix predict(cl::CommandQueue &queue, math::clFMatrix const &input) const override;
 
   private:
     std::unique_ptr<CNN> cnn;

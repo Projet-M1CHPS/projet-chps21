@@ -13,7 +13,7 @@ namespace nnet {
   }
 
 
-  math::clFMatrix MLPModel::predict(math::clFMatrix const &input) const {
+  math::clFMatrix MLPModel::predict(cl::CommandQueue &queue, math::clFMatrix const &input) const {
     return perceptron->predict(input);
   }
 

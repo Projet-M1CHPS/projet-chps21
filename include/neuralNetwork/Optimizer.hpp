@@ -10,9 +10,6 @@ namespace nnet {
    * @brief Base class for all optimizers
    */
   class Optimizer {
-  private:
-    class ModelUpdateContainer;
-
   public:
     class Operation;
 

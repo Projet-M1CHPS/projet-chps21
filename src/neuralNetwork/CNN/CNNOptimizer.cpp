@@ -4,14 +4,14 @@
 namespace nnet {
   namespace {
     math::clFTensor forward(const CNN &cnn, const math::clFTensor &inputs,
-                      std::vector<std::unique_ptr<CNNStorageBP>> &storages,
-                      cl::CommandQueue &queue) {
+                            std::vector<std::unique_ptr<CNNStorageBP>> &storages,
+                            cl::CommandQueue &queue) {
       auto &layers = cnn.getLayers();
 
       math::clFTensor output = inputs.shallowCopy();
 
       for (size_t i = 0; i < layers.size(); i++) {
-        output = layers[i]->computeForward(output, *storages[i]);
+        output = layers[i]->computeForward(queue, output, *storages[i]);
       }
 
       reorganizeForward(queue, output, inputs.getDepth(), cnn.getTopology().getNBranchFinal());
@@ -19,9 +19,9 @@ namespace nnet {
       return output;
     }
 
-    void backward(CNNOptimizer::WeightUpdateCache &cache, const CNN &cnn, const math::clFTensor &inputs,
-                  math::clFTensor &errorsFlatten, std::vector<std::unique_ptr<CNNStorageBP>> &storages,
-                  cl::CommandQueue &queue) {
+    void backward(CNNOptimizer::WeightUpdateCache &cache, const CNN &cnn,
+                  const math::clFTensor &inputs, math::clFTensor &errorsFlatten,
+                  std::vector<std::unique_ptr<CNNStorageBP>> &storages, cl::CommandQueue &queue) {
       auto &layers = cache.getLayers();
 
       reorganizeBackward(queue, errorsFlatten, errorsFlatten.getDepth(),
@@ -30,7 +30,7 @@ namespace nnet {
       math::clFTensor output = inputs.shallowCopy();
 
       for (long i = static_cast<long>(layers.size() - 1); i > -1; i--) {
-        output = layers[i]->computeBackward(output, *storages[i]);
+        output = layers[i]->computeBackward(queue, output, *storages[i]);
       }
 
       size_t i = 0;
@@ -77,7 +77,7 @@ namespace nnet {
     for (auto &layer : cnn_layers) {
       if (layer->hasWeight()) {
         auto &filter = layer->getWeight();
-        optimization->update(filter, weight_updates[tensor_index], queue);
+        optimization->optimize(filter, weight_updates[tensor_index], queue);
         tensor_index++;
       }
     }
