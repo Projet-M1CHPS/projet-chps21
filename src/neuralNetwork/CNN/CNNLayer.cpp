@@ -4,8 +4,8 @@
 namespace nnet {
 
   namespace {
-    math::clFTensor reduceFilter(cl::CommandQueue &queue, const math::clFTensor &tensor, const size_t nInput,
-                           const size_t nFilter, const size_t nBranch) {
+    math::clFTensor reduceFilter(cl::CommandQueue &queue, const math::clFTensor &tensor,
+                                 const size_t nInput, const size_t nFilter, const size_t nBranch) {
       const size_t n_total_filter = nFilter * nBranch;
       math::clFTensor res(tensor.getRows(), tensor.getCols(), n_total_filter);
       res.fill(0.f, queue, false);
@@ -31,8 +31,8 @@ namespace nnet {
       return res;
     }
 
-    math::clFTensor reduceInput(cl::CommandQueue &queue, const math::clFTensor &tensor, const size_t nInput,
-                          const size_t nFilter, const size_t nBranch) {
+    math::clFTensor reduceInput(cl::CommandQueue &queue, const math::clFTensor &tensor,
+                                const size_t nInput, const size_t nFilter, const size_t nBranch) {
       math::clFTensor res(tensor.getRows(), tensor.getCols(), nInput * nBranch);
       res.fill(0.f, queue, false);
 
@@ -88,7 +88,8 @@ namespace nnet {
     filters.copy(weights, utils::cl_wrapper.getDefaultQueue(), true);
   }
 
-  math::clFTensor CNNConvolutionLayer::compute(cl::CommandQueue &queue, const math::clFTensor &input) {
+  math::clFTensor CNNConvolutionLayer::compute(cl::CommandQueue &queue,
+                                               const math::clFTensor &input) {
     std::cout << "call compute : branch{" << n_branch << "}, filter{" << n_filter << "}"
               << std::endl;
 
@@ -117,23 +118,27 @@ namespace nnet {
   }
 
 
-  math::clFTensor CNNConvolutionLayer::computeForward(cl::CommandQueue &queue, const math::clFTensor &inputs, CNNStorageBP &storage) {
+  math::clFTensor CNNConvolutionLayer::computeForward(cl::CommandQueue &queue,
+                                                      const math::clFTensor &inputs,
+                                                      CNNStorageBP &storage) {
     auto &convoStorage = static_cast<CNNStorageBPConvolution &>(storage);
     convoStorage.input = inputs.shallowCopy();
     return compute(queue, inputs);
   }
 
 
-  math::clFTensor CNNConvolutionLayer::computeBackward(cl::CommandQueue &queue, const math::clFTensor &errors, CNNStorageBP &storage) {
+  math::clFTensor CNNConvolutionLayer::computeBackward(cl::CommandQueue &queue,
+                                                       const math::clFTensor &errors,
+                                                       CNNStorageBP &storage) {
     auto &convoStorage = static_cast<CNNStorageBPConvolution &>(storage);
+    const size_t n_input = convoStorage.input.getDepth() / n_branch;
 
+    math::clFTensor res_filter = computeErrorFilter(queue, errors, convoStorage);
     // compute filter error
-    math::clFTensor res_filter(filters.getRows(), filters.getCols(), errors.getDepth());
-    size_t height = convoStorage.input.getRows();
+    /*size_t height = convoStorage.input.getRows();
     size_t width = convoStorage.input.getCols();
     size_t kernel_h = errors.getRows();
     size_t kernel_w = errors.getCols();
-    size_t n_input = convoStorage.input.getDepth() / n_branch;
 
     std::vector<math::clFTensor> sub_input = convoStorage.input.slice(n_branch);
     std::vector<math::clFTensor> sub_error = errors.slice(n_branch * n_filter);
@@ -151,12 +156,11 @@ namespace nnet {
           index++;
         }
       }
-    }
+    }*/
 
+    math::clFTensor res_input = computeErrorInput(queue, errors, convoStorage);
     // compute input error
-    math::clFTensor res_input(convoStorage.input.getRows(), convoStorage.input.getCols(),
-                        errors.getDepth());
-    height = errors.getRows();
+    /*height = errors.getRows();
     width = errors.getCols();
     kernel_h = filters.getRows();
     kernel_w = filters.getCols();
@@ -178,11 +182,72 @@ namespace nnet {
                                  &queue(), nullptr);
         index += batch_count;
       }
-    }
-    std::cout << "error filter before : " << res_filter << std::endl;
-    std::cout << "error input before : " << res_input << std::endl;
+    }*/
     convoStorage.error_filter = reduceFilter(queue, res_filter, n_input, n_filter, n_branch);
     return reduceInput(queue, res_input, n_input, n_filter, n_branch);
+  }
+
+  math::clFTensor CNNConvolutionLayer::computeErrorFilter(cl::CommandQueue &queue,
+                                                          const math::clFTensor &errors,
+                                                          CNNStorageBPConvolution &storage) {
+    // compute filter error
+    math::clFTensor res_filter(filters.getRows(), filters.getCols(), errors.getDepth());
+    const size_t height = storage.input.getRows();
+    const size_t width = storage.input.getCols();
+    const size_t kernel_h = errors.getRows();
+    const size_t kernel_w = errors.getCols();
+    const size_t n_input = storage.input.getDepth() / n_branch;
+
+    std::vector<math::clFTensor> sub_input = storage.input.slice(n_branch);
+    std::vector<math::clFTensor> sub_error = errors.slice(n_branch * n_filter);
+
+    size_t index = 0;
+    for (size_t i = 0; i < n_branch; i++) {
+      for (size_t j = 0; j < n_filter; j++) {
+        for (size_t k = 0; k < n_input; k++) {
+          clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, height, width,
+                                   kernel_h, kernel_w, 0, 0, 1, 1, 1, 1, 1, 1,
+                                   sub_input[i][k].getBuffer()(), sub_input[i][k].getOffset(),
+                                   errors[index].getBuffer()(), errors[index].getOffset(),
+                                   res_filter[index].getBuffer()(), res_filter[index].getOffset(),
+                                   &queue(), nullptr);
+          index++;
+        }
+      }
+    }
+    return res_filter.shallowCopy();
+  }
+
+
+  math::clFTensor CNNConvolutionLayer::computeErrorInput(cl::CommandQueue &queue,
+                                                         const math::clFTensor &errors,
+                                                         CNNStorageBPConvolution &storage) {
+    math::clFTensor res_input(storage.input.getRows(), storage.input.getCols(), errors.getDepth());
+    // compute input error
+    const size_t height = errors.getRows();
+    const size_t width = errors.getCols();
+    const size_t kernel_h = filters.getRows();
+    const size_t kernel_w = filters.getCols();
+    const size_t batch_count = errors.getDepth() / (n_branch * n_filter);
+
+    std::vector<math::clFTensor> sub_error = errors.slice(n_branch * n_filter);
+    std::vector<math::clFTensor> sub_filter = filters.slice(n_branch * n_filter);
+
+    size_t index = 0;
+    for (size_t i = 0; i < n_branch; i++) {
+      for (size_t j = 0; j < n_filter; j++) {
+        clblast::Convgemm<float>(clblast::KernelMode::kConvolution, 1, height, width, kernel_h,
+                                 kernel_w, kernel_h - 1, kernel_w - 1, 1, 1, 1, 1, 1, batch_count,
+                                 sub_error[i * n_filter + j].getBuffer()(),
+                                 sub_error[i * n_filter + j].getOffsetInFloats(),
+                                 sub_filter[i * n_filter + j].getBuffer()(),
+                                 sub_filter[i * n_filter + j].getOffsetInFloats(),
+                                 res_input[index].getBuffer()(), res_input[index].getOffset(),
+                                 &queue(), nullptr);
+        index += batch_count;
+      }
+    }
+    return res_input;
   }
 
 
@@ -202,7 +267,8 @@ namespace nnet {
     return std::make_unique<CNNMaxPoolingLayer>(*this);
   }
 
-  math::clFTensor CNNMaxPoolingLayer::compute(cl::CommandQueue &queue, const math::clFTensor &inputs) {
+  math::clFTensor CNNMaxPoolingLayer::compute(cl::CommandQueue &queue,
+                                              const math::clFTensor &inputs) {
     math::clFTensor res(outputSize.first, outputSize.second, inputs.getDepth());
     for (size_t ii = 0; ii < inputs.getDepth(); ii++) {
       math::FloatMatrix _input = inputs[ii].toFloatMatrix(true);
@@ -229,7 +295,9 @@ namespace nnet {
     return res;
   }
 
-  math::clFTensor CNNMaxPoolingLayer::computeForward(cl::CommandQueue &queue, const math::clFTensor &inputs, CNNStorageBP &storage) {
+  math::clFTensor CNNMaxPoolingLayer::computeForward(cl::CommandQueue &queue,
+                                                     const math::clFTensor &inputs,
+                                                     CNNStorageBP &storage) {
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
     math::clFTensor res(outputSize.first, outputSize.second, inputs.getDepth());
     for (size_t ii = 0; ii < inputs.getDepth(); ii++) {
@@ -269,11 +337,13 @@ namespace nnet {
     return res;
   }
 
-  math::clFTensor CNNMaxPoolingLayer::computeBackward(cl::CommandQueue &queue, const math::clFTensor &errors, CNNStorageBP &storage) {
+  math::clFTensor CNNMaxPoolingLayer::computeBackward(cl::CommandQueue &queue,
+                                                      const math::clFTensor &errors,
+                                                      CNNStorageBP &storage) {
     auto &poolingStorage = static_cast<CNNStorageBPMaxPooling &>(storage);
 
     math::clFTensor res(poolingStorage.input_size.first, poolingStorage.input_size.second,
-                  errors.getDepth());
+                        errors.getDepth());
     for (size_t ii = 0; ii < errors.getDepth(); ii++) {
       math::FloatMatrix error_output = errors[ii].toFloatMatrix(true);
       math::FloatMatrix error_input = res[ii].toFloatMatrix(true);
@@ -309,7 +379,8 @@ namespace nnet {
     return std::make_unique<CNNAvgPoolingLayer>(*this);
   }
 
-  math::clFTensor CNNAvgPoolingLayer::compute(cl::CommandQueue &queue, const math::clFTensor &input) {
+  math::clFTensor CNNAvgPoolingLayer::compute(cl::CommandQueue &queue,
+                                              const math::clFTensor &input) {
     math::clFTensor res(outputSize.first, outputSize.second, input.getDepth());
 
     clblast::Convgemm<float>(clblast::KernelMode::kCrossCorrelation, 1, input.getRows(),
@@ -324,15 +395,19 @@ namespace nnet {
     return res;
   }
 
-  math::clFTensor CNNAvgPoolingLayer::computeForward(cl::CommandQueue &queue, const math::clFTensor &inputs, CNNStorageBP &storages) {
+  math::clFTensor CNNAvgPoolingLayer::computeForward(cl::CommandQueue &queue,
+                                                     const math::clFTensor &inputs,
+                                                     CNNStorageBP &storages) {
     return compute(queue, inputs);
   }
 
-  math::clFTensor CNNAvgPoolingLayer::computeBackward(cl::CommandQueue &queue, const math::clFTensor &errors, CNNStorageBP &storages) {
+  math::clFTensor CNNAvgPoolingLayer::computeBackward(cl::CommandQueue &queue,
+                                                      const math::clFTensor &errors,
+                                                      CNNStorageBP &storages) {
     auto &poolingStorage = static_cast<CNNStorageBPAvgPooling &>(storages);
 
     math::clFTensor res(poolingStorage.input_size.first, poolingStorage.input_size.second,
-                  errors.getDepth());
+                        errors.getDepth());
 
     for (size_t ii = 0; ii < errors.getDepth(); ii++) {
       math::FloatMatrix error_output = errors[ii].toFloatMatrix(true);

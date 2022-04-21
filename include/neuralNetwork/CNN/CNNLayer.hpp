@@ -34,8 +34,10 @@ namespace nnet {
     virtual void setWeight(const math::clFTensor &weights);
 
     virtual math::clFTensor compute(cl::CommandQueue &queue, const math::clFTensor &input) = 0;
-    virtual math::clFTensor computeForward(cl::CommandQueue &queue, const math::clFTensor &input, CNNStorageBP &storage) = 0;
-    virtual math::clFTensor computeBackward(cl::CommandQueue &queue, const math::clFTensor &input, CNNStorageBP &storage) = 0;
+    virtual math::clFTensor computeForward(cl::CommandQueue &queue, const math::clFTensor &input,
+                                           CNNStorageBP &storage) = 0;
+    virtual math::clFTensor computeBackward(cl::CommandQueue &queue, const math::clFTensor &input,
+                                            CNNStorageBP &storage) = 0;
 
     [[nodiscard]] const std::pair<size_t, size_t> getOutputSize() const { return outputSize; }
 
@@ -60,7 +62,7 @@ namespace nnet {
     bool hasWeight() const override { return true; }
 
     math::clFTensor &getWeight() override { return filters; }
-    //TODO : hum interressant plus de function pour faire la meme chose ?
+    // TODO : hum interressant plus de function pour faire la meme chose ?
     const math::clFTensor &getWeight() const override { return filters; }
     void setWeight(const math::clFTensor &weights) override;
 
@@ -68,8 +70,16 @@ namespace nnet {
     [[nodiscard]] math::clFTensor &getFilter() { return filters; }
 
     math::clFTensor compute(cl::CommandQueue &queue, const math::clFTensor &input) override;
-    math::clFTensor computeForward(cl::CommandQueue &queue, const math::clFTensor &input, CNNStorageBP &storage) override;
-    math::clFTensor computeBackward(cl::CommandQueue &queue, const math::clFTensor &input, CNNStorageBP &storage) override;
+    math::clFTensor computeForward(cl::CommandQueue &queue, const math::clFTensor &input,
+                                   CNNStorageBP &storage) override;
+    math::clFTensor computeBackward(cl::CommandQueue &queue, const math::clFTensor &input,
+                                    CNNStorageBP &storage) override;
+
+  private:
+    math::clFTensor computeErrorFilter(cl::CommandQueue &queue, const math::clFTensor &input,
+                                       CNNStorageBPConvolution &storage);
+    math::clFTensor computeErrorInput(cl::CommandQueue &queue, const math::clFTensor &input,
+                                      CNNStorageBPConvolution &storage);
 
   private:
     const size_t n_branch;
@@ -101,8 +111,10 @@ namespace nnet {
     std::unique_ptr<CNNLayer> copy() const override;
 
     math::clFTensor compute(cl::CommandQueue &queue, const math::clFTensor &input) override;
-    math::clFTensor computeForward(cl::CommandQueue &queue, const math::clFTensor &input, CNNStorageBP &storage) override;
-    math::clFTensor computeBackward(cl::CommandQueue &queue, const math::clFTensor &input, CNNStorageBP &storage) override;
+    math::clFTensor computeForward(cl::CommandQueue &queue, const math::clFTensor &input,
+                                   CNNStorageBP &storage) override;
+    math::clFTensor computeBackward(cl::CommandQueue &queue, const math::clFTensor &input,
+                                    CNNStorageBP &storage) override;
   };
 
 
@@ -116,8 +128,10 @@ namespace nnet {
     std::unique_ptr<CNNLayer> copy() const override;
 
     math::clFTensor compute(cl::CommandQueue &queue, const math::clFTensor &input) override;
-    math::clFTensor computeForward(cl::CommandQueue &queue, const math::clFTensor &input, CNNStorageBP &storage) override;
-    math::clFTensor computeBackward(cl::CommandQueue &queue, const math::clFTensor &input, CNNStorageBP &storage) override;
+    math::clFTensor computeForward(cl::CommandQueue &queue, const math::clFTensor &input,
+                                   CNNStorageBP &storage) override;
+    math::clFTensor computeBackward(cl::CommandQueue &queue, const math::clFTensor &input,
+                                    CNNStorageBP &storage) override;
 
   private:
     math::clFTensor filter;
