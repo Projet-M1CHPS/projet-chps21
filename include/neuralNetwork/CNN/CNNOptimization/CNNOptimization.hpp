@@ -13,8 +13,10 @@ namespace nnet {
     virtual ~CNNOptimization() = default;
 
     /**
-     *
-     * @param storage
+     * @brief Compute the gradient
+     * @param gradient Gradient
+     * @param dest Destination of optimization
+     * @queue Queue uses for computation
      */
     virtual void optimize(const math::clFTensor &gradient, math::clFTensor &dest,
                           cl::CommandQueue &queue) = 0;
