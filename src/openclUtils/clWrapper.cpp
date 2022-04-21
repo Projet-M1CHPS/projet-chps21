@@ -71,10 +71,6 @@ namespace utils {
 
     this->platform = platform;
     platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
-    for (auto &device : devices) {
-      cl_device_id id = device();
-      //clblast::FillCache(id);
-    }
     default_device = devices[device_id];
 
     context = cl::Context(devices);

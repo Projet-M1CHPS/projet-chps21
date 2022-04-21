@@ -182,13 +182,7 @@ namespace nnet {
     return caches;
   }
 
-  std::unique_ptr<MLPOptimizer::Operation> MLPOptimizer::makeMLPOperation() {
-    return std::make_unique<Operation>(*this);
-  }
-
-  std::unique_ptr<Optimizer::Operation> MLPOptimizer::makeOperationImpl() {
-    return std::make_unique<Operation>(*this);
-  }
+  MLPOptimizer::Operation *MLPOptimizer::makeOperationImpl() { return new Operation(*this); }
 
   clFTensor MLPOptimizer::optimize(const clFTensor &inputs, const clFTensor &targets,
                                    WeightUpdateCache &cache, cl::CommandQueue &queue) {
@@ -206,13 +200,13 @@ namespace nnet {
   math::clFTensor MLPOptimizer::Operation::computeGradient(size_t thread_rank,
                                                            const math::clFTensor &inputs,
                                                            const math::clFTensor &targets,
-                                                           cl::CommandQueue batch_queue) {
+                                                           cl::CommandQueue queue) {
     if (thread_rank > caches.size())
       throw std::invalid_argument("Error: Only " + std::to_string(caches.size()) +
                                   " caches reserved, tried to access cache " +
                                   std::to_string(thread_rank));
-    caches[thread_rank]->acquireBuffer(batch_queue);
-    return optimizer->optimize(inputs, targets, *caches[thread_rank], batch_queue);
+    caches[thread_rank]->acquireBuffer(queue);
+    return optimizer->optimize(inputs, targets, *caches[thread_rank], queue);
   }
 
   void MLPOptimizer::Operation::reserveCaches(size_t num_threads) {

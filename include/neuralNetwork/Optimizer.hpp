@@ -21,7 +21,8 @@ namespace nnet {
      * @return A pointer to an OptimizationScheduler.
      */
     std::unique_ptr<Operation> makeOperation() {
-      return makeOperationImpl();
+      auto *ptr = makeOperationImpl();
+      return std::unique_ptr<Operation>(ptr);
     }
 
     /**
@@ -32,8 +33,7 @@ namespace nnet {
     virtual void update() = 0;
 
   private:
-
-    virtual std::unique_ptr<Operation> makeOperationImpl() = 0;
+    virtual Operation *makeOperationImpl() = 0;
   };
 
   /**

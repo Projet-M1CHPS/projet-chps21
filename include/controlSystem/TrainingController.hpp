@@ -6,10 +6,19 @@
 
 namespace control {
 
+  /**
+   * @brief A controller for training a neural network
+   */
   class TrainingController {
   public:
-    explicit TrainingController(size_t max_epoch, ModelEvolutionTracker &evaluator,
-                                nnet::OptimizationScheduler &scheduler);
+    /**
+     * @brief
+     * @param max_epoch
+     * @param evaluator
+     * @param scheduler
+     */
+    TrainingController(size_t max_epoch, ModelEvolutionTracker &evaluator,
+                       nnet::OptimizationScheduler &scheduler);
 
     virtual ControllerResult run();
     void setVerbose(bool v) { is_verbose = v; }

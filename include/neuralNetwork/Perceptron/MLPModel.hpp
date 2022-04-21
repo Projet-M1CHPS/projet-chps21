@@ -6,7 +6,7 @@
 namespace nnet {
 
   /**
-   * @brief A model for a multi-layer perceptron.
+   * @brief A Model for a multi-layer perceptron.
    */
   class MLPModel : public Model {
   public:

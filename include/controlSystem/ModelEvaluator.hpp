@@ -72,6 +72,10 @@ namespace control {
      */
     ModelEvaluation evaluate();
 
+    /**
+     * @brief Enable the tracking of the model evolution on the testing set on top of the evaluation
+     * set. Can be used to trask over-fitting.
+     */
     void enableEvalOnTest();
 
   private:

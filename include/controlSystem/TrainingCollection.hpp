@@ -12,6 +12,12 @@ namespace control {
     friend class TrainingCollectionLoader;
 
 
+    /**
+     * @brief builds an empty set for images of a certain size. Since the images are stored inside
+     * tensors, they have to be of the same size.
+     * @param input_width The width of the input images contained in the set
+     * @param input_height The height of the input images contained in the set
+     */
     TrainingCollection(size_t input_width, size_t input_height)
         : training_set(input_width, input_height), eval_set(input_width, input_height) {}
 
@@ -31,8 +37,18 @@ namespace control {
 
     const InputSet &getEvaluationSet() const { return eval_set; }
 
+    /**
+     * @brief Returns the number of classes in the training setbr
+     * @return
+     */
     size_t getClassCount() const { return eval_set.getClasses().size(); }
 
+    /**
+     * @brief Changes the names of the classes in the training set.
+     * Note that this does not updates the ids of the classes of the already existing samples.
+     * @TODO Recheck this; it breaks encapsulation. The classes should be immutable.
+     * @param class_names
+     */
     void updateClasses(const std::vector<std::string> &class_names) {
       training_set.updateClasses(class_names);
       eval_set.updateClasses(class_names);
@@ -78,9 +94,7 @@ namespace control {
       makeTrainingTargets();
     }
 
-    const std::vector<math::clFTensor>& getTargets() {
-      return training_targets;
-    }
+    const std::vector<math::clFTensor> &getTargets() { return training_targets; }
 
   private:
     void makeTrainingTargets();

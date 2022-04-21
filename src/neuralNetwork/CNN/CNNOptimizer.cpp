@@ -118,13 +118,12 @@ namespace nnet {
     return caches;
   }
 
-  std::unique_ptr<CNNOptimizer::Operation> CNNOptimizer::makeCNNOperation() {
-    return std::make_unique<Operation>(*this);
+  std::unique_ptr<CNNOptimizer::Operation> CNNOptimizer::makeOperation() {
+    auto *ptr = makeOperationImpl();
+    return std::unique_ptr<Operation>(ptr);
   }
 
 
-  std::unique_ptr<Optimizer::Operation> CNNOptimizer::makeOperationImpl() {
-    return makeCNNOperation();
-  }
+  CNNOptimizer::Operation *CNNOptimizer::makeOperationImpl() { return new Operation(*this); }
 
 }   // namespace nnet
