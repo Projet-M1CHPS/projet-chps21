@@ -13,13 +13,24 @@ namespace nnet {
     CNNStorageBP() = default;
     virtual ~CNNStorageBP() = default;
 
-    // Pretty messy but easiest way to do it for now
+    /**
+     * @brief Check if storage have weight
+     * @return true if layer have weight, otherwise false
+     */
     virtual bool hasGradient() const { return false; }
 
+    /**
+     * @brief Getter to retrieve weight
+     * @return return weight if they exist otherwise throw an assertion
+     */
     virtual math::clFTensor &getGradient() {
       throw std::runtime_error("CNNStorageBP: Tried to acces gradient in a storage without one");
     }
 
+    /**
+     * @brief Getter to retrieve weight
+     * @return return weight if they exist otherwise throw an assertion
+     */
     virtual const math::clFTensor &getGradient() const {
       throw std::runtime_error("CNNStorageBP: Tried to acces gradient in a storage without one");
     }
@@ -29,12 +40,21 @@ namespace nnet {
   public:
     CNNStorageBPConvolution() = default;
 
+    /**
+     * @brief Check if storage have weight
+     * @return true if layer have weight, otherwise false
+     */
     bool hasGradient() const override { return true; }
 
+
     math::clFTensor &getGradient() override { return error_filter; }
+
+    /**
+     * @brief Getter to retrieve weight
+     * @return return weight if they exist otherwise throw an assertion
+     */
     const math::clFTensor &getGradient() const override { return error_filter; }
 
-    // private:
     math::clFTensor input;
     math::clFTensor error_filter;
   };
@@ -44,7 +64,6 @@ namespace nnet {
     explicit CNNStorageBPPooling(const std::pair<size_t, size_t> inputSize)
         : input_size(inputSize) {}
 
-    // private:
     std::pair<size_t, size_t> input_size;
   };
 
@@ -53,8 +72,6 @@ namespace nnet {
     explicit CNNStorageBPMaxPooling(const std::pair<size_t, size_t> inputSize)
         : CNNStorageBPPooling(inputSize) {}
 
-    // private:
-    // Matrix<std::pair<size_t, size_t>> maxIndex;
     std::vector<math::Matrix<size_t>> max_rows;
     std::vector<math::Matrix<size_t>> max_cols;
   };
