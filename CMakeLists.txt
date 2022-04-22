@@ -23,7 +23,7 @@ endif ()
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 include(check_coverage)
 maybe_enable_coverage()
-if (COVERARE_ENABLED)
+if (COVERAGE_ENABLED)
     # Must be placed at the top level for compiler flags to propagate to all targets
     append_coverage_compiler_flags()
 endif ()
