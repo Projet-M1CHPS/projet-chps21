@@ -27,7 +27,7 @@ namespace nnet {
       reorganizeBackward(queue, errorsFlatten, errorsFlatten.getDepth(),
                          cnn.getTopology().getNBranchFinal(), layers.back()->getOutputSize());
 
-      math::clFTensor output = inputs.shallowCopy();
+      math::clFTensor output = errorsFlatten.shallowCopy();
 
       for (long i = static_cast<long>(layers.size() - 1); i > -1; i--) {
         output = layers[i]->computeBackward(queue, output, *storages[i]);
@@ -46,7 +46,7 @@ namespace nnet {
   using WeightUpdateCache = CNNOptimizer::WeightUpdateCache;
 
   WeightUpdateCache::WeightUpdateCache(CNNOptimizer &optimizer)
-      : cnn(optimizer.cnn), contributions(0), optimization(optimizer.optimization.get()) {
+      : cnn(optimizer.cnn), contributions(0), optimization(optimizer.cnn_optimization.get()) {
     auto &layers = cnn->getLayers();
 
     for (auto &l : layers) {
@@ -91,8 +91,9 @@ namespace nnet {
     for (auto &tensor : weight_updates) { tensor.fill(0.f, queue, false); }
   }
 
-  CNNOptimizer::CNNOptimizer(CNNModel &model, std::unique_ptr<Optimization> mlpTm)
-      : cnn(&model.getCnn()), mlp_optimizer(model.getMlp(), std::move(mlpTm)) {}
+  CNNOptimizer::CNNOptimizer(CNNModel &model, std::unique_ptr<CNNOptimization> &&cnn_opti,
+                             std::unique_ptr<MLPOptimizer> &&mlp_opti)
+      : cnn(&model.getCnn()), cnn_optimization(std::move(cnn_opti)), mlp_optimizer(std::move(mlp_opti)) {}
 
   void CNNOptimizer::optimize(const math::clFTensor &inputs, const math::clFTensor &targets,
                               WeightUpdateCache &cnn_cache,
@@ -101,7 +102,7 @@ namespace nnet {
 
     math::clFTensor flatten = forward(*cnn, inputs, storages, queue);
 
-    math::clFTensor errorFlatten = mlp_optimizer.optimize(flatten, targets, mlp_cache, queue);
+    math::clFTensor errorFlatten = mlp_optimizer->optimize(flatten, targets, mlp_cache, queue);
 
     backward(cnn_cache, *cnn, inputs, errorFlatten, storages, queue);
     cnn_cache.increaseContribution(inputs.getDepth());

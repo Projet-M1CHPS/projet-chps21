@@ -90,8 +90,8 @@ namespace nnet {
 
   math::clFTensor CNNConvolutionLayer::compute(cl::CommandQueue &queue,
                                                const math::clFTensor &input) {
-    std::cout << "call compute : branch{" << n_branch << "}, filter{" << n_filter << "}"
-              << std::endl;
+    // std::cout << "call compute : branch{" << n_branch << "}, filter{" << n_filter << "}" <<
+    // std::endl;
 
     const size_t output_size_z = n_branch * n_filter * input.getDepth() / n_branch;
     math::clFTensor res(outputSize.first, outputSize.second, output_size_z);
@@ -351,6 +351,9 @@ namespace nnet {
   math::clFTensor CNNAvgPoolingLayer::computeForward(cl::CommandQueue &queue,
                                                      const math::clFTensor &inputs,
                                                      CNNStorageBP &storages) {
+    auto &poolingStorage = static_cast<CNNStorageBPAvgPooling &>(storages);
+    poolingStorage.input_size.first = inputs.getRows();
+    poolingStorage.input_size.second = inputs.getCols();
     return compute(queue, inputs);
   }
 
@@ -368,7 +371,6 @@ namespace nnet {
       error_input.fill(0.f);
 
       size_t rowsPos = 0, colsPos = 0;
-
       const size_t max_i = error_input.getRows() - error_output.getRows() + 1;
       const size_t max_j = error_input.getCols() - error_output.getCols() + 1;
       for (size_t i = 0; i < max_i; i++) {

@@ -1,11 +1,13 @@
+#include "ActivationFunction.hpp"
 #include "CNN.hpp"
 #include "CNNLayer.hpp"
+#include "CNNModel.hpp"
+#include "CNNOptimizer.hpp"
 #include "CNNTopology.hpp"
+#include "MLPModel.hpp"
+#include "SGDOptimization.hpp"
 #include "math/Matrix.hpp"
 #include "math/clFMatrix.hpp"
-#include "MLPModel.hpp"
-#include "CNNModel.hpp"
-#include "ActivationFunction.hpp"
 #include <iostream>
 
 using namespace math;
@@ -401,7 +403,8 @@ void testConvolutionalLayer1BranchBP() {
   input_tensor[5] = input2;
   std::cout << "input : " << input_tensor << std::endl;
 
-  clFTensor output_tensor = layer.computeForward(utils::cl_wrapper.getDefaultQueue(), input_tensor, storage);
+  clFTensor output_tensor =
+          layer.computeForward(utils::cl_wrapper.getDefaultQueue(), input_tensor, storage);
 
   utils::cl_wrapper.getDefaultQueue().finish();
 
@@ -425,7 +428,8 @@ void testConvolutionalLayer1BranchBP() {
 
   std::cout << "error : " << errors_tensor << std::endl;
 
-  clFTensor errors_input = layer.computeBackward(utils::cl_wrapper.getDefaultQueue(), errors_tensor, storage);
+  clFTensor errors_input =
+          layer.computeBackward(utils::cl_wrapper.getDefaultQueue(), errors_tensor, storage);
 
   utils::cl_wrapper.getDefaultQueue().finish();
 
@@ -683,7 +687,8 @@ void testMaxPoolingLayerBP() {
   for (size_t i = 0; i < input_tensor.getDepth(); i++)
     std::cout << "input " << i << " : \n" << input_tensor[i].toFloatMatrix(true) << std::endl;
 
-  clFTensor output_tensor = layer.computeForward(utils::cl_wrapper.getDefaultQueue(), input_tensor, storage);
+  clFTensor output_tensor =
+          layer.computeForward(utils::cl_wrapper.getDefaultQueue(), input_tensor, storage);
 
   utils::cl_wrapper.getDefaultQueue().finish();
 
@@ -696,7 +701,8 @@ void testMaxPoolingLayerBP() {
     errors_tensor[i].fill(1.f, utils::cl_wrapper.getDefaultQueue(), true);
   }
 
-  clFTensor errors_input = layer.computeBackward(utils::cl_wrapper.getDefaultQueue(), errors_tensor, storage);
+  clFTensor errors_input =
+          layer.computeBackward(utils::cl_wrapper.getDefaultQueue(), errors_tensor, storage);
 
   utils::cl_wrapper.getDefaultQueue().finish();
 
@@ -839,7 +845,8 @@ void testAvgPoolingLayerBP() {
   for (size_t i = 0; i < input_tensor.getDepth(); i++)
     std::cout << "input " << i << " : \n" << input_tensor[i].toFloatMatrix(true) << std::endl;
 
-  clFTensor output_tensor = layer.computeForward(utils::cl_wrapper.getDefaultQueue(), input_tensor, storage);
+  clFTensor output_tensor =
+          layer.computeForward(utils::cl_wrapper.getDefaultQueue(), input_tensor, storage);
 
   utils::cl_wrapper.getDefaultQueue().finish();
 
@@ -851,7 +858,8 @@ void testAvgPoolingLayerBP() {
     errors_tensor[i].fill(static_cast<float>(i + 1), utils::cl_wrapper.getDefaultQueue(), true);
   }
 
-  clFTensor errors_input = layer.computeBackward(utils::cl_wrapper.getDefaultQueue(), errors_tensor, storage);
+  clFTensor errors_input =
+          layer.computeBackward(utils::cl_wrapper.getDefaultQueue(), errors_tensor, storage);
 
   utils::cl_wrapper.getDefaultQueue().finish();
 
@@ -1268,7 +1276,8 @@ void foo() {
   input_tensor[3] = input2;
   std::cout << "input : " << input_tensor << std::endl;
 
-  clFTensor output_tensor = layer.computeForward(utils::cl_wrapper.getDefaultQueue(), input_tensor, storage);
+  clFTensor output_tensor =
+          layer.computeForward(utils::cl_wrapper.getDefaultQueue(), input_tensor, storage);
 
   utils::cl_wrapper.getDefaultQueue().finish();
 
@@ -1289,7 +1298,8 @@ void foo() {
 
   std::cout << "error : " << errors_tensor << std::endl;
 
-  clFTensor errors_input = layer.computeBackward(utils::cl_wrapper.getDefaultQueue(), errors_tensor, storage);
+  clFTensor errors_input =
+          layer.computeBackward(utils::cl_wrapper.getDefaultQueue(), errors_tensor, storage);
 
   utils::cl_wrapper.getDefaultQueue().finish();
 
@@ -1312,14 +1322,13 @@ void foo() {
 }
 
 
-void testPredictionMLP()
-{
+void testPredictionMLP() {
   cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
 
   nnet::MLPTopology topology({36, 5, 1});
 
   nnet::MLPerceptron mlp(topology);
-  mlp.setActivationFunction(af::ActivationFunctionType::relu);
+  mlp.setActivationFunction(af::ActivationFunctionType::leakyRelu);
   mlp.randomizeWeight();
 
   math::FloatMatrix input1(6, 6);
@@ -1408,35 +1417,33 @@ void testPredictionMLP()
   queue.finish();
   std::cout << "predict1\n" << res << std::endl;
 
-  res = mlp.predict( input_tensor[1]);
+  res = mlp.predict(input_tensor[1]);
   queue.finish();
   std::cout << "predict2\n" << res << std::endl;
 
-  auto res_tensor = mlp.predict( input_tensor);
+  auto res_tensor = mlp.predict(input_tensor);
   queue.finish();
   std::cout << "predict3\n" << res_tensor << std::endl;
 }
 
 
-void  testPredictionCNN()
-{
+void testPredictionCNN() {
   cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
 
-  std::string str_topology("5 5 relu convolution 2 2 2 pooling avg 2 2");
+  std::string str_topology("5 5 leakyRelu convolution 2 2 2 convolution 2 2 2 pooling avg 2 2");
   auto topology_cnn = nnet::stringToTopology(str_topology);
   std::cout << topology_cnn << std::endl;
 
-  nnet::MLPTopology topology_mlp({5, 1});
+  nnet::MLPTopology topology_mlp({5, 4});
 
   auto cnn = nnet::CNNModel::random(topology_cnn, topology_mlp);
-  
+
   cnn->getCnn().printWeights();
 
-  math::clFTensor inputs(5, 5, 1);
+  math::clFTensor inputs(5, 5, 10);
 
   math::FloatMatrix buffer(5, 5);
-  for(size_t i = 0; i < inputs.getDepth(); i++)
-  {
+  for (size_t i = 0; i < inputs.getDepth(); i++) {
     math::randomize<float>(buffer, 0.f, 2.f);
     inputs[i] = buffer;
   }
@@ -1447,9 +1454,55 @@ void  testPredictionCNN()
   queue.finish();
   std::cout << "outputs : " << outputs << std::endl;
 
-  std::cout << cnn->getMlp() << std::endl;
+  // std::cout << cnn->getMlp() << std::endl;
 }
 
+void testTrainModelCNN() {
+  cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
+
+  std::string str_topology("5 5 leakyRelu convolution 2 2 2 convolution 2 2 2 pooling avg 2 2");
+  auto topology_cnn = nnet::stringToTopology(str_topology);
+  std::cout << topology_cnn << std::endl;
+
+  nnet::MLPTopology topology_mlp({5, 4});
+
+  auto cnn_model = nnet::CNNModel::random(topology_cnn, topology_mlp);
+
+  auto mlp_optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(cnn_model->getMlp(), 0.04);
+
+  auto cnn_optimizer = std::make_unique<nnet::CNNOptimizer>(
+          *cnn_model, std::make_unique<nnet::CNNSGDOptimization>(cnn_model->getCnn(), 0.08f),
+          std::move(mlp_optimizer));
+
+
+  math::clFTensor inputs(5, 5, 1);
+  math::FloatMatrix buffer(5, 5);
+  for (size_t i = 0; i < inputs.getDepth(); i++) {
+    math::randomize<float>(buffer, 0.f, 0.2f);
+    inputs[i] = buffer;
+  }
+  math::FloatMatrix target(4, 1);
+  target(0, 0) = 1.5f;
+  target(1, 0) = 2.25f;
+  target(2, 0) = 2.f;
+  target(3, 0) = 2.75f;
+
+  math::clFTensor targets(4, 1, 1);
+  targets[0] = target;
+
+  std::cout << "inputs : " << inputs << std::endl;
+  std::cout << "targets : " << targets << std::endl;
+
+  auto operation = cnn_optimizer->makeOperation();
+  operation->reserveCaches(1);
+
+  std::cout << "predict : " << cnn_model->predict(queue, inputs) << std::endl;
+  for (size_t i = 0; i < 400; i++) {
+    operation->operator()(0, inputs, targets, queue);
+    operation->updateModel(queue);
+  }
+  std::cout << "predict : " << cnn_model->predict(queue, inputs) << std::endl;
+}
 
 
 int main() {
@@ -1460,20 +1513,23 @@ int main() {
 
   // testConvolutionalLayer1Branch();
   // testConvolutionalLayer1BranchBP();
-  //foo();
+  // foo();
   // testConvolutionalLayerXBranch();
 
   // testMaxPoolingLayer();
   // testMaxPoolingLayerBP();
 
   // testAvgPoolingLayer();
-  //testAvgPoolingLayerBP();
+  // testAvgPoolingLayerBP();
 
   // testPrediction1Branch();
   // testPredictionXBranch();
 
-  //testPredictionMLP();
-  testPredictionCNN();
+  // testPredictionMLP();
+  // testPredictionCNN();
+  testTrainModelCNN();
+
+  // testReorganize();
 
   return 0;
 }

@@ -114,6 +114,21 @@ namespace nnet {
     }
 
     /**
+     * @brief Helper method, creates a new optimizer and optimization method and return the
+     * optimizer
+     * @tparam optim The type of optimization method to use
+     * @tparam Args The arguments to pass to the optimization method
+     * @param model The model to optimize
+     * @param args The args for the optimization method
+     * @return A new optimizer
+     */
+    template<class optim, typename... Args>
+    static std::unique_ptr<MLPOptimizer> make(MLPerceptron &perceptron, Args &&...args) {
+      return std::make_unique<MLPOptimizer>(
+              perceptron, std::make_unique<optim>(perceptron, std::forward<Args>(args)...));
+    }
+
+    /**
      * @brief Return a delegate to run the optimizer
      * @return
      */

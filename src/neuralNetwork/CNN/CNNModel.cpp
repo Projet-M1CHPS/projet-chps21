@@ -22,7 +22,7 @@ namespace nnet {
     auto &mlp = res->getMlp();
     mlp.setTopology(mlp_topology);
     // TODO : check comment on init la fonction d activation
-    mlp.setActivationFunction(af::ActivationFunctionType::relu);
+    mlp.setActivationFunction(af::ActivationFunctionType::leakyRelu);
     mlp.randomizeWeight();
 
     return res;
@@ -31,7 +31,8 @@ namespace nnet {
   math::clFTensor CNNModel::predict(cl::CommandQueue &queue, math::clFTensor const &inputs) const {
     math::clFTensor flattens = cnn->predict(queue, inputs);
 
-    std::cout << "output cnn : " << flattens << std::endl; 
+    // TODO : output cnn
+    //std::cout << "output cnn : " << flattens << std::endl;
 
     return mlp->predict(flattens);
   }

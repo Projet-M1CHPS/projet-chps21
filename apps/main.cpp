@@ -9,6 +9,9 @@
 #include "neuralNetwork/OptimizationScheduler/SchedulerProfiler.hpp"
 #include "openclUtils/clPlatformSelector.hpp"
 #include "tscl.hpp"
+#include "CNNTopology.hpp"
+#include "CNNModel.hpp"
+#include "CNNOptimizer.hpp"
 
 #include <iomanip>
 #include <iostream>
@@ -100,10 +103,10 @@ bool createAndTrain(std::filesystem::path const &input_path,
          tscl::Log::Trace);
 
 
-  // auto model = nnet::MLPModel::randomReluSigmoid(topology);
+  auto model = nnet::MLPModel::randomReluSigmoid(topology);
   // auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
-  auto model = std::make_unique<nnet::MLPModel>();
-  model->load("michal.nnet");
+  //auto model = std::make_unique<nnet::MLPModel>();
+  //model->load("michal.nnet");
   std::unique_ptr<Optimizer> optimizer;
   if (kOptimType == kUseSGD)
     optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(*model, kLearningRate);
@@ -118,6 +121,24 @@ bool createAndTrain(std::filesystem::path const &input_path,
                                                                           kDecayRate, kMomentum);
 
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
+
+  std::string str_topology("32 32 sigmoid convolution 2 3 3 convolution 2 3 3 pooling avg 2 2");
+  auto topology_cnn = nnet::stringToTopology(str_topology);
+  std::cout << topology_cnn << std::endl;
+
+  nnet::MLPTopology topology_mlp({64, 64, 16, 2});
+
+  auto cnn_model = nnet::CNNModel::random(topology_cnn, topology_mlp);
+
+  auto mlp_optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(cnn_model->getMlp(), 0.04);
+
+  auto cnn_optimizer = std::make_unique<nnet::CNNOptimizer>(
+          *cnn_model, std::make_unique<nnet::CNNSGDOptimization>(cnn_model->getCnn(), 0.08f),
+          std::move(mlp_optimizer));
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   logger("Creating scheduler", tscl::Log::Debug);
 
   ParallelScheduler::Builder scheduler_builder;
@@ -127,7 +148,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   scheduler_builder.setMaxThread(kMaxThread, kAllowMultipleThreadPerDevice);
   scheduler_builder.setDevices(utils::cl_wrapper.getDevices());
 
-  scheduler_builder.setOptimizer(*optimizer);
+  scheduler_builder.setOptimizer(*cnn_optimizer);
 
   auto scheduler = scheduler_builder.build();
   // SchedulerProfiler sc_profiler(scheduler_builder.build(), output_path / "scheduler");

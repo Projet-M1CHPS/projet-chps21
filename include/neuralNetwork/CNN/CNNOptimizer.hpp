@@ -1,14 +1,14 @@
 #pragma once
 
 #include "CNNModel.hpp"
+#include "CNNOptimization.hpp"
+#include "CNNSGDOptimization.hpp"
 #include "Optimizer.hpp"
 #include "Perceptron/MLPModel.hpp"
 #include "Perceptron/MLPOptimizer.hpp"
 #include "Perceptron/Optimization/Optimization.hpp"
 #include "neuralNetwork/CNN/CNN.hpp"
 #include "neuralNetwork/CNN/CNNStorageBP.hpp"
-#include "CNNOptimization.hpp"
-#include "CNNSGDOptimization.hpp"
 #include <iostream>
 #include <utility>
 
@@ -17,7 +17,6 @@ namespace nnet {
 
   class CNNOptimizer : public Optimizer {
   public:
-
     class WeightUpdateCache {
     public:
       explicit WeightUpdateCache(CNNOptimizer &optimizer);
@@ -25,7 +24,8 @@ namespace nnet {
 
       WeightUpdateCache(WeightUpdateCache &&other) noexcept = default;
 
-      WeightUpdateCache(CNN *cnn, std::vector<math::clFTensor> &&weight_updates, size_t contribution);
+      WeightUpdateCache(CNN *cnn, std::vector<math::clFTensor> &&weight_updates,
+                        size_t contribution);
 
       void add(size_t index, const math::clFTensor &delta, cl::CommandQueue &queue);
 
@@ -54,7 +54,7 @@ namespace nnet {
     class Operation : public Optimizer::Operation {
     public:
       explicit Operation(CNNOptimizer &optimizer)
-          : mlp_operation(optimizer.mlp_optimizer.makeOperation()), optimizer(&optimizer) {}
+          : mlp_operation(optimizer.mlp_optimizer->makeOperation()), optimizer(&optimizer) {}
 
       void operator()(size_t thread_rank, const math::clFTensor &inputs,
                       const math::clFTensor &targets, cl::CommandQueue batch_queue) override {
@@ -93,7 +93,7 @@ namespace nnet {
     };
 
 
-    CNNOptimizer(CNNModel &model, std::unique_ptr<Optimization> mlp_optimization);
+    CNNOptimizer(CNNModel &model, std::unique_ptr<CNNOptimization> &&cnn_optimization, std::unique_ptr<MLPOptimizer> &&mlp_optimizer);
 
     CNNOptimizer(const CNNOptimizer &other) = delete;
     CNNOptimizer(CNNOptimizer &&other) noexcept = default;
@@ -101,7 +101,7 @@ namespace nnet {
     CNNOptimizer &operator=(const CNNOptimizer &other) = delete;
     CNNOptimizer &operator=(CNNOptimizer &&other) noexcept = default;
 
-    void update() override { mlp_optimizer.update(); }
+    void update() override { mlp_optimizer->update(); }
 
     void optimize(const math::clFTensor &inputs, const math::clFTensor &targets,
                   WeightUpdateCache &cnn_cache, MLPOptimizer::WeightUpdateCache &mlp_cache,
@@ -116,7 +116,7 @@ namespace nnet {
     Operation *makeOperationImpl() override;
 
     CNN *cnn;
-    MLPOptimizer mlp_optimizer;
-    std::unique_ptr<CNNOptimization> optimization;
+    std::unique_ptr<CNNOptimization> cnn_optimization;
+    std::unique_ptr<MLPOptimizer> mlp_optimizer;
   };
 }   // namespace nnet

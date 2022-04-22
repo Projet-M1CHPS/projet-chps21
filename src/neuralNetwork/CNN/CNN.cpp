@@ -35,12 +35,11 @@ namespace nnet {
 
     for (auto &layer : layers) {
       output = layer->compute(queue, output);
-      queue.finish();
-      std::cout << "output INTERMEDIAIRE : " << output << std::endl;
+      //queue.finish();
+      //std::cout << "output INTERMEDIAIRE : " << output << std::endl;
     }
 
-    reorganizeForward(queue, output, inputs.getDepth(),
-                      topology.getNBranchFinal());
+    reorganizeForward(queue, output, inputs.getDepth(), topology.getNBranchFinal());
 
     queue.finish();
 
@@ -48,19 +47,18 @@ namespace nnet {
   }
 
   void reorganizeForward(cl::CommandQueue &queue, math::clFTensor &tensor, const size_t nInput,
-                         const size_t nBranch) {
-    if (nInput < 2 || nBranch < 2)
-    {
-      tensor.reshape(nBranch * tensor.getRows() * tensor.getCols(), 1, nInput);
+                         const size_t nBranchFinal) {
+    if (nInput < 2) {
+      tensor.reshape(tensor.getRows() * tensor.getCols() * (tensor.getDepth() / nInput), 1, nInput);
       return;
     }
 
     const size_t size_matrix = tensor.getRows() * tensor.getRows() * sizeof(float);
-    math::clFTensor buffer(tensor.getRows(), tensor.getCols(), (nInput - 1) * nBranch);
+    math::clFTensor buffer(tensor.getRows(), tensor.getCols(), (nInput - 1) * nBranchFinal);
 
     size_t index = 0;
     for (size_t i = 1; i < nInput; i++) {
-      for (size_t j = 0; j < nBranch; j++) {
+      for (size_t j = 0; j < nBranchFinal; j++) {
         queue.enqueueCopyBuffer(tensor.getBuffer(), buffer.getBuffer(),
                                 tensor.getOffsetInBytes() + (i + j * nInput) * size_matrix,
                                 buffer.getOffsetInBytes() + index * size_matrix, size_matrix);
@@ -68,24 +66,24 @@ namespace nnet {
       }
     }
 
-    for (size_t i = 1; i < nBranch; i++) {
+    for (size_t i = 1; i < nBranchFinal; i++) {
       queue.enqueueCopyBuffer(tensor.getBuffer(), tensor.getBuffer(),
                               tensor.getOffsetInBytes() + i * nInput * size_matrix,
                               tensor.getOffsetInBytes() + i * size_matrix, size_matrix);
     }
 
     queue.enqueueCopyBuffer(buffer.getBuffer(), tensor.getBuffer(), buffer.getOffsetInBytes(),
-                            tensor.getOffsetInBytes() + nBranch * size_matrix,
+                            tensor.getOffsetInBytes() + nBranchFinal * size_matrix,
                             buffer.getDepth() * size_matrix);
 
-    tensor.reshape(nBranch * tensor.getRows() * tensor.getCols(), 1, nInput);
+    tensor.reshape(tensor.getRows() * tensor.getCols() * (tensor.getDepth() / nInput), 1, nInput);
   }
 
   void reorganizeBackward(cl::CommandQueue &queue, math::clFTensor &tensor, const size_t nInput,
                           const size_t nBranch, const std::pair<size_t, size_t> size) {
-    if (nInput < 2 || nBranch < 2) return;
-
     tensor.reshape(size.first, size.second, nInput * nBranch);
+
+    if (nInput < 2) return;
 
     const size_t size_matrix = tensor.getRows() * tensor.getRows() * sizeof(float);
     math::clFTensor buffer(tensor.getRows(), tensor.getCols(), (nInput - 1) * nBranch);
