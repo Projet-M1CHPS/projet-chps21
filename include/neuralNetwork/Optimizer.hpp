@@ -84,7 +84,6 @@ namespace nnet {
      * @param queue The queue to use for the model update
      */
     void updateModel(cl::CommandQueue &queue) {
-      std::cout << "Optimizer::Operation::updateModel()" << std::endl;
       reduceAll(queue);
       applyChanges(queue);
       clearChanges(queue);

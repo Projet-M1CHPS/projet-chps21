@@ -2,8 +2,8 @@
 
 #include "MLPModel.hpp"
 #include "MLPerceptron.hpp"
-#include "Optimization.hpp"
 #include "Optimizer.hpp"
+#include "Perceptron/Optimization/Optimization.hpp"
 #include "neuralNetwork/OptimizationScheduler/OptimizationScheduler.hpp"
 #include <iostream>
 #include <utility>

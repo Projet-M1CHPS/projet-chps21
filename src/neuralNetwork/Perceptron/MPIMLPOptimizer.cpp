@@ -4,27 +4,28 @@ using namespace math;
 
 namespace nnet {
   namespace {
-
     std::vector<size_t>
-    gatherContributions(const std::unique_ptr<MLPOptimizer::WeightUpdateCache> &send_cache) {
+    gatherContributions(const std::unique_ptr<MLPOptimizer::WeightUpdateCache> &send_cache,
+                        MPI_Comm &comm) {
       int rank = 0, n_process = 0;
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      MPI_Comm_size(MPI_COMM_WORLD, &n_process);
+      MPI_Comm_rank(comm, &rank);
+      MPI_Comm_size(comm, &n_process);
 
       std::vector<unsigned long> contributions;
       if (rank == 0) contributions.resize(n_process);
       auto send_contribution = (unsigned long) send_cache->getContribution();
       MPI_Gather(&send_contribution, 1, MPI_UNSIGNED_LONG, contributions.data(), 1,
-                 MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+                 MPI_UNSIGNED_LONG, 0, comm);
 
       return contributions;
     }
 
     std::vector<std::vector<math::clFMatrix>>
-    gatherWeightUpdates(const std::unique_ptr<MLPOptimizer::WeightUpdateCache> &send_cache) {
+    gatherWeightUpdates(const std::unique_ptr<MLPOptimizer::WeightUpdateCache> &send_cache,
+                        MPI_Comm &comm) {
       int rank = 0, n_process = 0;
-      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-      MPI_Comm_size(MPI_COMM_WORLD, &n_process);
+      MPI_Comm_rank(comm, &rank);
+      MPI_Comm_size(comm, &n_process);
 
       auto &send_weight_updates = send_cache->getWeightUpdates();
       auto rows = send_weight_updates.at(0).getRows(), cols = send_weight_updates.at(0).getCols();
@@ -39,7 +40,7 @@ namespace nnet {
         float *matrix_ptr = send_weight_updates.at(i).toFloatMatrix(true).getData();
         MPI_Gather(matrix_ptr, (int) send_weight_updates_matrix_size, MPI_FLOAT,
                    &recv_weight_updates_buffer.at(i * send_weight_updates_matrix_size),
-                   (int) send_weight_updates_matrix_size, MPI_FLOAT, 0, MPI_COMM_WORLD);
+                   (int) send_weight_updates_matrix_size, MPI_FLOAT, 0, comm);
       }
 
       // Recreate matrices from buffer
@@ -63,24 +64,24 @@ namespace nnet {
   void MPIMLPOptimizer::Operation::reduceAll(cl::CommandQueue &queue) {
     // Shared between processes
     std::vector<WeightUpdateCache> recv_caches;
-    size_t mean_contribution = 0;
+    size_t totalContributions = 0;
 
     // MPI environment
     int rank = 0, n_process = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &n_process);
+    MPI_Comm_rank(current_comm, &rank);
+    MPI_Comm_size(current_comm, &n_process);
 
     // Process-local reduction
     for (size_t i = 1; i < caches.size(); i++) caches[0]->reduce(*caches[i], queue);
 
     // Gather the contributions from all processes
-    auto global_contributions = gatherContributions(caches.at(0));
+    auto global_contributions = gatherContributions(caches.at(0), current_comm);
     if (rank == 0) assert(global_contributions.size() == n_process);
     else
       assert(global_contributions.empty());
 
     // Sharing weight_updates attribute
-    auto global_weight_updates = gatherWeightUpdates(caches.at(0));
+    auto global_weight_updates = gatherWeightUpdates(caches.at(0), current_comm);
     if (rank == 0) assert(global_weight_updates.size() == n_process);
     else
       assert(global_weight_updates.empty());
@@ -96,42 +97,19 @@ namespace nnet {
       // Reduce all received caches into zero-th cache
       for (size_t i = 1; i < recv_caches.size(); i++)
         recv_caches.at(0).reduce(recv_caches[i], queue);
+      // Todo: Assign cache.at(0) to recv_caches.at(0)
 
       // Average the contributions
-      mean_contribution = 0;
-      for (auto &cache : recv_caches) mean_contribution += cache.getContribution();
-      mean_contribution /= n_process;
+      totalContributions = 0;
+      for (auto &cache : recv_caches) totalContributions += cache.getContribution();
+      caches.at(0)->setContribution(totalContributions / n_process);
     }
-
-    // Distribute the reduced weight_updates[0] from Master to all processes
-    MPI_Bcast(&mean_contribution, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
-
-    // Update the contribution of 0-th cache
-    caches.at(0)->setContribution(mean_contribution);
-
-    // Share & Update weight_updates attribute
-    cl::CommandQueue q = utils::cl_wrapper.getDefaultQueue();
-    int matrix_size = (int) caches.at(0)->getWeightUpdates().at(0).size();
-    // Todo: Vector of pointers & send them one by one, asynchronously
-    for (const auto &ith_updated_weight : caches.at(0)->getWeightUpdates()) {
-      void *data_ptr = q.enqueueMapBuffer(
-              ith_updated_weight.getBuffer(), CL_TRUE, rank == 0 ? CL_MAP_READ : CL_MAP_WRITE,
-              ith_updated_weight.getOffsetInBytes(), ith_updated_weight.sizeInBytes());
-
-      MPI_Bcast(data_ptr, (int) ith_updated_weight.size(), MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-      q.enqueueUnmapMemObject(ith_updated_weight.getBuffer(), data_ptr);
-      // Update the 0-th cache
-      /*
-      cl::CommandQueue::getDefault().enqueueWriteBuffer(i.getBuffer(), CL_TRUE, 0, matrix_size,
-                                                        tmp_data.data());
-    */
-    }
-    q.finish();
   }
+
 
   void MPIMLPOptimizer::Operation::applyChanges(cl::CommandQueue &queue) {
     MLPOptimizer::Operation::applyChanges(queue);
+    synchronizeModel();
   }
 
   void MPIMLPOptimizer::Operation::clearChanges(cl::CommandQueue &queue) {
@@ -142,4 +120,33 @@ namespace nnet {
     return std::make_unique<Operation>(*this);
   }
 
+
+  /**
+   * @before caches.at(0)->contribution is the mean contribution of all processes
+   * @brief Broadcast the contribution & 0-th cache matrices to all processes
+   */
+  void MPIMLPOptimizer::Operation::synchronizeModel() {
+    int rank = 0;
+    MPI_Comm_rank(current_comm, &rank);
+
+    size_t mean_contribution = caches.at(0)->getContribution();
+    MPI_Bcast(&mean_contribution, 1, MPI_UNSIGNED, 0, current_comm);
+
+    // Update the contribution of 0-th cache
+    caches.at(0)->setContribution(mean_contribution);
+
+    // Share & Update weight_updates attribute
+    cl::CommandQueue q = utils::cl_wrapper.getDefaultQueue();
+    // Todo: Vector of pointers & send them one by one, asynchronously
+    for (const auto &ith_updated_weight : caches.at(0)->getWeightUpdates()) {
+      void *data_ptr = q.enqueueMapBuffer(
+              ith_updated_weight.getBuffer(), CL_TRUE, rank == 0 ? CL_MAP_READ : CL_MAP_WRITE,
+              ith_updated_weight.getOffsetInBytes(), ith_updated_weight.sizeInBytes());
+
+      MPI_Bcast(data_ptr, (int) ith_updated_weight.size(), MPI_FLOAT, 0, current_comm);
+
+      q.enqueueUnmapMemObject(ith_updated_weight.getBuffer(), data_ptr);
+    }
+    q.finish();
+  }
 }   // namespace nnet

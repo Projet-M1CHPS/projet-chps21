@@ -1,8 +1,8 @@
 #include "EvalController.hpp"
 #include "MPINeuralNetwork.hpp"
+#include "MPIParallelScheduler.hpp"
 #include "MPITrainingController.hpp"
 #include "ModelEvaluator.hpp"
-#include "ParallelScheduler.hpp"
 #include "ProjectVersion.hpp"
 #include "controlSystem/TrainingCollection.hpp"
 #include "controlSystem/TrainingCollectionLoader.hpp"
@@ -108,14 +108,6 @@ bool createAndTrain(std::filesystem::path const &input_path,
   std::cout << rank << " Saving to "
             << "tmp_" + std::to_string(rank)
             << " count: " << local_collection->getTrainingSet().getSize() << std::endl;
-  /*
-   for (auto &im : local_collection->getTrainingSet()) {
-     image::ImageSerializer::save("tmp_" + std::to_string(rank) + "/" + std::to_string(im.getId()) +
-                                          ".png",
-                                  im.getData(), 255);
-   }
-   */
-
 
   topology.pushBack(local_collection->getClassCount());
 
@@ -145,7 +137,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   logger("[P" + std::to_string(rank) + "]: " + "Creating scheduler", tscl::Log::Debug);
 
 
-  ParallelScheduler::Builder scheduler_builder;
+  MPIParallelScheduler::Builder scheduler_builder;
   auto targets = local_collection->makeTargets();
   scheduler_builder.setJob({64, local_collection->getTrainingSet().getTensors(), targets});
   // Set the resources for the scheduler
@@ -197,6 +189,13 @@ int main(int argc, char **argv) {
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);
 
   MPI_Init(nullptr, nullptr);
+  int n_process = 0;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_process);
+  if (n_process < 2) {
+    tscl::logger("Need at least 2 processes to run", tscl::Log::Fatal);
+    return 1;
+  }
+
   auto ret = createAndTrain(args[1], args.size() == 3 ? args[2] : "runs/test");
   MPI_Finalize();
   return ret;

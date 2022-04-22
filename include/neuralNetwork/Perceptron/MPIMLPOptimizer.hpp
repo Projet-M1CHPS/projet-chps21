@@ -2,7 +2,7 @@
 
 #include "mpi.h"
 
-#include "MLPOptimizer.hpp"
+#include "Perceptron/MLPOptimizer.hpp"
 
 namespace nnet {
 
@@ -27,13 +27,19 @@ namespace nnet {
 
   class MPIMLPOptimizer::Operation : public MLPOptimizer::Operation {
   public:
-    explicit Operation(MPIMLPOptimizer &optimizer) : MLPOptimizer::Operation(optimizer) {}
+    explicit Operation(MPIMLPOptimizer &optimizer)
+        : MLPOptimizer::Operation(optimizer), current_comm(MPI_COMM_WORLD) {}
 
+    void setCommunicator(MPI_Comm comm) { this->current_comm = comm; }
 
   protected:
     void reduceAll(cl::CommandQueue &queue) override;
     void applyChanges(cl::CommandQueue &queue) override;
     void clearChanges(cl::CommandQueue &queue) override;
+    void synchronizeModel();
+
+  private:
+    MPI_Comm current_comm{};
   };
 
 }   // namespace nnet

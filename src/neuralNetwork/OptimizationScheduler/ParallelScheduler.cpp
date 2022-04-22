@@ -157,9 +157,10 @@ namespace nnet {
 
     // Todo: Synchronize to the same global_work_size between all processes
     tscl::logger("global_work_size: " + std::to_string(global_work_size), tscl::Log::Warning);
-    // Todo: remove this
+
+    // Todo: remove me
     global_work_size = 4000;
-    //
+
     for (size_t current_size = 0; current_size < global_work_size; current_size += batch_size) {
       tscl::logger("current_size: " + std::to_string(current_size) + "/" +
                            std::to_string(global_work_size),

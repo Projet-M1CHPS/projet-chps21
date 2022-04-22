@@ -15,5 +15,5 @@ target_link_libraries(NeuralNetwork INTERFACE m Utils nnet Perceptron CNN Optimi
 if (USE_MPI)
     add_library(MPINeuralNetwork INTERFACE)
     target_include_directories(MPINeuralNetwork INTERFACE "${INCLUDE_DIR}" "${CURRENT_INCLUDE_DIR}")
-    target_link_libraries(MPINeuralNetwork INTERFACE m Utils nnet MPIPerceptron CNN OptimizationScheduler)
+    target_link_libraries(MPINeuralNetwork INTERFACE m Utils nnet MPIPerceptron CNN MPIOptimizationScheduler)
 endif ()

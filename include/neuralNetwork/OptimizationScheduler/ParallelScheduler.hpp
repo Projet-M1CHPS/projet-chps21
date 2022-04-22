@@ -1,4 +1,5 @@
 #pragma once
+
 #include "BatchOptimizationScheduler.hpp"
 #include "BatchProgression.hpp"
 
@@ -50,7 +51,6 @@ namespace nnet {
     void epochStart() override;
     void endEpoch() override;
 
-  private:
     std::unique_ptr<Dispatcher> batch_dispatcher;
     Optimizer *optimizer;
     std::unique_ptr<Optimizer::Operation> optimizer_operation;
@@ -96,9 +96,9 @@ namespace nnet {
 
     void setOptimizer(Optimizer &new_optimizer) { this->optimizer = &new_optimizer; }
 
-    std::unique_ptr<ParallelScheduler> build() const;
+    [[nodiscard]] virtual std::unique_ptr<ParallelScheduler> build() const;
 
-  private:
+  protected:
     BatchSchedulerJob job;
 
     Optimizer *optimizer;
