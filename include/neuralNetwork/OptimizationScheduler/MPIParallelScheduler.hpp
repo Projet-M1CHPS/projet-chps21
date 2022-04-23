@@ -24,19 +24,6 @@ namespace nnet {
      * determined by the policy used during the construction of the ParallelScheduler.
      */
     void run() override;
-
-    /** Getter for the work sizes of every process
-     */
-    [[nodiscard]] std::vector<size_t> getWorkSizes() const { return processes_work_sizes; }
-
-    /** Getter for the work sizes of a specific process
-     */
-    [[nodiscard]] size_t getWorkSize(int rank) const { return processes_work_sizes.at(rank); }
-
-  private:
-    std::vector<size_t> processes_work_sizes;
-
-    std::vector<MPI_Comm> synchronizeGlobalWorkSize();
   };
 
   class MPIParallelScheduler::Builder : public ParallelScheduler::Builder {
