@@ -97,7 +97,21 @@ namespace nnet {
       // Reduce all received caches into zero-th cache
       for (size_t i = 1; i < recv_caches.size(); i++)
         recv_caches.at(0).reduce(recv_caches[i], queue);
+
+
       // Todo: Assign cache.at(0) to recv_caches.at(0)
+      *caches.at(0) = std::move(recv_caches.at(0));
+      // Compare *cache.at(0) with recv_caches.at(0)
+      assert(caches.at(0)->getWeightUpdates().size() ==
+             recv_caches.at(0).getWeightUpdates().size());
+      assert(caches.at(0)->getContribution() == recv_caches.at(0).getContribution());
+      for (size_t i = 0; i < caches.at(0)->getWeightUpdates().size(); i++) {
+        assert(caches.at(0)->getWeightUpdates().at(i).getRows() ==
+               recv_caches.at(0).getWeightUpdates().at(i).getRows());
+        assert(caches.at(0)->getWeightUpdates().at(i).getCols() ==
+               recv_caches.at(0).getWeightUpdates().at(i).getCols());
+      }
+
 
       // Average the contributions
       totalContributions = 0;
@@ -129,7 +143,7 @@ namespace nnet {
     int rank = 0;
     MPI_Comm_rank(current_comm, &rank);
 
-    size_t mean_contribution = caches.at(0)->getContribution();
+    size_t mean_contribution = (rank == 0) ? caches.at(0)->getContribution() : 0;
     MPI_Bcast(&mean_contribution, 1, MPI_UNSIGNED, 0, current_comm);
 
     // Update the contribution of 0-th cache

@@ -96,7 +96,7 @@ namespace nnet {
         mpi_op->setCommunicator(sub_comms.at(current_comm_index).second);
         tscl::logger("[P" + std::to_string(rank) + "]: " + "Switching to sub-communicator " +
                              std::to_string(current_comm_index),
-                     tscl::Log::Warning);
+                     tscl::Log::Debug);
       }
 
       size_t current_batch_size = std::min(global_work_size - current_size, batch_size);
@@ -105,8 +105,6 @@ namespace nnet {
 
       ParallelScheduler::updateModel();
     }
-    tscl::logger("[P" + std::to_string(rank) + "]: " + "MPIParallelScheduler::run: Finished",
-                 tscl::Log::Warning);
 
     ParallelScheduler::optimizer->update();
     ParallelScheduler::endEpoch();

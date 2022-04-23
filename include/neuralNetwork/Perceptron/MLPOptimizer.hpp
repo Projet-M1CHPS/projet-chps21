@@ -49,8 +49,25 @@ namespace nnet {
   public:
     explicit WeightUpdateCache(MLPOptimizer &optimizer);
     WeightUpdateCache(std::vector<math::clFMatrix> weight_updates, size_t contributions);
-
     WeightUpdateCache(WeightUpdateCache &&other) = default;
+    WeightUpdateCache &operator=(WeightUpdateCache &&other) noexcept {
+      if (weight_updates.size() != other.weight_updates.size()) {
+        tscl::logger("MLPOptimizer::WeightUpdateCache assignment error: different size",
+                     tscl::Log::Error);
+        tscl::logger("Local size: " + std::to_string(weight_updates.size()), tscl::Log::Error);
+        tscl::logger("Other size: " + std::to_string(other.weight_updates.size()),
+                     tscl::Log::Error);
+        throw std::runtime_error("WeightUpdateCache: incompatible sizes");
+      }
+      for (size_t i = 0; i < weight_updates.size(); ++i) {
+        assert(weight_updates[i].size() == other.weight_updates[i].size());
+        assert(weight_updates[i].getRows() == other.weight_updates[i].getRows());
+        assert(weight_updates[i].getCols() == other.weight_updates[i].getCols());
+        weight_updates[i] = std::move(other.weight_updates[i]);
+      }
+      contribution = other.getContribution();
+      return *this;
+    }
 
 
     virtual ~WeightUpdateCache() = default;
