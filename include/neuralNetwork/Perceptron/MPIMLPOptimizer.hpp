@@ -32,6 +32,8 @@ namespace nnet {
 
     void setCommunicator(MPI_Comm comm) { this->current_comm = comm; }
 
+    MPI_Comm getCommunicator();
+
   protected:
     void reduceAll(cl::CommandQueue &queue) override;
     void applyChanges(cl::CommandQueue &queue) override;

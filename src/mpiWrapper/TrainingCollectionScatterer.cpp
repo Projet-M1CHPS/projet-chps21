@@ -142,7 +142,6 @@ namespace mpiw {
       // We only need to receive the training set
       for (size_t t = 0; t < nb_tensor; t++) {
         auto image_pack = ImagePack::receive(source, comm, height, width);
-        std::cout << "Received image pack " << t << std::endl;
         // Append the tensor at the end of the training set
         recv_collection.getTrainingSet().append(std::move(image_pack.getTensor()),
                                                 image_pack.getIds(), image_pack.getClassIds());

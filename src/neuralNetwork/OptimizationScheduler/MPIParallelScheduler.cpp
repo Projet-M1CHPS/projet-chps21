@@ -57,14 +57,18 @@ namespace nnet {
         result.emplace_back(current_work_size, new_comm);
       }
 
+
       return result;
     }
 
     std::vector<std::pair<size_t, MPI_Comm>> synchronizeGlobalWorkSize(size_t local_work_size) {
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
       int n_process = 0;
       MPI_Comm_size(MPI_COMM_WORLD, &n_process);
 
       std::vector<unsigned long> processes_work_sizes(n_process);
+
       MPI_Allgather(&local_work_size, 1, MPI_UNSIGNED_LONG, processes_work_sizes.data(), 1,
                     MPI_UNSIGNED_LONG, MPI_COMM_WORLD);
 
@@ -78,7 +82,6 @@ namespace nnet {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &world_n_process);
 
-    // TODO: Refactor me!
     epochStart();
     auto job = ParallelScheduler::getJob();
     size_t global_work_size = job.getGlobalWorkSize();
@@ -87,16 +90,15 @@ namespace nnet {
     BatchProgression progression(job.getInputs(), job.getTargets());
 
     auto sub_comms = synchronizeGlobalWorkSize(getJob().getGlobalWorkSize());
-    size_t current_comm_index = 0;
+
     auto mpi_op = (MPIMLPOptimizer::Operation *) ParallelScheduler::optimizer_operation.get();
+    mpi_op->setCommunicator(sub_comms.front().second);
+    size_t current_comm_index = 0;
     for (size_t current_size = 0; current_size < global_work_size; current_size += batch_size) {
-      if (current_size > sub_comms.at(current_comm_index).first) {
+      if (current_size >= sub_comms.at(current_comm_index).first) {
         current_comm_index++;
         assert(current_comm_index < sub_comms.size());
         mpi_op->setCommunicator(sub_comms.at(current_comm_index).second);
-        tscl::logger("[P" + std::to_string(rank) + "]: " + "Switching to sub-communicator " +
-                             std::to_string(current_comm_index),
-                     tscl::Log::Debug);
       }
 
       size_t current_batch_size = std::min(global_work_size - current_size, batch_size);
