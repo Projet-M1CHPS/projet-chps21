@@ -61,7 +61,8 @@ namespace nnet {
 
 
         if (rank == 0) {
-          for (size_t p = 0; p < n_process; p++)
+          recv_weight_updates[0].push_back(std::move(mat));
+          for (size_t p = 1; p < n_process; p++)
             recv_weight_updates[p].emplace_back(recv_raw_matrices.data() + p * matrix_size, rows,
                                                 cols, true);
 
@@ -69,7 +70,6 @@ namespace nnet {
         }
       }
       q.finish();
-
       return recv_weight_updates;
     }
   }   // namespace
@@ -104,30 +104,21 @@ namespace nnet {
     if (rank == 0) {
       // Recreate a vector of WeightUpdateCache
       for (size_t p = 0; p < n_process; p++)
-        recv_caches.emplace_back(std::move(global_weight_updates.at(p)),
-                                 global_contributions.at(p));
+        recv_caches.emplace_back(*optimizer, std::move(global_weight_updates[p]),
+                                 global_contributions[p]);
 
       // Reduce all received caches into zero-th cache
-      for (size_t i = 1; i < recv_caches.size(); i++)
-        recv_caches.at(0).reduce(recv_caches[i], queue);
+      for (size_t i = 1; i < recv_caches.size(); i++) recv_caches[0].reduce(recv_caches[i], queue);
 
       // Assign: cache.at(0) <-- recv_caches.at(0)
-      caches.at(0)->setContribution(recv_caches.at(0).getContribution());
-      for (size_t i = 0; i < recv_caches.at(0).getWeightUpdates().size(); i++) {
-        math::clFMatrix &mat = recv_caches.at(0).getWeightUpdates().at(i);
-        caches.at(0)->getWeightUpdates().at(i).copy(mat, true);
-      }
-
-      // Average the contributions
-      size_t totalContributions = 0;
-      for (auto &cache : recv_caches) totalContributions += cache.getContribution();
-      caches.at(0)->setContribution(totalContributions / n_process);
+      *caches[0] = std::move(recv_caches.at(0));
     }
   }
 
 
   void MPIMLPOptimizer::Operation::applyChanges(cl::CommandQueue &queue) {
     MLPOptimizer::Operation::applyChanges(queue);
+    queue.finish();
     synchronizeModel();
   }
 
@@ -136,7 +127,7 @@ namespace nnet {
   }
 
   std::unique_ptr<Optimizer::Operation> MPIMLPOptimizer::makeOperationImpl() {
-    return std::make_unique<Operation>(*this);
+    return std::make_unique<MPIMLPOptimizer::Operation>(*this);
   }
 
 
@@ -151,26 +142,20 @@ namespace nnet {
 
     if (n_process == 1) return;
 
-    size_t mean_contribution = (rank == 0) ? caches.at(0)->getContribution() : 0;
-    MPI_Bcast(&mean_contribution, 1, MPI_UNSIGNED, 0, current_comm);
-
-    // Update the contribution of 0-th cache
-    caches.at(0)->setContribution(mean_contribution);
-
-
     // Share & Update weight_updates attribute
     cl::CommandQueue q = utils::cl_wrapper.getDefaultQueue();
     // Todo: Vector of pointers & send them one by one, asynchronously
-    for (const auto &ith_updated_weight : caches.at(0)->getWeightUpdates()) {
+    for (const auto &new_weights : optimizer->getNeuralNetwork()->getWeights()) {
       void *data_ptr = q.enqueueMapBuffer(
-              ith_updated_weight.getBuffer(), CL_TRUE, rank == 0 ? CL_MAP_READ : CL_MAP_WRITE,
-              ith_updated_weight.getOffsetInBytes(), ith_updated_weight.sizeInBytes());
+              new_weights.getBuffer(), CL_TRUE, rank == 0 ? CL_MAP_READ : CL_MAP_WRITE,
+              new_weights.getOffsetInBytes(), new_weights.sizeInBytes());
 
-      MPI_Bcast(data_ptr, (int) ith_updated_weight.size(), MPI_FLOAT, 0, current_comm);
+      MPI_Bcast(data_ptr, (int) new_weights.size(), MPI_FLOAT, 0, current_comm);
 
-      q.enqueueUnmapMemObject(ith_updated_weight.getBuffer(), data_ptr);
+      q.enqueueUnmapMemObject(new_weights.getBuffer(), data_ptr);
     }
     q.finish();
   }
+
   MPI_Comm MPIMLPOptimizer::Operation::getCommunicator() { return current_comm; }
 }   // namespace nnet

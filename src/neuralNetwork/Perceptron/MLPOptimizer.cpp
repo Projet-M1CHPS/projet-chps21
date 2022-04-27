@@ -83,9 +83,11 @@ namespace nnet {
     queue.finish();
   }
 
-  WeightUpdateCache::WeightUpdateCache(std::vector<math::clFMatrix> weight_updates,
+  WeightUpdateCache::WeightUpdateCache(MLPOptimizer &optimizer,
+                                       std::vector<math::clFMatrix> weight_updates,
                                        size_t contributions)
-      : contribution(contributions), weight_updates(std::move(weight_updates)) {}
+      : perceptron(optimizer.neural_network), contribution(contributions),
+        weight_updates(std::move(weight_updates)), optimization(optimizer.opti_meth.get()) {}
 
   void WeightUpdateCache::add(size_t index, const clFMatrix &delta, size_t contribution_size,
                               cl::CommandQueue &queue) {
@@ -96,6 +98,7 @@ namespace nnet {
     for (size_t i = 0; i < weight_updates.size(); i++) {
       weight_updates[i].ipadd(1.0f, other[i], queue);
     }
+    contribution += other.contribution;
   }
 
   void WeightUpdateCache::clear(cl::CommandQueue &queue) {

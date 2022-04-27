@@ -47,7 +47,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // to avoid batch fragmentation
   constexpr int kBatchSize = 16;
 
-  constexpr float kLearningRate = 0.01;
+  constexpr float kLearningRate = 0.08;
   constexpr float kMomentum = 0.9;
   constexpr float kDecayRate = 0.001;
 
@@ -59,7 +59,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // The scheduler is free to use less if it judges necessary
   constexpr size_t kMaxThread = 1;
   constexpr bool kAllowMultipleThreadPerDevice = false;
-  constexpr size_t kMaxEpoch = 30;
+  constexpr size_t kMaxEpoch = 75;
   // If set to true, the scheduler will move batches around to ensure each batch used for
   // computation is of size kBatchSize
   constexpr bool kAllowBatchDefragmentation = false;
@@ -82,7 +82,9 @@ bool createAndTrain(std::filesystem::path const &input_path,
   MLPTopology topology = {kImageSize * kImageSize, 64, 64, 64, 64};
 
   int rank = 0;
+  int comm_size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
   mpiw::TrainingCollectionScatterer scatterer(MPI_COMM_WORLD);
   std::unique_ptr<TrainingCollection> local_collection;
@@ -119,9 +121,9 @@ bool createAndTrain(std::filesystem::path const &input_path,
   }
 
   // auto model = nnet::MLPModel::randomReluSigmoid(topology);
-  auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
-  // auto model = std::make_unique<nnet::MLPModel>();
-  // model->load("michal.nnet");
+  // auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
+  auto model = std::make_unique<nnet::MLPModel>();
+  model->load("michal.nnet");
   std::unique_ptr<Optimizer> optimizer;
   if (kOptimType == kUseSGD)
     optimizer = nnet::MPIMLPOptimizer::make<nnet::SGDOptimization>(*model, kLearningRate);
@@ -138,8 +140,10 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
 
   MPIParallelScheduler::Builder scheduler_builder;
+  std::cout << "batch size : " << static_cast<size_t>(kBatchSize / comm_size) << std::endl;
   auto targets = local_collection->makeTargets();
-  scheduler_builder.setJob({64, local_collection->getTrainingSet().getTensors(), targets});
+  scheduler_builder.setJob({static_cast<size_t>(kBatchSize / comm_size),
+                            local_collection->getTrainingSet().getTensors(), targets});
   // Set the resources for the scheduler
   scheduler_builder.setMaxThread(kMaxThread, kAllowMultipleThreadPerDevice);
   scheduler_builder.setDevices(utils::cl_wrapper.getDevices());
@@ -191,10 +195,6 @@ int main(int argc, char **argv) {
   MPI_Init(nullptr, nullptr);
   int n_process = 0;
   MPI_Comm_size(MPI_COMM_WORLD, &n_process);
-  if (n_process < 2) {
-    tscl::logger("Need at least 2 processes to run", tscl::Log::Fatal);
-    return 1;
-  }
 
   auto ret = createAndTrain(args[1], args.size() == 3 ? args[2] : "runs/test");
   MPI_Finalize();

@@ -83,7 +83,7 @@ namespace nnet {
     MPI_Comm_size(MPI_COMM_WORLD, &world_n_process);
 
     epochStart();
-    auto job = ParallelScheduler::getJob();
+    auto job = getJob();
     size_t global_work_size = job.getGlobalWorkSize();
     size_t batch_size = job.getBatchSize();
 
@@ -91,25 +91,25 @@ namespace nnet {
 
     auto sub_comms = synchronizeGlobalWorkSize(getJob().getGlobalWorkSize());
 
-    auto mpi_op = (MPIMLPOptimizer::Operation *) ParallelScheduler::optimizer_operation.get();
+    auto mpi_op = (MPIMLPOptimizer::Operation *) optimizer_operation.get();
     mpi_op->setCommunicator(sub_comms.front().second);
     size_t current_comm_index = 0;
     for (size_t current_size = 0; current_size < global_work_size; current_size += batch_size) {
-      if (current_size >= sub_comms.at(current_comm_index).first) {
+      if (current_size >= sub_comms[current_comm_index].first) {
         current_comm_index++;
         assert(current_comm_index < sub_comms.size());
-        mpi_op->setCommunicator(sub_comms.at(current_comm_index).second);
+        mpi_op->setCommunicator(sub_comms[current_comm_index].second);
       }
 
       size_t current_batch_size = std::min(global_work_size - current_size, batch_size);
-      ParallelScheduler::batch_dispatcher->dispatch(progression, current_batch_size,
-                                                    *ParallelScheduler::optimizer_operation);
+      batch_dispatcher->dispatch(progression, current_batch_size,
+                                 *ParallelScheduler::optimizer_operation);
 
-      ParallelScheduler::updateModel();
+      updateModel();
     }
 
-    ParallelScheduler::optimizer->update();
-    ParallelScheduler::endEpoch();
+    optimizer->update();
+    endEpoch();
   }
 
 

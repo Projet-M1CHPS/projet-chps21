@@ -38,18 +38,25 @@ namespace nnet {
     virtual std::unique_ptr<WeightUpdateCache> makeCache();
     virtual std::vector<std::unique_ptr<WeightUpdateCache>> makeCaches(size_t ncache);
 
+    MLPerceptron *getNeuralNetwork() { return neural_network; }
+
+
+  protected:
+    MLPerceptron *neural_network;
+
   private:
     std::unique_ptr<Optimizer::Operation> makeOperationImpl() override;
 
-    MLPerceptron *neural_network;
     std::unique_ptr<Optimization> opti_meth;
   };
 
   class MLPOptimizer::WeightUpdateCache {
   public:
     explicit WeightUpdateCache(MLPOptimizer &optimizer);
-    WeightUpdateCache(std::vector<math::clFMatrix> weight_updates, size_t contributions);
+    WeightUpdateCache(MLPOptimizer &optimizer, std::vector<math::clFMatrix> weight_updates,
+                      size_t contributions);
     WeightUpdateCache(WeightUpdateCache &&other) = default;
+    WeightUpdateCache &operator=(WeightUpdateCache &&other) = default;
 
 
     virtual ~WeightUpdateCache() = default;
