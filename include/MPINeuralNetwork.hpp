@@ -7,8 +7,8 @@
 #include "neuralNetwork/Model.hpp"
 #include "neuralNetwork/Optimizer.hpp"
 
-#include "neuralNetwork/Perceptron/MLPModel.hpp"
 #include "neuralNetwork/Perceptron/MLPModelSerializer.hpp"
+#include "neuralNetwork/Perceptron/MPIMLPModel.hpp"
 
 #include "neuralNetwork/Perceptron/ActivationFunction.hpp"
 

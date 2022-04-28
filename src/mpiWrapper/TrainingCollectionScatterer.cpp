@@ -213,8 +213,6 @@ namespace mpiw {
       sendCollection(process_rank, comm, collections[process_rank]);
     }
 
-    auto &eval_set = collections[0].getEvaluationSet();
-
     return std::move(collections[0]);
   }
 

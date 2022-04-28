@@ -31,38 +31,24 @@ namespace nnet {
       auto &send_weight_updates = send_cache->getWeightUpdates();
 
       // Gathering
-      std::vector<std::vector<math::clFMatrix>> recv_weight_updates((rank == 0) * n_process);
+      std::vector<std::vector<math::clFMatrix>> recv_weight_updates((rank == 0) ? n_process : 0);
       std::vector<float> recv_raw_matrices;
       cl::CommandQueue q = cl::CommandQueue::getDefault();
       for (auto &mat : send_weight_updates) {
         int rows = (int) mat.getRows(), cols = (int) mat.getCols();
         int matrix_size = (int) mat.size();
-        recv_raw_matrices.resize((rank == 0) * n_process * matrix_size);
+        recv_raw_matrices.resize((rank == 0) ? n_process * matrix_size : 0);
 
-        /* // MPICH2 issue: (memcpy argument memory ranges overlap)
-        MPI_Gather(mat_ptr, matrix_size, MPI_FLOAT, recv_raw_matrices.data(), matrix_size,
+        // Gather raw matrices from all processes
+        void *send_mat_ptr = q.enqueueMapBuffer(mat.getBuffer(), CL_TRUE, CL_MAP_READ, 0,
+                                                matrix_size * sizeof(float));
+        MPI_Gather(send_mat_ptr, matrix_size, MPI_FLOAT, recv_raw_matrices.data(), matrix_size,
                    MPI_FLOAT, 0, comm);
-        // Replaced by one-sided communications
-        */
-
-        std::vector<MPI_Request> requests(n_process - 1);
-        if (rank > 0) {
-          auto mat_ptr = (float *) q.enqueueMapBuffer(mat.getBuffer(), CL_TRUE, CL_MAP_READ, 0,
-                                                      matrix_size * sizeof(float));
-          MPI_Send(mat_ptr, matrix_size, MPI_FLOAT, 0, 0, comm);
-          q.enqueueUnmapMemObject(mat.getBuffer(), mat_ptr);
-
-        } else {
-          for (int i = 1; i < n_process; i++)
-            MPI_Irecv(recv_raw_matrices.data() + i * matrix_size, matrix_size, MPI_FLOAT, i, 0,
-                      comm, &requests[i - 1]);
-          MPI_Waitall(n_process - 1, requests.data(), MPI_STATUSES_IGNORE);
-        }
+        if (rank > 0) q.enqueueUnmapMemObject(mat.getBuffer(), send_mat_ptr);
 
 
         if (rank == 0) {
-          recv_weight_updates[0].push_back(std::move(mat));
-          for (size_t p = 1; p < n_process; p++)
+          for (size_t p = 0; p < n_process; p++)
             recv_weight_updates[p].emplace_back(recv_raw_matrices.data() + p * matrix_size, rows,
                                                 cols, true);
 

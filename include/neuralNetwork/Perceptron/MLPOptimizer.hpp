@@ -129,7 +129,6 @@ namespace nnet {
       return *caches[thread_rank];
     }
 
-
   protected:
     std::vector<std::unique_ptr<WeightUpdateCache>> caches;
     MLPOptimizer *optimizer;

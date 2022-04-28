@@ -28,7 +28,10 @@ target_link_libraries(Perceptron PUBLIC tscl::tscl openclUtils Math)
 
 if (USE_MPI)
     message(STATUS "Using MPI for MLP")
-    add_library(MPIPerceptron STATIC MPIMLPOptimizer.cpp ${CURRENT_INCLUDE_DIR}/MPIMLPOptimizer.hpp)
+    add_library(MPIPerceptron STATIC
+            MPIMLPOptimizer.cpp ${CURRENT_INCLUDE_DIR}/MPIMLPOptimizer.hpp
+            MPIMLPModel.cpp ${CURRENT_INCLUDE_DIR}/MPIMLPModel.hpp
+            )
     target_include_directories(MPIPerceptron
             PUBLIC ${INCLUDE_DIR} ${CURRENT_INCLUDE_DIR} ${INCLUDE_DIR}/neuralNetwork ${CURRENT_INCLUDE_DIR}/Optimization)
     target_link_libraries(MPIPerceptron PUBLIC tscl::tscl openclUtils Math Perceptron)
