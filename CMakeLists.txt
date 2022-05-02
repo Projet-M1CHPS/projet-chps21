@@ -21,6 +21,17 @@ else ()
 endif ()
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+
+## MPI support
+if (USE_MPI)
+    message(STATUS "Looking for mpicxx...")
+    if (CMAKE_CXX_COMPILER MATCHES ".*mpicxx")
+        message(STATUS "Found mpicxx: ${CMAKE_CXX_COMPILER}")
+    else ()
+        message(FATAL_ERROR "USE_MPI enabled, but mpicxx wasn't found.\nSet CMAKE_CXX_COMPILER to the path of your mpicxx.")
+    endif ()
+endif ()
+
 include(check_coverage)
 maybe_enable_coverage()
 if (COVERAGE_ENABLED)

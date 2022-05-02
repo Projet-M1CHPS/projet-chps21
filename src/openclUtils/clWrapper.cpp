@@ -43,10 +43,6 @@ namespace utils {
         std::cout << "Platform: " << platform.getInfo<CL_PLATFORM_NAME>() << std::endl;
         for (size_t i = 0; i < devices.size(); i++) {
           std::cout << "\t d" << i << ": " << devices[i].getInfo<CL_DEVICE_NAME>() << std::endl;
-          std::cout << "\t Memory alignment" << devices[i].getInfo<CL_DEVICE_MEM_BASE_ADDR_ALIGN>()
-                    << std::endl;
-          std::cout << "device fission: "
-                    << devices[i].getInfo<CL_DEVICE_PARTITION_MAX_SUB_DEVICES>() << std::endl;
         }
         if (!devices.empty()) { gpu_platforms.push_back(platform); }
       }
@@ -75,6 +71,9 @@ namespace utils {
 
     context = cl::Context(devices);
     default_queue = cl::CommandQueue(context, default_device);
+    // By default, we do not enable out-of-order execution for the queue handler
+    // The user is free to create queues with out-of-order execution enabled
+
     kernels = std::make_shared<clKernelMap>(context, absolute_kernel_path);
   }
 

@@ -23,8 +23,8 @@ namespace control {
     if (res.training_set.getClasses().empty())
       throw std::runtime_error("TrainingCollectionLoader::load: Training and eval sets have "
                                "no classes");
-    res.makeTrainingTargets();
 
+    res.makeTrainingTargets();
     return res;
   }
 

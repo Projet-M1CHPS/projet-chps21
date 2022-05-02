@@ -3,12 +3,12 @@ extern "C" {
 #include <cblas.h>
 }
 
+#include <random>
 #include <cassert>
 #include <cmath>
 #include <cstring>
 #include <iostream>
 #include <memory>
-#include <random>
 #include <utility>
 
 #define USE_BLAS

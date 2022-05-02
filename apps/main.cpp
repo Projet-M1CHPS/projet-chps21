@@ -101,9 +101,9 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
 
   // auto model = nnet::MLPModel::randomReluSigmoid(topology);
-  // auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
-  auto model = std::make_unique<nnet::MLPModel>();
-  model->load("michal.nnet");
+  auto model = nnet::MLPModel::random(topology, af::ActivationFunctionType::leakyRelu);
+  /*auto model = std::make_unique<nnet::MLPModel>();
+  model->load("michal.nnet");*/
   std::unique_ptr<Optimizer> optimizer;
   if (kOptimType == kUseSGD)
     optimizer = nnet::MLPOptimizer::make<nnet::SGDOptimization>(*model, kLearningRate);

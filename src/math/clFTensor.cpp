@@ -20,7 +20,6 @@ namespace math {
 
   std::ostream &operator<<(std::ostream &os, const clFTensor &t) {
     if (t.is_view) std::cout << "(View) ";
-    std::cout << "clFTensor(" << t.rows << ", " << t.cols << ", " << t.depth << "):" << std::endl;
     for (size_t i = 0; i < t.depth; i++) { std::cout << t[i] << std::endl; }
     return os;
   }
@@ -174,9 +173,10 @@ namespace math {
     const size_t A_rows = A.getRows(), A_cols = A.getCols(), B_rows = B.getRows(),
                  B_cols = B.getCols();
 
-    if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows))
+    if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows)) {
       throw std::invalid_argument("clFTensor::batchedGemm: Matrix size do not match");
-
+    }
+    
     auto ta = transpose_a ? clblast::Transpose::kYes : clblast::Transpose::kNo;
     auto tb = transpose_b ? clblast::Transpose::kYes : clblast::Transpose::kNo;
     size_t m = (transpose_a ? A_cols : A_rows);
@@ -209,8 +209,9 @@ namespace math {
     const size_t A_rows = A.getRows(), A_cols = A.getCols(), B_rows = B.getRows(),
                  B_cols = B.getCols(), C_rows = C.getRows(), C_cols = C.getCols();
 
-    if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows))
+    if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows)) {
       throw std::invalid_argument("clFTensor::batchedGemm: Matrix size do not match");
+    }
 
     auto ta = transpose_a ? clblast::Transpose::kYes : clblast::Transpose::kNo;
     auto tb = transpose_b ? clblast::Transpose::kYes : clblast::Transpose::kNo;
@@ -251,8 +252,9 @@ namespace math {
     const size_t A_rows = A.getRows(), A_cols = A.getCols(), B_rows = B.getRows(),
                  B_cols = B.getCols();
 
-    if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows))
+    if ((transpose_a ? A_rows : A_cols) != (transpose_b ? B_cols : B_rows)) {
       throw std::invalid_argument("clFTensor::batchedGemm: Matrix size do not match");
+    }
 
     auto ta = transpose_a ? clblast::Transpose::kYes : clblast::Transpose::kNo;
     auto tb = transpose_b ? clblast::Transpose::kYes : clblast::Transpose::kNo;
