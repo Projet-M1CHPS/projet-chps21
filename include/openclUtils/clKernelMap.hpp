@@ -11,11 +11,33 @@
 #include <unordered_map>
 
 namespace utils {
+
+  /**
+   * @brief A lazily loaded map of all the cl::Kernel available in the program
+   */
   class clKernelMap {
   public:
+    /**
+     * @brief Build a map with the given kernel path and context. Kernels are lazy loaded and
+     * compiled for every devices in the context
+     * @param context
+     * @param kernels_path
+     */
     explicit clKernelMap(cl::Context &context, std::filesystem::path kernels_path = "kernels");
 
+    /**
+     * @brief Fetch a program from the map, lazy loading it if not present
+     * @param program_name The nae of the program to fetch
+     * @return A reference to the loaded program, throws on error
+     */
     cl::Program &getProgram(const std::string &program_name);
+
+    /**
+     * @brief Retrieve a kernel from a program
+     * @param program_name The name of the program, lazy loading it if not present
+     * @param kernel_name The name of the kernel to extract from the program
+     * @return A new kernel object for the kernel
+     */
     cl::Kernel getKernel(const std::string &program_name, const std::string &kernel_name);
 
   private:

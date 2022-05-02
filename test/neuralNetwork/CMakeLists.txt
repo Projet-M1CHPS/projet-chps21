@@ -1,7 +1,7 @@
 
 add_executable(
         NeuralNetwork_test
-        NeuralNetwork_test.cpp
+        #NeuralNetwork_test.cpp
         ActivationFunction_test.cpp
         CNN_test.cpp
 )

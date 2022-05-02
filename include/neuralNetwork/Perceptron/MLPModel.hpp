@@ -6,12 +6,12 @@
 namespace nnet {
 
   /**
-   * @brief A model for a multi-layer perceptron.
+   * @brief A Model for a multi-layer perceptron.
    */
   class MLPModel : public Model {
   public:
     MLPModel();
-    MLPModel(std::unique_ptr<MLPerceptron> &&perceptron);
+    explicit MLPModel(std::unique_ptr<MLPerceptron> &&perceptron);
 
     [[nodiscard]] MLPerceptron &getPerceptron() { return *perceptron; }
     [[nodiscard]] MLPerceptron const &getPerceptron() const { return *perceptron; }
@@ -21,15 +21,23 @@ namespace nnet {
      * @param input The matrix to be fed to the perceptron
      * @return The output of the perceptron
      */
-    math::clFMatrix predict(math::clFMatrix const &input) const override;
+    math::clFMatrix predict(cl::CommandQueue &queue, math::clFMatrix const &input) const override;
 
-    math::clFTensor predict(math::clFTensor const &input) const override {
-      // TODO : Implement me
-      assert(0 && "implement me");
-      return {1, 1, 1};
-    }
+    math::clFTensor predict(cl::CommandQueue &queue, math::clFTensor const &inputs) const override;
 
+    /**
+     * @brief Loads an MLPModel from a file
+     * TODO: Replace me by an abstract factory
+     * @param path
+     * @return
+     */
     bool load(const std::filesystem::path &path) override;
+
+    /**
+     * @brief Saves the MLPModel to a file
+     * @param path
+     * @return
+     */
     bool save(const std::filesystem::path &path) const override;
 
     /**

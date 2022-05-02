@@ -2,20 +2,22 @@
 
 namespace nnet {
 
-  CNNTopologyLayer::CNNTopologyLayer(const std::pair<size_t, size_t> inputSize, const std::pair<size_t, size_t> filter, const size_t nBranch)
-      : input_size(inputSize), filter(filter), n_branch(nBranch) {}
+  CNNTopologyLayer::CNNTopologyLayer(const std::pair<size_t, size_t> inputSize,
+                                     const std::pair<size_t, size_t> filterSize,
+                                     const size_t nBranch)
+      : input_size(inputSize), filter_size(filterSize), n_branch(nBranch) {}
 
 
   CNNTopologyLayerConvolution::CNNTopologyLayerConvolution(
           const std::pair<size_t, size_t> inputSize, const size_t features,
-          const std::pair<size_t, size_t> filter, const af::ActivationFunctionType aFunction,
+          const std::pair<size_t, size_t> filterSize, const af::ActivationFunctionType aFunction,
           const size_t nBranch)
-      : CNNTopologyLayer(inputSize, filter, nBranch), features(features), activationFunction(aFunction),
-        outputSize(computeOutputSize(inputSize)) {}
+      : CNNTopologyLayer(inputSize, filterSize, nBranch), features(features),
+        activationFunction(aFunction), outputSize(computeOutputSize(inputSize)) {}
 
   std::unique_ptr<CNNLayer> CNNTopologyLayerConvolution::convertToLayer() const {
-    return std::make_unique<CNNConvolutionLayer>(outputSize, filter, features, activationFunction,
-                                                 n_branch);
+    return std::make_unique<CNNConvolutionLayer>(outputSize, filter_size, features,
+                                                 activationFunction, n_branch);
   }
 
   std::unique_ptr<CNNStorageBP> CNNTopologyLayerConvolution::convertToStorage() const {
@@ -29,15 +31,15 @@ namespace nnet {
     // K = Filter size
     // S = Stride ( 1 )
     // P = Padding ( 0 )
-    const size_t rows = (inputSize.first - filter.first) + 1;
-    const size_t cols = (inputSize.second - filter.second) + 1;
+    const size_t rows = (inputSize.first - filter_size.first) + 1;
+    const size_t cols = (inputSize.second - filter_size.second) + 1;
     return std::make_pair(rows, cols);
   }
 
   std::ostream &CNNTopologyLayerConvolution::printTo(std::ostream &os) const {
     os << "Convolution layer: nBranch{" << n_branch << "}, outPutSize{" << outputSize.first << ", "
-       << outputSize.second << "}, features{" << features << "}, filter{" << filter.first << ", "
-       << filter.second << "}";
+       << outputSize.second << "}, features{" << features << "}, filter{" << filter_size.first << ", "
+       << filter_size.second << "}";
     return os;
   }
 
@@ -54,8 +56,8 @@ namespace nnet {
     // K = Filter size
     // S = Stride ( 1 )
 
-    const size_t rows = (inputSize.first - filter.first) + 1;
-    const size_t cols = (inputSize.second - filter.second) + 1;
+    const size_t rows = (inputSize.first - filter_size.first) + 1;
+    const size_t cols = (inputSize.second - filter_size.second) + 1;
     return std::make_pair(rows, cols);
   }
 
@@ -66,7 +68,7 @@ namespace nnet {
       : CNNTopologyLayerPooling(inputSize, filter, nBranch) {}
 
   std::unique_ptr<CNNLayer> CNNTopologyLayerMaxPooling::convertToLayer() const {
-    return std::make_unique<CNNMaxPoolingLayer>(outputSize, filter);
+    return std::make_unique<CNNMaxPoolingLayer>(outputSize, filter_size);
   }
 
   std::unique_ptr<CNNStorageBP> CNNTopologyLayerMaxPooling::convertToStorage() const {
@@ -75,7 +77,7 @@ namespace nnet {
 
   std::ostream &CNNTopologyLayerMaxPooling::printTo(std::ostream &os) const {
     os << "Max Pooling layer: nBranch{" << n_branch << "}, outputSize{" << outputSize.first << ", "
-       << outputSize.second << "}, filter{" << filter.first << ", " << filter.second << "}";
+       << outputSize.second << "}, filter{" << filter_size.first << ", " << filter_size.second << "}";
     return os;
   }
 
@@ -86,7 +88,7 @@ namespace nnet {
       : CNNTopologyLayerPooling(inputSize, filter, nBranch) {}
 
   std::unique_ptr<CNNLayer> CNNTopologyLayerAvgPooling::convertToLayer() const {
-    return std::make_unique<CNNAvgPoolingLayer>(outputSize, filter);
+    return std::make_unique<CNNAvgPoolingLayer>(outputSize, filter_size);
   }
 
   std::unique_ptr<CNNStorageBP> CNNTopologyLayerAvgPooling::convertToStorage() const {
@@ -95,8 +97,8 @@ namespace nnet {
 
   std::ostream &CNNTopologyLayerAvgPooling::printTo(std::ostream &os) const {
     os << "Avg Pooling layer: nBranch{" << n_branch << ", outputSize{" << outputSize.first << ", "
-       << outputSize.second << "}, nBranch{" << n_branch << "}, filter{" << filter.first << ", "
-       << filter.second << "}";
+       << outputSize.second << "}, nBranch{" << n_branch << "}, filter{" << filter_size.first << ", "
+       << filter_size.second << "}";
     return os;
   }
 

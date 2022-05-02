@@ -92,12 +92,29 @@ namespace af {
   std::pair<cl::Kernel, cl::Kernel> getAFKernelFromType(ActivationFunctionType type,
                                                         utils::clWrapper &wrapper);
 
-
+  /**
+   * @brief Runs an activation function on a matrix, by appending a kernel to the queue. Does not
+   * wait for the kernel completion
+   */
   void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue);
+
+  /**
+   * @brief Runs an activation function on a tensor, by appending a kernel to the queue. Does not
+   * wait for the kernel completion
+   */
   void applyAF(af::ActivationFunctionType type, math::clFTensor &mat, cl::CommandQueue &queue);
 
+  /**
+   * @brief Runs the derivative of the activation function on a matrix, by appending a kernel to the
+   * queue. Does not wait for the kernel completion
+   */
   void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
                          cl::CommandQueue &queue);
+
+  /**
+   * @brief Runs the derivative of the activation function on a tensor, by appending a kernel to the
+   * queue. Does not wait for the kernel completion
+   */
   void applyDerivativeAF(af::ActivationFunctionType type, math::clFTensor &mat,
                          cl::CommandQueue &queue);
 

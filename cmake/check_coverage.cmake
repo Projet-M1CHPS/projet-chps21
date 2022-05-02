@@ -16,7 +16,7 @@ function(maybe_enable_coverage)
       include(extern/CodeCoverage.cmake)
       set(COVERAGE_EXCLUDES "/extern" "/test")
       message(STATUS "Code coverage enabled")
-      set(COVERARE_ENABLED ON PARENT_SCOPE)
+      set(COVERAGE_ENABLED ON PARENT_SCOPE)
     else ()
       # Issue a warning if an error occured
       message(WARNING "Cannot enable code coverage tests: gcovr or gcov not found")

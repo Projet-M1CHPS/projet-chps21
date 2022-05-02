@@ -6,8 +6,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
-
 # Setup compiler specific flags
 include(CheckCXXCompilerFlag)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
@@ -22,6 +20,7 @@ else ()
     endif ()
 endif ()
 
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 ## MPI support
 if (USE_MPI)
@@ -35,7 +34,7 @@ endif ()
 
 include(check_coverage)
 maybe_enable_coverage()
-if (COVERARE_ENABLED)
+if (COVERAGE_ENABLED)
     # Must be placed at the top level for compiler flags to propagate to all targets
     append_coverage_compiler_flags()
 endif ()

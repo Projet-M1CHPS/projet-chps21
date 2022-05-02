@@ -4,7 +4,7 @@ namespace control {
 
   EvalController::EvalController(const std::filesystem::path &output_path, nnet::Model *model,
                                  InputSet *input_set)
-      : Controller(output_path), model(model), input_set(input_set) {}
+      : output_path(output_path), model(model), input_set(input_set) {}
 
 
   ControllerResult EvalController::run() noexcept {
@@ -14,7 +14,7 @@ namespace control {
 
     // Temporary implementation that treat each matrix individually and not tensor-wise
     for (auto &it : *input_set) {
-      auto res = model->predict(it.getData());
+      auto res = model->predict(utils::cl_wrapper.getDefaultQueue(), it.getData());
       auto class_id = res.imax();
       (*input_set)[count].setClass(class_id);
       std::cout << "Sample " << it.getId() << " is of class " << class_id << std::endl;

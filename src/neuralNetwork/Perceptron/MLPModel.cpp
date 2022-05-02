@@ -13,8 +13,12 @@ namespace nnet {
   }
 
 
-  math::clFMatrix MLPModel::predict(math::clFMatrix const &input) const {
+  math::clFMatrix MLPModel::predict(cl::CommandQueue &queue, math::clFMatrix const &input) const {
     return perceptron->predict(input);
+  }
+
+  math::clFTensor MLPModel::predict(cl::CommandQueue &queue, math::clFTensor const &inputs) const {
+    return perceptron->predict(inputs);
   }
 
   std::unique_ptr<MLPModel> MLPModel::random(MLPTopology const &topology,

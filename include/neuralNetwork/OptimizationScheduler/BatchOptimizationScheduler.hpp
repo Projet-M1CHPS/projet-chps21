@@ -5,6 +5,9 @@
 
 namespace nnet {
 
+  /**
+   * @brief A job for the batch optimization scheduler. Stores a batch size and datasets
+   */
   class BatchSchedulerJob {
   public:
     BatchSchedulerJob() = default;
@@ -25,8 +28,8 @@ namespace nnet {
   };
 
   /**
-   * @brief Interface for a scheduler that optimizes the weights of the network using batches of
-   * data. Batches are distributed among the available resources.
+   * @brief Interface for an OptimizationScheduler that optimizes the weights of the network using
+   * batches of data. Batches are distributed among the available resources.
    */
   class BatchOptimizationScheduler : public OptimizationScheduler {
   public:

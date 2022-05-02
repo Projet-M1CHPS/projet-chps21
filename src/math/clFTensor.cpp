@@ -140,7 +140,7 @@ namespace math {
     depth = new_depth;
   }
 
-  clFTensor clFTensor::sub(float factor, const clFTensor &other, cl::CommandQueue &queue,
+  clFTensor clFTensor::sub(float alpha, const clFTensor &other, cl::CommandQueue &queue,
                            bool blocking) const {
     if (rows != other.rows || cols != other.cols || depth != other.depth) {
       throw std::runtime_error("clFTensor::sub: Cannot subtract two tensors with different sizes");
@@ -150,20 +150,19 @@ namespace math {
     result.copy(*this, queue, false);
 
     cl::Event evt;
-    clblast::Axpy<float>(size(), -factor, other.data(), other.getOffsetInFloats(), 1, result.data(),
+    clblast::Axpy<float>(size(), -alpha, other.data(), other.getOffsetInFloats(), 1, result.data(),
                          result.getOffsetInFloats(), 1, &queue(), &evt());
     if (blocking) evt.wait();
     return result;
   }
 
-  void clFTensor::ipadd(float factor, const clFTensor &other, cl::CommandQueue &queue,
-                        bool blocking) {
-    if (rows != other.rows || cols != other.cols || depth != other.depth) {
+  void clFTensor::ipadd(float alpha, const clFTensor &B, cl::CommandQueue &queue, bool blocking) {
+    if (rows != B.rows || cols != B.cols || depth != B.depth) {
       throw std::runtime_error("clFTensor::sub: Cannot subtract two tensors with different sizes");
     }
 
     cl::Event evt;
-    clblast::Axpy<float>(size(), factor, other.data(), other.getOffsetInFloats(), 1, data(),
+    clblast::Axpy<float>(size(), alpha, B.data(), B.getOffsetInFloats(), 1, data(),
                          getOffsetInFloats(), 1, &queue(), &evt());
     if (blocking) evt.wait();
   }

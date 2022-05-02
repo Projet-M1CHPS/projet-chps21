@@ -13,6 +13,9 @@
 
 namespace utils {
 
+  /**
+   * @brief A wrapper for opencl's core objects
+   */
   class clWrapper {
   public:
     /**

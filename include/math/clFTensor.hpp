@@ -50,6 +50,11 @@ namespace math {
       if (blocking) event.wait();
     }
 
+    /**
+     * @brief Divides the tensor into multiple chunks
+     * @param ndiv
+     * @return
+     */
     std::vector<clFTensor> slice(size_t ndiv) const;
 
     /**
@@ -176,32 +181,103 @@ namespace math {
     size_t size() const { return rows * cols * depth; }
     size_t sizeInBytes() const { return size() * sizeof(float); }
 
+    /**
+     * @brief Returns the opencl buffer associated with the tensor
+     * @return
+     */
     cl::Buffer getBuffer() const { return data; }
 
+    /**
+     * @brief Reshapes the tensor to the given dimensions
+     * @param new_rows
+     * @param new_cols
+     * @param new_depth
+     */
     void reshape(size_t new_rows, size_t new_cols, size_t new_depth);
 
-    clFTensor sub(float factor, const clFTensor &other, cl::CommandQueue &queue,
+    /**
+     * @brief C = A - alpha * B
+     * @param alpha
+     * @param other
+     * @param queue
+     * @param blocking If true, blocks until the operation is complete
+     * @return
+     */
+    clFTensor sub(float alpha, const clFTensor &other, cl::CommandQueue &queue,
                   bool blocking = false) const;
 
-    void ipadd(float factor, const clFTensor &other, cl::CommandQueue &queue,
-               bool blocking = false);
+    /**
+     * @brief C = C + alpha * B, where B is a tensor
+     * @param alpha
+     * @param B
+     * @param queue
+     * @param blocking If true, blocks until the operation is complete
+     */
+    void ipadd(float alpha, const clFTensor &B, cl::CommandQueue &queue, bool blocking = false);
 
+    /**
+     * @brief C = alpha * A * B, where A is a matrix and B is a tensor
+     * @param alpha
+     * @param transpose_a If true transposes A
+     * @param A
+     * @param transpose_b If true transposes B
+     * @param B
+     * @param queue
+     * @param blocking If true, blocks until the operation is complete
+     * @return
+     */
     static clFTensor batchedGemm(float alpha, bool transpose_a, const clFMatrix &A,
                                  bool transpose_b, const clFTensor &B, cl::CommandQueue &queue,
                                  bool blocking = false);
 
+    /**
+     * @brief R = alpha * A * B + beta * C, where A is a matrix, B a tensor, and C a matrix
+     * @param alpha
+     * @param transpose_a If true transposes A
+     * @param A
+     * @param transpose_b If true transposes B
+     * @param B
+     * @param beta
+     * @param C
+     * @param queue
+     * @param blocking If true, blocks until the operation is complete
+     * @return
+     */
     static clFTensor batchedGemm(float alpha, bool transpose_a, const clFMatrix &A,
                                  bool transpose_b, const clFTensor &B, float beta,
                                  const clFMatrix &C, cl::CommandQueue &queue,
                                  bool blocking = false);
 
-
+    /**
+     * @brief C = alpha * A * B, where A and B are tensors
+     * @param alpha
+     * @param transpose_a If true transposes A
+     * @param A
+     * @param transpose_b If true transposes B
+     * @param B
+     * @param queue
+     * @param blocking If true, blocks until the operation is complete
+     * @return
+     */
     static clFTensor batchedGemm(float alpha, bool transpose_a, const clFTensor &A,
                                  bool transpose_b, const clFTensor &B, cl::CommandQueue &queue,
                                  bool blocking = false);
 
+    /**
+     * @brief Sums the tensors along the z-axis, returning a single matrix
+     * @param queue
+     * @param blocking If true, blocks until the operation is complete
+     * @return
+     */
     clFMatrix sumCollapse(cl::CommandQueue &queue, bool blocking = false) const;
 
+    /**
+     * @brief Multiply two tensors element by element
+     * @param other
+     * @param queue
+     * @param blocking If true, blocks until the operation is complete
+     * @return
+     */
     clFTensor &iphadamard(const clFTensor &other, cl::CommandQueue &queue, bool blocking = false);
 
     /**

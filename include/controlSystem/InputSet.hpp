@@ -166,6 +166,10 @@ namespace control {
       return samples[global_index].getClass();
     }
 
+    /**
+     * @brief Return the number of classes
+     * @return
+     */
     size_t getClassCount() const {
       std::shared_lock<std::shared_mutex> lock(mutex);
       return class_names.size();

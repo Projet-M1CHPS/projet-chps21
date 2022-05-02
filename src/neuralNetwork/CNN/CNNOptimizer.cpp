@@ -3,15 +3,15 @@
 
 namespace nnet {
   namespace {
-    clFTensor forward(const CNN &cnn, const clFTensor &inputs,
-                      std::vector<std::unique_ptr<CNNStorageBP>> &storages,
-                      cl::CommandQueue &queue) {
+    math::clFTensor forward(const CNN &cnn, const math::clFTensor &inputs,
+                            std::vector<std::unique_ptr<CNNStorageBP>> &storages,
+                            cl::CommandQueue &queue) {
       auto &layers = cnn.getLayers();
 
-      clFTensor output = inputs.shallowCopy();
+      math::clFTensor output = inputs.shallowCopy();
 
       for (size_t i = 0; i < layers.size(); i++) {
-        output = layers[i]->computeForward(output, *storages[i]);
+        output = layers[i]->computeForward(queue, output, *storages[i]);
       }
 
       reorganizeForward(queue, output, inputs.getDepth(), cnn.getTopology().getNBranchFinal());
@@ -19,18 +19,18 @@ namespace nnet {
       return output;
     }
 
-    void backward(CNNOptimizer::WeightUpdateCache &cache, const CNN &cnn, const clFTensor &inputs,
-                  clFTensor &errorsFlatten, std::vector<std::unique_ptr<CNNStorageBP>> &storages,
-                  cl::CommandQueue &queue) {
+    void backward(CNNOptimizer::WeightUpdateCache &cache, const CNN &cnn,
+                  const math::clFTensor &inputs, math::clFTensor &errorsFlatten,
+                  std::vector<std::unique_ptr<CNNStorageBP>> &storages, cl::CommandQueue &queue) {
       auto &layers = cache.getLayers();
 
       reorganizeBackward(queue, errorsFlatten, errorsFlatten.getDepth(),
                          cnn.getTopology().getNBranchFinal(), layers.back()->getOutputSize());
 
-      clFTensor output = inputs.shallowCopy();
+      math::clFTensor output = inputs.shallowCopy();
 
       for (long i = static_cast<long>(layers.size() - 1); i > -1; i--) {
-        output = layers[i]->computeBackward(output, *storages[i]);
+        output = layers[i]->computeBackward(queue, output, *storages[i]);
       }
 
       size_t i = 0;
@@ -57,7 +57,7 @@ namespace nnet {
     }
   }
 
-  WeightUpdateCache::WeightUpdateCache(CNN *cnn, std::vector<clFTensor> &&weight_updates,
+  WeightUpdateCache::WeightUpdateCache(CNN *cnn, std::vector<math::clFTensor> &&weight_updates,
                                        size_t contribution) {}
 
   void WeightUpdateCache::add(size_t index, const math::clFTensor &delta, cl::CommandQueue &queue) {
@@ -77,7 +77,7 @@ namespace nnet {
     for (auto &layer : cnn_layers) {
       if (layer->hasWeight()) {
         auto &filter = layer->getWeight();
-        optimization->update(filter, weight_updates[tensor_index], queue);
+        optimization->optimize(filter, weight_updates[tensor_index], queue);
         tensor_index++;
       }
     }
@@ -94,14 +94,14 @@ namespace nnet {
   CNNOptimizer::CNNOptimizer(CNNModel &model, std::unique_ptr<Optimization> mlpTm)
       : cnn(&model.getCnn()), mlp_optimizer(model.getMlp(), std::move(mlpTm)) {}
 
-  void CNNOptimizer::optimize(const clFTensor &inputs, const clFTensor &targets,
+  void CNNOptimizer::optimize(const math::clFTensor &inputs, const math::clFTensor &targets,
                               WeightUpdateCache &cnn_cache,
                               MLPOptimizer::WeightUpdateCache &mlp_cache, cl::CommandQueue &queue) {
     std::vector<std::unique_ptr<CNNStorageBP>> storages = cnn->getTopology().convertToStorage();
 
-    clFTensor flatten = forward(*cnn, inputs, storages, queue);
+    math::clFTensor flatten = forward(*cnn, inputs, storages, queue);
 
-    clFTensor errorFlatten = mlp_optimizer.optimize(flatten, targets, mlp_cache, queue);
+    math::clFTensor errorFlatten = mlp_optimizer.optimize(flatten, targets, mlp_cache, queue);
 
     backward(cnn_cache, *cnn, inputs, errorFlatten, storages, queue);
     cnn_cache.increaseContribution(inputs.getDepth());
@@ -118,13 +118,12 @@ namespace nnet {
     return caches;
   }
 
-  std::unique_ptr<CNNOptimizer::Operation> CNNOptimizer::makeCNNOperation() {
-    return std::make_unique<Operation>(*this);
+  std::unique_ptr<CNNOptimizer::Operation> CNNOptimizer::makeOperation() {
+    auto *ptr = makeOperationImpl();
+    return std::unique_ptr<Operation>(ptr);
   }
 
 
-  std::unique_ptr<Optimizer::Operation> CNNOptimizer::makeOperationImpl() {
-    return makeCNNOperation();
-  }
+  CNNOptimizer::Operation *CNNOptimizer::makeOperationImpl() { return new Operation(*this); }
 
 }   // namespace nnet

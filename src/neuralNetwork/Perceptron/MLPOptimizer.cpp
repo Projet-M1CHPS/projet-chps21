@@ -20,18 +20,22 @@ namespace nnet {
 
       clFTensor current_layer = clFTensor::batchedGemm(1.0f, false, weights[0], false, inputs, 1.0f,
                                                        biases[0], queue);
+      // std::cout << "current_layer:\n" << current_layer;
 
       layers_output[1].copy(current_layer, queue, false);
       af::applyAF(activation_functions[0], current_layer, queue);
       layers_af_output[1].copy(current_layer, queue, false);
+      // std::cout << "current_layer AF:\n" << current_layer;
       for (size_t k = 1; k < weights.size(); k++) {
         // C = W * C + B
         current_layer = clFTensor::batchedGemm(1.0f, false, weights[k], false, current_layer, 1.0f,
                                                biases[k], queue);
+        // std::cout << "current_layer " << k << ":\n" << current_layer;
         layers_output[k + 1].copy(current_layer, queue, false);
 
         // Apply activation function on every element of the matrix
         af::applyAF(activation_functions[k], current_layer, queue);
+        // std::cout << "current_layer AF " << k << ":\n" << current_layer;
         layers_af_output[k + 1].copy(current_layer, queue, false);
       }
     }
@@ -45,24 +49,51 @@ namespace nnet {
 
       if (weights.empty()) return {};
 
-
+      // std::stringstream ss;
+      // auto substart = std::chrono::high_resolution_clock::now();
       clFTensor error = layers_af_output.back().sub(1.0f, targets, queue);
-
+      // auto subend = std::chrono::high_resolution_clock::now();
+      // auto subduration = std::chrono::duration_cast<std::chrono::microseconds>(subend -
+      // substart); ss << queue() << ": "
+      //    << "Subtraction: " << subduration.count() << " us" << std::endl;
       //   Need to use a long since we stop when index reaches -1
       for (long i = weights.size() - 1; i >= 0; i--) {
+        // auto start = std::chrono::high_resolution_clock::now();
         clFTensor derivative;
         derivative.copy(layers_output[i + 1], queue, false);
+        // std::cout << "Derivative " << i << ":\n" << derivative;
         af::applyDerivativeAF(activation_functions[i], derivative, queue);
+        // std::cout << "Derivative AF " << i << ":\n" << derivative;
         derivative.iphadamard(error, queue);
+        // std::cout << "Hadamard " << i << ":\n" << derivative;
         error = clFTensor::batchedGemm(1.0f, true, weights[i], false, derivative, queue);
+        // std::cout << "Error " << i << ":\n" << error;
 
         clFTensor gradient =
                 clFTensor::batchedGemm(1.0f, false, derivative, true, layers_af_output[i], queue);
+        // std::cout << "Gradient " << i << ":\n" << gradient;
 
+        // auto end = std::chrono::high_resolution_clock::now();
+        // auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        // ss << queue() << ": " << i << " layer: Backward pass took " << elapsed.count() << "us"
+        //    << std::endl;
+        // start = std::chrono::high_resolution_clock::now();
+        //  Reduce the gradient to a single matrix
         clFMatrix collapsed_gradient = gradient.sumCollapse(queue);
+        // std::cout << "Avg Gradients " << i << ":\n" << derivative;
+        //  end = std::chrono::high_resolution_clock::now();
+        //  elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        //  ss << queue() << ": " << i << " layer: Collapse took " << elapsed.count() << "us"
+        //     << std::endl;
 
+        // start = std::chrono::high_resolution_clock::now();
         updater.add(i, collapsed_gradient, gradient.getDepth(), queue);
+        // end = std::chrono::high_resolution_clock::now();
+        // elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        // ss << queue() << ": " << i << " layer: add took " << elapsed.count() << "us" <<
+        // std::endl;
       }
+      // std::cout << ss.str();
       return error;
     }
   }   // namespace
@@ -98,6 +129,7 @@ namespace nnet {
     for (size_t i = 0; i < weight_updates.size(); i++) {
       weight_updates[i].ipadd(1.0f, other[i], queue);
     }
+    // Todo: Verify that it's necessary (merge)
     contribution += other.contribution;
   }
 
@@ -154,14 +186,7 @@ namespace nnet {
     return caches;
   }
 
-  std::unique_ptr<MLPOptimizer::Operation> MLPOptimizer::makeMLPOperation() {
-    return std::make_unique<Operation>(*this);
-  }
-
-  std::unique_ptr<Optimizer::Operation> MLPOptimizer::makeOperationImpl() {
-    std::cout << "MLPOptimizer::makeOperationImpl()" << std::endl;
-    return std::make_unique<Operation>(*this);
-  }
+  MLPOptimizer::Operation *MLPOptimizer::makeOperationImpl() { return new Operation(*this); }
 
   clFTensor MLPOptimizer::optimize(const clFTensor &inputs, const clFTensor &targets,
                                    WeightUpdateCache &cache, cl::CommandQueue &queue) {
@@ -179,13 +204,13 @@ namespace nnet {
   math::clFTensor MLPOptimizer::Operation::computeGradient(size_t thread_rank,
                                                            const math::clFTensor &inputs,
                                                            const math::clFTensor &targets,
-                                                           cl::CommandQueue batch_queue) {
+                                                           cl::CommandQueue queue) {
     if (thread_rank > caches.size())
       throw std::invalid_argument("Error: Only " + std::to_string(caches.size()) +
                                   " caches reserved, tried to access cache " +
                                   std::to_string(thread_rank));
-    caches[thread_rank]->acquireBuffer(batch_queue);
-    return optimizer->optimize(inputs, targets, *caches[thread_rank], batch_queue);
+    caches[thread_rank]->acquireBuffer(queue);
+    return optimizer->optimize(inputs, targets, *caches[thread_rank], queue);
   }
 
   void MLPOptimizer::Operation::reserveCaches(size_t num_threads) {

@@ -14,33 +14,34 @@ namespace nnet {
 
     auto &cnn = res->getCnn();
     cnn.setTopology(topology);
-    // TODO: Implement random initialization
-    // cnn.randomizeWeight();
+    cnn.randomizeWeight();
 
-    const size_t size = 10;   // cnn.getOutputSize();
+    const size_t size = cnn.getTopology().getCNNOutputSize();
     mlp_topology.pushFront(size);
 
     auto &mlp = res->getMlp();
     mlp.setTopology(mlp_topology);
-    mlp.setActivationFunction(af::ActivationFunctionType::sigmoid);
+    // TODO : check comment on init la fonction d activation
+    mlp.setActivationFunction(af::ActivationFunctionType::relu);
     mlp.randomizeWeight();
 
     return res;
   }
 
-  clFTensor CNNModel::predict(clFTensor const &inputs) const {
-    clFTensor flatten = cnn->predict(inputs);
+  math::clFTensor CNNModel::predict(cl::CommandQueue &queue, math::clFTensor const &inputs) const {
+    math::clFTensor flattens = cnn->predict(queue, inputs);
 
-    // return mlp->predict(flatten);
+    std::cout << "output cnn : " << flattens << std::endl; 
 
-    return clFTensor(1, 1, 1);
+    return mlp->predict(flattens);
   }
 
-  clFMatrix CNNModel::predict(clFMatrix const &input) const {
-    clFTensor buffer(input.getRows(), input.getCols(), 1);
-    buffer[0].copy(input, true);
+  math::clFMatrix CNNModel::predict(cl::CommandQueue &queue, math::clFMatrix const &input) const {
+    math::clFTensor buffer(input.getRows(), input.getCols(), 1);
+    buffer[0].copy(input, queue, true);
 
-    return cnn->predict(buffer)[0];
+    math::clFTensor flattens = cnn->predict(queue, buffer);
+    return mlp->predict(flattens)[0];
   }
 
 }   // namespace nnet

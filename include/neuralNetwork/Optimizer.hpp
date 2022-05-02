@@ -7,26 +7,22 @@
 namespace nnet {
 
   /**
-   * @brief Base class for all optimizers
+   * @brief Interface class for all optimizers
    */
   class Optimizer {
-  private:
-    class ModelUpdateContainer;
-
   public:
     class Operation;
 
     virtual ~Optimizer() = default;
 
-    virtual /**
-             * @brief Return an operation that can be used to handle the optimization process. This
-             * object should be fed to a OptimizationScheduler.
-             * @return A pointer to an OptimizationScheduler.
-             */
-            std::unique_ptr<Operation>
-            makeOperation() {
-      std::cout << "Optimizer::makeOperation()" << std::endl;
-      return makeOperationImpl();
+    /**
+     * @brief Return an operation that can be used to handle the optimization process. This object
+     * should be fed to a OptimizationScheduler.
+     * @return A pointer to an OptimizationScheduler.
+     */
+    virtual std::unique_ptr<Operation> makeOperation() {
+      auto *ptr = makeOperationImpl();
+      return std::unique_ptr<Operation>(ptr);
     }
 
     /**
@@ -37,19 +33,21 @@ namespace nnet {
     virtual void update() = 0;
 
   private:
-
-    virtual std::unique_ptr<Operation> makeOperationImpl() = 0;
+    virtual Operation *makeOperationImpl() = 0;
   };
 
   /**
-   * @brief Interface for an optimizer operation. An optimizer operation receives some inputs, and
-   * must run the optimization algorithm on them. Any changes to the model must be cached. At the
-   * end of the training epoch, the optimizer operation shall be called to update the model using
-   * the cached changes.
+   * @brief High level interface that wraps the Optimizer and provides parallelism
+   * capabilities.
    *
-   * Multiple thread may use the same optimizer operation concurrently, and the optimizer operation
-   * may be called multiple times in a row. The updateModel() operation should apply all the
-   * changes that were cached since the last call.
+   * An optimizer operation receives some inputs, and runs the optimization algorithm on them. Any
+   * changes to the model must be cached. At the end of the training epoch, the optimizer operation
+   * shall be called to update the model using the cached changes.
+   *
+   * Multiple thread must be able use the same optimizer operation concurrently, and the optimizer
+   * operation may be called multiple times in a row without an update.
+   *
+   * The operation should apply all the changes that were cached since the last update.
    */
   class Optimizer::Operation {
   public:
@@ -91,8 +89,22 @@ namespace nnet {
     }
 
   private:
+    /**
+     * @brief Sums all the changes in the caches
+     * @param queue
+     */
     virtual void reduceAll(cl::CommandQueue &queue) = 0;
+
+    /**
+     * @brief Apply all the changes to the model
+     * @param queue
+     */
     virtual void applyChanges(cl::CommandQueue &queue) = 0;
+
+    /**
+     * @brief Clear all the caches
+     * @param queue
+     */
     virtual void clearChanges(cl::CommandQueue &queue) = 0;
   };
 }   // namespace nnet
