@@ -33,6 +33,11 @@ void setupLogger() {
 // for production use.
 bool createAndTrain(std::filesystem::path const &input_path,
                     std::filesystem::path const &output_path) {
+  int rank = 0;
+  int comm_size = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+
   tscl::logger("Current version: " + tscl::Version::current.to_string(), tscl::Log::Debug);
   tscl::logger("Output path: " + output_path.string(), tscl::Log::Debug);
 
@@ -69,11 +74,11 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // Uncomment to display a ncurses-based UI for platform selection
   // Take care to only call initOpenCL ONCE!
   utils::clWrapper::initOpenCL(*utils::clWrapper::makeDefault());
-  std::vector<cl::Device> allowed_devices = utils::cl_wrapper.getDevices();
-
+  std::vector<cl::Device> allowed_devices;
+  size_t n_devices = utils::cl_wrapper.getDevices().size();
   // Just truncate the list of devices to kMaxDeviceCount (We assume every device is the same for
   // the sake of simplicity)
-  allowed_devices.resize(kMaxDeviceCount);
+  allowed_devices.push_back(utils::cl_wrapper.getDevices()[rank % n_devices]);
   // This is pretty bad design, but it'll simplify the benchmarking process
   // Not intended for production code
   utils::cl_wrapper.restrictDevicesTo(allowed_devices);
@@ -81,10 +86,6 @@ bool createAndTrain(std::filesystem::path const &input_path,
   // Do not add the output size, it is automatically set to the number of classes
   MLPTopology topology = {kImageSize * kImageSize, 64, 64, 64, 64};
 
-  int rank = 0;
-  int comm_size = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
   mpiw::TrainingCollectionScatterer scatterer(MPI_COMM_WORLD);
   std::unique_ptr<TrainingCollection> local_collection;
@@ -141,6 +142,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   MPIParallelScheduler::Builder scheduler_builder;
   std::cout << "batch size : " << static_cast<size_t>(kBatchSize / comm_size) << std::endl;
+  assert(local_collection->getTargets().empty() == false);
   scheduler_builder.setJob({static_cast<size_t>(kBatchSize / comm_size),
                             local_collection->getTrainingSet().getTensors(),
                             local_collection->getTargets()});

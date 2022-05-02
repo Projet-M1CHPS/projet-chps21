@@ -99,9 +99,9 @@ namespace control {
 
     std::vector<TrainingCollection> splitTrainingSet(size_t npart) const;
 
-  private:
     void makeTrainingTargets();
 
+  private:
     InputSet training_set;
     InputSet eval_set;
     // Temporary solution, this should probably moved elsewhere

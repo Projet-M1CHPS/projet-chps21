@@ -146,6 +146,9 @@ namespace mpiw {
         recv_collection.getTrainingSet().append(std::move(image_pack.getTensor()),
                                                 image_pack.getIds(), image_pack.getClassIds());
       }
+
+      recv_collection.makeTrainingTargets();
+      assert(recv_collection.getTargets().empty() == false);
       return recv_collection;
     }
 
@@ -159,7 +162,7 @@ namespace mpiw {
       for (const auto &c : classes) {
         size_t len = c.size() + 1;
         MPI_Bcast(&len, 1, MPI_UNSIGNED_LONG, 0, comm);
-        MPI_Bcast((void *) c.data(), c.size() + 1, MPI_CHAR, 0, comm);
+        MPI_Bcast((void *) c.data(), (int) c.size() + 1, MPI_CHAR, 0, comm);
       }
     }
 
@@ -180,7 +183,7 @@ namespace mpiw {
         MPI_Bcast(&string_len, 1, MPI_UNSIGNED_LONG, 0, comm);
 
         std::string class_name(string_len, '\0');
-        MPI_Bcast((void *) class_name.data(), class_name.size(), MPI_CHAR, 0, comm);
+        MPI_Bcast((void *) class_name.data(), (int) class_name.size(), MPI_CHAR, 0, comm);
         classes.push_back(class_name);
       }
       return {dims[0], dims[1], classes};
@@ -193,15 +196,14 @@ namespace mpiw {
   }
 
   TrainingCollection
-  TrainingCollectionScatterer::scatter(const TrainingCollection &global_collection) {
+  TrainingCollectionScatterer::scatter(const TrainingCollection &global_collection) const {
     // Split the global collection into smaller parts
     std::vector<TrainingCollection> collections = global_collection.splitTrainingSet(size);
 
     // We can't have a process with no data, or can we ?
-    if (collections.size() != size) {
+    if (collections.size() != size)
       throw std::runtime_error("TrainingCollectionScatterer::scatter: number of collections is "
                                "not equal to number of processes");
-    }
 
     // Send the images width and height, as well as the classes names
     const auto &dataset = global_collection.getTrainingSet();
@@ -209,21 +211,19 @@ namespace mpiw {
                       global_collection.getClassNames());
 
 
-    for (size_t process_rank = 1; process_rank < size; ++process_rank) {
+    for (size_t process_rank = 1; process_rank < size; ++process_rank)
       sendCollection(process_rank, comm, collections[process_rank]);
-    }
 
+    collections[0].makeTrainingTargets();
     return std::move(collections[0]);
   }
 
-  control::TrainingCollection TrainingCollectionScatterer::receive(int source) {
-    if (rank == source) {
+  control::TrainingCollection TrainingCollectionScatterer::receive(int source) const {
+    if (rank == source)
       throw std::runtime_error("TrainingCollectionScatterer::receive: cannot receive from self");
-    }
 
-    if (source > size) {
+    if (source > size)
       throw std::runtime_error("TrainingCollectionScatterer::receive: invalid id for source");
-    }
 
     // Receive the metadata from the master
     auto [height, width, classes] = broadcastMetadata(comm);

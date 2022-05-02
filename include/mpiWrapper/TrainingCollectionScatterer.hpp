@@ -24,14 +24,14 @@ namespace mpiw {
      * @param global_collection The collection to scatter among all the processes.
      * @return The local collection that should be used by the current process.
      */
-    control::TrainingCollection scatter(const control::TrainingCollection &global_collection);
+    control::TrainingCollection scatter(const control::TrainingCollection &global_collection) const;
 
     /**
      * @brief Receive a training collection from another process.
      * @param source The source process.
      * @return A sub collection that the current process should use
      */
-    control::TrainingCollection receive(int source);
+    control::TrainingCollection receive(int source) const;
 
   private:
     int rank, size;

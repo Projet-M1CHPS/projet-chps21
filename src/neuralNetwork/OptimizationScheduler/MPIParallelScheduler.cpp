@@ -90,7 +90,7 @@ namespace nnet {
     size_t current_comm_index = 0;
     for (size_t current_size = 0; current_size < global_work_size; current_size += batch_size) {
       if (current_size >= sub_comms[current_comm_index].first)
-        mpi_op->setCommunicator(sub_comms[current_comm_index++].second);
+        mpi_op->setCommunicator(sub_comms[++current_comm_index].second);
 
       size_t current_batch_size = std::min(global_work_size - current_size, batch_size);
       batch_dispatcher->dispatch(progression, current_batch_size,
