@@ -1,6 +1,6 @@
 #pragma once
+#include "BatchLocation.hpp"
 #include "BatchOptimizationScheduler.hpp"
-#include "BatchProgression.hpp"
 #include "ParallelScheduler.hpp"
 #include <mpi.h>
 

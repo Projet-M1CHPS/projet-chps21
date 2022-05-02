@@ -76,7 +76,7 @@ namespace nnet {
       std::vector<MPI_Request> requests(send_weight_updates.size());
       for (size_t i = 0; i < send_weight_updates.size(); i++) {
         auto &mat = send_weight_updates[i];
-        int rows = (int) mat.getRows(), cols = (int) mat.getCols(), matrix_size = (int) mat.size();
+        int matrix_size = (int) mat.size();
         recv_raw_matrices[i].resize((rank == 0) ? n_process * matrix_size : 0);
 
         // Gather raw matrices from all processes
@@ -159,9 +159,7 @@ namespace nnet {
     MLPOptimizer::Operation::clearChanges(queue);
   }
 
-  std::unique_ptr<Optimizer::Operation> MPIMLPOptimizer::makeOperationImpl() {
-    return std::make_unique<MPIMLPOptimizer::Operation>(*this);
-  }
+  MLPOptimizer::Operation *MPIMLPOptimizer::makeOperationImpl() { return new Operation(*this); }
 
 
   MPI_Comm MPIMLPOptimizer::Operation::getCommunicator() const { return current_comm; }

@@ -141,9 +141,9 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
   MPIParallelScheduler::Builder scheduler_builder;
   std::cout << "batch size : " << static_cast<size_t>(kBatchSize / comm_size) << std::endl;
-  auto targets = local_collection->makeTargets();
   scheduler_builder.setJob({static_cast<size_t>(kBatchSize / comm_size),
-                            local_collection->getTrainingSet().getTensors(), targets});
+                            local_collection->getTrainingSet().getTensors(),
+                            local_collection->getTargets()});
   // Set the resources for the scheduler
   scheduler_builder.setMaxThread(kMaxThread, kAllowMultipleThreadPerDevice);
   scheduler_builder.setDevices(utils::cl_wrapper.getDevices());
@@ -160,7 +160,6 @@ bool createAndTrain(std::filesystem::path const &input_path,
   logger("[P" + std::to_string(rank) + "]: Starting run", tscl::Log::Debug);
   MPITrainingController controller(kMaxEpoch, evaluator, *scheduler);
   controller.setVerbose(true);
-
   ControllerResult res = controller.run();
   // Ensure the profiler dumps to disk cleanly
   // sc_profiler.finish();

@@ -52,6 +52,7 @@ namespace control {
     void updateClasses(const std::vector<std::string> &class_names) {
       training_set.updateClasses(class_names);
       eval_set.updateClasses(class_names);
+      makeTrainingTargets();
     }
 
     const std::vector<std::string> &getClassNames() const { return eval_set.getClasses(); }
@@ -95,6 +96,8 @@ namespace control {
     }
 
     const std::vector<math::clFTensor> &getTargets() { return training_targets; }
+
+    std::vector<TrainingCollection> splitTrainingSet(size_t npart) const;
 
   private:
     void makeTrainingTargets();

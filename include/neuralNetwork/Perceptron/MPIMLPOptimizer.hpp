@@ -21,7 +21,7 @@ namespace nnet {
     // std::unique_ptr<Operation> makeMLPOperation() override;
 
   private:
-    std::unique_ptr<Optimizer::Operation> makeOperationImpl() override;
+    nnet::MLPOptimizer::Operation *makeOperationImpl() override;
   };
 
 

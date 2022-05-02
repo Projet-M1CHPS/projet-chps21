@@ -20,7 +20,7 @@ namespace nnet {
      * should be fed to a OptimizationScheduler.
      * @return A pointer to an OptimizationScheduler.
      */
-    virtual std::unique_ptr<Operation> makeOperation() {
+    std::unique_ptr<Operation> makeOperation() {
       auto *ptr = makeOperationImpl();
       return std::unique_ptr<Operation>(ptr);
     }

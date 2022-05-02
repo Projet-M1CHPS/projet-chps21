@@ -80,7 +80,7 @@ namespace nnet {
     size_t global_work_size = job.getGlobalWorkSize();
     size_t batch_size = job.getBatchSize();
 
-    BatchProgression progression(job.getInputs(), job.getTargets());
+    BatchLocation progression(job.getInputs(), job.getTargets());
 
     // As processes do not have the same work_size, we synchronize them into sub-communicators
     auto sub_comms = synchronizeGlobalWorkSize(global_work_size);

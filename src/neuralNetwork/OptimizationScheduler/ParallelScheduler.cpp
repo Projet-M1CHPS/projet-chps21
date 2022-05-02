@@ -132,9 +132,14 @@ namespace nnet {
       : BatchOptimizationScheduler(job), batch_dispatcher(std::move(dispatcher)),
         optimizer(&optimizer) {
     bool tensors_ok = checkTensorsSize(job.getInputs(), job.getTargets());
-    if (not tensors_ok or not job.isValid()) {
+    if (not tensors_ok) {
+      tscl::logger("job.getInputs().size() != job.getTargets().size(): " +
+                           std::to_string(job.getInputs().size()) +
+                           " != " + std::to_string(job.getTargets().size()),
+                   tscl::Log::Error);
       throw std::runtime_error("ParallelScheduler::ParallelScheduler: Tensors size mismatch");
-    }
+    } else if (not job.isValid())
+      throw std::runtime_error("ParallelScheduler::ParallelScheduler: Invalid job");
     optimizer_operation = optimizer.makeOperation();
   }
 

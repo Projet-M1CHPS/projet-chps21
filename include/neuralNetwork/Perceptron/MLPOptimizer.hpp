@@ -70,9 +70,9 @@ namespace nnet {
       std::vector<std::unique_ptr<WeightUpdateCache>> caches;
       MLPOptimizer *optimizer;
 
-      void reduceAll(cl::CommandQueue &queue) override;
-      void applyChanges(cl::CommandQueue &queue) override;
-      void clearChanges(cl::CommandQueue &queue) override;
+      virtual void reduceAll(cl::CommandQueue &queue) override;
+      virtual void applyChanges(cl::CommandQueue &queue) override;
+      virtual void clearChanges(cl::CommandQueue &queue) override;
     };
 
     /**
@@ -121,7 +121,7 @@ namespace nnet {
       // C++ doesn't support covariance with smart pointers
       // We use raw pointers here, before encapsulating them
       auto *ptr = makeOperationImpl();
-      return std::unique_ptr<Operation>(ptr);
+      return std::unique_ptr<MLPOptimizer::Operation>(ptr);
     }
 
     /**

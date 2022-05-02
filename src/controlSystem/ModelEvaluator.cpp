@@ -25,7 +25,10 @@ namespace control {
     // On huge input sets, the evaluation can take quite some time
     // No reason not to use OpenMP here
 #pragma omp declare reduction (add_matrix : math::Matrix<size_t> : omp_out += omp_in ) initializer ( omp_priv(omp_orig) )
-#pragma omp parallel for reduction(add_matrix: confusion_matrix) schedule(dynamic) default(none) shared(input_set, model) num_threads(1) // 4 max thread to avoid overloading the GPU
+#pragma omp parallel for reduction(add_matrix                                                      \
+                                   : confusion_matrix) schedule(dynamic) default(none)             \
+        shared(input_set, model, utils::cl_wrapper)                                                \
+                num_threads(1)   // 4 max thread to avoid overloading the GPU
     for (auto &input : input_set) {
       long true_class = input.getClass();
       auto buf = model.predict(utils::cl_wrapper.getDefaultQueue(), input.getData());
