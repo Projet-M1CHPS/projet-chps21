@@ -61,34 +61,48 @@ namespace nnet {
       MPI_Comm_size(comm, &n_process);
       assert(n_process > 1);
 
+      // Preparing buffers to send
       auto &send_weight_updates = send_cache->getWeightUpdates();
+      std::vector<void *> send_mat_ptrs(send_weight_updates.size());
+      for (size_t i = 0; i < send_weight_updates.size(); i++)
+        send_mat_ptrs[i] = enqueueMapBuffer(send_weight_updates[i].getBuffer(), CL_FALSE,
+                                            CL_MAP_READ, send_weight_updates[i].getOffsetInBytes(),
+                                            send_weight_updates[i].sizeInBytes());
+      utils::cl_wrapper.getDefaultQueue().finish();
 
       // Gathering
       std::vector<std::vector<math::clFMatrix>> recv_weight_updates((rank == 0) ? n_process : 0);
-      std::vector<float> recv_raw_matrices;
-      cl::CommandQueue q = cl::CommandQueue::getDefault();
-      for (auto &mat : send_weight_updates) {
-        int rows = (int) mat.getRows(), cols = (int) mat.getCols();
-        int matrix_size = (int) mat.size();
-        recv_raw_matrices.resize((rank == 0) ? n_process * matrix_size : 0);
+      std::vector<std::vector<float>> recv_raw_matrices(send_weight_updates.size());
+      std::vector<MPI_Request> requests(send_weight_updates.size());
+      for (size_t i = 0; i < send_weight_updates.size(); i++) {
+        auto &mat = send_weight_updates[i];
+        int rows = (int) mat.getRows(), cols = (int) mat.getCols(), matrix_size = (int) mat.size();
+        recv_raw_matrices[i].resize((rank == 0) ? n_process * matrix_size : 0);
 
         // Gather raw matrices from all processes
-        void *send_mat_ptr = q.enqueueMapBuffer(mat.getBuffer(), CL_TRUE, CL_MAP_READ, 0,
-                                                matrix_size * sizeof(float));
-        MPI_Gather(send_mat_ptr, matrix_size, MPI_FLOAT, recv_raw_matrices.data(), matrix_size,
-                   MPI_FLOAT, 0, comm);
-        if (rank > 0) q.enqueueUnmapMemObject(mat.getBuffer(), send_mat_ptr);
 
+        MPI_Igather(send_mat_ptrs[i], matrix_size, MPI_FLOAT, recv_raw_matrices[i].data(),
+                    matrix_size, MPI_FLOAT, 0, comm, &requests[i]);
+      }
+
+      for (size_t i = 0; i < send_weight_updates.size(); i++) {
+        auto &mat = send_weight_updates[i];
+        int rows = (int) mat.getRows(), cols = (int) mat.getCols(), matrix_size = (int) mat.size();
+
+        // Wait for this request to finish
+        MPI_Wait(&requests[i], MPI_STATUS_IGNORE);
+
+        // Unmap buffers
+        enqueueUnmapMemObject(mat.getBuffer(), send_mat_ptrs[i]);
 
         if (rank == 0) {
           for (size_t p = 0; p < n_process; p++)
-            recv_weight_updates[p].emplace_back(recv_raw_matrices.data() + p * matrix_size, rows,
+            recv_weight_updates[p].emplace_back(recv_raw_matrices[i].data() + p * matrix_size, rows,
                                                 cols, true);
-
-          recv_raw_matrices.clear();
         }
       }
-      q.finish();
+
+      utils::cl_wrapper.getDefaultQueue().finish();
       return recv_weight_updates;
     }
   }   // namespace
