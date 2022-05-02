@@ -17,19 +17,12 @@ namespace nnet {
     MPI_Comm newCommWith(const std::vector<int> &ranks_to_keep) {
       int rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
       MPI_Comm new_comm;
       MPI_Group world_group;
       MPI_Comm_group(MPI_COMM_WORLD, &world_group);
       MPI_Group new_group;
       MPI_Group_incl(world_group, (int) ranks_to_keep.size(), ranks_to_keep.data(), &new_group);
-
       MPI_Comm_create(MPI_COMM_WORLD, new_group, &new_comm);
-      if (std::any_of(ranks_to_keep.begin(), ranks_to_keep.end(),
-                      [rank](int r) { return r == rank; }))
-        assert(new_comm != MPI_COMM_NULL);
-      else
-        assert(new_comm == MPI_COMM_NULL);
       return new_comm;
     }
 
@@ -74,8 +67,6 @@ namespace nnet {
 
       return createSubCommunicators(processes_work_sizes);
     }
-
-    void synchronizeBiases() {}
   }   // anonymous namespace
 
 
@@ -93,9 +84,6 @@ namespace nnet {
 
     // As processes do not have the same work_size, we synchronize them into sub-communicators
     auto sub_comms = synchronizeGlobalWorkSize(global_work_size);
-
-    // Synchronize the biases (as they are randomly initialized)
-    synchronizeBiases();
 
     auto mpi_op = (MPIMLPOptimizer::Operation *) optimizer_operation.get();
     mpi_op->setCommunicator(sub_comms.front().second);

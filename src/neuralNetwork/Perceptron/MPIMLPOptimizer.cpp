@@ -4,6 +4,39 @@ using namespace math;
 
 namespace nnet {
   namespace {
+    /**
+     * @before caches.at(0)->contribution is the mean contribution of all processes
+     * @brief Broadcast the contribution & 0-th cache matrices to all processes
+     */
+    void synchronizeModel(const MPI_Comm &current_comm,
+                          const std::vector<math::clFMatrix> &weights) {
+      int rank = 0, n_process = 0;
+      MPI_Comm_rank(current_comm, &rank);
+      MPI_Comm_size(current_comm, &n_process);
+
+      if (n_process == 1) return;
+
+      // Map asynchronous buffer for weight_updates
+      std::vector<void *> data_ptrs(weights.size());
+      data_ptrs.reserve(weights.size());
+      for (size_t i = 0; i < weights.size(); i++)
+        data_ptrs[i] = enqueueMapBuffer(weights[i].getBuffer(), CL_FALSE,
+                                        rank == 0 ? CL_MAP_READ : CL_MAP_WRITE,
+                                        weights[i].getOffsetInBytes(), weights[i].sizeInBytes());
+      utils::cl_wrapper.getDefaultQueue().finish();
+
+      // Broadcast weight_updates
+      std::vector<MPI_Request> requests(weights.size());
+      for (size_t i = 0; i < weights.size(); i++)
+        MPI_Ibcast(data_ptrs[i], (int) weights[i].size(), MPI_FLOAT, 0, current_comm, &requests[i]);
+      MPI_Waitall((int) requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+
+      // Unmap buffers
+      for (size_t i = 0; i < weights.size(); i++)
+        enqueueUnmapMemObject(weights[i].getBuffer(), data_ptrs[i]);
+      utils::cl_wrapper.getDefaultQueue().finish();
+    }
+
     std::vector<size_t>
     gatherContributions(const std::unique_ptr<MLPOptimizer::WeightUpdateCache> &send_cache,
                         MPI_Comm &comm) {
@@ -105,7 +138,7 @@ namespace nnet {
   void MPIMLPOptimizer::Operation::applyChanges(cl::CommandQueue &queue) {
     MLPOptimizer::Operation::applyChanges(queue);
     queue.finish();
-    synchronizeModel();
+    synchronizeModel(current_comm, optimizer->getNeuralNetwork()->getWeights());
   }
 
   void MPIMLPOptimizer::Operation::clearChanges(cl::CommandQueue &queue) {
@@ -117,38 +150,5 @@ namespace nnet {
   }
 
 
-  /**
-   * @before caches.at(0)->contribution is the mean contribution of all processes
-   * @brief Broadcast the contribution & 0-th cache matrices to all processes
-   */
-  void MPIMLPOptimizer::Operation::synchronizeModel() {
-    int rank = 0, n_process = 0;
-    MPI_Comm_rank(current_comm, &rank);
-    MPI_Comm_size(current_comm, &n_process);
-
-    if (n_process == 1) return;
-
-    auto &weights = optimizer->getNeuralNetwork()->getWeights();
-    // Map asynchronous buffer for weight_updates
-    std::vector<void *> data_ptrs(weights.size());
-    data_ptrs.reserve(weights.size());
-    for (size_t i = 0; i < weights.size(); i++)
-      data_ptrs[i] = enqueueMapBuffer(weights[i].getBuffer(), CL_FALSE,
-                                      rank == 0 ? CL_MAP_READ : CL_MAP_WRITE,
-                                      weights[i].getOffsetInBytes(), weights[i].sizeInBytes());
-    utils::cl_wrapper.getDefaultQueue().finish();
-
-    // Broadcast weight_updates
-    std::vector<MPI_Request> requests(weights.size());
-    for (size_t i = 0; i < weights.size(); i++)
-      MPI_Ibcast(data_ptrs[i], (int) weights[i].size(), MPI_FLOAT, 0, current_comm, &requests[i]);
-    MPI_Waitall((int) requests.size(), requests.data(), MPI_STATUSES_IGNORE);
-
-    // Unmap buffers
-    for (size_t i = 0; i < weights.size(); i++)
-      enqueueUnmapMemObject(weights[i].getBuffer(), data_ptrs[i]);
-    utils::cl_wrapper.getDefaultQueue().finish();
-  }
-
-  MPI_Comm MPIMLPOptimizer::Operation::getCommunicator() { return current_comm; }
+  MPI_Comm MPIMLPOptimizer::Operation::getCommunicator() const { return current_comm; }
 }   // namespace nnet

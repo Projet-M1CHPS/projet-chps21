@@ -32,13 +32,12 @@ namespace nnet {
 
     void setCommunicator(MPI_Comm comm) { this->current_comm = comm; }
 
-    MPI_Comm getCommunicator();
+    [[nodiscard]] MPI_Comm getCommunicator() const;
 
   protected:
     void reduceAll(cl::CommandQueue &queue) override;
     void applyChanges(cl::CommandQueue &queue) override;
     void clearChanges(cl::CommandQueue &queue) override;
-    void synchronizeModel();
 
   private:
     MPI_Comm current_comm{};
