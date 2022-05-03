@@ -52,7 +52,7 @@ cd build && make test -j
 ```sh
 # Build the project if not done already
 cd build
-./bin/kress <path todataset> <output path>
+./bin/main <path todataset> <output path>
 ```
 
 Raw data will be outputted to \<output path\>/.
