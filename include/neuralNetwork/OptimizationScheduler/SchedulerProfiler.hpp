@@ -9,7 +9,7 @@ namespace nnet {
     /**
      * @brief Run the optimization process, using all the resources available in the scheduler.
      */
-    void run() override;
+    void run() override { std::cout << "SchedulerProfiler::run()" << std::endl; }
 
     void setVerbose(bool v) {
       verbose = v;

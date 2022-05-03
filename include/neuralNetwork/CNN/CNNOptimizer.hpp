@@ -107,7 +107,7 @@ namespace nnet {
                   WeightUpdateCache &cnn_cache, MLPOptimizer::WeightUpdateCache &mlp_cache,
                   cl::CommandQueue &queue);
 
-    std::unique_ptr<Operation> makeOperation();
+    std::unique_ptr<Optimizer::Operation> makeOperation();
 
     std::unique_ptr<WeightUpdateCache> makeCache();
     std::vector<std::unique_ptr<WeightUpdateCache>> makeCaches(size_t ncache);

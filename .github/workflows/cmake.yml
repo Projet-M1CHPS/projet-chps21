@@ -2,9 +2,9 @@ name: Run Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop-* ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop-* ]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -26,7 +26,7 @@ jobs:
 
       - name: install dependency
         run: |
-             sudo apt-get install -y doxygen gcovr libopenblas-dev libboost-all-dev \
+          sudo apt-get install -yq doxygen gcovr libopenblas-dev libboost-all-dev \
              libtbb-dev libblas-dev libncurses5-dev libncurses5 libcmocka-dev g++ pocl-opencl-icd libpocl-dev
 
       - name: install opencl

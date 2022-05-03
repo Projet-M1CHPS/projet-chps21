@@ -10,6 +10,7 @@ namespace control {
    */
   class ControllerResult {
   public:
+    ControllerResult() = default;
     ControllerResult(int code, const std::string &message);
     ControllerResult(int code, const std::runtime_error &exception);
 
@@ -33,6 +34,6 @@ namespace control {
 
   private:
     std::string message;
-    int return_code;
+    int return_code = 0;
   };
 }   // namespace control

@@ -22,7 +22,16 @@ namespace math {
     // And this would waste cpu time anyway
     if (size() == 0) return;
 
-    data = cl::Buffer(CL_MEM_READ_WRITE, rows * cols * sizeof(float));
+    try {
+      data = cl::Buffer(CL_MEM_READ_WRITE, rows * cols * sizeof(float));
+    } catch (cl::Error &err) {
+      std::cerr << "[clFMatrix::clFMatrix] ERROR: " << err.what() << "(" << err.err() << ")"
+                << std::endl;
+      std::cerr << "Size is: " << rows * cols * sizeof(float) << " bytes." << std::endl;
+      std::cerr << "Description here: https://streamhpc.com/blog/2013-04-28/opencl-error-codes/"
+                << std::endl;
+      throw err;
+    }
     queue.enqueueWriteBuffer(data, blocking, 0, rows * cols * sizeof(float), source);
   }
 

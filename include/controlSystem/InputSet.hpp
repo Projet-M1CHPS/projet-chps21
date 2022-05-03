@@ -19,7 +19,7 @@ namespace control {
      * @param data The raw data of the sample
      */
     Sample(size_t id, long class_id, math::clFMatrix &&data)
-        : id(id), class_id(class_id), data(std::move(data)) {}
+        : id(id), class_id(class_id), data(std::move(data)){};
 
     size_t getId() const { return id; }
 
@@ -106,6 +106,8 @@ namespace control {
      * invalidates any iterators
      */
     void shuffle();
+
+    void split(size_t nb_sets, std::vector<InputSet> &sub_sets) const;
 
     size_t getSize() const {
       std::shared_lock<std::shared_mutex> lock(mutex);
@@ -278,7 +280,48 @@ namespace control {
       class_names = std::move(classes);
     }
 
+    /**
+     * @brief Return the id for a specific sample in the input set
+     * @return The id of the sample
+     */
+    size_t getSampleId(size_t index) const {
+      std::scoped_lock lock(mutex);
+      return samples.at(index).getId();
+    }
+
+    /**
+     * @brief Return the id for each of the samples in the input set
+     * @return The id of each of the samples
+     */
+    std::vector<size_t> getSamplesIds() const {
+      std::scoped_lock lock(mutex);
+      std::vector<size_t> ids;
+      std::for_each(samples.cbegin(), samples.cend(),
+                    [&ids](const Sample &sample) { ids.push_back(sample.getId()); });
+      return ids;
+    }
+
+    /**
+     * @brief Return the class id for each of the samples in the input set
+     * @return The class id of each of the samples
+     */
+    std::vector<long> getSamplesClassIds() const {
+      std::scoped_lock lock(mutex);
+      std::vector<long> class_ids;
+      std::for_each(samples.cbegin(), samples.cend(),
+                    [&class_ids](const Sample &sample) { class_ids.push_back(sample.getClass()); });
+      return class_ids;
+    }
+
+    const std::vector<Sample> &getSamples() const;
+
   private:
+    // Split the tensors into nb_sets parts.
+    std::vector<std::vector<math::clFTensor>> splitTensors(size_t nb_sets) const;
+
+    // Split class names into nb_sets parts.
+    std::vector<std::vector<std::string>> splitClassNames(size_t nb_sets) const;
+
     // rows and cols dimension of the matrices/tensors
     size_t input_width = 0, input_height = 0;
 

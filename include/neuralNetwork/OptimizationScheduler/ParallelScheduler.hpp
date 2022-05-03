@@ -50,7 +50,6 @@ namespace nnet {
     void epochStart() override;
     void endEpoch() override;
 
-  private:
     std::unique_ptr<Dispatcher> batch_dispatcher;
     Optimizer *optimizer;
     std::unique_ptr<Optimizer::Operation> optimizer_operation;
@@ -123,9 +122,9 @@ namespace nnet {
      * @brielf Builds the parallel scheduler
      * @return
      */
-    std::unique_ptr<ParallelScheduler> build() const;
+    virtual std::unique_ptr<ParallelScheduler> build() const;
 
-  private:
+  protected:
     BatchSchedulerJob job;
 
     Optimizer *optimizer;
