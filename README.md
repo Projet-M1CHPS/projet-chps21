@@ -2,11 +2,13 @@
 
 [![Run Test](https://github.com/Thukisdo/projet-chps21/actions/workflows/cmake.yml/badge.svg)](https://github.com/Thukisdo/projet-chps21/actions/workflows/cmake.yml)
 
-This project is done in the context of the Master Calcul Haute Performance et Simulation at the Université de Versailles St-Quentin.
+This project is done in the context of the Master Calcul Haute Performance et Simulation at the Université de Versailles
+St-Quentin.
 
 The goal of this project is to implement a tool for breast cancer detection, and optimize it accordingly.
 
-While the first semester focused on the sequential implementation (Versions <= 0.5), the second semester sees us switching to a GPU backend for maximum performance and scalability.
+While the first semester focused on the sequential implementation (Versions <= 0.5), the second semester sees us
+switching to a GPU backend for maximum performance and scalability.
 
 Furthermore, we also this project as an opportunity to explore software architecture on a real scale.
 
@@ -56,11 +58,12 @@ cd build
 Raw data will be outputted to \<output path\>/.
 
 # Authors
-  
-  [Benjamin Lozes](https://github.com/byjtew)  \
-  [Ugo Battiston](https://github.com/johnkyky)  \
-  [Mathys JAM](https://github.com/Thukisdo)
+
+[Benjamin Lozes](https://github.com/byjtew)  \
+[Ugo Battiston](https://github.com/johnkyky)  \
+[Mathys Jam](https://github.com/Thukisdo)
 
 # Thanks to
-  [Mohammed-Salah Ibnamar](https://github.com/yaspr), for supervising us during this project \
-  Thomas Dufaud, for providing us access to a GPU cluster
+
+[Mohammed-Salah Ibnamar](https://github.com/yaspr), for supervising us during this project \
+Thomas Dufaud, for providing us access to a GPU cluster
