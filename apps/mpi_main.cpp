@@ -205,5 +205,5 @@ int main(int argc, char **argv) {
     return 1;
   }
   MPI_Finalize();
-  return ret;
+  return ret ? 0 : 1;
 }
