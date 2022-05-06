@@ -34,4 +34,61 @@ namespace af {
     return pair->second;
   }
 
+  std::pair<cl::Kernel, cl::Kernel> getAFKernelFromType(ActivationFunctionType type,
+                                                        utils::clWrapper &wrapper) {
+    auto &map = wrapper.getKernels();
+    switch (type) {
+      case ActivationFunctionType::identity:
+        return {map.getKernel("ActivationFunction.cl", "identity"),
+                map.getKernel("ActivationFunction.cl", "didentity")};
+      case ActivationFunctionType::sigmoid:
+        return {map.getKernel("ActivationFunction.cl", "sigmoid"),
+                map.getKernel("ActivationFunction.cl", "dsigmoid")};
+      case ActivationFunctionType::relu:
+        return {map.getKernel("ActivationFunction.cl", "relu"),
+                map.getKernel("ActivationFunction.cl", "drelu")};
+      case ActivationFunctionType::leakyRelu:
+        return {map.getKernel("ActivationFunction.cl", "leakyRelu"),
+                map.getKernel("ActivationFunction.cl", "dleakyRelu")};
+      case ActivationFunctionType::square:
+        return {map.getKernel("ActivationFunction.cl", "square"),
+                map.getKernel("ActivationFunction.cl", "dsquare")};
+      default:
+        throw std::invalid_argument("getAFKernelFromType(): unknown activation function");
+    }
+  }
+
+
+  void applyAF(af::ActivationFunctionType type, math::clFMatrix &mat, cl::CommandQueue &queue) {
+    if (type == af::ActivationFunctionType::identity) return;
+    auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
+    afunc.setArg(0, mat.getBuffer());
+    queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.size(), cl::NullRange);
+  }
+
+  void applyAF(af::ActivationFunctionType type, math::clFTensor &mat, cl::CommandQueue &queue) {
+    if (type == af::ActivationFunctionType::identity) return;
+    auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).first;
+    afunc.setArg(0, mat.getBuffer());
+    queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.getDepth() * mat.getRows() * mat.getCols(),
+                               cl::NullRange);
+  }
+
+  void applyDerivativeAF(af::ActivationFunctionType type, math::clFMatrix &mat,
+                         cl::CommandQueue &queue) {
+    if (type == af::ActivationFunctionType::identity) return;
+    auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).second;
+    afunc.setArg(0, mat.getBuffer());
+    queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.getRows() * mat.getCols(), cl::NullRange);
+  }
+
+  void applyDerivativeAF(af::ActivationFunctionType type, math::clFTensor &mat,
+                         cl::CommandQueue &queue) {
+    if (type == af::ActivationFunctionType::identity) return;
+    auto afunc = af::getAFKernelFromType(type, utils::cl_wrapper).second;
+    afunc.setArg(0, mat.getBuffer());
+    queue.enqueueNDRangeKernel(afunc, cl::NullRange, mat.getDepth() * mat.getRows() * mat.getCols(),
+                               cl::NullRange);
+  }
+
 }   // namespace af

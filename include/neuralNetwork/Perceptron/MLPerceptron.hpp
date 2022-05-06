@@ -1,8 +1,11 @@
 #pragma once
 
-#include "Matrix.hpp"
+#include "ActivationFunction.hpp"
 #include "Utils.hpp"
-#include "neuralNetwork/ActivationFunction.hpp"
+#include "math/Matrix.hpp"
+#include "math/clFMatrix.hpp"
+#include "math/clFTensor.hpp"
+#include "openclUtils/clWrapper.hpp"
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -12,14 +15,25 @@
 
 namespace nnet {
 
+  /**
+   * @brief Describes the layers of a multilayer perceptron.
+   */
   class MLPTopology {
     friend std::ostream &operator<<(std::ostream &os, const MLPTopology &topology);
 
   public:
+    /**
+     * @brief Builds a topology from a space separated string
+     * @param str
+     * @return
+     */
+    static MLPTopology fromString(const std::string &str);
+
     MLPTopology() = default;
     MLPTopology(std::initializer_list<size_t> list) : layers(list) {}
-    explicit MLPTopology(std::vector<size_t> sizes) : layers(std::move(sizes)) {}
 
+    explicit MLPTopology(std::vector<size_t> sizes) : layers(std::move(sizes)) {}
+    explicit MLPTopology(std::vector<size_t> &&sizes) : layers(std::move(sizes)) {}
 
     size_t &operator[](size_t i) {
       if (i > layers.size()) { throw std::out_of_range("Index out of range"); }
@@ -32,13 +46,45 @@ namespace nnet {
     }
 
     [[nodiscard]] size_t getInputSize() const { return layers.empty() ? 0 : layers.front(); }
-    void setInputSize(size_t i) { layers.front() = i; }
+    void setInputSize(size_t i) {
+      if (layers.empty()) {
+        layers.push_back(i);
+      } else {
+        layers[0] = i;
+      }
+    }
 
     [[nodiscard]] size_t getOutputSize() const { return layers.empty() ? 0 : layers.back(); }
-    void setOutputSize(size_t i) { layers.back() = i; }
-    void push_back(size_t i) { layers.push_back(i); }
+    void setOutputSize(size_t i) {
+      if (layers.empty()) {
+        layers.push_back(i);
+      } else {
+        layers[layers.size() - 1] = i;
+      }
+    }
 
+    /**
+     * @brief Insert a layer to the front of the topology
+     * @param i
+     */
+    void pushFront(size_t i) { layers.insert(layers.begin(), i); }
+
+    /**
+     * @brief Append a layer to the back of the topology
+     * @param i
+     */
+    void pushBack(size_t i) { layers.push_back(i); }
+
+    /**
+     * @brief Returns true if the topology is empty
+     * @return
+     */
     [[nodiscard]] bool empty() const { return layers.empty(); }
+
+    /**
+     * @brief Returns the number of layers in the topology
+     * @return
+     */
     [[nodiscard]] size_t size() const { return layers.size(); }
 
     using iterator = std::vector<size_t>::iterator;
@@ -47,7 +93,6 @@ namespace nnet {
     iterator begin() { return layers.begin(); }
     iterator end() { return layers.end(); }
 
-    static MLPTopology fromString(const std::string &str);
     [[nodiscard]] const_iterator begin() const { return layers.begin(); }
     [[nodiscard]] const_iterator end() const { return layers.end(); }
 
@@ -56,64 +101,54 @@ namespace nnet {
   };
 
   /**
-   * @brief Base interface for MLPerceptron
+   * @brief A multilayer Perceptron neural network
    *
    */
-  class MLPBase {
+  class MLPerceptron final {
   public:
-    MLPBase() = default;
-
-    virtual ~MLPBase() = default;
-
-    virtual void setTopology(MLPTopology const &topology) = 0;
-    [[nodiscard]] MLPTopology const &getTopology() const { return topology; }
-
-    virtual void randomizeWeight() = 0;
-
-  protected:
-    MLPTopology topology;
-  };
-
-  /**
-   * @brief A neural network that supports most fp precision as template
-   * parameters
-   *
-   * @tparam real
-   */
-  class MLPerceptron final : public MLPBase {
-  public:
-
     /**
      * @brief Construct a new Neural Network object with no layer
      *
      */
-    MLPerceptron() = default;
+    explicit MLPerceptron(const MLPTopology &topology = {});
 
-    MLPerceptron(const MLPerceptron &other) = default;
+    MLPerceptron(const MLPerceptron &other) { *this = other; }
+    MLPerceptron &operator=(const MLPerceptron &);
 
     MLPerceptron(MLPerceptron &&other) noexcept = default;
+    MLPerceptron &operator=(MLPerceptron &&) noexcept = default;
 
-    MLPerceptron &operator=(const MLPerceptron &) = default;
-    MLPerceptron &operator=(MLPerceptron &&other) noexcept = default;
-
-    /** @brief Runs the neural network on the inputs
-     * The outputs are returned as a matrix of reals
-     *
-     * @tparam iterator
-     * @param begin
-     * @param end
+    /**
+     * @brief Predict the output of the neural network on the given input
+     * Uses the next available queue
+     * @param input
      * @return
      */
-    math::FloatMatrix predict(math::FloatMatrix const &input) const;
+    math::clFMatrix predict(cl::CommandQueue &queue, math::clFMatrix const &input) const;
+
+    math::clFMatrix predict(math::clFMatrix const &input) const;
+
+
+    /**
+     * @brief Predict the output of the neural network on the given input
+     * Uses the next available queue
+     * @param input
+     * @return
+     */
+    math::clFTensor predict(cl::CommandQueue &queue, math::clFTensor const &input) const;
+    math::clFTensor predict(math::clFTensor const &input) const;
+
+
+    [[nodiscard]] MLPTopology const &getTopology() const { return topology; }
 
     /**
      * @brief Take a vector of sizes correspondig to the number of neurons
      * in each layer and build the network accordingly. Note that weights are not
      * initialized after this.
-     *
-     * @param layers
+
+     * @param topology
      */
-    void setTopology(MLPTopology const &topology) override;
+    void setTopology(MLPTopology const &topology);
     void setActivationFunction(af::ActivationFunctionType type) {
       for (auto &activation_function : activation_functions) { activation_function = type; }
     }
@@ -131,22 +166,20 @@ namespace nnet {
     /**
      * @brief Randomizes the weights and biases of the network
      *
-     * @param seed
      */
-    void randomizeWeight() override;
+    void randomizeWeight();
 
-    [[nodiscard]] std::vector<math::FloatMatrix> &getWeights() { return weights; }
+    [[nodiscard]] std::vector<math::clFMatrix> &getWeights() { return weights; }
+    [[nodiscard]] const std::vector<math::clFMatrix> &getWeights() const { return weights; }
 
-    [[nodiscard]] const std::vector<math::FloatMatrix> &getWeights() const { return weights; }
-
-    [[nodiscard]] std::vector<math::FloatMatrix> &getBiases() { return biases; }
-
-    [[nodiscard]] const std::vector<math::FloatMatrix> &getBiases() const { return biases; }
-
+    [[nodiscard]] std::vector<math::clFMatrix> &getBiases() { return biases; }
+    [[nodiscard]] const std::vector<math::clFMatrix> &getBiases() const { return biases; }
 
   private:
-    std::vector<math::FloatMatrix> weights;
-    std::vector<math::FloatMatrix> biases;
+    MLPTopology topology;
+
+    std::vector<math::clFMatrix> weights;
+    std::vector<math::clFMatrix> biases;
 
     // We want every layer to have its own activation function
     std::vector<af::ActivationFunctionType> activation_functions;

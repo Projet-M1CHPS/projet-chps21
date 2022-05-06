@@ -8,30 +8,16 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_executable(
-        Math_test
-        Math_test.cpp
-        ${CMAKE_SOURCE_DIR}/include/Matrix.hpp
-)
-
-target_link_libraries(
-        Math_test PUBLIC
-        Utils
-        gtest_main
-        BLAS::BLAS
-)
-
 include(GoogleTest)
+add_subdirectory(math)
 add_subdirectory(image)
-add_subdirectory(controlSystem)
 add_subdirectory(neuralNetwork)
-add_subdirectory(interface)
 
-gtest_discover_tests(Math_test)
-if (COVERARE_ENABLED)
+if (COVERAGE_ENABLED)
     setup_target_for_coverage_gcovr_html(NAME coverage
             EXECUTABLE ctest -j
-            EXCLUDE "${CMAKE_SOURCE_DIR}/extern/*" "/usr/*" "${CMAKE_BINARY_DIR}/_deps/*" "${CMAKE_SOURCE_DIR}/test/*"
-            "${CMAKE_SOURCE_DIR}/apps/*"
+            # Ensure every file is compiled to generate gcov files
+            EXCLUDE "${CMAKE_SOURCE_DIR}/extern/*" "${CMAKE_BINARY_DIR}/_deps/*"
+            "${CMAKE_SOURCE_DIR}/test/*"
             )
 endif ()

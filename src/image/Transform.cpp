@@ -62,7 +62,7 @@ namespace image::transform {
    * @brief Sub-function for resizing (stable on both up-scaling and down-scaling, but not really
    * efficient on up-scaling)
    *
-   * @param factors Pair: (source.width-1)/(dest.width-1) ; (source.height-1)/(dest.height-1)
+   * @param factors Pair: (source.input_width-1)/(dest.input_width-1) ; (source.input_height-1)/(dest.input_height-1)
    * @param source source image
    * @param dest destination image
    */
@@ -104,15 +104,15 @@ namespace image::transform {
     }
   }
 
-  bool Crop::transform(GrayscaleImage &image) {
+  bool Crop::transform(GrayscaleImage &image) const {
     if (orig_x < 0 || orig_y < 0 || width <= 0 || height <= 0) {
       throw std::invalid_argument(
               "Crop can not be applied on this image: new origin needs to be greater or equal than "
               "(0,0) and new dimensions needs to be strictly greater than (0,0)");
     } else if (orig_x + width > image.getWidth()) {
-      throw std::invalid_argument("Crop::transform: orig_x + width > image.getWidth()");
+      throw std::invalid_argument("Crop::transform: orig_x + input_width > image.getWidth()");
     } else if (orig_y + height > image.getHeight()) {
-      throw std::invalid_argument("Crop::transform: orig_y + height > image.getHeight()");
+      throw std::invalid_argument("Crop::transform: orig_y + input_height > image.getHeight()");
     }
     const image::GrayscaleImage source =
             image;   // In order to modify the image ref, we first need to copy it.
@@ -125,7 +125,7 @@ namespace image::transform {
     return true;
   }
 
-  bool Resize::transform(GrayscaleImage &image) {
+  bool Resize::transform(GrayscaleImage &image) const {
     if (width <= 0 || height <= 0) {
       throw std::invalid_argument("Resize can not be applied on this image: new dimensions needs "
                                   "to be strictly greater than (0,0)");
@@ -143,7 +143,7 @@ namespace image::transform {
     return true;
   }
 
-  bool Restriction::transform(GrayscaleImage &image) {
+  bool Restriction::transform(GrayscaleImage &image) const {
     unsigned compare_step = desired_step + 1;
     std::for_each(image.begin(), image.end(), [compare_step](auto &e) {
       unsigned modulo_value = (e % compare_step);
@@ -153,7 +153,7 @@ namespace image::transform {
   }
 
   // TODO: Improve performance, really slow.
-  bool Filter::transform(GrayscaleImage &image) {
+  bool Filter::transform(GrayscaleImage &image) const {
     size_t dimension = 11;   // Needs to be odd (2n+1)
     size_t half_d = std::floor(dimension / 2.0);
     std::vector<float> filter = filtering_subfunctions::gaussianFilter(dimension);
@@ -177,7 +177,7 @@ namespace image::transform {
     return true;
   }
 
-  bool Edges::transform(GrayscaleImage &image) {
+  bool Edges::transform(GrayscaleImage &image) const {
     size_t cap = 50;   // over 1020
     int sobel_x[9] = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
     int sobel_y[9] = {-1, -2, -1, 0, 0, 0, 1, 2, 1};
@@ -207,7 +207,7 @@ namespace image::transform {
   }
 
 
-  bool Equalize::transform(GrayscaleImage &image) {
+  bool Equalize::transform(GrayscaleImage &image) const {
     std::vector<double> ratio_histogram = image.createRatioHistogram();
 
     std::vector<grayscale_t> associations(nb_colors);
@@ -226,13 +226,13 @@ namespace image::transform {
     std::for_each(image.begin(), image.end(), [cap](auto &e) { e = e <= cap ? 0U : 255U; });
   }
 
-  bool BinaryScale::transform(GrayscaleImage &image) {
+  bool BinaryScale::transform(GrayscaleImage &image) const {
     float half_brightness = max_brightness / 2.0;
     binaryScalingByCap(image, half_brightness);
     return true;
   }
 
-  bool BinaryScaleByMedian::transform(GrayscaleImage &image) {
+  bool BinaryScaleByMedian::transform(GrayscaleImage &image) const {
     std::vector<double> brightness_histogram = image.createRatioHistogram();
     grayscale_t median_brightness = 254;
     double cumul = 0.0;
@@ -247,7 +247,7 @@ namespace image::transform {
     return true;
   }
 
-  bool Inversion::transform(GrayscaleImage &image) {
+  bool Inversion::transform(GrayscaleImage &image) const {
     std::for_each(image.begin(), image.end(), [](auto &e) { e = max_brightness - e; });
     return true;
   }

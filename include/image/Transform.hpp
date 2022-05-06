@@ -23,7 +23,7 @@ namespace image::transform {
   class Transformation {
   public:
     virtual ~Transformation() = default;
-    virtual bool transform(image::GrayscaleImage &image) = 0;
+    virtual bool transform(image::GrayscaleImage &image) const = 0;
   };
 
   /** @brief Resizing transformation for GrayscaleImage
@@ -41,7 +41,7 @@ namespace image::transform {
      * image will be the same.
      */
     Resize(size_t width, size_t height);
-    bool transform(image::GrayscaleImage &image) override;
+    bool transform(image::GrayscaleImage &image) const override;
   };
 
   /** @brief Produces a view of a GrayscaleImage
@@ -62,7 +62,7 @@ namespace image::transform {
      * @param orig_y row origin index (0 is top border)
      */
     Crop(size_t width, size_t height, size_t orig_x = 0, size_t orig_y = 0);
-    bool transform(image::GrayscaleImage &image) override;
+    bool transform(image::GrayscaleImage &image) const override;
   };
 
 
@@ -81,7 +81,7 @@ namespace image::transform {
      * @param desired_step 1 by default, step between two colors.
      */
     Restriction(size_t desired_step = 1);
-    bool transform(image::GrayscaleImage &image) override;
+    bool transform(image::GrayscaleImage &image) const override;
   };
 
   /**
@@ -90,7 +90,7 @@ namespace image::transform {
    */
   class Equalize : public Transformation {
   public:
-    bool transform(image::GrayscaleImage &image) override;
+    bool transform(image::GrayscaleImage &image) const override;
   };
 
   /**
@@ -98,7 +98,7 @@ namespace image::transform {
    */
   class Filter : public Transformation {
   public:
-    bool transform(image::GrayscaleImage &image) override;
+    bool transform(image::GrayscaleImage &image) const override;
   };
 
   /**
@@ -108,7 +108,7 @@ namespace image::transform {
    */
   class Edges : public Transformation {
   public:
-    bool transform(image::GrayscaleImage &image) override;
+    bool transform(image::GrayscaleImage &image) const override;
   };
 
   /**
@@ -116,7 +116,7 @@ namespace image::transform {
    */
   class BinaryScale : public Transformation {
   public:
-    bool transform(image::GrayscaleImage &image) override;
+    bool transform(image::GrayscaleImage &image) const override;
   };
 
   /**
@@ -124,7 +124,7 @@ namespace image::transform {
    */
   class BinaryScaleByMedian : public Transformation {
   public:
-    bool transform(image::GrayscaleImage &image) override;
+    bool transform(image::GrayscaleImage &image) const override;
   };
 
   /**
@@ -132,7 +132,7 @@ namespace image::transform {
    */
   class Inversion : public Transformation {
   public:
-    bool transform(image::GrayscaleImage &image) override;
+    bool transform(image::GrayscaleImage &image) const override;
   };
 
   /** @brief Pipeline for applying transformations on GrayscaleImage

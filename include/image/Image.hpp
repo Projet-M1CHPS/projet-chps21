@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Matrix.hpp"
+#include "math/Matrix.hpp"
+#include "math/clFMatrix.hpp"
 #include <filesystem>
 #include <memory>
 #include <vector>
@@ -29,8 +30,8 @@ namespace image {
     /**
      * @brief Construct a new GrayscaleImage object
      *
-     * @param width width of the image
-     * @param height height of the image
+     * @param width input_width of the image
+     * @param height input_height of the image
      * @param ptr Ptr to the raw data
      * The image assume the ownership of the ptr
      */
@@ -118,7 +119,7 @@ namespace image {
     /**
      * @brief Returns the dimensions of the image as a pair
      *
-     * @return std::pair<width, height>
+     * @return std::pair<input_width, input_height>
      */
     [[nodiscard]] std::pair<size_t, size_t> getDimension() const {
       return std::make_pair(width, height);
@@ -126,17 +127,19 @@ namespace image {
 
     /**
      * @brief Getter for the image area
-     * 
+     *
      * @return Number of pixel in the image
      */
     [[nodiscard]] size_t getSize() const { return height * width; }
 
     /**
-     * @brief Change the images dimensions properties (width, height) and re-allocate the pixels array accordingly.
+     * @brief Change the images dimensions properties (input_width, input_height) and re-allocate
+     * the pixels array accordingly.
      */
     void setSize(size_t new_width, size_t new_height) {
-      if(new_width <= 0) throw std::invalid_argument("setSize needs a new_width > 0");
-      else if(new_height <= 0) throw std::invalid_argument("setSize needs a new_height > 0");
+      if (new_width <= 0) throw std::invalid_argument("setSize needs a new_width > 0");
+      else if (new_height <= 0)
+        throw std::invalid_argument("setSize needs a new_height > 0");
       std::tie(width, height) = {new_width, new_height};
       pixel_data = std::make_unique<grayscale_t[]>(width * height);
     }
@@ -187,32 +190,25 @@ namespace image {
      */
     static void save(std::string const &filename, const GrayscaleImage &image);
 
+    static void save(std::string const &filename, const math::clFMatrix &matrix, float rescale);
+
+    static void save(std::string const &filename, const math::FloatMatrix &image, float rescale);
+
     /** @brief Returns a vector containing all the png images located in the given directory
      *
-     * @param directory_path 
+     * @param directory_path
      */
-    static std::vector<image::GrayscaleImage> loadDirectory(std::filesystem::path const &directory_path);
+    static std::vector<image::GrayscaleImage>
+    loadDirectory(std::filesystem::path const &directory_path);
 
     /**
      * @brief Get basic informations about a file without loading it
-     * 
+     *
      * @param path Image path
-     * @return (width, height, channels)
+     * @return (input_width, input_height, channels)
      */
     static std::tuple<int, int, int> loadInfo(std::filesystem::path const &path);
 
   private:
   };
-
-  template<typename real>
-  math::Matrix<real> imageToMatrix(GrayscaleImage const &image, real normalize = 1.0) {
-    math::Matrix<real> res(image.getHeight() * image.getWidth(), 1);
-
-    auto data = res.getData();
-    auto image_data = image.getData();
-
-    for (size_t i = 0; i < image.getSize(); i++) { data[i] = (real) image_data[i] / normalize; }
-
-    return res;
-  }
 }   // namespace image

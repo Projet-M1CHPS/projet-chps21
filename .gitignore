@@ -12,6 +12,8 @@
 **/_deps/*
 **/CMakeCache.txt
 **/Makefile
+*.cmake
+!cmake
 *.findOrBuildEnvironnement
 *.marks
 *.pc
@@ -44,12 +46,12 @@
 
 .vscode
 .idea
+cmake-build-*/
 
 # Common CMake build directories
-
-build
-debug
-Debug
-release
-Release
 interface/interface_c
+
+[Bb]uild
+[Dd]ebug
+[Rr]elease
+cmake-build-*

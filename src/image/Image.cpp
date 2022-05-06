@@ -2,10 +2,10 @@
 
 #include <algorithm>
 #include <dirent.h>
+#include <filesystem>
 #include <functional>
 #include <numeric>
 #include <unistd.h>
-#include <filesystem>
 
 #include <cassert>
 #include <cstring>
@@ -144,7 +144,14 @@ namespace image {
 
     if (img_data == nullptr) throw std::runtime_error("ImageSerializer::load: stbi_load failed");
 
-    std::unique_ptr<grayscale_t[]> ptr(reinterpret_cast<grayscale_t *>(img_data));
+
+    // We reallocate an array using a unique_ptr
+    // Since stbi_load returns a pointer that must be freed by stbi_image_free
+    // This is inefficient but atleast we can leave the memory management to the c++ standard
+    std::unique_ptr<grayscale_t[]> ptr = std::make_unique<grayscale_t[]>(width * height);
+    std::memcpy(ptr.get(), img_data, sizeof(grayscale_t) * width * height);
+    stbi_image_free(img_data);
+
     GrayscaleImage res(width, height, std::move(ptr));
 
     return res;
@@ -155,28 +162,56 @@ namespace image {
                    image.getWidth());
   }
 
-  std::vector<image::GrayscaleImage> ImageSerializer::loadDirectory(fs::path const &directory_path) {
+
+  void ImageSerializer::save(std::string const &filename, const math::clFMatrix &matrix,
+                             float rescale) {
+    ImageSerializer::save(filename, matrix.toFloatMatrix(), rescale);
+  }
+
+  void ImageSerializer::save(std::string const &filename, const math::FloatMatrix &image,
+                             float rescale) {
+    size_t width = image.getRows();
+    size_t height = image.getCols();
+    std::unique_ptr<grayscale_t[]> ptr = std::make_unique<grayscale_t[]>(width * height);
+
+    for (size_t i = 0; i < width * height; i++) {
+      ptr[i] = (grayscale_t) (image.getData()[i] * rescale);
+    }
+    GrayscaleImage res(width, height, std::move(ptr));
+    ImageSerializer::save(filename, res);
+  }
+
+
+  std::vector<image::GrayscaleImage>
+  ImageSerializer::loadDirectory(fs::path const &directory_path) {
     std::vector<image::GrayscaleImage> img_list;
 
-    if (!fs::exists(directory_path)){
-      throw std::runtime_error("Error: " + directory_path.string() + " doesnt exist. No images were loaded. Empty vector has been returned.\n");
+    if (!fs::exists(directory_path)) {
+      throw std::runtime_error(
+              "Error: " + directory_path.string() +
+              " doesnt exist. No images were loaded. Empty vector has been returned.\n");
       return img_list;
     }
     if (!fs::is_directory(directory_path)) {
-      throw std::runtime_error("Error: " + directory_path.string() + " is not a directory. No images were loaded. Empty vector has been returned.\n");
+      throw std::runtime_error(
+              "Error: " + directory_path.string() +
+              " is not a directory. No images were loaded. Empty vector has been returned.\n");
       return img_list;
     }
     if ((fs::status(directory_path).permissions() & fs::perms::others_read) == fs::perms::none) {
-      throw std::runtime_error("Error: " + directory_path.string() + " is not readable. No images were loaded. Empty vector has been returned.\n");
+      throw std::runtime_error(
+              "Error: " + directory_path.string() +
+              " is not readable. No images were loaded. Empty vector has been returned.\n");
       return img_list;
     }
 
-    for (const auto & file : fs::directory_iterator(directory_path))
-        if (std::regex_match ((std::string)file.path(), std::regex("(.*)(\\.png)") )) {
-          img_list.push_back(image::ImageSerializer::load(file.path()));
-        }
+    for (const auto &file : fs::directory_iterator(directory_path))
+      if (std::regex_match((std::string) file.path(), std::regex("(.*)(\\.png)"))) {
+        img_list.push_back(image::ImageSerializer::load(file.path()));
+      }
     if (img_list.size() == 0) {
-      throw std::runtime_error("Warning, no images were loaded. The directory doesnt contain any readable images.\n");
+      throw std::runtime_error("Warning, no images were loaded. The directory doesnt contain any "
+                               "readable images.\n");
     }
     return img_list;
   }

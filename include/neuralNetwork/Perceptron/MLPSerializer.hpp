@@ -1,47 +1,22 @@
-
 #pragma once
-#include "tscl.hpp"
-
 #include "MLPerceptron.hpp"
 #include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include <type_traits>
-#include <utility>
 
 namespace nnet {
-
-  /** @brief Utility class for serializing and deserializing MLPerceptrons
+  /** Utility class for serializing and deserializing MLPerceptrons
    *
    */
   class MLPSerializer {
   public:
-    /**
-     * @returns a new MLPerceptronSerializer, or nullptr on failure
-     */
-    virtual MLPerceptron readFromFile(const std::filesystem::path &path) = 0;
+    // This class is fully static
+    MLPSerializer() = delete;
 
-    /**
-     * @returns a new MLPerceptronSerializer, or nullptr on failure
-     */
-    virtual MLPerceptron readFromStream(std::istream &stream) = 0;
+    static MLPerceptron readFromFile(const std::filesystem::path &path);
 
-    /**
-     *
-     * @param path Path to the file to write to
-     * @param perceptron The perceptron to write
-     * @return true on success, false on failure
-     */
-    virtual bool writeToFile(const std::filesystem::path &path,
-                             const MLPerceptron &perceptron) = 0;
+    static MLPerceptron readFromStream(std::istream &stream);
 
-    /**
-     *
-     * @param stream The stream to write to
-     * @param perceptron The perceptron to write
-     * @return true on success, false on failure
-     */
-    virtual bool writeToStream(std::ostream &stream, const MLPerceptron &perceptron) = 0;
+    static bool writeToFile(const std::filesystem::path &path, const MLPerceptron &perceptron);
+
+    static bool writeToStream(std::ostream &stream, const MLPerceptron &perceptron);
   };
 }   // namespace nnet

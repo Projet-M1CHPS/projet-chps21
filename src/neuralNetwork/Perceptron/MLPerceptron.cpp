@@ -2,33 +2,79 @@
 
 namespace nnet {
 
-    MLPTopology MLPTopology::fromString(const std::string &str) {
-      std::vector<size_t> layers;
-      std::stringstream ss(str);
-      std::string token;
-      while (std::getline(ss, token, ',')) { layers.push_back(std::stoi(token)); }
-      return MLPTopology(layers);
-    }
+  MLPTopology MLPTopology::fromString(const std::string &str) {
+    std::vector<size_t> layers;
+    std::stringstream ss(str);
+    std::string token;
 
-  math::FloatMatrix MLPerceptron::predict(math::FloatMatrix const &input) const {
-    const size_t nbInput = input.getRows();
+    while (std::getline(ss, token, ',')) { layers.push_back(std::stoi(token)); }
+    return MLPTopology(layers);
+  }
+
+  MLPerceptron::MLPerceptron(const MLPTopology &topology) {
+    if (not topology.empty()) { setTopology(topology); }
+  }
+
+  math::clFMatrix MLPerceptron::predict(cl::CommandQueue &queue,
+                                        math::clFMatrix const &input) const {
+    auto flattened_input = input.flatten();
+    const size_t nbInput = flattened_input.getRows();
 
     if (nbInput != weights.front().getCols()) {
       throw std::invalid_argument("Invalid number of input");
     }
 
-    auto current_layer = math::FloatMatrix::matMatProdMatAdd(weights[0], input, biases[0]);
-    auto afunc = af::getAFFromType(activation_functions[0]).first;
-    std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
+    auto current_layer = math::clFMatrix::gemm(1.0f, false, weights[0], false, flattened_input,
+                                               1.0f, biases[0], queue);
 
+    af::applyAF(activation_functions[0], current_layer, queue);
     for (size_t i = 1; i < weights.size(); i++) {
-      current_layer = math::FloatMatrix::matMatProdMatAdd(weights[i], current_layer, biases[i]);
+      current_layer = math::clFMatrix::gemm(1.0f, false, weights[i], false, current_layer, 1.0f,
+                                            biases[i], queue);
 
-      // Apply activation function on every element of the matrix
-      afunc = af::getAFFromType(activation_functions[i]).first;
-      std::transform(current_layer.cbegin(), current_layer.cend(), current_layer.begin(), afunc);
+      af::applyAF(activation_functions[i], current_layer, queue);
     }
     return current_layer;
+  }
+
+  math::clFMatrix MLPerceptron::predict(math::clFMatrix const &input) const {
+    cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
+    math::clFMatrix res = predict(queue, input);
+    queue.finish();
+    return res;
+  }
+
+
+  math::clFTensor MLPerceptron::predict(cl::CommandQueue &queue,
+                                        math::clFTensor const &inputs) const {
+    auto flattened_inputs = inputs.flatten();
+    const size_t nbInput = flattened_inputs.getRows();
+
+    if (nbInput != weights.front().getCols()) {
+      throw std::invalid_argument("Invalid number of input");
+    }
+
+    math::clFTensor current_layer = math::clFTensor::batchedGemm(
+            1.0f, false, weights[0], false, flattened_inputs, 1.0f, biases[0], queue);
+
+    af::applyAF(activation_functions[0], current_layer, queue);
+
+    for (size_t k = 1; k < weights.size(); k++) {
+      // C = W * C + B
+      current_layer = math::clFTensor::batchedGemm(1.0f, false, weights[k], false, current_layer,
+                                                   1.0f, biases[k], queue);
+
+      // Apply activation function on every element of the matrix
+      af::applyAF(activation_functions[k], current_layer, queue);
+    }
+    return current_layer;
+  }
+
+  math::clFTensor MLPerceptron::predict(math::clFTensor const &inputs) const {
+    cl::CommandQueue queue(utils::cl_wrapper.getContext(), utils::cl_wrapper.getDefaultDevice());
+    math::clFTensor res = predict(queue, inputs);
+    queue.finish();
+    return res;
   }
 
 
@@ -41,8 +87,8 @@ namespace nnet {
     for (size_t i = 0; i < topology.size() - 1; i++) {
       // Create a matrix of size (layers[i + 1] x layers[i])
       // So that each weight matrix can be multiplied by the previous layer
-      weights.push_back(math::FloatMatrix(topology[i + 1], topology[i]));
-      biases.push_back(math::FloatMatrix(topology[i + 1], 1));
+      weights.emplace_back(topology[i + 1], topology[i]);
+      biases.emplace_back(topology[i + 1], 1);
       activation_functions.push_back(af::ActivationFunctionType::sigmoid);
     }
     this->topology = topology;
@@ -50,13 +96,17 @@ namespace nnet {
 
   void MLPerceptron::randomizeWeight() {
     for (auto &layer : weights) {
-      double x = std::sqrt(2.0 / (double) layer.getRows());
-      math::randomize<float>(layer, -x, x);
+      float x = std::sqrt(2.0f / (float) layer.getRows());
+      math::FloatMatrix buf(layer.getRows(), layer.getCols());
+      math::randomize<float>(buf, -x, x);
+      layer.fromFloatMatrix(buf);
     }
 
     for (auto &layer : biases) {
-      double x = std::sqrt(2.0 / (double) layer.getRows());
-      math::randomize<float>(layer, -x, x);
+      float x = std::sqrt(2.0f / (float) layer.getRows());
+      math::FloatMatrix buf(layer.getRows(), layer.getCols());
+      math::randomize<float>(buf, -x, x);
+      layer.fromFloatMatrix(buf);
     }
   }
 
@@ -65,9 +115,12 @@ namespace nnet {
     os << "-------input-------\n";
     for (size_t i = 0; i < size; i++) {
       os << "-----weight[" << i << "]-----\n";
-      os << nn.getWeights()[i];
+      // We need to fetch the matrix from the defice to print it
+      auto buf1 = nn.getWeights()[i].toFloatMatrix();
+      os << buf1;
       os << "------bias[" << i << "]------\n";
-      os << nn.getBiases()[i];
+      auto buf2 = nn.getBiases()[i].toFloatMatrix();
+      os << buf2;
       if (i != size - 1) { os << "-----hidden[" << i << "]-----\n"; }
     }
     os << "-------output------\n";

@@ -6,18 +6,16 @@ find_package(Doxygen)
 
 # Dont force the use of Doxygen, it may not be installed
 if (Doxygen_FOUND)
-  set(DOXYGEN_INPUT_DIR "${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/include")
-  set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen)
+  set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/docs)
   set(DOXYGEN_INDEX_FILE ${CMAKE_CURRENT_SOURCE_DIR}/html/index.html)
   set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
-  set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+  set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
-  configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
-  file(MAKE_DIRECTORY ${DOXYGEN_OUTPUT_DIR})
+  configure_file(${DOXYFILE_IN} ${DOXYFILE})
 
   add_custom_command(OUTPUT ${DOXYGEN_INDEX_FILE}
-          COMMAND Doxygen::doxygen ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+          COMMAND Doxygen::doxygen ${DOXYFILE}
+          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
           MAIN_DEPENDENCY ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
           COMMENT "Generating docs")
 
