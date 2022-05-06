@@ -167,5 +167,6 @@ int main(int argc, char **argv) {
   for (size_t i = 0; i < argc; i++) args.emplace_back(argv[i]);
 
 
-  return createAndTrain(args[1], args.size() == 3 ? args[2] : "runs/test");
+  bool ret = createAndTrain(args[1], args.size() == 3 ? args[2] : "runs/test");
+  return ret ? 0 : 1;
 }
