@@ -141,7 +141,7 @@ bool createAndTrain(std::filesystem::path const &input_path,
 
 
   MPIParallelScheduler::Builder scheduler_builder;
-  std::cout << "batch size : " << static_cast<size_t>(kBatchSize / comm_size) << std::endl;
+
   assert(local_collection->getTargets().empty() == false);
   scheduler_builder.setJob({static_cast<size_t>(kBatchSize / comm_size),
                             local_collection->getTrainingSet().getTensors(),
@@ -196,8 +196,14 @@ int main(int argc, char **argv) {
   MPI_Init(nullptr, nullptr);
   int n_process = 0;
   MPI_Comm_size(MPI_COMM_WORLD, &n_process);
-
-  auto ret = createAndTrain(args[1], args.size() == 3 ? args[2] : "runs/test");
+  bool ret;
+  try {
+    ret = createAndTrain(args[1], args.size() == 3 ? args[2] : "runs/test");
+  } catch (const std::exception &e) {
+    tscl::logger(e.what(), tscl::Log::Error);
+    MPI_Abort(MPI_COMM_WORLD, 1);
+    return 1;
+  }
   MPI_Finalize();
   return ret;
 }
